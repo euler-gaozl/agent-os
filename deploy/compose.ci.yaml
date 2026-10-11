@@ -1,4 +1,7 @@
 services:
+  migrate:
+    environment:
+      LANGFUSE_URL: http://fixture:8111
   runtime:
     cpus: 0.05
     deploy: {replicas: 2}

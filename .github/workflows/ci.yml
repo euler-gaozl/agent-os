@@ -99,6 +99,8 @@ jobs:
           docker build --target service --build-arg SERVICE=knowledge -t agent-os-knowledge:baseline .state/previous-release
       - name: Independent schema upgrade, deployment, scale and rollback
         run: node scripts/smoke-independent-release.mjs
+      - name: Every service runs as its own deployment unit with the shared Console
+        run: node scripts/smoke-service-units.mjs
       - name: Save sanitized service status
         if: always()
         run: |
