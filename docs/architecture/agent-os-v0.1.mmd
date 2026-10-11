@@ -1,0 +1,53 @@
+%% Agent OS v0.1 — 逻辑架构，2026-10-11，待用户评审，未实现。
+%% 方框是职责边界，不要求分别部署。模型、引擎、数据库与沙箱产品尚未锁定。
+%% Runtime 拥有 Run/Step/Call 状态和重试决策；执行器拥有业务事务与效果回执。
+%% ToolHub 核心保持通用；业务实现按能力包注册，固定具体版本。
+%% 业务包中的用户规则不能被网页、报告和工具输出覆盖。
+%% 上下文是持久化状态的工作视图；摘要不是任务或事实的权威记录。
+%% 身份和工作区范围贯穿任务、工具、沙箱、存储与检索。
+flowchart TB
+    UI["期货工作台 / 其他业务应用"] --> API["任务入口<br/>提交 · 进度 · 取消 · 恢复"]
+    API --> R
+
+    subgraph CORE["Agent 运行层"]
+        R["Runtime<br/>任务状态 · 调度 · 子 Agent · 预算"]
+        C["上下文管理器<br/>固定约束 · 工作集 · Compact"]
+        M["模型适配器<br/>模型调用 · 流式输出"]
+        R --> C --> M
+    end
+
+    P["业务能力包<br/>Skill · 提示词 · 工具实现 · 校验规则"]
+    P -. "加载指定版本" .-> C
+    P -. "注册能力" .-> H
+
+    R --> H["ToolHub<br/>发现 · 权限 · 版本 · 输入输出契约"]
+    H --> W["业务工具执行器<br/>固定采集 · 查询 · 校验 · 提交"]
+    H --> S["Sandbox<br/>动态代码 · 浏览器 · 临时分析"]
+
+    ST["存储服务<br/>运行状态与调用账本<br/>原始证据与产物<br/>业务事实与版本<br/>长期记忆与检索索引"]
+    R -->|"事件 / 检查点 / 上下文清单"| ST
+    ST -->|"按任务重建工作集"| C
+    W -->|"归档 / 业务事务 / 效果回执"| ST
+    S -->|"暂存产物与出处"| ST
+
+    G["生命周期管理<br/>引用 · 保留期 · 租约 · 垃圾回收"]
+    G --> ST
+    G -->|"回收失效工作区"| S
+
+    K["身份与凭证服务<br/>作用范围 · 短期授权 · 网络策略"]
+    K -.-> H
+    K -.-> S
+    K -.-> ST
+
+    O["观测与评估<br/>OpenTelemetry / Langfuse"]
+    R -. "运行事件" .-> O
+    H -. "调用事件" .-> O
+
+    classDef runtime fill:#e8f0ff,stroke:#315aa8,color:#122b52;
+    classDef storage fill:#e7f5ed,stroke:#2e7650,color:#153c28;
+    classDef execution fill:#fff1dd,stroke:#a46617,color:#553408;
+    classDef cross fill:#f1eef7,stroke:#74618e,color:#3d3150;
+    class R,C,M runtime;
+    class ST,G storage;
+    class H,W,S execution;
+    class P,K,O cross;

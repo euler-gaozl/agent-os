@@ -1,0 +1,50 @@
+# Secrets and machine-local configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+secrets/
+credentials/
+.local/
+*.pem
+*.key
+
+# Runtime state and private research data
+.state/
+.dsh/
+var/
+data/
+artifacts/
+logs/
+sandboxes/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# JavaScript / build outputs
+node_modules/
+dist/
+build/
+coverage/
+.cache/
+
+# Editor and operating system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini

@@ -1,0 +1,43 @@
+%% 恢复时序设计，不代表已经实现或提供 exactly-once 保证。
+%% 外部服务不支持幂等与结果查询时，UNKNOWN 不可盲目重试。
+%% 持久化失败时，不宣称任务已接受或执行已完成。
+%% 取消请求、超时与失败分开记录；取消不等于已发生效果回滚。
+%% 新 Worker 接管需租约与 fencing 防止旧 Worker 继续提交。
+%% 示例提交作用于我们可控制的业务数据库；业务事务与 Runtime 账本不是跨库原子事务。
+sequenceDiagram
+    actor U as 用户 / 调度器
+    participant R as Runtime
+    participant L as 运行账本
+    participant H as ToolHub
+    participant W as 工具执行器
+    participant D as 业务库 / 产物服务
+
+    U->>R: 提交任务
+    R->>L: 保存任务契约与输入版本
+    L-->>R: 持久化确认
+    R-->>U: 返回已接受的 run_id
+
+    R->>L: 保存调用意图、operation_id、参数与工具版本
+    L-->>R: 持久化确认
+    R->>H: 执行已登记的调用
+    H->>W: 校验授权与契约后派发
+    W->>D: 查询 operation_id，复用已提交结果或执行
+    Note over W,D: 大文件先暂存并验证完整性，再发布产物清单；业务数据与效果回执在可控事务中提交
+    D-->>W: 提交版本与回执
+    W-->>H: 结构化结果与产物引用
+
+    alt Runtime 正常收到结果
+        H-->>R: 调用结果
+        R->>L: 保存结果、检查点、事件序号与上下文清单
+        L-->>R: 持久化确认
+        R->>R: 推进下一步
+    else 已有外部效果，但结果回执丢失
+        Note over R,L: 重启后加载最后检查点与未决调用，取得有效 Worker 租约
+        R->>H: 按 operation_id 核对，不直接重新执行
+        H->>W: 查询效果
+        W->>D: 查询回执 / 操作状态
+        D-->>W: 已完成 / 未执行 / 无法确定
+        W-->>H: 核对结果
+        H-->>R: 结构化状态
+        R->>L: 已完成则补记；未执行且可重试则重试；无法确定则保持待核对
+    end
