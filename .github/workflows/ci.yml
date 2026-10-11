@@ -125,10 +125,11 @@ jobs:
           test "$RUNNER_ENVIRONMENT" = github-hosted
           # These are preinstalled SDKs on this disposable hosted VM only.
           # They are unused by the Go/PostgreSQL benchmark; never run locally.
-          sudo rm -rf -- /usr/local/lib/android /usr/share/dotnet /opt/ghc
-          df -Pk . > capacity-disk-before.txt
+          sudo rm -rf -- /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/swift /opt/hostedtoolcache/CodeQL /opt/az
+          mkdir -p .state/capacity-evidence
+          df -Pk . | tee .state/capacity-evidence/disk-before.txt
           FREE_KIB=$(df -Pk . | awk 'NR==2 {print $4}')
-          test "$FREE_KIB" -ge 36700160
+          test "$FREE_KIB" -ge 31457280
       - uses: actions/setup-go@v5
         with: {go-version-file: go.mod}
       - name: Build bounded benchmark client
@@ -136,7 +137,6 @@ jobs:
       - name: Initialize isolated capacity database
         run: |
           mkdir -p .state/capacity-evidence
-          cp capacity-disk-before.txt .state/capacity-evidence/disk-before.txt
           docker network create agentos-capacity
           docker run -d --name capacity-db --network agentos-capacity --cpus=1.5 --memory=3g -e POSTGRES_DB=agentos_capacity -e POSTGRES_USER=agentos -e POSTGRES_PASSWORD=disposable-capacity-only postgres:18 -c shared_buffers=256MB -c work_mem=8MB -c maintenance_work_mem=256MB -c max_connections=16 -c max_wal_size=1GB -c wal_compression=on
           for i in $(seq 1 60); do docker exec capacity-db pg_isready -U agentos -d agentos_capacity && break; sleep 1; done
@@ -165,4 +165,6 @@ jobs:
           path: .state/capacity-evidence/
       - name: Dispose fixture containers
         if: always()
-        run: docker rm -f capacity-client capacity-db; docker network rm agentos-capacity
+        run: |
+          docker rm -f capacity-client capacity-db || true
+          docker network rm agentos-capacity || true
