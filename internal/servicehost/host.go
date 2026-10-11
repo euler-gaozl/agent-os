@@ -118,10 +118,22 @@ func run(role, port string, build Build) error {
 		defer db.Close()
 	}
 	cfg := servicehttp.Config{Role: role, Token: token, AdminToken: Env("ADMIN_TOKEN", token), DevLocal: os.Getenv("DEV_LOCAL") == "1"}
+	defaultConcurrency := "16"
+	if role == "knowledge" || role == "toolhub" || role == "storage" {
+		defaultConcurrency = "4"
+	}
+	concurrency, err := strconv.Atoi(Env("HTTP_MAX_CONCURRENT", defaultConcurrency))
+	if err != nil || concurrency < 1 || concurrency > 64 {
+		return errors.New("HTTP_MAX_CONCURRENT must be 1..64")
+	}
+	cfg.MaxConcurrent = concurrency
 	if raw := os.Getenv("SERVICE_PEERS"); raw != "" {
 		if e = json.Unmarshal([]byte(raw), &cfg.Peers); e != nil {
 			return errors.New("invalid service identity policy")
 		}
+	}
+	if cfg.Peers[role] != servicehttp.TokenHash(token) {
+		return errors.New("service identity configuration missing or inconsistent; run migrate-services")
 	}
 	if role == "futures" {
 		cfg.AdminToken = Env("BUSINESS_TOKEN", cfg.AdminToken)

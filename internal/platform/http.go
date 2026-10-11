@@ -210,7 +210,7 @@ func (s *Server) toolRoutes(mux *http.ServeMux) {
 				return e
 			}
 			var local bool
-			if e := s.Store.DB.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM documents WHERE id=$1)", args.ID).Scan(&local); e != nil {
+			if e := s.Store.DB.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM documents d JOIN runs r ON r.id=$2 WHERE d.id=$1 AND (d.scope='' OR d.scope=r.snapshot->'agent_ref'->>'id'))", args.ID, inv.RunID).Scan(&local); e != nil {
 				return e
 			}
 			remoteDocument = !local
@@ -592,8 +592,12 @@ func (s *Server) runtimeRoutes(mux *http.ServeMux) {
 		if caller := servicehttp.Caller(r.Context()); caller != "" && caller != in.Role {
 			return &servicehttp.StatusError{Status: 403, Message: "instance role must match service identity"}
 		}
-		if _, e := s.Store.DB.Exec(r.Context(), "INSERT INTO instances(id,role,hostname,pid) VALUES($1,$2,$3,$4) ON CONFLICT(id) DO UPDATE SET heartbeat_at=now(),pid=$4", in.ID, in.Role, in.Hostname, in.PID); e != nil {
+		tag, e := s.Store.DB.Exec(r.Context(), "INSERT INTO instances(id,role,hostname,pid) VALUES($1,$2,$3,$4) ON CONFLICT(id) DO UPDATE SET heartbeat_at=now(),pid=$4 WHERE instances.role=excluded.role AND instances.hostname=excluded.hostname", in.ID, in.Role, in.Hostname, in.PID)
+		if e != nil {
 			return e
+		}
+		if tag.RowsAffected() != 1 {
+			return errors.New("instance identity already belongs to another service or host")
 		}
 		jsonResponse(w, 200, map[string]bool{"registered": true})
 		return nil

@@ -1,0 +1,31 @@
+flowchart TB
+  Admin[统一中台 React] --> Console[Console BFF 无数据库账号]
+  User[期货业务前端] --> Business[Futures BFF 无数据库账号]
+  Console --> Registry[Registry 资源与凭证]
+  Console --> Hub[ToolHub Skill/MCP 治理]
+  Console --> Knowledge[Knowledge]
+  Console --> Runtime[Runtime 多实例]
+  Business --> Registry
+  Business --> Runtime
+  Worker[Worker 多实例 + DSH] --> Hub
+  Hub --> Runtime
+  Runtime --> Hub
+  Runtime --> Knowledge
+  Runtime --> Sandbox[隔离 Sandbox]
+  Worker --> Registry
+  Knowledge --> Registry
+  Indexer[Indexer 多实例] --> KnowledgeDB[(Knowledge schema)]
+  Knowledge --> KnowledgeDB
+  Hub --> HubDB[(ToolHub schema)]
+  Registry --> RegistryDB[(资源/凭证表)]
+  Worker --> RuntimeDB[(运行/回执/原始记录)]
+  Runtime --> RuntimeDB
+  Storage[Storage] --> RuntimeDB
+  Telemetry[异步 Telemetry] --> RuntimeDB
+  Indexer --> RAG[外部 Milvus / LightRAG / Embedding]
+  subgraph 当前同一 PostgreSQL 实例 各服务独立账号
+    KnowledgeDB
+    HubDB
+    RegistryDB
+    RuntimeDB
+  end

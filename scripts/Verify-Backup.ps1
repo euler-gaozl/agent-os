@@ -19,6 +19,19 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Restored database validation failed.' }
     $invalid = & (Join-Path $PostgresBin 'psql.exe') -h $dbUri.Host -p $dbUri.Port -U $credentials[0] -d $verifyDatabase -Atc "SELECT count(*) FROM artifacts WHERE encode(sha256(body),'hex')<>hash"
     if ($LASTEXITCODE -ne 0 -or $invalid -ne '0') { throw 'Artifact integrity validation failed.' }
+    $serviceChecks = @'
+DO $$ BEGIN
+ IF to_regclass('knowledge.artifacts') IS NOT NULL THEN
+  IF EXISTS(SELECT 1 FROM knowledge.artifacts WHERE encode(sha256(body),'hex')<>hash) THEN RAISE EXCEPTION 'Knowledge artifact hash mismatch'; END IF;
+  IF EXISTS(SELECT 1 FROM knowledge.artifact_refs r LEFT JOIN knowledge.artifacts a USING(hash) WHERE a.hash IS NULL) THEN RAISE EXCEPTION 'Knowledge reference missing'; END IF;
+ END IF;
+ IF to_regclass('toolhub.asset_files') IS NOT NULL THEN
+  IF EXISTS(SELECT 1 FROM toolhub.asset_files WHERE encode(sha256(body),'hex')<>hash) THEN RAISE EXCEPTION 'Skill file hash mismatch'; END IF;
+ END IF;
+END $$;
+'@
+    & (Join-Path $PostgresBin 'psql.exe') -h $dbUri.Host -p $dbUri.Port -U $credentials[0] -d $verifyDatabase -v ON_ERROR_STOP=1 -Atc $serviceChecks
+    if ($LASTEXITCODE -ne 0) { throw 'Service-owned data validation failed.' }
     Write-Output 'Backup restored into an isolated database; schema, original artifact hashes and references checked.'
 } finally {
     if ($created -and $verifyDatabase -match '^agentos_restorecheck_[a-f0-9]{32}$') {

@@ -68,7 +68,11 @@ jobs:
         run: node scripts/smoke-services.mjs
       - name: Save sanitized service status
         if: always()
-        run: docker compose ps --all --format json > .state/ci-evidence/containers.json
+        run: |
+          docker compose ps --all --format json > .state/ci-evidence/containers.json
+          if [ -f .state/ci-evidence/service-smoke.json ]; then
+            node scripts/summarize-service-evidence.mjs .state/ci-evidence/service-smoke.json > .state/ci-evidence/summary.json
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:

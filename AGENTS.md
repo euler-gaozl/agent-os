@@ -2,9 +2,9 @@
 
 ## 项目状态
 
-先读 README.md、docs/architecture/contracts-v0.4.md、harness/README.md、docs/validation-v0.4.md 和 docs/architecture/next-steps.md；v0.1 独立评审保留为历史基线。
+先读 README.md、docs/architecture/contracts-v0.5.md、harness/README.md、docs/validation-v0.5.md 和 docs/production-readiness.md；v0.4 执行恢复契约和 v0.1 独立评审保留为历史基线。
 
-当前为 v0.4 本地可运行实现，默认执行器为 DSH 官方核心包。不能将真实 Harness + 模型协议夹具写成真实供应商已验证，不能将设计目标写成生产能力。
+当前为 v0.5 服务生产化增量，默认执行器为 DSH 官方核心包。不能将真实 Harness + 模型协议夹具写成真实供应商已验证，不能将设计目标写成生产能力。目标是 Linux 2 核 / 4 GB 平台预算（外部模型/RAG 单独计量）、100 万文档 / 1000 万块；容量和物理节点 HA 未验收。
 
 ## 本地布局与技术选型
 
@@ -18,7 +18,7 @@
 
 - 核心 Runtime 和 ToolHub 不写入期货专属规则；业务逻辑以独立能力包实现。
 - 中台统一管理资源和 Agent；知识库、ToolHub、Runtime、Registry 是独立服务。期货前端和业务 BFF 单独部署，不把基础设施配置暴露给业务用户。
-- 服务首版共享 PostgreSQL schema；跨服务数据库访问的现状必须如实记录，不能宣称数据库已完全解耦。
+- ToolHub 和 Knowledge 各自拥有 schema/账号；Console/Futures 不访问数据库。Runtime/Worker/Storage/Sandbox 仍共享部分执行事务表，必须如实记录，不能宣称数据库已完全解耦。
 - 明确运行状态权威、重试策略拥有者和 Compact 决策者，避免框架之间重复管理。
 - DSH 版本及重放可见的适配行为必须固定；升级前验证未完成任务兼容。旧 Go 循环仅供迁移前历史任务恢复。
 - 执行前登记调用意图，结果不确定时先核对；不能将无回执直接等同于未执行。

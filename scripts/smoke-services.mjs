@@ -18,7 +18,7 @@ async function request(path,body,options={}){
 }
 const evidence={platform:'Linux Docker Compose',model:'controlled fixture, no real provider',checks:[],resources:[]};
 function passed(name){evidence.checks.push(name);console.log('PASS '+name)}
-let sampler=setInterval(()=>{try{const raw=docker('stats','--no-stream','--format','{{json .}}');evidence.resources.push(...raw.split('\n').filter(Boolean).map(x=>({time:new Date().toISOString(),...JSON.parse(x)})))}catch{}},4000);
+let sampler=setInterval(()=>{try{const raw=docker('stats','--no-stream','--format','{{json .}}');const at=new Date().toISOString();evidence.resources.push(...raw.split('\n').filter(Boolean).map(x=>({time:at,...JSON.parse(x)})))}catch{}},4000);
 try{
  await until(async()=>{const s=await request('/status');return s.instances.filter(x=>x.active).length>=12},'service heartbeats');
  for(const role of ['toolhub','knowledge','storage','sandbox','worker']){

@@ -17,6 +17,13 @@ $previous=@();if(Test-Path -LiteralPath $manifestPath){$previous=@(Get-Content -
 foreach($entry in $previous){if($entry.role -notin $selected){continue};$p=Get-Process -Id $entry.pid -ErrorAction SilentlyContinue;if($p -and $p.Path -eq $entry.binary -and $p.StartTime.ToUniversalTime().Ticks -eq ([datetime]$entry.started_at).ToUniversalTime().Ticks){throw ('Service already running: '+$entry.role+'. Stop only that service before restarting.')}}
 $needConfig=-not(Test-Path -LiteralPath (Join-Path $repoRoot '.state\services\toolhub.json'))
 if($Migrate -or $needConfig){if($previous.Count -gt 0){throw 'Stop all platform services before migrating.'};Push-Location $repoRoot;try{& $index['migrate-services'] --config $adminConfig;if($LASTEXITCODE -ne 0){throw 'Service migration failed; old data retained.'}}finally{Pop-Location}}
+if('worker' -in $selected){
+ $workerConfig=Get-Content (Join-Path $repoRoot '.state/services/worker.json') -Raw|ConvertFrom-Json
+ $nodeCommand=if($workerConfig.AGENTOS_NODE){$workerConfig.AGENTOS_NODE}else{'node'}
+ if(-not(Get-Command $nodeCommand -ErrorAction SilentlyContinue)){throw 'Worker requires Node 24; configure AGENTOS_NODE in .state/dev.json and migrate.'}
+ if(-not(Test-Path -LiteralPath (Join-Path $repoRoot 'harness/node_modules'))){throw 'Install pinned harness dependencies before starting workers.'}
+}
+foreach($ui in @('control','futures')){if($ui -in $selected){$dir=if($ui -eq 'control'){'web/dist'}else{'web/dist-futures'};if(-not(Test-Path -LiteralPath (Join-Path $repoRoot ($dir+'/index.html')))){throw ('Build frontend before starting '+$ui)}}}
 $ports=@{control=8090;toolhub=8091;storage=8092;sandbox=8093;runtime=8094;knowledge=8095;registry=8096;indexer=8097;futures=8098}
 $started=@();$savedInstance=$env:INSTANCE_ID
 try{
