@@ -283,7 +283,7 @@ func (s *Store) Retrieve(ctx context.Context, ref Ref, kb KnowledgeBase, query s
 		}
 		queryCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 		defer cancel()
-		rows, e := s.DB.Query(queryCtx, `SELECT c.id,c.content,d.source,d.id,f.name FROM knowledge_chunks c JOIN knowledge_files f ON f.id=c.file_id JOIN documents d ON d.id=f.document_id WHERE f.kb_id=$1 AND f.kb_revision=$2 AND f.status='ready' AND c.search_vector @@ plainto_tsquery('simple',$3) LIMIT 8`, ref.ID, ref.Revision, scopeToken(ref)+" "+strings.Join(terms, " "))
+		rows, e := s.DB.Query(queryCtx, localChunkQuery, ref.ID, ref.Revision, scopeToken(ref)+" "+strings.Join(terms, " "))
 		if e != nil {
 			return result, e
 		}
@@ -303,7 +303,7 @@ func (s *Store) Retrieve(ctx context.Context, ref Ref, kb KnowledgeBase, query s
 		// File names are searchable independently from chunk contents, including
 		// legacy uploads backfilled by the indexer. Return the first chunk as a
 		// preview; the caller can read the complete document using document_id.
-		rows, e = s.DB.Query(queryCtx, `SELECT c.id,c.content,d.source,d.id,f.name FROM knowledge_files f JOIN documents d ON d.id=f.document_id JOIN knowledge_chunks c ON c.file_id=f.id AND c.ordinal=0 WHERE f.kb_id=$1 AND f.kb_revision=$2 AND f.status='ready' AND f.name_vector @@ plainto_tsquery('simple',$3) LIMIT 8`, ref.ID, ref.Revision, scopeToken(ref)+" "+strings.Join(terms, " "))
+		rows, e = s.DB.Query(queryCtx, localNameQuery, ref.ID, ref.Revision, scopeToken(ref)+" "+strings.Join(terms, " "))
 		if e != nil {
 			return result, e
 		}

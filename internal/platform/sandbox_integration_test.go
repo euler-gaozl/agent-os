@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"os/exec"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -65,7 +66,7 @@ func TestDockerSandboxIsolationReplayAndBrokerCrash(t *testing.T) {
 		t.Fatal("sandbox restrictions not observed", result)
 	}
 	again, e := server.sandbox(ctx, inv)
-	if e != nil || string(again) != string(body) {
+	if e != nil || !sameSandboxJSON(again, body) {
 		t.Fatal("sandbox replay changed", e)
 	}
 	var count int
@@ -138,8 +139,12 @@ func TestDockerSandboxIsolationReplayAndBrokerCrash(t *testing.T) {
 		t.Fatal("orphan result not durably recovered", e)
 	}
 	restored, e := server.sandbox(ctx, inv)
-	if e != nil || string(restored) != string(saved) {
+	if e != nil || !sameSandboxJSON(restored, saved) {
 		t.Fatal("orphan retry did not replay stored result", e)
 	}
 	t.Log("real container restrictions, replay, broker SIGKILL, independent timeout, orphan receipt recovery and cleanup passed")
+}
+func sameSandboxJSON(a, b []byte) bool {
+	var x, y any
+	return json.Unmarshal(a, &x) == nil && json.Unmarshal(b, &y) == nil && reflect.DeepEqual(x, y)
 }

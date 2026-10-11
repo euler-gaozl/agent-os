@@ -101,6 +101,14 @@ func run() error {
 		return fmt.Errorf("loaded row counts differ")
 	}
 	store := knowledge.Store{DB: db}
+	plans := map[string]any{}
+	for _, q := range []string{"record" + strconv.Itoa(n/2), "missingrecord99999999", "容量样本"} {
+		p, e := store.ExplainLocal(ctx, ref, q)
+		if e != nil {
+			return e
+		}
+		plans[q] = p
+	}
 	type sample struct {
 		Query        string  `json:"query"`
 		Milliseconds float64 `json:"ms"`
@@ -146,6 +154,7 @@ func run() error {
 	}
 	sort.Float64s(times)
 	report := map[string]any{"documents": documents, "chunks": chunks, "chunk_characters": 800, "source_bytes_per_document": 1024, "fixture": "SQL generated; repeated seeded text; original documents intentionally shorter than aggregate chunks; not an upload/relevance test", "database_table_and_index_bytes": bytes, "load_seconds": loadSeconds, "concurrency": 4, "samples": samples, "initial_queries_after_load": initial, "cache": "warm/mixed after load; no cold-cache claim", "p50_ms": times[len(times)/2], "p95_ms": times[len(times)*95/100], "max_ms": times[len(times)-1], "errors": errors, "limits": "PostgreSQL 1.5 CPU/3 GiB, benchmark client 0.5 CPU/512 MiB; other platform services excluded"}
+	report["query_plans"] = plans
 	body, _ := json.MarshalIndent(report, "", "  ")
 	if e = os.WriteFile("/evidence/capacity.json", body, 0600); e != nil {
 		return e
