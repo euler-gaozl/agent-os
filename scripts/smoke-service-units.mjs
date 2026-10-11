@@ -24,7 +24,7 @@ try{
  const telemetryConfig=JSON.parse(fs.readFileSync('.state/services/telemetry.json','utf8'));
  const telemetryDB=new URL(telemetryConfig.DATABASE_URL);telemetryDB.pathname='/agentos_telemetry_ci';telemetryConfig.DATABASE_URL=telemetryDB.href;
  const migrationDB=new URL(telemetryDB);migrationDB.username='agentos';migrationDB.password=process.env.POSTGRES_PASSWORD;
- dc('run','--rm','--no-deps','-e','DATABASE_URL='+migrationDB.href,'migrate','--service','telemetry');
+ dc('run','--rm','--no-deps','--entrypoint','/app/service','-e','DATABASE_URL='+migrationDB.href,'migrate','--service','telemetry');
  fs.writeFileSync(isolatedTelemetryConfig,JSON.stringify(telemetryConfig),{mode:0o640});
  exec('sudo',['chown','10001:'+exec('id',['-g']),isolatedTelemetryConfig]);
  assert.equal(dc('exec','-T','postgres','psql','-U','agentos','-d','agentos_telemetry_ci','-At','-c',"SELECT to_regclass('events') IS NULL AND to_regclass('runs') IS NULL"),'t');
