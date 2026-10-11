@@ -54,6 +54,9 @@ func permitted(service, caller, method, path string) bool {
 			return (get && strings.HasPrefix(path, "/v1/resources/")) || (method == "POST" && path == "/v1/credentials/resolve")
 		}
 	case "toolhub":
+		if caller == "runtime" && method == "POST" && path == "/v1/skill-file" {
+			return true
+		}
 		if caller == "control" {
 			return strings.HasPrefix(path, "/v1/assets") || path == "/v1/discover"
 		}

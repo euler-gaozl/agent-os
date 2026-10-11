@@ -4,6 +4,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const dc=(...args)=>execFileSync('docker',['compose','-f','compose.yaml','-f','deploy/compose.ci.yaml',...args],{encoding:'utf8',timeout:120000,stdio:['pipe','pipe','pipe']}).trim();
 const docker=(...args)=>execFileSync('docker',args,{encoding:'utf8',timeout:30000,stdio:['pipe','pipe','pipe']}).trim();
+// Crash the application process. `docker kill` is an operator stop and can
+// suppress restart policy, so it is not a valid supervisor recovery test.
+const crash=id=>docker('exec','--user','10001',id,'sh','-c','kill -KILL "$(pidof service)"');
 const sql=q=>dc('exec','-T','postgres','psql','-U','agentos','-d','agentos','-At','-v','ON_ERROR_STOP=1','-c',q);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const until=async(fn,label,seconds=90)=>{const end=Date.now()+seconds*1000;while(Date.now()<end){try{const v=await fn();if(v)return v}catch{}await sleep(1000)}throw Error('Timeout: '+label)};
@@ -53,14 +56,14 @@ try{
  await until(()=>sql("SELECT count(*) FROM calls WHERE run_id='"+run.id+"' AND request->>'name'='note_save' AND status='completed'")==='1','first durable tool receipt');
  const owner=sql("SELECT hostname FROM instances WHERE id=(SELECT owner FROM runs WHERE id='"+run.id+"')");assert(owner);
  const workers=dc('ps','-q','worker').split('\n');const victim=workers.find(id=>JSON.parse(docker('inspect',id))[0].Config.Hostname===owner);assert(victim,'owner container');
- docker('kill','--signal=KILL',victim);
+ crash(victim);
  const completed=await until(async()=>{const r=await request('/tasks/'+run.id,undefined,{business:true});if(r.status==='failed'||r.status==='needs_review')throw Error(JSON.stringify(r));return r.status==='completed'?r:null},'DSH task recovery',150);
  assert.match(completed.result,/Controlled/);
  assert.equal(sql("SELECT count(*) FROM documents WHERE title='CI durable receipt'"),'1');
  assert(Number(sql("SELECT fence FROM runs WHERE id='"+run.id+"'"))>=2);passed('real worker SIGKILL, fenced takeover, DSH replay and one committed note');
  assert.equal(sql("SELECT count(*) FROM calls WHERE run_id='"+run.id+"' AND kind='tool' AND status='completed'"),'4');passed('cross-service MCP call, KB search and bound original document read');
  dc('stop','toolhub');const partial=await request('/resources');assert.equal(partial.services.toolhub,false);assert.equal(partial.services.registry,true);assert(partial.items.some(x=>x.id==='ci-agent'));assert((await request('/tasks',undefined,{business:true})).length===1);dc('start','toolhub');passed('ToolHub outage leaves registry catalog and business history usable');
- for(const role of ['registry','runtime','knowledge','indexer','storage','control','futures']){const ids=dc('ps','-q',role).split('\n');docker('kill','--signal=KILL',ids[0]);await until(()=>JSON.parse(docker('inspect',ids[0]))[0].State.Health?.Status==='healthy',role+' automatic restart',60)}
+ for(const role of ['registry','runtime','knowledge','indexer','storage','control','futures']){const ids=dc('ps','-q',role).split('\n');const before=JSON.parse(docker('inspect',ids[0]))[0].RestartCount;crash(ids[0]);await until(()=>{const state=JSON.parse(docker('inspect',ids[0]))[0];return state.RestartCount>before&&state.State.Health?.Status==='healthy'},role+' automatic restart',60)}
  assert((await request('/knowledge/query',{knowledge:{id:'ci-kb',revision:1},query:'甲醇库存'})).hits.length===1);passed('independent service crash restart retains data');
  dc('stop','postgres');await sleep(2000);
  for(const role of ['registry','runtime','knowledge']){let unhealthy=false;try{dc('exec','-T',role,'/app/healthcheck')}catch{unhealthy=true}assert(unhealthy,role+' must not report ready without DB')}

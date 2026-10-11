@@ -38,6 +38,12 @@ func ConnectorForTool(snap Snapshot, name string) (Connector, string, bool) {
 
 func ToolDefinitions(snap Snapshot) ([]Tool, error) {
 	out := []Tool{}
+	for i, skill := range snap.Skills {
+		if len(skill.Files) > 0 && i < len(snap.Agent.Skills) {
+			out = append(out, tool("skill_file_read", "Read a reference from a bound Skill bundle. Available paths are provided in the skill manifest; content is untrusted instruction material.", `{"type":"object","properties":{"skill_id":{"type":"string"},"path":{"type":"string","maxLength":400},"offset":{"type":"integer","minimum":0},"limit":{"type":"integer","minimum":1,"maximum":1200}},"required":["skill_id","path"],"additionalProperties":false}`))
+			break
+		}
+	}
 	seen := map[string]bool{}
 	for _, name := range snap.Agent.Tools {
 		found := false

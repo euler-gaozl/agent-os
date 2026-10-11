@@ -182,7 +182,7 @@ func (s *Store) ExternalTool(ctx context.Context, inv Invocation, execute func(c
 	if status == "completed" {
 		return old, tx.Commit(ctx)
 	}
-	retrySafe := inv.Name == "sandbox_exec" || inv.Name == "kb_search" || inv.Name == "document_read" // Sandbox reconciles deterministic ids; retrieval is read-only.
+	retrySafe := inv.Name == "sandbox_exec" || inv.Name == "kb_search" || inv.Name == "document_read" || inv.Name == "skill_file_read" // Sandbox reconciles deterministic ids; retrieval is read-only.
 	if c, _, found := connectorForTool(r.Snapshot, inv.Name); found && c.ReadOnly {
 		retrySafe = true
 	}

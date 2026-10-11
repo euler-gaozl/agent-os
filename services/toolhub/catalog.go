@@ -167,6 +167,29 @@ func (s *Store) Resolve(ctx context.Context, kind, id string, rev int) (contract
 	if !a.Enabled || a.Health != "healthy" || (kind == "connector" && (a.CheckedAt == nil || time.Since(*a.CheckedAt) > 5*time.Minute)) {
 		return a.Resource, errors.New("resource disabled, unhealthy, unchecked or stale")
 	}
+	if kind == "skill" {
+		var skill contracts.Skill
+		if e = json.Unmarshal(a.Spec, &skill); e != nil {
+			return a.Resource, e
+		}
+		skill.Files = nil
+		rows, err := s.DB.Query(ctx, "SELECT path FROM asset_files WHERE kind=$1 AND id=$2 AND revision=$3 ORDER BY path", kind, id, rev)
+		if err != nil {
+			return a.Resource, err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var path string
+			if err = rows.Scan(&path); err != nil {
+				return a.Resource, err
+			}
+			skill.Files = append(skill.Files, path)
+		}
+		if err = rows.Err(); err != nil {
+			return a.Resource, err
+		}
+		a.Spec = contracts.JSON(skill)
+	}
 	return a.Resource, nil
 }
 func (s *Store) Schedule(ctx context.Context, kind, id string, rev int) error {
@@ -294,15 +317,17 @@ func (s *Store) CheckNext(ctx context.Context, owner string) (bool, error) {
 		return true, e
 	}
 	defer tx.Rollback(ctx)
-	tag, e := tx.Exec(ctx, `UPDATE asset_state SET health=$6,report=$7,checked_at=now(),check_until=NULL,failures=CASE WHEN $6='healthy' THEN 0 ELSE failures+1 END,next_check_at=now()+CASE WHEN $6='healthy' THEN interval '60 seconds' ELSE least(300,power(2,least(failures,8))::int*5)*interval '1 second' END WHERE kind=$1 AND id=$2 AND revision=$3 AND check_owner=$4 AND check_fence=$5 AND check_until>now()`, kind, id, rev, owner, fence, report.Status, contracts.JSON(report))
+	tag, e := tx.Exec(ctx, `UPDATE asset_state SET health=$6,report=$7,checked_at=now(),check_until=NULL,failures=CASE WHEN $6='healthy' THEN 0 ELSE failures+1 END,next_check_at=CASE WHEN kind='skill' THEN 'infinity'::timestamptz ELSE now()+CASE WHEN $6='healthy' THEN interval '60 seconds' ELSE least(300,power(2,least(failures,8))::int*5)*interval '1 second' END END WHERE kind=$1 AND id=$2 AND revision=$3 AND check_owner=$4 AND check_fence=$5 AND check_until>now()`, kind, id, rev, owner, fence, report.Status, contracts.JSON(report))
 	if e != nil {
 		return true, e
 	}
 	if tag.RowsAffected() != 1 {
 		return true, errors.New("check lease superseded")
 	}
-	if e = audit(ctx, tx, kind, id, rev, "checked", owner, report); e != nil {
-		return true, e
+	if a.Health != report.Status {
+		if e = audit(ctx, tx, kind, id, rev, "checked", owner, report); e != nil {
+			return true, e
+		}
 	}
 	return true, tx.Commit(ctx)
 }

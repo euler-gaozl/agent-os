@@ -217,8 +217,16 @@ func (s *Server) toolRoutes(mux *http.ServeMux) {
 		}
 		var result []byte
 		var e error
-		if strings.HasPrefix(inv.Name, "mcp_") || inv.Name == "sandbox_exec" || inv.Name == "kb_search" || remoteDocument {
+		if strings.HasPrefix(inv.Name, "mcp_") || inv.Name == "sandbox_exec" || inv.Name == "kb_search" || inv.Name == "skill_file_read" || remoteDocument {
 			result, e = s.Store.ExternalTool(r.Context(), inv, func(ctx context.Context, run Run) ([]byte, error) {
+				if inv.Name == "skill_file_read" {
+					var args map[string]any
+					if e := json.Unmarshal(inv.Arguments, &args); e != nil {
+						return nil, e
+					}
+					args["run_id"] = run.ID
+					return internalRequest(ctx, s.Store.CatalogURL+"/v1/skill-file", s.Token, args)
+				}
 				if remoteDocument {
 					var args map[string]any
 					if e := json.Unmarshal(inv.Arguments, &args); e != nil {

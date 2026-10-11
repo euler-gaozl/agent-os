@@ -98,6 +98,7 @@ function Console() {
       api<any[]>("/runs"),
       api<any>("/status"),
     ]);
+    if([r,run,st].some(x=>x.status==="rejected" && x.reason?.status===401)){setReady(false);setError("请使用管理访问令牌登录。");return;}
     const failures:string[]=[];
     if(r.status==="fulfilled") {setResources(r.value.items); for(const [name,ok] of Object.entries(r.value.services)) if(!ok) failures.push(name);} else failures.push("资源目录");
     if(run.status==="fulfilled") setRuns(run.value); else failures.push("运行记录");
@@ -241,7 +242,7 @@ function Console() {
             <div>
               我的工作区
               <small>
-                <i className="online-dot" /> 服务在线 · v0.4
+                <i className="online-dot" /> 服务连接 · v0.5
               </small>
             </div>
             <MoreHorizontal size={17} />

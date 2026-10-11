@@ -275,3 +275,45 @@ func TestRejectedDefinitionDoesNotCreateAsset(t *testing.T) {
 		t.Fatal("rejected asset persisted")
 	}
 }
+func TestBundleReferencesReadByBoundVersionAndDisabledGate(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+	files, e := Unpack(zipFiles(t, map[string]string{"SKILL.md": "Use references/method.md", "references/method.md": "Retain original source."}, 0644))
+	if e != nil {
+		t.Fatal(e)
+	}
+	_, e = s.Register(ctx, "skill", "bundle", contracts.JSON(contracts.Skill{Name: "Bundle", Content: "Use references/method.md"}), files, "test")
+	if e != nil {
+		t.Fatal(e)
+	}
+	_, e = s.CheckNext(ctx, "checker")
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = s.Enable(ctx, "skill", "bundle", 1, true, "reviewed", "test"); e != nil {
+		t.Fatal(e)
+	}
+	resource, e := s.Resolve(ctx, "skill", "bundle", 1)
+	var skill contracts.Skill
+	json.Unmarshal(resource.Spec, &skill)
+	if e != nil || len(skill.Files) != 2 {
+		t.Fatal(skill, e)
+	}
+	run := contracts.Run{Snapshot: contracts.Snapshot{Agent: contracts.Agent{Skills: []contracts.Ref{{ID: "bundle", Revision: 1}}}}}
+	v, e := s.ReadSkillFile(ctx, run, "bundle", "references/method.md", 0, 100)
+	if e != nil || !strings.Contains(string(contracts.JSON(v)), "Retain original") {
+		t.Fatal(v, e)
+	}
+	if _, e = s.ReadSkillFile(ctx, run, "other", "references/method.md", 0, 100); e == nil {
+		t.Fatal("unbound skill read")
+	}
+	if _, e = s.ReadSkillFile(ctx, run, "bundle", "../escape", 0, 100); e == nil {
+		t.Fatal("path escape")
+	}
+	if e = s.Enable(ctx, "skill", "bundle", 1, false, "withdraw", "test"); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = s.ReadSkillFile(ctx, run, "bundle", "references/method.md", 0, 100); e == nil {
+		t.Fatal("disabled skill read")
+	}
+}

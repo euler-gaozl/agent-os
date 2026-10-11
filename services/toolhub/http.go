@@ -27,25 +27,78 @@ func newProbe(p Policy, c contracts.Connector) *mcp.MCPClient {
 }
 func (s *Server) Handler() http.Handler { return servicehttp.New(s.HTTP, s.Store.DB.Ping, s.Routes) }
 func (s *Server) Routes(mux *http.ServeMux) {
+	mux.HandleFunc("POST /v1/skill-file", servicehttp.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+		var in struct {
+			RunID   string `json:"run_id"`
+			SkillID string `json:"skill_id"`
+			Path    string `json:"path"`
+			Offset  int    `json:"offset"`
+			Limit   int    `json:"limit"`
+		}
+		if e := servicehttp.Decode(w, r, &in); e != nil {
+			return e
+		}
+		if s.Execution == nil {
+			return errors.New("runtime unavailable")
+		}
+		run, e := s.Execution.Run(r.Context(), in.RunID)
+		if e != nil {
+			return e
+		}
+		out, e := s.Store.ReadSkillFile(r.Context(), run, in.SkillID, in.Path, in.Offset, in.Limit)
+		if e != nil {
+			return e
+		}
+		servicehttp.JSONResponse(w, 200, out)
+		return nil
+	}))
 	mux.HandleFunc("GET /v1/assets/{kind}/{id}/{revision}/files", servicehttp.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		rev, _ := strconv.Atoi(r.PathValue("revision"))
-		rows, e := s.Store.DB.Query(r.Context(), "SELECT path,hash,convert_from(body,'UTF8') FROM asset_files WHERE kind=$1 AND id=$2 AND revision=$3 ORDER BY path", r.PathValue("kind"), r.PathValue("id"), rev)
+		rows, e := s.Store.DB.Query(r.Context(), "SELECT path,hash FROM asset_files WHERE kind=$1 AND id=$2 AND revision=$3 ORDER BY path", r.PathValue("kind"), r.PathValue("id"), rev)
 		if e != nil {
 			return e
 		}
 		defer rows.Close()
 		out := []map[string]string{}
 		for rows.Next() {
-			var path, hash, content string
-			if e = rows.Scan(&path, &hash, &content); e != nil {
+			var path, hash string
+			if e = rows.Scan(&path, &hash); e != nil {
 				return e
 			}
-			out = append(out, map[string]string{"path": path, "hash": hash, "content": content})
+			out = append(out, map[string]string{"path": path, "hash": hash})
 		}
 		if e = rows.Err(); e != nil {
 			return e
 		}
 		servicehttp.JSONResponse(w, 200, out)
+		return nil
+	}))
+	mux.HandleFunc("GET /v1/assets/{kind}/{id}/{revision}/file", servicehttp.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+		rev, e := strconv.Atoi(r.PathValue("revision"))
+		if e != nil {
+			return errors.New("invalid revision")
+		}
+		offset := 0
+		if v := r.URL.Query().Get("offset"); v != "" {
+			offset, e = strconv.Atoi(v)
+			if e != nil || offset < 0 {
+				return errors.New("invalid offset")
+			}
+		}
+		var body []byte
+		var hash string
+		if e = s.Store.DB.QueryRow(r.Context(), "SELECT body,hash FROM asset_files WHERE kind=$1 AND id=$2 AND revision=$3 AND path=$4", r.PathValue("kind"), r.PathValue("id"), rev, r.URL.Query().Get("path")).Scan(&body, &hash); e != nil {
+			return e
+		}
+		if contracts.Hash(body) != hash {
+			return errors.New("file hash mismatch")
+		}
+		chars := []rune(string(body))
+		if offset > len(chars) {
+			return errors.New("offset exceeds file size")
+		}
+		end := min(offset+4000, len(chars))
+		servicehttp.JSONResponse(w, 200, map[string]any{"content": string(chars[offset:end]), "hash": hash, "next_offset": end, "has_more": end < len(chars)})
 		return nil
 	}))
 	mux.HandleFunc("GET /v1/assets", servicehttp.Wrap(func(w http.ResponseWriter, r *http.Request) error {

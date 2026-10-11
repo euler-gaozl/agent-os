@@ -41,8 +41,9 @@ type Connector struct {
 	AuthToken string `json:"-"`
 }
 type Skill struct {
-	Name    string `json:"name"`
-	Content string `json:"content"`
+	Name    string   `json:"name"`
+	Content string   `json:"content"`
+	Files   []string `json:"files,omitempty"`
 }
 type Agent struct {
 	ContextTokens int         `json:"context_tokens"`

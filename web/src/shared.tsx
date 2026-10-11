@@ -44,7 +44,7 @@ export async function api<T = any>(
     const error = await response
       .json()
       .catch(() => ({ error: response.statusText }));
-    throw new Error(error.error || error.findings?.map((f: any) => f.Message || f.message).join("；") || response.statusText);
+    throw Object.assign(new Error(error.error || error.findings?.map((f: any) => f.Message || f.message).join("；") || response.statusText),{status:response.status});
   }
   return response.json();
 }
