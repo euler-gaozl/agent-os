@@ -9,14 +9,16 @@
 | 引擎 | 首版用途 | 成本与限制 | 本项目证据 |
 | --- | --- | --- | --- |
 | local | 导入、原文回溯、字面关键词匹配 | 无 Embedding 费用；不能理解同义词或做语义排名 | 本机上传/检索实测 |
-| Milvus | 中文长资料的语义检索 | 需要 Milvus 和 Embedding 推理服务；还需调分片/召回 | REST 适配及模拟协议验证，未实机运行 |
-| LightRAG | 跨文档实体与关系查询 | 需要生成模型、Embedding、抽取和索引；图谱可能含抽取误差 | 异步导入/状态/查询适配及模拟验证，未实机运行 |
+| Milvus | 中文长资料的语义检索 | 需要 Milvus 和 Embedding 推理服务；还需调分片/召回 | v2.6.24 真实容器：索引、查询、来源/版本隔离、写后丢失回执恢复、重启持久化通过；本次向量为夹具 |
+| LightRAG | 跨文档实体与关系查询 | 需要生成模型、Embedding、抽取和索引；图谱可能含抽取误差 | v1.5.7 真实容器：异步导入、跟踪、图谱/片段查询、本地原文归属通过；本次 LLM/Embedding 为夹具 |
 
 Milvus 适配采用 REST v2.6、字符串主键、稳定 chunk id、COSINE 距离与 upsert。LightRAG 使用服务接口查询图谱与上下文，再由当前 Agent 回答，避免默认另起一层答案生成器。其源码主要是 Python，作为可选外部服务使用；项目 Runtime、ToolHub、Knowledge 和业务代码是 Go/TypeScript。[Milvus Create](https://milvus.io/api-reference/restful/v2.6.x/v2/Collection%20(v2)/Create.md)、[Upsert](https://milvus.io/api-reference/restful/v2.6.x/v2/Vector%20(v2)/Upsert.md)、[Search](https://milvus.io/api-reference/restful/v2.6.x/v2/Vector%20(v2)/Search.md)、[LightRAG 官方仓库](https://github.com/HKUDS/LightRAG)、[API Server 文档](https://github.com/HKUDS/LightRAG/blob/main/docs/LightRAG-API-Server.md)。
 
 LightRAG v1.5.7 的 WORKSPACE 是服务实例配置，不是本适配器可逐请求切换的 namespace。不同知识库版本应使用隔离的上游 workspace/endpoint，避免实体抽取在远端混合来源。即使部署配置错误，Knowledge 仍逐条核对返回材料的本地文件归属，拒绝跨版本来源、混合来源条目和不在原文中的文本片段；无法证明归属的结果不会传给模型。这个校验不能证明外部服务可信或图谱抽取正确，实体/关系仍为待原文核验的抽取结论。[固定版本环境配置](https://github.com/HKUDS/LightRAG/blob/v1.5.7/env.example)、[查询协议](https://github.com/HKUDS/LightRAG/blob/v1.5.7/lightrag/api/routers/query_routes.py)。
 
 ## Embedding 候选
+
+真实检索后端证据来自 [CI 38153838660](https://github.com/euler-gaozl/agent-os/actions/runs/38153838660)，本地副本 `.state/rag-live-b5200e5/`。模型推理和领域召回不能由协议夹具代替。下一项使用官方 Qwen3-Embedding-0.6B Q8_0 GGUF 实际 CPU 推理，固定模型 revision `370f27d7550e0def9b39c1f16d3fbaa13aa67728`、校验权重 SHA-256、固定 llama.cpp 容器 digest；先检查四份中文人工测试材料，不能将小样本写成模型优劣结论。
 
 中台提供可编辑配置，不把模型名写死在服务中：base URL、model、credential name、dimensions、query prefix。
 

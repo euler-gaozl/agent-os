@@ -82,6 +82,13 @@
 - LightRAG 返回值新增本地来源校验：限定知识库 revision、索引状态和上游 endpoint；实体/关系的每个来源都必须属于当前版本，混合未授权来源的条目被丢弃；文本片段还必须在保留原文中出现。返回固定字段和本地 document_id，远端引用表、调试字段不直接进入上下文。跨版本、混合来源、伪造片段、未完成索引和其他 endpoint 的本机测试通过，真实 LightRAG 联调仍待完成。
 - 新增独立的真实 Milvus CI：固定 v2.6.24，使用生产索引/检索代码，Embedding 为明确标记的受控向量；验收写后丢失回执的幂等恢复、来源回查、版本隔离及后端重启。该作业尚待执行，不能计为通过。
 
+2026-10-12 追加：
+
+- [CI 38153838660](https://github.com/euler-gaozl/agent-os/actions/runs/38153838660) 的真实 Milvus v2.6.24 和 LightRAG v1.5.7 均通过。Milvus 真实 upsert 后故意丢失响应，重试后向量数量仍与本地分块一致；重启后可继续检索。LightRAG 真实异步处理、图谱实体/关系与原文片段回查、未绑定 revision 排除通过。两项模型输入为明确标记的夹具，没有消耗用户 API。首次 Milvus 作业因 CPU 上限超过 runner 实际 2 核而未能启动，降低其配置上限后重跑；失败记录保留。
+- Git HTTPS 连续连接失败时，通过 GitHub Git Data API 上传已提交对象，逐个核对 blob/tree/commit SHA 与本地完全一致后，仅对原私有分支做非强制快进。没有更改凭证、扩大仓库访问或重写已发布历史。
+- 本机分别升级 Knowledge 与 Runtime：Knowledge 可检索原有浏览器上传材料；Runtime 仅执行本域迁移，事件 outbox 已可用。每次其余 11 个进程和全部配置 hash 不变。升级前备份 `20261012-000512.dump` 已恢复到隔离库；43 个资源版本、4 份执行资料、89 个产物，产物 hash 错误/悬空引用均为 0，Knowledge/ToolHub/Sources 自有资料完整性检查通过。
+- Embedding 输入校验新增拒绝 null、float32 溢出、零向量及转换成 float32 后全零的向量，避免无效 COSINE 索引。针对真实 Qwen 推理 + Milvus 的中文标注样本 CI 待执行。
+
 ## 容量实测和失败
 
 - 10,000 文档 / 100,000 分块、有界 CPU/内存、4 并发 200 次检索：[基线 38144602314](https://github.com/euler-gaozl/agent-os/actions/runs/38144602314) P95 1501.45 ms。定位 PostgreSQL 候选集联接计划后，增加有界候选 CTE；[修复后 38145136016](https://github.com/euler-gaozl/agent-os/actions/runs/38145136016) P95 51.73 ms、最大 57.28 ms、0 次错误，表与索引约 178 MB。
@@ -90,3 +97,5 @@
 - [百万规模 38147319771](https://github.com/euler-gaozl/agent-os/actions/runs/38147319771)（`1306722`）已完成：1,000,000 文档 / 10,000,000 分块，装载 2330.09 秒，表与索引 17,379,991,552 字节，4 并发 / 200 次检索，P50 57.832 ms，P95 1435.712 ms，最大 1734.651 ms，0 错误。原始报告在 `.state/capacity-million-1306722/capacity.json`。版本隔离检查通过。仍沿用上方合成资料、预热/混合缓存和仅检索客户端 + PostgreSQL 的限制。
 - 本次资源采样文件为空：采样早于测试容器启动，`docker stats` 的非零返回使后台脚本提前退出，未取得 CPU/内存/磁盘趋势，也未真正运行低空间停止分支。容器创建时的资源限制和检索报告仍有效，但不能声称已经观测过资源峰值。已增加采样容错、非空断言和容器限制留档，下次容量运行必须补齐。
 - 百万规模未命中首次查询 1376.775 ms；报告中的文件名计划为顺序扫描。将文件名匹配规划与 64 条候选限制分开，两层 MATERIALIZED CTE 保留有界联接；本机 20,000 文件的 `EXPLAIN ANALYZE` 检查通过，未命中使用 GIN 索引，广泛命中也只消费最多 64 条候选。尚待相同百万规模复测；没有全局关闭顺序扫描。语义依据见 [PostgreSQL 18 CTE 文档](https://www.postgresql.org/docs/18/queries-with.html#QUERIES-WITH-CTE-MATERIALIZATION)。
+- [复测 38150855499](https://github.com/euler-gaozl/agent-os/actions/runs/38150855499)（`d36c5c2`）通过：同样 1,000,000 文档 / 10,000,000 块，装载 2477.72 秒，表与索引 17,380,761,600 字节；4 并发 / 200 查询，P50 17.150 ms、P95 752.473 ms、最大 1115.620 ms、0 错误。未命中首次查询降至 12.011 ms，文件名未命中计划使用 GIN。广泛命中文件名仍较慢（该组 P95 1107.492 ms），不能只展示最快查询。
+- 本次每个容器 335 个资源样本、336 个磁盘样本，采样内存峰值：PostgreSQL 484.9 MiB、客户端 8.426 MiB；最低磁盘余量 14,230,396 KiB。保留创建时的 cgroup 限制、完整查询样本/计划及观测原文于 `.state/capacity-million-d36c5c2/`。采样值不是连续峰值，仍不包括全平台其他服务，数据分布和缓存限制与前次相同。

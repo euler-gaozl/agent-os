@@ -13,6 +13,7 @@ import (
 	"github.com/euler-gaozl/agent-os/internal/servicehttp"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -227,8 +228,8 @@ func (s *Store) Embed(ctx context.Context, kb KnowledgeBase, text []string, quer
 	}
 	var response struct {
 		Data []struct {
-			Index     int       `json:"index"`
-			Embedding []float64 `json:"embedding"`
+			Index     int        `json:"index"`
+			Embedding []*float64 `json:"embedding"`
 		} `json:"data"`
 	}
 	if e = json.Unmarshal(b, &response); e != nil {
@@ -242,7 +243,20 @@ func (s *Store) Embed(ctx context.Context, kb KnowledgeBase, text []string, quer
 		if item.Index < 0 || item.Index >= len(out) || out[item.Index] != nil || len(item.Embedding) != kb.Dimensions {
 			return nil, errors.New("embedding index/dimension mismatch")
 		}
-		out[item.Index] = item.Embedding
+		vector := make([]float64, len(item.Embedding))
+		norm := 0.0
+		for i, value := range item.Embedding {
+			if value == nil || math.IsNaN(*value) || math.IsInf(*value, 0) || math.Abs(*value) > math.MaxFloat32 {
+				return nil, errors.New("embedding contains a null or non-finite float32 value")
+			}
+			vector[i] = *value
+			indexed := float64(float32(*value))
+			norm += indexed * indexed
+		}
+		if norm == 0 {
+			return nil, errors.New("embedding is a zero vector")
+		}
+		out[item.Index] = vector
 	}
 	return out, nil
 }
