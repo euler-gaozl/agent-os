@@ -1,0 +1,64 @@
+name: Real retrieval backend contracts
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'services/knowledge/**'
+      - 'internal/contracts/**'
+      - '.github/workflows/rag-integration.yml'
+      - 'deploy/milvus-ci-etcd.yaml'
+permissions:
+  contents: read
+jobs:
+  milvus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18
+        env: {POSTGRES_DB: agentos_rag_ci, POSTGRES_USER: agentos, POSTGRES_PASSWORD: disposable-rag-ci-only}
+        ports: ['5432:5432']
+        options: >-
+          --memory=512m --cpus=0.5
+          --health-cmd "pg_isready -U agentos -d agentos_rag_ci"
+          --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgres://agentos:disposable-rag-ci-only@127.0.0.1:5432/agentos_rag_ci?sslmode=disable
+      TEST_MILVUS_URL: http://127.0.0.1:19530
+      TEST_MILVUS_RESTART: agentos-rag-milvus
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: {go-version-file: go.mod}
+      - name: Start pinned real Milvus with embedded dependencies
+        run: |
+          mkdir -p .state/rag-evidence
+          # External retrieval budget, separate from the 2 CPU / 4 GiB platform.
+          # No provider credentials or production documents are used.
+          docker run -d --name agentos-rag-milvus --cpus=3 --memory=4g \
+            -e ETCD_USE_EMBED=true -e ETCD_DATA_DIR=/var/lib/milvus/etcd \
+            -e ETCD_CONFIG_PATH=/milvus/configs/embedEtcd.yaml \
+            -e COMMON_STORAGETYPE=local -e DEPLOY_MODE=STANDALONE \
+            -v "$PWD/deploy/milvus-ci-etcd.yaml:/milvus/configs/embedEtcd.yaml:ro" \
+            -p 127.0.0.1:19530:19530 -p 127.0.0.1:9091:9091 \
+            milvusdb/milvus:v2.6.24 milvus run standalone
+          for i in $(seq 1 120); do curl -fsS http://127.0.0.1:9091/healthz >/dev/null && break; sleep 2; done
+          curl -fsS http://127.0.0.1:9091/healthz >/dev/null
+          docker image inspect milvusdb/milvus:v2.6.24 --format '{{json .RepoDigests}}' > .state/rag-evidence/milvus-image.json
+      - name: Production adapter against real Milvus, controlled embedding fixture
+        run: |
+          (while true; do docker stats --no-stream --format '{{json .}}' agentos-rag-milvus >> .state/rag-evidence/milvus-resources.jsonl || true; sleep 3; done) &
+          SAMPLER=$!
+          trap 'kill "$SAMPLER" 2>/dev/null || true' EXIT
+          go test -v -count=1 -timeout 6m ./services/knowledge -run '^TestMilvusLiveContract$' | tee .state/rag-evidence/milvus-test.txt
+      - name: Retain diagnostics
+        if: always()
+        run: |
+          docker logs --tail 250 agentos-rag-milvus > .state/rag-evidence/milvus-log.txt 2>&1 || true
+          docker inspect --format '{{json .State}}' agentos-rag-milvus > .state/rag-evidence/milvus-state.json || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: real-milvus-evidence, path: '.state/rag-evidence/'}
+      - name: Dispose disposable backend
+        if: always()
+        run: docker rm -f -v agentos-rag-milvus
