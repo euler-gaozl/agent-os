@@ -25,7 +25,7 @@ LightRAG v1.5.7 的 WORKSPACE 是服务实例配置，不是本适配器可逐�
 - **Qwen3-Embedding-0.6B**：作为轻量中文/多语言候选，默认完整维度 1024。模型卡提供查询 instruction 用法；可在 query prefix 配置检索任务说明。0.6B/4B/8B 不能混用同一索引，升级模型须重建并评估。[官方模型卡](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B)
 - **BGE-M3**：多语言候选，dense 维度 1024。模型还支持 sparse / multi-vector，但本项目当前只接 dense embedding，不声称已实现其混合检索能力。[官方模型卡](https://huggingface.co/BAAI/bge-m3)
 
-这些是候选和界面预设，没有下载模型、启动推理服务或比较本机性能。Qwen 0.6B 的选择基于模型规模与多语言定位，属于工程初选，不是“最适合期货”的实测结论。Embedding API 必须实际符合 OpenAI-style `/embeddings`；网关模型别名需要和配置一致。
+Qwen 0.6B 已在 [CI 38154474531](https://github.com/euler-gaozl/agent-os/actions/runs/38154474531) 使用真实 Q8_0 权重和 CPU 推理联调：四份中文测试原文上传至 Milvus，四个预先标注问题均 top-1 命中对应原文；索引总计 3.77 秒，单次查询 0.82–0.88 秒。此为四样本功能检查，没有和 BGE-M3 对比，也不是“最适合期货”的实测结论。模型/容器资源单独计量，本机 Windows 尚未安装这个推理后端。Embedding API 必须实际符合 OpenAI-style `/embeddings`；网关模型别名需要和配置一致。
 
 ## 上线验收方法
 

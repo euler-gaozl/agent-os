@@ -88,6 +88,10 @@
 - Git HTTPS 连续连接失败时，通过 GitHub Git Data API 上传已提交对象，逐个核对 blob/tree/commit SHA 与本地完全一致后，仅对原私有分支做非强制快进。没有更改凭证、扩大仓库访问或重写已发布历史。
 - 本机分别升级 Knowledge 与 Runtime：Knowledge 可检索原有浏览器上传材料；Runtime 仅执行本域迁移，事件 outbox 已可用。每次其余 11 个进程和全部配置 hash 不变。升级前备份 `20261012-000512.dump` 已恢复到隔离库；43 个资源版本、4 份执行资料、89 个产物，产物 hash 错误/悬空引用均为 0，Knowledge/ToolHub/Sources 自有资料完整性检查通过。
 - Embedding 输入校验新增拒绝 null、float32 溢出、零向量及转换成 float32 后全零的向量，避免无效 COSINE 索引。针对真实 Qwen 推理 + Milvus 的中文标注样本 CI 待执行。
+- 上述真实 Qwen + Milvus 在 [CI 38154474531](https://github.com/euler-gaozl/agent-os/actions/runs/38154474531) 通过：四份中文原文、四个预标注问题均 top-1 命中原文，实际 1024 维推理，索引 3.77 秒、单次查询 0.82–0.88 秒。原始日志与两次 Docker stats 样本在 `.state/real-embedding-e172095/`。采样太少，不用它宣称稳定内存峰值或并发容量。
+- 容器回归 `38153838427` 在强杀 Worker 时测试 exec shell 同时被容器 init 结束，返回 137；修复故障注入脚本，仅允许这个退出码，并额外要求 Worker RestartCount 实际增加，后续仍要验证 fence 接管和唯一效果。不是忽略任意故障。
+- 已增加全平台混合负载测试：全部 12 类平台服务、PostgreSQL、两个 DSH Worker，包含 Sandbox broker/Telemetry，合计容器 CPU 限额 2 核、内存小于 4 GiB。预设验收为 12 个任务、4 个读请求客户端持续 90 秒、任务 180 秒内完成、读请求成功率至少 95%、P95 小于 1 秒、无意外 5xx/OOM/重启。模型/MCP/OTLP 为外部受控夹具；沙箱执行容器与外部检索推理不在平台预算内。该新增负载检查待 CI 完成。
+- 真实自托管 Langfuse v4.56.0 联调作业已编写：独立 disposable 项目、生产 Telemetry exporter、上游 observations API 回读和重复投递身份验证；只有 CI 夹具凭证。尚待实际执行，不能把受控 OTLP 的成功代替此项。
 
 ## 容量实测和失败
 
