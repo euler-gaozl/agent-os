@@ -9,12 +9,15 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+var sandboxImageDigest = regexp.MustCompile(`^(?:[a-zA-Z0-9._:/-]+@)?sha256:[a-f0-9]{64}$`)
 
 type boundedBuffer struct {
 	bytes.Buffer
@@ -57,7 +60,7 @@ func (s *Server) sandboxRoutes(mux *http.ServeMux) {
 }
 func (s *Server) sandbox(ctx context.Context, inv Invocation) ([]byte, error) {
 	image := os.Getenv("SANDBOX_IMAGE")
-	if !strings.Contains(image, "@sha256:") {
+	if !sandboxImageDigest.MatchString(image) {
 		return nil, errors.New("sandbox unavailable: configure a pinned SANDBOX_IMAGE and Docker; host execution is disabled")
 	}
 	if e := s.validateSandboxInvocation(ctx, inv); e != nil {
@@ -125,9 +128,10 @@ func (s *Server) sandbox(ctx context.Context, inv Invocation) ([]byte, error) {
 		if !strings.Contains(strings.ToLower(state), "no such") {
 			return nil, fmt.Errorf("sandbox inspect failed: %s", truncateUTF8(state, 300))
 		}
-		// BusyBox timeout execs the workload. Keep it out of PID 1 so the
-		// watchdog can signal it after the broker disappears.
-		out, e := docker(jobCtx, "create", "--init", "--name", name, "--network", "none", "--read-only", "--memory", "128m", "--cpus", "0.5", "--pids-limit", "64", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--user", "65534:65534", "--tmpfs", "/tmp:rw,noexec,nosuid,size=16m", "--log-opt", "max-size=1m", "--log-opt", "max-file=1", "--label", "agentos.job="+inv.OperationID, image, "timeout", "-s", "KILL", "30", "node", "--eval", args.Code)
+		// The trusted guard keeps UID 0 inside the container, while Node runs
+		// as 65534 with zero capabilities. Untrusted code cannot stop the guard.
+		// Only SETUID/SETGID are granted to launch the child; no CAP_KILL needed.
+		out, e := docker(jobCtx, "create", "--init", "--name", name, "--network", "none", "--read-only", "--memory", "128m", "--cpus", "0.5", "--pids-limit", "64", "--cap-drop", "ALL", "--cap-add", "SETUID", "--cap-add", "SETGID", "--security-opt", "no-new-privileges", "--user", "0:0", "--tmpfs", "/tmp:rw,noexec,nosuid,size=16m", "--log-opt", "max-size=1m", "--log-opt", "max-file=1", "--label", "agentos.job="+inv.OperationID, "--entrypoint", "/usr/local/bin/agentos-sandbox-guard", image, args.Code)
 		if e != nil {
 			return nil, fmt.Errorf("sandbox create failed: %s", truncateUTF8(out, 300))
 		}
@@ -250,7 +254,7 @@ func (s *Server) ReapSandbox(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-tick.C:
-			if !strings.Contains(os.Getenv("SANDBOX_IMAGE"), "@sha256:") {
+			if !sandboxImageDigest.MatchString(os.Getenv("SANDBOX_IMAGE")) {
 				continue
 			}
 			_ = s.reapSandboxBatch(ctx)

@@ -48,7 +48,9 @@ jobs:
           docker run -d --name agentos-test-dind --privileged -p 127.0.0.1:12375:2375 -e DOCKER_TLS_CERTDIR= docker:28-dind --tls=false
           for i in $(seq 1 60); do docker -H tcp://127.0.0.1:12375 info >/dev/null 2>&1 && break; sleep 1; done
           docker -H tcp://127.0.0.1:12375 pull node:24-alpine
-          IMAGE=$(docker -H tcp://127.0.0.1:12375 image inspect node:24-alpine --format '{{index .RepoDigests 0}}')
+          BASE=$(docker -H tcp://127.0.0.1:12375 image inspect node:24-alpine --format '{{index .RepoDigests 0}}')
+          docker -H tcp://127.0.0.1:12375 build -f deploy/sandbox-runtime.Dockerfile --build-arg NODE_BASE="$BASE" -t agentos-sandbox-runtime:ci .
+          IMAGE=$(docker -H tcp://127.0.0.1:12375 image inspect agentos-sandbox-runtime:ci --format '{{.Id}}')
           echo "SANDBOX_IMAGE=$IMAGE" >> "$GITHUB_ENV"
           echo 'DOCKER_HOST=tcp://127.0.0.1:12375' >> "$GITHUB_ENV"
           echo 'TEST_DOCKER_SANDBOX=1' >> "$GITHUB_ENV"

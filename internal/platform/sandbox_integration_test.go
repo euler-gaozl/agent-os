@@ -40,7 +40,7 @@ func TestDockerSandboxIsolationReplayAndBrokerCrash(t *testing.T) {
 	if os.Getenv("TEST_DOCKER_SANDBOX") != "1" {
 		t.Skip("isolated Linux Docker daemon required")
 	}
-	if !strings.Contains(os.Getenv("SANDBOX_IMAGE"), "@sha256:") {
+	if !sandboxImageDigest.MatchString(os.Getenv("SANDBOX_IMAGE")) {
 		t.Fatal("pinned test image required")
 	}
 	execution, _ := testStore(t)
@@ -54,7 +54,7 @@ func TestDockerSandboxIsolationReplayAndBrokerCrash(t *testing.T) {
 	}
 	inv := invocation(r)
 	inv.Name = "sandbox_exec"
-	inv.Arguments = JSON(map[string]string{"code": `const fs=require('fs'),net=require('net'),os=require('os');let root='';try{fs.writeFileSync('/forbidden','x');root='writable'}catch(e){root=e.code}const socket=net.connect({host:'1.1.1.1',port:443});socket.setTimeout(500);socket.on('error',e=>console.log(JSON.stringify({uid:process.getuid(),root,network:e.code,interfaces:Object.keys(os.networkInterfaces())})));socket.on('timeout',()=>{socket.destroy();console.log('network timed out')});`})
+	inv.Arguments = JSON(map[string]string{"code": `const fs=require('fs'),net=require('net'),os=require('os');let root='';try{fs.writeFileSync('/forbidden','x');root='writable'}catch(e){root=e.code}const cap=fs.readFileSync('/proc/self/status','utf8').match(/CapEff:\s*(\w+)/)[1];const socket=net.connect({host:'1.1.1.1',port:443});socket.setTimeout(500);socket.on('error',e=>console.log(JSON.stringify({uid:process.getuid(),root,cap,network:e.code,interfaces:Object.keys(os.networkInterfaces())})));socket.on('timeout',()=>{socket.destroy();console.log('network timed out')});`})
 	sandboxIntent(t, execution, inv)
 	s, dsn, runtimeURL := separateSandboxStore(t, execution)
 	server := &Server{Store: s}
@@ -69,7 +69,7 @@ func TestDockerSandboxIsolationReplayAndBrokerCrash(t *testing.T) {
 	if e = json.Unmarshal(body, &result); e != nil {
 		t.Fatal(e)
 	}
-	if result.Exit != "0" || !strings.Contains(result.Output, `"uid":65534`) || (!strings.Contains(result.Output, "EROFS") && !strings.Contains(result.Output, "EACCES")) || !strings.Contains(result.Output, "ENETUNREACH") {
+	if result.Exit != "0" || !strings.Contains(result.Output, `"uid":65534`) || !strings.Contains(result.Output, `"cap":"0000000000000000"`) || (!strings.Contains(result.Output, "EROFS") && !strings.Contains(result.Output, "EACCES")) || !strings.Contains(result.Output, "ENETUNREACH") {
 		t.Fatal("sandbox restrictions not observed", result)
 	}
 	again, e := server.sandbox(ctx, inv)
@@ -81,7 +81,7 @@ func TestDockerSandboxIsolationReplayAndBrokerCrash(t *testing.T) {
 		t.Fatal("receipt cleanup missing", e)
 	}
 	inv.OperationID = r.ID + "/tool/crash"
-	inv.Arguments = JSON(map[string]string{"code": `console.log('BROKER_CRASH_RECEIPT');while(true){}`})
+	inv.Arguments = JSON(map[string]string{"code": `console.log('BROKER_CRASH_RECEIPT');for(const signal of ['SIGSTOP','SIGKILL']){try{process.kill(process.ppid,signal);console.log('GUARD_SIGNAL_ALLOWED')}catch(e){console.log('GUARD_SIGNAL_DENIED:'+signal+':'+e.code)}}while(true){}`})
 	sandboxIntent(t, execution, inv)
 	child := exec.Command(os.Args[0], "-test.run=^TestSandboxBrokerChild$")
 	child.Env = append(os.Environ(), "SANDBOX_TEST_CHILD_DSN="+dsn, "SANDBOX_TEST_CHILD_INV="+string(JSON(inv)), "SANDBOX_TEST_RUNTIME_URL="+runtimeURL, "SANDBOX_TEST_RUNTIME_TOKEN="+s.Remote.Token)
@@ -117,17 +117,23 @@ func TestDockerSandboxIsolationReplayAndBrokerCrash(t *testing.T) {
 			NanoCpus       int64
 			PidsLimit      int64
 			CapDrop        []string
+			CapAdd         []string
 		}
 		Config struct {
-			User string
-			Cmd  []string
+			User       string
+			Cmd        []string
+			Entrypoint []string
 		}
 	}
 	if e = json.Unmarshal([]byte(inspect), &configs); e != nil || len(configs) != 1 {
 		t.Fatal("container inspection failed")
 	}
 	c := configs[0]
-	if !c.HostConfig.Init || c.HostConfig.NetworkMode != "none" || !c.HostConfig.ReadonlyRootfs || c.HostConfig.Memory != 128<<20 || c.HostConfig.NanoCpus != 500000000 || c.HostConfig.PidsLimit != 64 || c.Config.User != "65534:65534" || len(c.Config.Cmd) < 1 || c.Config.Cmd[0] != "timeout" {
+	capabilities := map[string]bool{}
+	for _, cap := range c.HostConfig.CapAdd {
+		capabilities[strings.TrimPrefix(strings.ToUpper(cap), "CAP_")] = true
+	}
+	if !c.HostConfig.Init || c.HostConfig.NetworkMode != "none" || !c.HostConfig.ReadonlyRootfs || c.HostConfig.Memory != 128<<20 || c.HostConfig.NanoCpus != 500000000 || c.HostConfig.PidsLimit != 64 || c.Config.User != "0:0" || len(c.Config.Entrypoint) != 1 || c.Config.Entrypoint[0] != "/usr/local/bin/agentos-sandbox-guard" || len(c.HostConfig.CapAdd) != 2 || !capabilities["SETUID"] || !capabilities["SETGID"] {
 		t.Fatal("sandbox resource config incorrect", c)
 	}
 	if e = child.Process.Kill(); e != nil {
@@ -146,6 +152,9 @@ func TestDockerSandboxIsolationReplayAndBrokerCrash(t *testing.T) {
 	var cleaned bool
 	if e = s.DB.QueryRow(ctx, "SELECT result,cleaned_at IS NOT NULL FROM sandbox_jobs WHERE id=$1", inv.OperationID).Scan(&saved, &cleaned); e != nil || !cleaned || !strings.Contains(string(saved), "BROKER_CRASH_RECEIPT") {
 		t.Fatal("orphan result not durably recovered", e)
+	}
+	if !strings.Contains(string(saved), "GUARD_SIGNAL_DENIED:SIGSTOP:EPERM") || !strings.Contains(string(saved), "GUARD_SIGNAL_DENIED:SIGKILL:EPERM") || strings.Contains(string(saved), "GUARD_SIGNAL_ALLOWED") {
+		t.Fatal("untrusted workload could signal trusted deadline guard")
 	}
 	restored, e := server.sandbox(ctx, inv)
 	if e != nil || !sameSandboxJSON(restored, saved) {

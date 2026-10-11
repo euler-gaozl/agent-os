@@ -29,6 +29,10 @@ Telemetry 新版无跨域 SQL：Runtime 的事务事件行同时是 outbox，`PO
 
 Sandbox 新版只需要自己的作业表，通过 Runtime 的 `POST /v1/sandbox/authorize` 校验持久化调用意图、参数摘要、绑定工具、fence、规则版本和取消状态。等待作业锁后再次校验；Runtime 不可用时拒绝启动新执行。部署顺序是先升级 Runtime，再升级 Sandbox，最后撤销 Sandbox 对 `public.runs` 的旧权限；初始化作业已采用新权限。回滚到使用跨域 SQL 的旧 Sandbox 前需要恢复对应旧配置/权限，不能把协议迁移当作普通兼容发布。实际独立库迁移时要保留完整 sandbox_jobs 和确定性容器 ID，不得丢弃待核对作业。
 
+Sandbox 的工作负载镜像与 HTTP 服务镜像分开。使用 `deploy/sandbox-runtime.Dockerfile`，将可信 Node 基镜像 digest 作为 `NODE_BASE` 构建，然后把生成的不可变 `sha256:…` image ID（仅同一 daemon 有效）或推送仓库后的 `repo@sha256:…` 配置为 `SANDBOX_IMAGE`。普通 Node 镜像不再满足新版运行契约；缺少 guard 会失败，不能回退到宿主机执行。
+
+guard 为容器内可信 Go 程序，UID 0，仅有 SETUID/SETGID 用于启动 UID/GID 65534、无额外组权限和零 capabilities 的 Node 子进程；不授予 CAP_KILL。执行代码与守护程序不同身份，不能向 guard 发 SIGSTOP/SIGKILL。guard 在 30 秒退出容器主进程，init 退出时整个 PID namespace 的后代被销毁；broker 仍保留 35 秒持久化截止与恢复器。只读根目录、网络关闭、128 MiB/0.5 CPU/64 PID 及 16 MiB 临时目录继续约束整个容器。此前同 UID 的 BusyBox timeout 仅验证了普通死循环，不能用于证明抵抗主动干扰截止进程；新版必须通过 Linux 容器信号攻击与 broker SIGKILL 联合验收。Docker 共享宿主内核，仍不是面向恶意多租户的虚拟机隔离。
+
 ## 构建和发布单个服务
 
 以 Knowledge 为例；`release-service.mjs` 接收已经构建或拉取到本机的镜像，将标签解析为本机不可变 image ID 后部署。发布记录只保存路径、配置摘要和镜像 ID，不保存凭证。

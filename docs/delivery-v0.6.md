@@ -72,6 +72,7 @@
 - 目录变更 `0a2d0e0` 已在本机分别迁移/更新 Registry、ToolHub、Console，其余进程和全部服务配置 hash 不变。浏览器输入大写 ID 搜索成功，打开并保存独立验收 Agent 后，1054 字提示词、末尾标记和绑定等完整 spec 语义相同；仅 JSON 对象字段序导致最初的字符串相等检查失败，改为语义比较后通过。搜索无结果时已有绑定仍显示勾选。证据在 `.state/live-e2e/catalog-*`，新版本 Linux CI 待完成。
 - Runtime/Storage 的资料效果与回执尚未通过跨库协议解耦；独立部署检查不代替数据边界验收。
 - Telemetry 已实现 Runtime outbox → HTTP 租约/fence → 本域 inbox 提交 → Runtime ack → 独立批量 OTLP 导出，移除部署服务对 events 的 SQL 权限。独立 schema 无执行表、丢失确认后的重投、旧 fence 拒绝、同序号内容变化拒绝、晚提交事件、多导出实例和 Runtime 故障后继续导出的本机测试通过。新 Linux CI 将另建完全没有 runs/events 的数据库验收；通过前不列为容器独立数据库已验收。
+- 沙箱截止进程与工作负载同 UID 是本次代码审查发现的风险；先前死循环测试不覆盖代码主动发送信号。新增独立 Go guard 工作负载镜像：可信守护程序保留独立 UID，仅用于子进程降权，执行代码仍为 UID 65534 且零 capabilities。Linux CI 增加 SIGSTOP/SIGKILL 干扰 guard 与 broker SIGKILL 联合检查；本机只能交叉编译，未验收前不能声称攻击测试通过。
 - 真正 Milvus/LightRAG/Embedding/Langfuse 服务联调、目标规模结果、长期资料生命周期与真实跨机 HA 继续分别记录，不能合称全部生产化完成。
 
 ## 容量实测和失败
