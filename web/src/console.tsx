@@ -70,10 +70,14 @@ const blankAgent = () => ({
     base_url: "https://api.deepseek.com",
     model: "deepseek-flash",
     key_env: "DEEPSEEK_API_KEY",
+    thinking: "disabled",
+    max_tokens: 4096,
   },
   publication: { enabled: false, app: "futures", name: "", description: "" },
   constraints: [],
   max_steps: 12,
+  max_model_attempts: 40,
+  model_token_budget: 200000,
   context_bytes: 64000,
   context_tokens: 32000,
   max_children: 2,
@@ -980,8 +984,22 @@ function AgentEditor({
                 </div>
                 <h3 className="section-label">执行预算</h3>
                 <div className="two-fields">
+                  <Field label="思考模式（兼容 DeepSeek）">
+                    <select value={draft.model.thinking || ""} onChange={e => update("model", {...draft.model, thinking:e.target.value, reasoning_effort:""})}>
+                      <option value="">使用供应商默认值</option>
+                      <option value="disabled">关闭 · 日常收集与整理</option>
+                      <option value="enabled">开启 · 复杂核验</option>
+                    </select>
+                  </Field>
+                  <Field label="单次输出上限 / tokens">
+                    <input type="number" min={1} max={32768} value={draft.model.max_tokens || 4096} onChange={e=>update("model",{...draft.model,max_tokens:Number(e.target.value)})}/>
+                  </Field>
+                </div>
+                <div className="two-fields">
                   {[
                     ["max_steps", "最多模型步骤"],
+                    ["max_model_attempts", "整项任务模型尝试上限（含子任务及重试）"],
+                    ["model_token_budget", "整项任务 token 预算（含子任务）"],
                     ["context_tokens", "上下文预算 / 估算 tokens"],
                     ["max_children", "最多直属子任务"],
                   ].map(([key, name]) => (
@@ -1867,6 +1885,7 @@ function Knowledge({
 }
 function Runs({ runs, notify }: { runs: any[]; notify: (m: string) => void }) {
   const [selected, setSelected] = useState<any>(null),
+    [usage, setUsage] = useState<any>(null),
     [calls, setCalls] = useState<any[]>([]),
     [evidence, setEvidence] = useState(""),
     [decision, setDecision] = useState("completed"),
@@ -1874,12 +1893,14 @@ function Runs({ runs, notify }: { runs: any[]; notify: (m: string) => void }) {
     [callID, setCallID] = useState("");
   const open = async (id: string) => {
     try {
-      const [r, c] = await Promise.all([
+      const [r, c, u] = await Promise.all([
         api("/runs/" + id),
         api<any[]>("/runs/" + id + "/calls"),
+        api("/runs/" + id + "/usage"),
       ]);
       setSelected(r);
       setCalls(c);
+      setUsage(u);
       setCallID(
         c.find((x) => ["unknown", "inflight"].includes(x.status))?.id || "",
       );
@@ -1926,6 +1947,7 @@ function Runs({ runs, notify }: { runs: any[]; notify: (m: string) => void }) {
             <p className="field-hint">
               执行器：{selected.engine || "历史任务"}
             </p>
+            {usage && <p className="field-hint">整项任务（含子任务）模型尝试 {usage.attempts} 次 · 已报告输入 {usage.prompt_tokens} / 输出 {usage.completion_tokens} tokens{usage.unknown_usage_attempts ? ` · ${usage.unknown_usage_attempts} 次用量未确认，仍占用保守预算` : ""}。实际费用以供应商账单为准。</p>}
             <h3>{selected.task}</h3>
             <article className="answer-text">
               {selected.state.result || selected.state.error || "等待执行结果…"}

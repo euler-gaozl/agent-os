@@ -21,7 +21,9 @@
     "model": {
       "base_url": "https://api.deepseek.com",
       "model": "deepseek-flash",
-      "key_env": "DEEPSEEK_API_KEY"
+      "key_env": "DEEPSEEK_API_KEY",
+      "thinking": "disabled",
+      "max_tokens": 4096
     },
     "max_steps": 12,
     "context_bytes": 64000,
@@ -42,6 +44,8 @@
       "app": "futures",
       "name": "交叉核对资料",
       "description": "比较多个来源，找出样本、单位、日期和统计范围的差异。"
-    }
+    },
+    "max_model_attempts": 40,
+    "model_token_budget": 200000
   }
 }

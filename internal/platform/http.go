@@ -662,6 +662,14 @@ func (s *Server) runtimeRoutes(mux *http.ServeMux) {
 		jsonResponse(w, 200, v)
 		return nil
 	}))
+	mux.HandleFunc("GET /v1/runs/{id}/usage", wrap(func(w http.ResponseWriter, r *http.Request) error {
+		usage, e := s.Store.Usage(r.Context(), r.PathValue("id"))
+		if e != nil {
+			return e
+		}
+		jsonResponse(w, 200, usage)
+		return nil
+	}))
 	mux.HandleFunc("POST /v1/runs/{id}/cancel", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		if e := s.Store.Cancel(r.Context(), r.PathValue("id")); e != nil {
 			return e

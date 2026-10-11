@@ -21,7 +21,9 @@
     "model": {
       "base_url": "https://api.deepseek.com",
       "model": "deepseek-flash",
-      "key_env": "DEEPSEEK_API_KEY"
+      "key_env": "DEEPSEEK_API_KEY",
+      "thinking": "disabled",
+      "max_tokens": 4096
     },
     "max_steps": 12,
     "context_bytes": 64000,
@@ -32,6 +34,8 @@
         "id": "futures-library",
         "revision": 1
       }
-    ]
+    ],
+    "max_model_attempts": 40,
+    "model_token_budget": 200000
   }
 }

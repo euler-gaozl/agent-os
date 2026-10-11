@@ -21,7 +21,9 @@
     "model": {
       "base_url": "https://api.deepseek.com",
       "model": "deepseek-flash",
-      "key_env": "DEEPSEEK_API_KEY"
+      "key_env": "DEEPSEEK_API_KEY",
+      "thinking": "disabled",
+      "max_tokens": 4096
     },
     "max_steps": 12,
     "context_bytes": 64000,
@@ -42,6 +44,8 @@
       "app": "futures",
       "name": "回溯关键变化",
       "description": "把证据放回当时的时间，区分实绩、计划与后续修订。"
-    }
+    },
+    "max_model_attempts": 40,
+    "model_token_budget": 200000
   }
 }

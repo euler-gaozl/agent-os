@@ -268,6 +268,11 @@ func (w *Worker) harnessExchange(ctx context.Context, r *Run, f harnessFrame) (a
 		}
 		modelRun := *r
 		modelRun.Snapshot.Agent.Model.MaxTokens = m.MaxTokens
+		// Preserve old snapshots' behavior. Explicit operator caps apply to every
+		// new model exchange, including the harness compaction request.
+		if cap := r.Snapshot.Agent.Model.MaxTokens; cap > 0 && (m.MaxTokens == 0 || cap < m.MaxTokens) {
+			modelRun.Snapshot.Agent.Model.MaxTokens = cap
+		}
 		message, err := s.Complete(ctx, modelRun, op, m.Messages, m.Tools)
 		if err != nil {
 			return nil, false, err
