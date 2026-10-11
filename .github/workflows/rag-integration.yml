@@ -7,6 +7,7 @@ on:
       - 'internal/contracts/**'
       - '.github/workflows/rag-integration.yml'
       - 'deploy/milvus-ci-etcd.yaml'
+      - 'scripts/rag-model-fixture.mjs'
 permissions:
   contents: read
 jobs:
@@ -35,7 +36,7 @@ jobs:
           mkdir -p .state/rag-evidence
           # External retrieval budget, separate from the 2 CPU / 4 GiB platform.
           # No provider credentials or production documents are used.
-          docker run -d --name agentos-rag-milvus --cpus=3 --memory=4g \
+          docker run -d --name agentos-rag-milvus --cpus=1.5 --memory=4g \
             -e ETCD_USE_EMBED=true -e ETCD_DATA_DIR=/var/lib/milvus/etcd \
             -e ETCD_CONFIG_PATH=/milvus/configs/embedEtcd.yaml \
             -e COMMON_STORAGETYPE=local -e DEPLOY_MODE=STANDALONE \
@@ -47,6 +48,7 @@ jobs:
           docker image inspect milvusdb/milvus:v2.6.24 --format '{{json .RepoDigests}}' > .state/rag-evidence/milvus-image.json
       - name: Production adapter against real Milvus, controlled embedding fixture
         run: |
+          set -o pipefail
           (while true; do docker stats --no-stream --format '{{json .}}' agentos-rag-milvus >> .state/rag-evidence/milvus-resources.jsonl || true; sleep 3; done) &
           SAMPLER=$!
           trap 'kill "$SAMPLER" 2>/dev/null || true' EXIT
@@ -62,3 +64,60 @@ jobs:
       - name: Dispose disposable backend
         if: always()
         run: docker rm -f -v agentos-rag-milvus
+  lightrag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18
+        env: {POSTGRES_DB: agentos_rag_ci, POSTGRES_USER: agentos, POSTGRES_PASSWORD: disposable-rag-ci-only}
+        ports: ['5432:5432']
+        options: >-
+          --memory=512m --cpus=0.5
+          --health-cmd "pg_isready -U agentos -d agentos_rag_ci"
+          --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgres://agentos:disposable-rag-ci-only@127.0.0.1:5432/agentos_rag_ci?sslmode=disable
+      TEST_LIGHTRAG_URL: http://127.0.0.1:9621
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: {go-version-file: go.mod}
+      - name: Start pinned LightRAG and controlled model fixture
+        run: |
+          mkdir -p .state/rag-evidence
+          docker network create agentos-rag
+          docker run -d --name rag-model-fixture --network agentos-rag --cpus=0.25 --memory=128m --read-only --cap-drop=ALL \
+            -v "$PWD/scripts/rag-model-fixture.mjs:/fixture.mjs:ro" node:24-alpine node /fixture.mjs
+          docker run -d --name agentos-rag-lightrag --network agentos-rag --cpus=2 --memory=3g \
+            -p 127.0.0.1:9621:9621 -e HOST=0.0.0.0 -e PORT=9621 -e WORKSPACE=ci_disposable \
+            -e LLM_BINDING=openai -e LLM_BINDING_HOST=http://rag-model-fixture:8113/v1 \
+            -e LLM_BINDING_API_KEY=disposable-fixture-only -e LLM_MODEL=controlled-extraction \
+            -e EMBEDDING_BINDING=openai -e EMBEDDING_BINDING_HOST=http://rag-model-fixture:8113/v1 \
+            -e EMBEDDING_BINDING_API_KEY=disposable-fixture-only -e EMBEDDING_MODEL=controlled-embedding \
+            -e EMBEDDING_DIM=4 -e EMBEDDING_USE_BASE64=false -e EMBEDDING_SEND_DIM=false \
+            -e MAX_ASYNC_LLM=2 -e MAX_PARALLEL_INSERT=2 -e EMBEDDING_FUNC_MAX_ASYNC=2 \
+            ghcr.io/hkuds/lightrag:v1.5.7
+          for i in $(seq 1 120); do curl -fsS http://127.0.0.1:9621/health >/dev/null && break; sleep 2; done
+          curl -fsS http://127.0.0.1:9621/health > .state/rag-evidence/lightrag-health.json
+          docker image inspect ghcr.io/hkuds/lightrag:v1.5.7 --format '{{json .RepoDigests}}' > .state/rag-evidence/lightrag-image.json
+      - name: Real graph ingestion, tracking, query and source isolation
+        run: |
+          set -o pipefail
+          (while true; do docker stats --no-stream --format '{{json .}}' agentos-rag-lightrag >> .state/rag-evidence/lightrag-resources.jsonl || true; sleep 3; done) &
+          SAMPLER=$!
+          trap 'kill "$SAMPLER" 2>/dev/null || true' EXIT
+          go test -v -count=1 -timeout 6m ./services/knowledge -run '^TestLightRAGLiveContract$' | tee .state/rag-evidence/lightrag-test.txt
+      - name: Retain diagnostics
+        if: always()
+        run: |
+          docker logs --tail 250 agentos-rag-lightrag > .state/rag-evidence/lightrag-log.txt 2>&1 || true
+          docker inspect --format '{{json .State}}' agentos-rag-lightrag > .state/rag-evidence/lightrag-state.json || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: real-lightrag-evidence, path: '.state/rag-evidence/'}
+      - name: Dispose disposable backends
+        if: always()
+        run: |
+          docker rm -f -v agentos-rag-lightrag rag-model-fixture || true
+          docker network rm agentos-rag || true
