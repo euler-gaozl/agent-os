@@ -60,6 +60,30 @@ func TestGraphRejectsForeignMixedAndInventedProvenance(t *testing.T) {
 	if len(result.Entities) != 1 || len(result.Chunks) != 1 || len(result.References) != 1 || result.Discarded != 6 {
 		t.Fatal("wrong scoped graph", string(clean))
 	}
+	// A valid path cannot launder foreign derived fields into context. Names
+	// absent from local text are rejected; valid names only survive as hints,
+	// with original spelling and per-field locally verified document IDs.
+	forged := JSON(map[string]any{
+		"entities": []any{
+			map[string]any{"entity_name": "FOREIGN953", "description": "FOREIGN_DESCRIPTION", "file_path": p1},
+			map[string]any{"entity_name": "owned842", "entity_type": "FOREIGN_TYPE", "description": "FOREIGN_DESCRIPTION", "file_path": p1},
+		},
+		"relationships": []any{
+			map[string]any{"src_id": "OWNED842", "tgt_id": "FOREIGN953", "file_path": p1},
+			map[string]any{"src_id": "owned842", "tgt_id": "Inventory", "description": "FOREIGN_RELATION", "keywords": "FOREIGN_KEYWORD", "file_path": p1},
+		},
+	})
+	verified, e := s.scopedGraph(ctx, ref, kb.Endpoint, forged)
+	if e != nil || strings.Contains(string(verified), "FOREIGN") {
+		t.Fatal("forged authorized path leaked remote text", string(verified), e)
+	}
+	var hints struct{ Entities, Relationships []map[string]json.RawMessage }
+	if e = json.Unmarshal(verified, &hints); e != nil || len(hints.Entities) != 1 || len(hints.Relationships) != 1 {
+		t.Fatal("verified retrieval hints missing", string(verified), e)
+	}
+	if string(hints.Entities[0]["entity_name"]) != `"OWNED842"` || string(hints.Relationships[0]["tgt_id"]) != `"inventory"` || !strings.Contains(string(hints.Relationships[0]["field_sources"]), owned.DocumentID) || string(hints.Relationships[0]["status"]) != `"retrieval_hint_only"` {
+		t.Fatal("hints must return original spelling and local field evidence", string(verified))
+	}
 	// A different configured backend cannot claim a source uploaded elsewhere.
 	empty, e := s.scopedGraph(ctx, ref, "https://other.example.test", raw)
 	if e != nil || strings.Contains(string(empty), "OWNED842") {

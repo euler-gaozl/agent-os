@@ -14,7 +14,7 @@
 
 Milvus 适配采用 REST v2.6、字符串主键、稳定 chunk id、COSINE 距离与 upsert。LightRAG 使用服务接口查询图谱与上下文，再由当前 Agent 回答，避免默认另起一层答案生成器。其源码主要是 Python，作为可选外部服务使用；项目 Runtime、ToolHub、Knowledge 和业务代码是 Go/TypeScript。[Milvus Create](https://milvus.io/api-reference/restful/v2.6.x/v2/Collection%20(v2)/Create.md)、[Upsert](https://milvus.io/api-reference/restful/v2.6.x/v2/Vector%20(v2)/Upsert.md)、[Search](https://milvus.io/api-reference/restful/v2.6.x/v2/Vector%20(v2)/Search.md)、[LightRAG 官方仓库](https://github.com/HKUDS/LightRAG)、[API Server 文档](https://github.com/HKUDS/LightRAG/blob/main/docs/LightRAG-API-Server.md)。
 
-LightRAG v1.5.7 的 WORKSPACE 是服务实例配置，不是本适配器可逐请求切换的 namespace。不同知识库版本应使用隔离的上游 workspace/endpoint，避免实体抽取在远端混合来源。即使部署配置错误，Knowledge 仍逐条核对返回材料的本地文件归属，拒绝跨版本来源、混合来源条目和不在原文中的文本片段；无法证明归属的结果不会传给模型。这个校验不能证明外部服务可信或图谱抽取正确，实体/关系仍为待原文核验的抽取结论。[固定版本环境配置](https://github.com/HKUDS/LightRAG/blob/v1.5.7/env.example)、[查询协议](https://github.com/HKUDS/LightRAG/blob/v1.5.7/lightrag/api/routers/query_routes.py)。
+LightRAG v1.5.7 的 WORKSPACE 是服务实例配置，不是本适配器可逐请求切换的 namespace。不同知识库版本应使用隔离的上游 workspace/endpoint，避免实体抽取在远端混合来源。Knowledge 拒绝跨版本或混合来源条目，并逐字段匹配保留的本地原文；来源文件名本身不能证明远端描述可信。实体/关系名称允许大小写差异，但返回原文拼写；描述、类型、关键词和文本块必须在本地来源中逐字出现，否则省略字段或丢弃条目。每个字段返回 `field_sources`，实体和关系标记为检索线索：词语共现不证明关系成立。这样会舍弃不能核验的远端概括，也不能替代行业召回评估。[固定版本环境配置](https://github.com/HKUDS/LightRAG/blob/v1.5.7/env.example)、[查询协议](https://github.com/HKUDS/LightRAG/blob/v1.5.7/lightrag/api/routers/query_routes.py)。
 
 ## Embedding 候选
 

@@ -37,24 +37,26 @@ try{
   evidence.resources.push({at:new Date().toISOString(),memory_bytes:samples.reduce((n,x)=>n+bytes(x.MemUsage.split(' / ')[0]),0),cpu_percent:samples.reduce((n,x)=>n+Number(x.CPUPerc.replace('%','')),0),containers:samples.map(x=>({id:x.ID,memory:x.MemUsage,cpu:x.CPUPerc,pids:Number(x.PIDs)}))});
  }catch{evidence.resource_errors=(evidence.resource_errors??0)+1}if(!stop)await sleep(2000)}})();
  await sleep(6000);
- const began=Date.now();
- for(let i=0;i<evidence.criteria.tasks;i++){
-  const response=await api('/tasks',{agent:{id:'ci-agent',revision:1},commodity:'CI fixture',period:'bounded-platform-'+i,question:'Verify sustained platform operation under bounded resources'},true,'bounded-platform-'+i);
-  assert.equal(response.status,201);evidence.tasks.push({id:response.value.id,submitted_ms:Date.now()-began});
- }
+ const began=Date.now();evidence.read_clients=[];
  const readers=Array.from({length:evidence.criteria.read_clients},(_,client)=>(async()=>{
-  const end=began+evidence.criteria.read_load_seconds*1000;let n=0;
+  const started=Date.now(),end=started+evidence.criteria.read_load_seconds*1000;let n=0;
   while(Date.now()<end){
    const route=(n+++client)%2?'/knowledge/query':'/catalog?limit=100';const start=performance.now();
    try{
     const response=await api(route,route==='/knowledge/query'?{knowledge:{id:'ci-kb',revision:1},query:'甲醇库存'}:undefined);
-    evidence.requests.push({route,status:response.status,ms:performance.now()-start});
+    evidence.requests.push({client,at_ms:Date.now()-began,route,status:response.status,ms:performance.now()-start});
     if(response.status===200&&route==='/knowledge/query')assert.equal(response.value.hits[0]?.source,'fixture://source');
-   }catch{evidence.requests.push({route,status:0,ms:performance.now()-start})}
+   }catch{evidence.requests.push({client,at_ms:Date.now()-began,route,status:0,ms:performance.now()-start})}
    await sleep(evidence.criteria.read_interval_ms);
   }
+  evidence.read_clients.push({client,started_ms:started-began,finished_ms:Date.now()-began,duration_ms:Date.now()-started,requests:n});
  })());
- const monitor=(async()=>{const pending=new Set(evidence.tasks.map(x=>x.id));while(pending.size){
+ const monitor=(async()=>{
+ for(let i=0;i<evidence.criteria.tasks;i++){
+  const response=await api('/tasks',{agent:{id:'ci-agent',revision:1},commodity:'CI fixture',period:'bounded-platform-'+i,question:'Verify sustained platform operation under bounded resources'},true,'bounded-platform-'+i);
+  assert.equal(response.status,201);evidence.tasks.push({id:response.value.id,submitted_ms:Date.now()-began});
+ }
+ const pending=new Set(evidence.tasks.map(x=>x.id));while(pending.size){
   for(const id of [...pending]){
    const response=await api('/tasks/'+id,undefined,true);assert.equal(response.status,200);
    assert(!['failed','cancelled','waiting_unknown','needs_review'].includes(response.value.status),'Agent failed under declared workload');
@@ -68,6 +70,12 @@ try{
   assert(Date.now()-began<evidence.criteria.task_deadline_seconds*1000,'Task deadline exceeded');if(pending.size)await sleep(1000);
  }})();
  const results=await Promise.allSettled([...readers,monitor]);for(const result of results)if(result.status==='rejected')throw result.reason;
+ assert.equal(evidence.read_clients.length,evidence.criteria.read_clients);
+ assert(evidence.read_clients.every(x=>x.duration_ms>=evidence.criteria.read_load_seconds*1000&&x.requests>0),'Every reader must actually run for the full declared window');
+ const overlapStart=Math.max(...evidence.read_clients.map(x=>x.started_ms),Math.min(...evidence.tasks.map(x=>x.submitted_ms)));
+ const overlapEnd=Math.min(...evidence.read_clients.map(x=>x.finished_ms),Math.max(...evidence.tasks.map(x=>x.completed_ms)));
+ evidence.mixed_load_overlap_ms=Math.max(0,overlapEnd-overlapStart);
+ assert(evidence.mixed_load_overlap_ms>=10000,'Tasks and all read clients must overlap for at least ten seconds');
  stop=true;await sampler;
  const good=evidence.requests.filter(x=>x.status===200),other=evidence.requests.filter(x=>x.status!==200&&x.status!==429);
  evidence.summary={read_requests:evidence.requests.length,read_successes:good.length,read_429:evidence.requests.filter(x=>x.status===429).length,unexpected:other.length,p50_ms:percentile(good.map(x=>x.ms),.5),p95_ms:percentile(good.map(x=>x.ms),.95),peak_sampled_memory_bytes:Math.max(...evidence.resources.map(x=>x.memory_bytes)),max_task_elapsed_ms:Math.max(...evidence.tasks.map(x=>x.elapsed_ms))};

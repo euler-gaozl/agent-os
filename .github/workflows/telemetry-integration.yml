@@ -35,6 +35,9 @@ jobs:
         run: |
           docker compose -f deploy/langfuse.ci.yaml ps --all --format json > .state/telemetry-evidence/containers.json
           docker compose -f deploy/langfuse.ci.yaml logs --tail 150 > .state/telemetry-evidence/upstream.txt
+          for id in $(docker compose -f deploy/langfuse.ci.yaml ps --all -q); do
+            docker inspect --format '{{json .State}}' "$id" >> .state/telemetry-evidence/container-state.jsonl
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: real-langfuse-evidence, path: '.state/telemetry-evidence/'}

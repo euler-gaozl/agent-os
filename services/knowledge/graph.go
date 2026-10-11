@@ -20,9 +20,9 @@ type graphSource struct {
 }
 
 // The remote graph is a derived, untrusted index. Only provenance belonging to
-// ready documents in this exact KB revision may enter the model context. In
-// particular, a merged entity mentioning both owned and foreign files is not
-// safe just because ONE of its source files is authorized.
+// ready documents in this exact KB revision may enter the model context. Remote
+// file paths are claims, not proof: every returned field must also match retained
+// local text. Entity/relationship names are retrieval hints, not verified claims.
 func (s *Store) scopedGraph(ctx context.Context, ref Ref, endpoint string, body []byte) (json.RawMessage, error) {
 	var data struct {
 		Entities      []map[string]json.RawMessage `json:"entities"`
@@ -103,27 +103,62 @@ func (s *Store) scopedGraph(ctx context.Context, ref Ref, endpoint string, body 
 				}
 			}
 			out := map[string]any{}
+			keys, values := []string{}, []string{}
 			for _, key := range fields[kind] {
 				v := text(item, key)
 				if len(v) > 8000 {
 					valid = false
 					break
 				}
-				out[key] = v
+				if v != "" {
+					keys, values = append(keys, key), append(values, v)
+				}
 			}
-			if kind == 2 && valid {
-				// A chunk is evidence only when it is literally present in its
-				// retained source. Do not echo invented/foreign remote text.
-				content := text(item, "content")
-				if content == "" || len(sources) != 1 {
-					valid = false
-				} else {
-					var matches bool
-					e := s.DB.QueryRow(ctx, "SELECT strpos(content,$2)>0 FROM documents WHERE id=$1", sources[0].ID, content).Scan(&matches)
-					if e != nil {
+			if kind == 2 && len(sources) != 1 {
+				valid = false
+			}
+			if valid {
+				// Query in PostgreSQL to avoid loading up to 128 whole documents
+				// into a small service. Names may differ in case; return the actual
+				// source spelling. Descriptions and chunks require literal matches.
+				docIDs := make([]string, 0, len(sources))
+				for _, source := range sources {
+					docIDs = append(docIDs, source.ID)
+				}
+				rows, e := s.DB.Query(ctx, `SELECT t.key,d.id,substring(d.content FROM p.position FOR char_length(t.value))
+FROM documents d CROSS JOIN unnest($2::text[],$3::text[]) AS t(key,value)
+CROSS JOIN LATERAL (SELECT CASE WHEN t.key IN ('entity_name','src_id','tgt_id') THEN strpos(lower(d.content),lower(t.value)) ELSE strpos(d.content,t.value) END AS position) p
+WHERE d.id=ANY($1) AND p.position>0 ORDER BY d.id,t.key`, docIDs, keys, values)
+				if e != nil {
+					return nil, e
+				}
+				fieldSources := map[string]string{}
+				for rows.Next() {
+					var key, docID, literal string
+					if e = rows.Scan(&key, &docID, &literal); e != nil {
+						rows.Close()
 						return nil, e
 					}
-					valid = matches
+					if _, exists := out[key]; !exists {
+						out[key], fieldSources[key] = literal, docID
+					}
+				}
+				e = rows.Err()
+				rows.Close()
+				if e != nil {
+					return nil, e
+				}
+				switch kind {
+				case 0:
+					valid = out["entity_name"] != nil
+				case 1:
+					valid = out["src_id"] != nil && out["tgt_id"] != nil
+				case 2:
+					valid = out["content"] != nil
+				}
+				out["field_sources"] = fieldSources
+				if kind < 2 {
+					out["status"] = "retrieval_hint_only"
 				}
 			}
 			if !valid {
@@ -145,7 +180,7 @@ func (s *Store) scopedGraph(ctx context.Context, ref Ref, endpoint string, body 
 	sort.Slice(ordered, func(i, j int) bool { return ordered[i].ID < ordered[j].ID })
 	result["references"] = ordered
 	result["discarded_items"] = discarded
-	result["notice"] = "Graph entities and relationships are extracted claims, not verified facts. Read the retained source documents to verify them."
+	result["notice"] = "Every text field is matched to retained local source text. Entity and relationship groupings are unverified retrieval hints; co-occurrence does not prove a relationship. Read field_sources to verify the original context. Remote summaries absent from originals are omitted."
 	out := JSON(result)
 	if len(out) > 128<<10 {
 		return nil, errors.New("LightRAG context exceeds 128 KiB")
