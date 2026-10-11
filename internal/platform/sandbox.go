@@ -60,25 +60,13 @@ func (s *Server) sandbox(ctx context.Context, inv Invocation) ([]byte, error) {
 	if !strings.Contains(image, "@sha256:") {
 		return nil, errors.New("sandbox unavailable: configure a pinned SANDBOX_IMAGE and Docker; host execution is disabled")
 	}
-	tx, e := s.Store.DB.Begin(ctx)
-	if e != nil {
-		return nil, e
-	}
-	defer tx.Rollback(ctx)
-	run, e := checkInvocation(ctx, tx, inv)
-	if e != nil {
-		return nil, e
-	}
-	if e = authorize(run, inv); e != nil {
-		return nil, e
-	}
-	if e = tx.Commit(ctx); e != nil {
+	if e := s.validateSandboxInvocation(ctx, inv); e != nil {
 		return nil, e
 	}
 	if inv.Name != "sandbox_exec" {
 		return nil, errors.New("sandbox only accepts sandbox_exec")
 	}
-	if e = validateArgs(Builtins[4], inv.Arguments); e != nil {
+	if e := validateArgs(Builtins[4], inv.Arguments); e != nil {
 		return nil, e
 	}
 	// Session advisory lock serializes service replicas for this deterministic job/container.
@@ -94,13 +82,7 @@ func (s *Server) sandbox(ctx context.Context, inv Invocation) ([]byte, error) {
 	defer unlockSandbox(conn, lockKey)
 	// Revalidate after waiting for another replica; the run may have been
 	// cancelled or fenced while this request was waiting for the job lock.
-	guard, e := conn.Begin(ctx)
-	if e != nil {
-		return nil, e
-	}
-	_, e = checkInvocation(ctx, guard, inv)
-	_ = guard.Rollback(ctx)
-	if e != nil {
+	if e = s.validateSandboxInvocation(ctx, inv); e != nil {
 		return nil, e
 	}
 	var oldHash, status string
@@ -179,6 +161,38 @@ func (s *Server) sandbox(ctx context.Context, inv Invocation) ([]byte, error) {
 	// Keep container until its result is durable. Cleanup can safely repeat.
 	cleanupSandbox(conn, inv.OperationID, name)
 	return result, nil
+}
+
+// The independently deployed Sandbox needs only its own job table. Runtime
+// remains the authority for leases, current constraints and bound tools.
+func (s *Server) validateSandboxInvocation(ctx context.Context, inv Invocation) error {
+	if inv.Name != "sandbox_exec" || !strings.HasPrefix(inv.OperationID, inv.RunID+"/") || inv.RunID == "" {
+		return errors.New("invalid sandbox invocation")
+	}
+	if s.Store.Remote != nil {
+		var result struct {
+			Authorized bool `json:"authorized"`
+		}
+		e := s.Store.Remote.Request(ctx, "POST", s.Store.Remote.RuntimeURL+"/v1/sandbox/authorize", inv, &result)
+		if e != nil {
+			return e
+		}
+		if !result.Authorized {
+			return errors.New("runtime did not authorize sandbox invocation")
+		}
+		return nil
+	}
+	// Historical single-process deployments and isolated integration fixtures.
+	tx, e := s.Store.DB.Begin(ctx)
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback(ctx)
+	run, e := checkInvocation(ctx, tx, inv)
+	if e != nil {
+		return e
+	}
+	return authorize(run, inv)
 }
 
 func unlockSandbox(conn *pgxpool.Conn, id string) {

@@ -120,7 +120,7 @@ func run(output string) error {
 		return e
 	}
 	execution := []string{"runs", "events", "calls", "model_attempts", "harness_exchanges", "documents", "artifacts", "artifact_refs", "app_runs", "business_runs", "instances"}
-	grants := map[string][]string{"runtime": execution, "worker": execution, "registry": {"resources", "secrets"}, "storage": {"documents", "artifacts", "artifact_refs"}, "sandbox": {"runs", "sandbox_jobs"}, "telemetry": {"events", "telemetry_exports"}, "toolhub": nil, "knowledge": nil, "indexer": nil, "control": nil, "futures": nil}
+	grants := map[string][]string{"runtime": execution, "worker": execution, "registry": {"resources", "secrets"}, "storage": {"documents", "artifacts", "artifact_refs"}, "sandbox": {"sandbox_jobs"}, "telemetry": {"events", "telemetry_exports"}, "toolhub": nil, "knowledge": nil, "indexer": nil, "control": nil, "futures": nil}
 	identities := map[string]string{}
 	grants["sources"] = nil
 	identityFile := filepath.Join(output, "identities.json")
@@ -234,6 +234,11 @@ func run(output string) error {
 		}
 		if _, e = admin.DB.Exec(ctx, "GRANT USAGE ON SCHEMA "+pgx.Identifier{schema}.Sanitize()+" TO "+ident); e != nil {
 			return e
+		}
+		if role == "sandbox" {
+			if _, e = admin.DB.Exec(ctx, "REVOKE ALL ON TABLE public.runs FROM "+ident); e != nil {
+				return e
+			}
 		}
 		if schema != "public" {
 			if _, e = admin.DB.Exec(ctx, "GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA "+pgx.Identifier{schema}.Sanitize()+" TO "+ident); e != nil {

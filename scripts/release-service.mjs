@@ -16,7 +16,8 @@ if(!/^agentos-[a-z][a-z0-9-]{0,47}$/.test(project??''))throw Error('--project mu
 if(!['deploy','rollback','status','stop'].includes(action))throw Error('action must be deploy, rollback, status or stop');
 const directory=path.join(root,'.state','deployments',project), statePath=path.join(directory,'release.json');
 fs.mkdirSync(directory,{recursive:true,mode:0o700});
-const state=fs.existsSync(statePath)?JSON.parse(fs.readFileSync(statePath,'utf8')):{current:null,previous:null,history:[]};
+const readState=()=>fs.existsSync(statePath)?JSON.parse(fs.readFileSync(statePath,'utf8')):{current:null,previous:null,history:[]};
+let state=readState();
 function docker(args,env={},timeout=120000){return execFileSync('docker',args,{cwd:root,env:{...process.env,...env},encoding:'utf8',timeout,stdio:['pipe','pipe','pipe']}).trim()}
 function digest(file){return createHash('sha256').update(fs.readFileSync(file)).digest('hex')}
 function env(unit){return {SERVICE_IMAGE:unit.image,SERVICE_NAME:unit.service,SERVICE_CONFIG:unit.config,SERVICE_NETWORK:unit.network,SERVICE_PORT:String(unit.port),SERVICE_HOST_PORT:String(unit.publish),SERVICE_MEMORY:unit.service==='worker'?'384m':'128m',SERVICE_CPUS:unit.service==='worker'?'0.375':'0.10',SERVICE_HEALTH_KEY:unit.service==='control'?'ADMIN_TOKEN':unit.service==='futures'?'BUSINESS_TOKEN':'SERVICE_TOKEN'}}
@@ -37,6 +38,7 @@ if(action==='status'){
  try{handle=fs.openSync(lock,'wx',0o600)}catch{throw Error('release unit is locked; inspect the existing operator process before removing release.lock')}
  fs.writeFileSync(handle,String(process.pid));
  try{
+  state=readState(); // A preceding release may have finished before we acquired the lock.
   if(action==='stop'){
    if(!state.current)throw Error('no recorded deployment');
    compose(state.current,'stop','app');

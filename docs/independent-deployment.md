@@ -14,14 +14,16 @@
 | Runtime | 8094 / service | 运行、调用、事件、业务任务与实例 | 执行库、Registry、按工具绑定调用下游 |
 | Worker | 8099 / worker | 消费 Runtime 运行状态；固定 DSH 和 Node | 执行库、Registry、ToolHub、所绑定的工具与模型 |
 | Storage | 8092 / service | documents、artifacts、artifact_refs | 执行库；这些表当前仍参与 Runtime 的本地事务 |
-| Sandbox | 8093 / sandbox | sandbox_jobs | 执行库中的运行 fencing、专用隔离 Docker daemon |
+| Sandbox | 8093 / sandbox | sandbox_jobs | Runtime 授权 HTTP API、专用隔离 Docker daemon |
 | Telemetry | 8100 / service | telemetry_exports 游标 | 执行库的事件、Registry 中的凭证、Langfuse |
 | Console | 8090 / control | 无数据库 | 聚合服务 HTTP API |
 | Futures | 8098 / futures | 无数据库 | Registry 发布目录和 Runtime 任务 API |
 
 所有服务的实例心跳写入 Runtime；心跳失败不阻止其他服务提供本域功能。端口不代表必须映射到公网。独立部署允许不同主机和不同服务版本，但必须保留上表的依赖与兼容性。
 
-**尚未完成的数据解耦**：Runtime/Worker 直接读写执行库；Storage 资料效果与 Runtime 回执共用事务；Sandbox 校验执行库 fencing；Telemetry 读取执行事件。当前拆分了部署和 DDL 所有权，不能因此宣称这些服务可分别迁到任意数据库。后续拆库必须先实现效果 outbox/inbox 和恢复核对协议。ToolHub、Knowledge、Sources 已有独立 schema 及 HTTP 边界，可以为它们配置独立 PostgreSQL，但迁移历史资料和跨库灾备还需专项验收。
+**尚未完成的数据解耦**：Runtime/Worker 直接读写执行库；Storage 资料效果与 Runtime 回执共用事务；Telemetry 读取执行事件。当前拆分了部署和 DDL 所有权，不能因此宣称这些服务可分别迁到任意数据库。后续拆库必须先实现效果 outbox/inbox 和恢复核对协议。ToolHub、Knowledge、Sources 已有独立 schema 及 HTTP 边界，可以为它们配置独立 PostgreSQL，但迁移历史资料和跨库灾备还需专项验收。
+
+Sandbox 新版只需要自己的作业表，通过 Runtime 的 `POST /v1/sandbox/authorize` 校验持久化调用意图、参数摘要、绑定工具、fence、规则版本和取消状态。等待作业锁后再次校验；Runtime 不可用时拒绝启动新执行。部署顺序是先升级 Runtime，再升级 Sandbox，最后撤销 Sandbox 对 `public.runs` 的旧权限；初始化作业已采用新权限。回滚到使用跨域 SQL 的旧 Sandbox 前需要恢复对应旧配置/权限，不能把协议迁移当作普通兼容发布。实际独立库迁移时要保留完整 sandbox_jobs 和确定性容器 ID，不得丢弃待核对作业。
 
 ## 构建和发布单个服务
 

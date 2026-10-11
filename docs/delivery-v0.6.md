@@ -39,3 +39,24 @@
 ## Linux 检查
 
 提交 `746a19c` 的 [CI 38142273408](https://github.com/euler-gaozl/agent-os/actions/runs/38142273408) 两个作业通过：Go race/构建及既有容器故障链路。后续 Sources/文件名索引/页面渲染变更必须重新通过对应检查后才计入结果。
+
+提交 `aeebd4a` 的 [CI 38145694276](https://github.com/euler-gaozl/agent-os/actions/runs/38145694276) 两个作业通过，包含真实 Docker 沙箱隔离、缓存回放、执行服务 SIGKILL、容器自行超时停止及孤儿作业回执恢复。此前两次检查分别暴露 JSONB 字节比较测试错误、容器 PID 1 导致超时失效；修复后重新验收，没有删除失败记录。[Docker 官方进程说明](https://docs.docker.com/reference/cli/docker/container/run/)是增加 init 的依据。后续 Sandbox HTTP 授权解耦需在新提交上重测。
+
+## Compact 的真实模型验收
+
+- 运行 `14f7a3de5acfe02e01a912aeec0f3b86` 读取独立的 10 页受控资料，触发 2 次真实模型 Compact；核对 10 个不同分页偏移、初报撤回、修订值 108、差值 -12、未来计划 20 与资料末页标记，关键字段均保留。完整 DSH 事件产物 SHA-256 已独立核验。
+- 原始资料和事件记录不靠压缩摘要保存；存于本机忽略提交的 `.state/live-e2e/compaction-*` 和数据库产物。
+- 质量局限：答案对同仓库初值多加了不必要的口径疑问，不能称为完全语义保真。首次运行因模型一次请求 10 个工具超过 8 个的上限而失败；改为每轮至多 4 个后重跑成功，保留失败运行。
+- 本批余额接口 49.91 元，可能存在延迟计费。此测试不是期货事实，不混入正式研究资料。
+
+## 独立发布和迁移
+
+- 已增加单服务 Compose、镜像 ID 固定、配置摘要验证、单服务升级/回滚/副本调整及失败后恢复入口；Console 仍为统一中台。数据库升级选择服务所有者，不重写其他服务身份或配置。
+- 本机仅迁移并重启 Knowledge 和 Sandbox；其余 10 个进程 PID 保持不变，全部服务配置文件内容摘要不变。备份 `20261011-221516.dump` 保留；本次只是 dump 目录检查，恢复验证另行执行。
+- Linux 旧版本二进制回滚与失败发布测试正在 CI 验收；共享执行表的剩余耦合仍未关闭，见[独立部署契约](independent-deployment.md)。
+
+## 容量实测和失败
+
+- 10,000 文档 / 100,000 分块、有界 CPU/内存、4 并发 200 次检索：[基线 38144602314](https://github.com/euler-gaozl/agent-os/actions/runs/38144602314) P95 1501.45 ms。定位 PostgreSQL 候选集联接计划后，增加有界候选 CTE；[修复后 38145136016](https://github.com/euler-gaozl/agent-os/actions/runs/38145136016) P95 51.73 ms、最大 57.28 ms、0 次错误，表与索引约 178 MB。
+- 这是 SQL 合成资料的本地词法检索测试，原文较分块总量更短，重复内容可压缩；不是上传吞吐、真实语料召回率或全平台容量验收。PostgreSQL 1.5 CPU / 3 GiB，测试客户端 0.5 CPU / 512 MiB；其他常驻服务不计入。
+- 百万文档 / 千万分块首次测试耗尽 GitHub runner 磁盘，日志/报告未能上传。已从 GitHub check annotation 确认 `No space left on device`，不能将其算为通过；增加 CI 临时 VM 空间预检和低空间提前停止，继续重测。小样本成功不能替代目标规模验收。

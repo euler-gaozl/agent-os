@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/euler-gaozl/agent-os/internal/serviceclient"
 )
 
 // A real subprocess is killed by the parent test. Unlike a cancelled context,
@@ -27,6 +29,9 @@ func TestSandboxBrokerChild(t *testing.T) {
 		t.Fatal("open child database")
 	}
 	defer s.DB.Close()
+	if endpoint := os.Getenv("SANDBOX_TEST_RUNTIME_URL"); endpoint != "" {
+		s.Remote = &serviceclient.Client{RuntimeURL: endpoint, Token: os.Getenv("SANDBOX_TEST_RUNTIME_TOKEN")}
+	}
 	if _, e = (&Server{Store: s}).sandbox(context.Background(), inv); e != nil {
 		t.Fatal(e)
 	}
@@ -38,18 +43,20 @@ func TestDockerSandboxIsolationReplayAndBrokerCrash(t *testing.T) {
 	if !strings.Contains(os.Getenv("SANDBOX_IMAGE"), "@sha256:") {
 		t.Fatal("pinned test image required")
 	}
-	s, dsn := testStore(t)
+	execution, _ := testStore(t)
 	ctx := context.Background()
 	snap := basicSnapshot("https://fixture.invalid")
 	snap.Agent.Tools = []string{"sandbox_exec"}
-	submit(t, s, snap)
-	r := claim(t, s, "sandbox-acceptance")
-	if _, e := s.DB.Exec(ctx, "UPDATE runs SET lease_until=now()+interval '3 minutes' WHERE id=$1", r.ID); e != nil {
+	submit(t, execution, snap)
+	r := claim(t, execution, "sandbox-acceptance")
+	if _, e := execution.DB.Exec(ctx, "UPDATE runs SET lease_until=now()+interval '3 minutes' WHERE id=$1", r.ID); e != nil {
 		t.Fatal(e)
 	}
 	inv := invocation(r)
 	inv.Name = "sandbox_exec"
 	inv.Arguments = JSON(map[string]string{"code": `const fs=require('fs'),net=require('net'),os=require('os');let root='';try{fs.writeFileSync('/forbidden','x');root='writable'}catch(e){root=e.code}const socket=net.connect({host:'1.1.1.1',port:443});socket.setTimeout(500);socket.on('error',e=>console.log(JSON.stringify({uid:process.getuid(),root,network:e.code,interfaces:Object.keys(os.networkInterfaces())})));socket.on('timeout',()=>{socket.destroy();console.log('network timed out')});`})
+	sandboxIntent(t, execution, inv)
+	s, dsn, runtimeURL := separateSandboxStore(t, execution)
 	server := &Server{Store: s}
 	body, e := server.sandbox(ctx, inv)
 	if e != nil {
@@ -75,8 +82,9 @@ func TestDockerSandboxIsolationReplayAndBrokerCrash(t *testing.T) {
 	}
 	inv.OperationID = r.ID + "/tool/crash"
 	inv.Arguments = JSON(map[string]string{"code": `console.log('BROKER_CRASH_RECEIPT');while(true){}`})
+	sandboxIntent(t, execution, inv)
 	child := exec.Command(os.Args[0], "-test.run=^TestSandboxBrokerChild$")
-	child.Env = append(os.Environ(), "SANDBOX_TEST_CHILD_DSN="+dsn, "SANDBOX_TEST_CHILD_INV="+string(JSON(inv)))
+	child.Env = append(os.Environ(), "SANDBOX_TEST_CHILD_DSN="+dsn, "SANDBOX_TEST_CHILD_INV="+string(JSON(inv)), "SANDBOX_TEST_RUNTIME_URL="+runtimeURL, "SANDBOX_TEST_RUNTIME_TOKEN="+s.Remote.Token)
 	if e = child.Start(); e != nil {
 		t.Fatal(e)
 	}

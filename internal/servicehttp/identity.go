@@ -69,6 +69,9 @@ func permitted(service, caller, method, path string) bool {
 			return (get && strings.HasPrefix(path, "/v1/resolve/")) || (caller == "worker" && method == "POST" && path == "/invoke")
 		}
 	case "runtime":
+		if caller == "sandbox" {
+			return method == "POST" && path == "/v1/sandbox/authorize"
+		}
 		if caller == "control" {
 			return strings.HasPrefix(path, "/v1/runs") || path == "/v1/status"
 		}
