@@ -102,6 +102,7 @@ func TestDockerSandboxIsolationReplayAndBrokerCrash(t *testing.T) {
 	}
 	var configs []struct {
 		HostConfig struct {
+			Init           bool
 			NetworkMode    string
 			ReadonlyRootfs bool
 			Memory         int64
@@ -118,7 +119,7 @@ func TestDockerSandboxIsolationReplayAndBrokerCrash(t *testing.T) {
 		t.Fatal("container inspection failed")
 	}
 	c := configs[0]
-	if c.HostConfig.NetworkMode != "none" || !c.HostConfig.ReadonlyRootfs || c.HostConfig.Memory != 128<<20 || c.HostConfig.NanoCpus != 500000000 || c.HostConfig.PidsLimit != 64 || c.Config.User != "65534:65534" || len(c.Config.Cmd) < 1 || c.Config.Cmd[0] != "timeout" {
+	if !c.HostConfig.Init || c.HostConfig.NetworkMode != "none" || !c.HostConfig.ReadonlyRootfs || c.HostConfig.Memory != 128<<20 || c.HostConfig.NanoCpus != 500000000 || c.HostConfig.PidsLimit != 64 || c.Config.User != "65534:65534" || len(c.Config.Cmd) < 1 || c.Config.Cmd[0] != "timeout" {
 		t.Fatal("sandbox resource config incorrect", c)
 	}
 	if e = child.Process.Kill(); e != nil {

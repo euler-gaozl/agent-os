@@ -143,7 +143,9 @@ func (s *Server) sandbox(ctx context.Context, inv Invocation) ([]byte, error) {
 		if !strings.Contains(strings.ToLower(state), "no such") {
 			return nil, fmt.Errorf("sandbox inspect failed: %s", truncateUTF8(state, 300))
 		}
-		out, e := docker(jobCtx, "create", "--name", name, "--network", "none", "--read-only", "--memory", "128m", "--cpus", "0.5", "--pids-limit", "64", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--user", "65534:65534", "--tmpfs", "/tmp:rw,noexec,nosuid,size=16m", "--log-opt", "max-size=1m", "--log-opt", "max-file=1", "--label", "agentos.job="+inv.OperationID, image, "timeout", "-s", "KILL", "30", "node", "--eval", args.Code)
+		// BusyBox timeout execs the workload. Keep it out of PID 1 so the
+		// watchdog can signal it after the broker disappears.
+		out, e := docker(jobCtx, "create", "--init", "--name", name, "--network", "none", "--read-only", "--memory", "128m", "--cpus", "0.5", "--pids-limit", "64", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--user", "65534:65534", "--tmpfs", "/tmp:rw,noexec,nosuid,size=16m", "--log-opt", "max-size=1m", "--log-opt", "max-file=1", "--label", "agentos.job="+inv.OperationID, image, "timeout", "-s", "KILL", "30", "node", "--eval", args.Code)
 		if e != nil {
 			return nil, fmt.Errorf("sandbox create failed: %s", truncateUTF8(out, 300))
 		}
