@@ -60,10 +60,21 @@ var Tools = []contracts.Tool{
 }
 
 func Migrate(ctx context.Context, p *pgxpool.Pool) error {
-	_, e := p.Exec(ctx, `CREATE TABLE IF NOT EXISTS source_blobs(hash text PRIMARY KEY,body bytea NOT NULL);
+	tx, e := p.Begin(ctx)
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback(ctx)
+	if _, e = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(8843924)"); e != nil {
+		return e
+	}
+	_, e = tx.Exec(ctx, `CREATE TABLE IF NOT EXISTS source_blobs(hash text PRIMARY KEY,body bytea NOT NULL);
  CREATE TABLE IF NOT EXISTS source_captures(id text PRIMARY KEY,url text NOT NULL,hash text NOT NULL REFERENCES source_blobs(hash),media_type text NOT NULL,title text NOT NULL,content text NOT NULL,links jsonb NOT NULL,fetched_at timestamptz NOT NULL DEFAULT now());
  CREATE INDEX IF NOT EXISTS source_captures_url ON source_captures(url,fetched_at DESC);`)
-	return e
+	if e != nil {
+		return e
+	}
+	return tx.Commit(ctx)
 }
 func (s *Store) ValidateURL(raw string) error {
 	u, e := url.Parse(raw)

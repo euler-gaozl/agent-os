@@ -23,8 +23,16 @@ import (
 
 func main() {
 	output := flag.String("output", ".state/services", "private per-service configuration directory")
+	service := flag.String("service", "", "upgrade only this service's schema; do not provision identities or import legacy data")
 	if e := servicehost.Load(); e != nil {
 		fail(e)
+	}
+	if *service != "" {
+		if e := upgradeService(context.Background(), os.Getenv("DATABASE_URL"), *service); e != nil {
+			fail(e)
+		}
+		fmt.Println("Selected service schema upgraded; configuration and credentials unchanged.")
+		return
 	}
 	if e := run(*output); e != nil {
 		fail(e)
@@ -138,7 +146,7 @@ func run(output string) error {
 	}
 	for role, tables := range grants {
 		cfg := map[string]string{}
-		for _, key := range []string{"SERVICE_TOKEN", "ADMIN_TOKEN", "BUSINESS_TOKEN", "DEV_LOCAL", "REGISTRY_URL", "RUNTIME_URL", "TOOLHUB_URL", "KNOWLEDGE_URL", "STORAGE_URL", "SANDBOX_URL", "AGENTOS_NODE", "DSH_RUNNER", "WEB_DIR", "FUTURES_WEB_DIR", "MCP_ALLOWED_HOSTS", "SANDBOX_IMAGE", "LANGFUSE_URL"} {
+		for _, key := range []string{"SERVICE_TOKEN", "ADMIN_TOKEN", "BUSINESS_TOKEN", "DEV_LOCAL", "REGISTRY_URL", "RUNTIME_URL", "TOOLHUB_URL", "KNOWLEDGE_URL", "STORAGE_URL", "SANDBOX_URL", "SOURCES_URL", "AGENTOS_NODE", "DSH_RUNNER", "WEB_DIR", "FUTURES_WEB_DIR", "MCP_ALLOWED_HOSTS", "SANDBOX_IMAGE", "DOCKER_HOST", "LANGFUSE_URL"} {
 			if value := os.Getenv(key); value != "" {
 				cfg[key] = value
 			}

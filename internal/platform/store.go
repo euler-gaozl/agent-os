@@ -2,7 +2,6 @@ package platform
 
 import (
 	"context"
-	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,9 +11,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-//go:embed schema.sql
-var schema string
 
 type Store struct {
 	DB         *pgxpool.Pool
@@ -47,8 +43,14 @@ func (s *Store) Migrate(ctx context.Context) error {
 	if _, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(8843921)"); err != nil {
 		return err
 	}
-	if _, err = tx.Exec(ctx, schema); err != nil {
-		return err
+	for _, domain := range []string{"legacy_versions", "registry", "runtime", "storage", "sandbox", "telemetry", "legacy_knowledge"} {
+		body, err := migrationSQL.ReadFile("migrations/" + domain + ".sql")
+		if err != nil {
+			return err
+		}
+		if _, err = tx.Exec(ctx, string(body)); err != nil {
+			return err
+		}
 	}
 	if err = migratePublications(ctx, tx); err != nil {
 		return err

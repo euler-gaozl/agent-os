@@ -1,0 +1,70 @@
+# 独立服务部署与版本边界
+
+每个后端服务有独立镜像、身份、配置和发布单位，共用 Console 中台 Web。Futures 是独立业务入口。代码在同一仓库中维护；一次服务发布不要求构建或替换其他镜像。以下流程已实现，实际验收以 Linux CI 的 `independent-release.json` 为准。
+
+## 服务和状态归属
+
+| 服务 | 端口 / Docker 构建 target | 状态及迁移责任 | 运行依赖 |
+| --- | --- | --- | --- |
+| Registry | 8096 / service | resources、secrets | 本域 PostgreSQL；解析 MCP/Skill 时调用 ToolHub |
+| ToolHub | 8091 / service | toolhub schema | 本域 PostgreSQL；命名凭证由 Registry 解析；业务执行转交 Runtime |
+| Knowledge | 8095 / service | knowledge schema | 本域 PostgreSQL、Registry 配置/凭证；原文授权需要 Runtime |
+| Indexer | 8097 / service | 消费 Knowledge 的 schema，不能自定不兼容迁移 | Knowledge 数据、Registry；按选型调用外部 RAG |
+| Sources | 8101 / service | sources schema | 本域 PostgreSQL、管理员白名单中的公开网站 |
+| Runtime | 8094 / service | 运行、调用、事件、业务任务与实例 | 执行库、Registry、按工具绑定调用下游 |
+| Worker | 8099 / worker | 消费 Runtime 运行状态；固定 DSH 和 Node | 执行库、Registry、ToolHub、所绑定的工具与模型 |
+| Storage | 8092 / service | documents、artifacts、artifact_refs | 执行库；这些表当前仍参与 Runtime 的本地事务 |
+| Sandbox | 8093 / sandbox | sandbox_jobs | 执行库中的运行 fencing、专用隔离 Docker daemon |
+| Telemetry | 8100 / service | telemetry_exports 游标 | 执行库的事件、Registry 中的凭证、Langfuse |
+| Console | 8090 / control | 无数据库 | 聚合服务 HTTP API |
+| Futures | 8098 / futures | 无数据库 | Registry 发布目录和 Runtime 任务 API |
+
+所有服务的实例心跳写入 Runtime；心跳失败不阻止其他服务提供本域功能。端口不代表必须映射到公网。独立部署允许不同主机和不同服务版本，但必须保留上表的依赖与兼容性。
+
+**尚未完成的数据解耦**：Runtime/Worker 直接读写执行库；Storage 资料效果与 Runtime 回执共用事务；Sandbox 校验执行库 fencing；Telemetry 读取执行事件。当前拆分了部署和 DDL 所有权，不能因此宣称这些服务可分别迁到任意数据库。后续拆库必须先实现效果 outbox/inbox 和恢复核对协议。ToolHub、Knowledge、Sources 已有独立 schema 及 HTTP 边界，可以为它们配置独立 PostgreSQL，但迁移历史资料和跨库灾备还需专项验收。
+
+## 构建和发布单个服务
+
+以 Knowledge 为例；`release-service.mjs` 接收已经构建或拉取到本机的镜像，将标签解析为本机不可变 image ID 后部署。发布记录只保存路径、配置摘要和镜像 ID，不保存凭证。
+
+```sh
+docker build --target service --build-arg SERVICE=knowledge -t agent-os-knowledge:release-1 .
+node scripts/release-service.mjs deploy \
+  --project agentos-knowledge-prod --service knowledge \
+  --image agent-os-knowledge:release-1 \
+  --config /srv/agent-os/config/knowledge-v1.json \
+  --network agentos-private --replicas 1
+node scripts/release-service.mjs status --project agentos-knowledge-prod
+node scripts/release-service.mjs rollback --project agentos-knowledge-prod
+node scripts/release-service.mjs stop --project agentos-knowledge-prod
+```
+
+网络、数据库、下游地址和服务身份由运维预先配置。启动入口仅使用 `deploy/service.compose.yaml`，没有数据库容器或 `depends_on`；不会隐式启动、升级其他服务。`--network` 是已存在的私有 Docker 网络；跨宿主机网络及 TLS/mTLS 由部署基础设施提供，这个 Compose 文件本身不是跨机集群。
+
+配置文件必须让运行容器的 UID 10001 可读，并让发布操作员可读以校验摘要；不授予其他用户读取权限。配置内容参照初始化生成的每服务配置，HTTP 下游使用服务 DNS 或负载均衡地址。控制台还需 `SOURCES_URL`。运行配置不得包含数据库管理员账号；只有 Registry 获得 MASTER_KEY。
+
+相同项目名再次 deploy 可以换镜像、配置路径、实例数量。使用不可变的版本配置文件，保留前一版本；修改原配置文件后脚本会拒绝自动回滚，避免拿旧二进制配未知配置。发布先等待 `/readyz`，失败自动恢复前一镜像及副本数；初次发布失败只清理本发布单位。并发发布有文件锁。操作员进程被强杀时锁会保留，须确认进程已退出、检查容器和发布记录后解除；尚不承诺操作员断电时发布控制器自动续传。
+
+只有 Console/Futures 可通过 `--publish 8090` / `--publish 8098` 映射宿主机回环端口；单机固定端口只支持一个实例。多个网关实例应使用独立负载均衡。增加副本会增加连接数、CPU 和内存总预算。单服务 Compose 替换有短暂切换窗口；**不是零停机或物理节点 HA 的证明**。
+
+## 数据库迁移
+
+首次初始化/历史跨域导入仍使用 `migrate-services --output`，需要维护窗口。日常单服务升级改为：
+
+```sh
+# 专用迁移容器，只挂载所需的管理员/DDL 配置；不挂载所有服务配置目录。
+docker run --rm --network agentos-private --read-only --cap-drop=ALL \
+  -v /srv/agent-os/config/knowledge-ddl.json:/run/ddl.json:ro \
+  --entrypoint /app/service agent-os-migrate:release-1 \
+  --config /run/ddl.json --service knowledge
+```
+
+迁移配置仅需 DATABASE_URL；`--service` 不重写配置、不生成/轮换身份、不重导历史数据。Knowledge/Indexer 对应同一个数据域；Runtime/Worker 也是同一个域。Registry、Storage、Sandbox、Telemetry 的 SQL 已按所有权拆分，Bootstrap 仍按依赖顺序执行全部 SQL。Sources/Knowledge/ToolHub 迁移各自加数据库锁；执行域升级与历史初始化互斥。
+
+迁移设置 3 秒锁等待、单语句 120 秒、总计 3 分钟预算，不能无界阻塞在线服务。新增大索引可能超过该预算，需要为该版本安排独立索引构建/维护流程；不能通过取消超时硬顶生产负载。升级采用先兼容扩展、再发布消费者、最后单独清理旧字段的步骤。自动回滚只回滚程序，不逆向删除 schema 或用户资料；破坏性 schema 变更不适用该流程。
+
+Windows 可在备份后直接执行新的迁移二进制 `--config .state/dev.json --service knowledge`，不必经过要求全停的历史 `Start-Local.ps1 -Migrate`。然后使用 `Build-Services.ps1 -Service knowledge`、`Stop-Local.ps1 -Service knowledge`、`Start-Local.ps1 -Service knowledge` 单独替换。
+
+## 验收范围
+
+新增 Linux CI 使用真实旧版本 Knowledge 二进制 `a0d6c81` 验证迁移后的数据读取、单服务升级、回滚、两副本、错误镜像发布失败后恢复。断言其他服务容器 ID 不变，所有身份配置字节不变。模型使用受控夹具，不消耗真实 API。共享执行库拆分、跨机故障转移、每个历史版本的兼容矩阵仍单列未完成；不能用 Knowledge 一项结果代替所有服务的版本兼容验收。

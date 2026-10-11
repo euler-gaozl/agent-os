@@ -72,6 +72,7 @@ jobs:
       COMPOSE_FILE: compose.yaml:deploy/compose.ci.yaml
     steps:
       - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '24'}
       - name: Validate and build independently deployable services
@@ -83,10 +84,21 @@ jobs:
         run: |
           docker compose up -d --wait postgres
           docker compose run --rm migrate
+          # Grant only the CI runner group read access to fixture configs.
+          # Container UID 10001 remains owner; no world-readable credentials.
+          sudo chgrp "$(id -g)" .state/services/*.json
+          sudo chmod g+r .state/services/*.json
       - name: Run bounded platform with replica pairs
         run: docker compose up -d --wait --wait-timeout 120
       - name: Real service contracts, authorization and crash recovery
         run: node scripts/smoke-services.mjs
+      - name: Build previous Knowledge release for real rollback validation
+        run: |
+          mkdir -p .state/previous-release
+          git archive a0d6c81 | tar -x -C .state/previous-release
+          docker build --target service --build-arg SERVICE=knowledge -t agent-os-knowledge:baseline .state/previous-release
+      - name: Independent schema upgrade, deployment, scale and rollback
+        run: node scripts/smoke-independent-release.mjs
       - name: Save sanitized service status
         if: always()
         run: |

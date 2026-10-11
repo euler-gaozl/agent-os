@@ -1,0 +1,40 @@
+# One independently managed deployment unit. Infrastructure and downstream
+# services must already be provisioned; this file never starts them implicitly.
+services:
+  app:
+    image: ${SERVICE_IMAGE:?select an immutable service image}
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs: ['/tmp:size=32m,mode=1777']
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: ${SERVICE_MEMORY:-128m}
+    cpus: ${SERVICE_CPUS:-0.10}
+    stop_grace_period: 15s
+    volumes:
+      - type: bind
+        source: ${SERVICE_CONFIG:?absolute private configuration path}
+        target: /run/service.json
+        read_only: true
+        bind: {create_host_path: false}
+    environment:
+      DEV_LOCAL: '0'
+      LISTEN: 0.0.0.0:${SERVICE_PORT:?service port}
+      HEALTH_URL: http://127.0.0.1:${SERVICE_PORT}/readyz
+      HEALTH_TOKEN_KEY: ${SERVICE_HEALTH_KEY:-SERVICE_TOKEN}
+    healthcheck:
+      test: [CMD, /app/healthcheck]
+      interval: 5s
+      timeout: 4s
+      retries: 6
+      start_period: 10s
+    logging: {driver: json-file, options: {max-size: '10m', max-file: '3'}}
+    networks:
+      platform:
+        aliases: ['${SERVICE_NAME:?service network alias}']
+networks:
+  platform:
+    external: true
+    name: ${SERVICE_NETWORK:?existing private network}
