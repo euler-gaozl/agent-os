@@ -33,6 +33,7 @@ type Config struct {
 	DevLocal                bool
 	MaxConcurrent           int
 	RequestTimeout          time.Duration
+	Readiness               func(context.Context) error
 }
 type StatusError struct {
 	Status  int
@@ -109,6 +110,9 @@ func authorized(c Config, r *http.Request) bool {
 	return ok && (r.Method == "GET" || r.Method == "HEAD" || r.Header.Get("X-AgentOS-Client") == "web")
 }
 func New(c Config, ready func(context.Context) error, routes func(*http.ServeMux)) http.Handler {
+	if c.Readiness != nil {
+		ready = c.Readiness
+	}
 	if c.MaxConcurrent < 1 {
 		c.MaxConcurrent = 16
 	}
