@@ -22,7 +22,7 @@
 | Futures | 独立构建、端口和 BFF；直接调用发布的 Agent 确定版本，返回业务所需的进度与结果 |
 | Sources | 独立公开资料 MCP；管理员指定 HTTPS 域名、原始响应哈希留存、文本分页与定位；不绕过授权来源 |
 
-Sandbox 的 Docker JavaScript 执行适配、Langfuse OTLP 事件导出和 Compose 多实例配置已编写；本机没有 Docker，尚未实机验证这些外部部署。知识库不等于已校验事实库，图谱关系和检索结果必须回查原始来源。
+Sandbox 的真实 Docker 隔离、主动干扰截止进程和执行服务强杀恢复已通过 Linux CI；本机没有 Docker，执行功能保持停用。Telemetry 已通过独立数据库接收和受控 OTLP 导出，真实 Langfuse 后端尚未联调。知识库不等于已校验事实库，图谱关系和检索结果必须回查原始来源。
 
 ## 启动
 
@@ -53,6 +53,6 @@ pnpm --dir web run build
 - [后续工作](docs/architecture/next-steps.md)
 - [v0.1 独立架构评审原文](docs/architecture/agent-os-v0.1-independent-review.txt)（历史基线，不是本版代码审计）
 
-各服务具有独立二进制、镜像、数据库账号和服务身份。ToolHub/Knowledge 拥有各自 schema；Console/Futures 无数据库权限。Runtime/Worker/Storage/Sandbox 仍共享部分执行事务表，尚未完全拆库。Linux 2 核 / 4 GB、100 万文档 / 1000 万分块以及物理节点 HA 都是验收目标；参见[生产验收账本](docs/production-readiness.md)，不能把小样本 CI 写成生产能力。
+各服务具有独立二进制、镜像、配置、服务身份和发布入口，12 个部署单位已通过 Linux CI 的单独部署检查，共用中台 Web。ToolHub/Knowledge/Sources 拥有各自 schema；Sandbox/Telemetry 通过 HTTP 对接 Runtime；Console/Futures 无数据库权限。Runtime/Worker/Storage 仍共享部分执行事务表，尚未完全拆库。百万文档 / 千万分块已有受限检索实测，完整平台 2 核 / 4 GB 负载和物理节点 HA 仍待验收；参见[交付账本](docs/delivery-v0.6.md)，不能将一次容量测试写成全部生产能力。
 
 期货应用只负责资料收集、校验、分类、留存和客观事实反馈。预测、交易方向与操作决定由用户负责。

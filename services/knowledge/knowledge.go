@@ -336,8 +336,8 @@ func (s *Store) Retrieve(ctx context.Context, ref Ref, kb KnowledgeBase, query s
 		if response.Status != "success" {
 			return result, errors.New("LightRAG query failed")
 		}
-		result.Graph = response.Data
-		return result, nil
+		result.Graph, e = s.scopedGraph(ctx, ref, kb.Endpoint, response.Data)
+		return result, e
 	}
 	vectors, e := s.Embed(ctx, kb, []string{query}, true)
 	if e != nil {

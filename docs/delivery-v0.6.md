@@ -75,6 +75,13 @@
 - 沙箱截止进程与工作负载同 UID 是本次代码审查发现的风险；先前死循环测试不覆盖代码主动发送信号。新增独立 Go guard 工作负载镜像：可信守护程序保留独立 UID，仅用于子进程降权，执行代码仍为 UID 65534 且零 capabilities。Linux CI 增加 SIGSTOP/SIGKILL 干扰 guard 与 broker SIGKILL 联合检查；本机只能交叉编译，未验收前不能声称攻击测试通过。
 - 真正 Milvus/LightRAG/Embedding/Langfuse 服务联调、目标规模结果、长期资料生命周期与真实跨机 HA 继续分别记录，不能合称全部生产化完成。
 
+### 本批复验
+
+- [CI 38152175266](https://github.com/euler-gaozl/agent-os/actions/runs/38152175266)（`b7fd421`）两个作业通过。Telemetry 使用另建的 `agentos_telemetry_ci` 数据库，库中没有 runs/events，旧执行库读取权限被真实拒绝；Runtime 事件通过 HTTP 接收、落盘并导出。12 个部署单位仍可单独运行，共用 Console，其他容器和配置不变。原始证据在 `.state/isolated-telemetry-ci-b7fd421/`。
+- 同一 CI 的 Go race 和真实 Docker 沙箱检查通过，包含工作负载对 guard 的 SIGSTOP/SIGKILL 均遭 EPERM、执行服务 SIGKILL 后容器仍自行截止、孤儿作业恢复。没有用只编译或普通死循环代替主动干扰测试。
+- LightRAG 返回值新增本地来源校验：限定知识库 revision、索引状态和上游 endpoint；实体/关系的每个来源都必须属于当前版本，混合未授权来源的条目被丢弃；文本片段还必须在保留原文中出现。返回固定字段和本地 document_id，远端引用表、调试字段不直接进入上下文。跨版本、混合来源、伪造片段、未完成索引和其他 endpoint 的本机测试通过，真实 LightRAG 联调仍待完成。
+- 新增独立的真实 Milvus CI：固定 v2.6.24，使用生产索引/检索代码，Embedding 为明确标记的受控向量；验收写后丢失回执的幂等恢复、来源回查、版本隔离及后端重启。该作业尚待执行，不能计为通过。
+
 ## 容量实测和失败
 
 - 10,000 文档 / 100,000 分块、有界 CPU/内存、4 并发 200 次检索：[基线 38144602314](https://github.com/euler-gaozl/agent-os/actions/runs/38144602314) P95 1501.45 ms。定位 PostgreSQL 候选集联接计划后，增加有界候选 CTE；[修复后 38145136016](https://github.com/euler-gaozl/agent-os/actions/runs/38145136016) P95 51.73 ms、最大 57.28 ms、0 次错误，表与索引约 178 MB。
