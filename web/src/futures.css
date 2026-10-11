@@ -575,11 +575,11 @@ body {
   font-size: 11px;
 }
 .research-document > div:last-child {
-  white-space: pre-wrap;
+  white-space: normal;
   padding: 26px 31px;
   font-size: 14px;
   line-height: 2.1;
-  color: #88724e;
+  color: #534b3d;
   overflow-wrap: anywhere;
 }
 .research-wait,

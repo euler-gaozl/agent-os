@@ -119,7 +119,7 @@ func run(role, port string, build Build) error {
 	}
 	cfg := servicehttp.Config{Role: role, Token: token, AdminToken: Env("ADMIN_TOKEN", token), DevLocal: os.Getenv("DEV_LOCAL") == "1"}
 	defaultConcurrency := "16"
-	if role == "knowledge" || role == "toolhub" || role == "storage" {
+	if role == "knowledge" || role == "toolhub" || role == "storage" || role == "sources" {
 		defaultConcurrency = "4"
 	}
 	concurrency, err := strconv.Atoi(Env("HTTP_MAX_CONCURRENT", defaultConcurrency))

@@ -389,3 +389,20 @@ summary {
   width: 100%;
   margin-top: 6px;
 }
+/* Shared, safe rendering for durable model answers. */
+.markdown-body { white-space: normal; overflow-wrap: anywhere; line-height: 1.85; }
+.markdown-body > :first-child { margin-top: 0; }
+.markdown-body h1 { font-size: 1.5em; line-height: 1.5; margin: 0 0 1em; }
+.markdown-body h2 { font-size: 1.2em; margin: 1.8em 0 .6em; }
+.markdown-body h3 { font-size: 1.05em; margin: 1.4em 0 .5em; }
+.markdown-body p, .markdown-body ul, .markdown-body ol { margin: .7em 0; }
+.markdown-body ul, .markdown-body ol { padding-left: 1.6em; }
+.markdown-body a { color: #41645b; text-decoration: underline; text-underline-offset: 3px; }
+.markdown-body code { font-size: .9em; background: #88888812; padding: .1em .3em; border-radius: 3px; }
+.markdown-body pre { white-space: pre-wrap; padding: 1em; background: #8888880c; border-radius: 8px; }
+.markdown-body blockquote { border-left: 3px solid #b9b3a5; margin: 1em 0; padding-left: 1em; }
+.markdown-table { overflow-x: auto; max-width: 100%; margin: 1em 0; }
+.markdown-table table { width: 100%; border-collapse: collapse; font-size: .94em; }
+.markdown-table th, .markdown-table td { text-align: left; border: 1px solid #88888830; padding: .65em .8em; min-width: 6em; }
+.markdown-table th { background: #88888809; font-weight: 600; }
+.markdown-body hr { border: 0; border-top: 1px solid #88888830; margin: 1.6em 0; }

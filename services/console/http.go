@@ -16,6 +16,7 @@ type Server struct {
 	HTTP                             servicehttp.Config
 	Client                           serviceclient.Client
 	KnowledgeURL, StorageURL, WebDir string
+	SourcesURL                       string
 }
 
 func (s *Server) Handler() http.Handler { return servicehttp.New(s.HTTP, nil, s.Routes) }
@@ -32,6 +33,9 @@ func (s *Server) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/connectors/discover", func(w http.ResponseWriter, r *http.Request) { s.proxy(w, r, s.Client.CatalogURL+"/v1/discover") })
 	mux.HandleFunc("/api/toolhub/", func(w http.ResponseWriter, r *http.Request) {
 		s.proxy(w, r, s.Client.CatalogURL+strings.Replace(r.URL.Path, "/api/toolhub/", "/v1/", 1))
+	})
+	mux.HandleFunc("/api/sources/", func(w http.ResponseWriter, r *http.Request) {
+		s.proxy(w, r, s.SourcesURL+strings.TrimPrefix(r.URL.Path, "/api/sources"))
 	})
 	for _, prefix := range []string{"/api/runs", "/api/runs/"} {
 		mux.HandleFunc(prefix, func(w http.ResponseWriter, r *http.Request) {

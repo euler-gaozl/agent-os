@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { Answer } from "./markdown";
 import {
   ArrowLeft,
   ArrowUp,
@@ -424,11 +425,11 @@ function Futures() {
                         className="text-button"
                         onClick={() => {
                           const blob = new Blob([result.result], {
-                            type: "text/plain;charset=utf-8",
+                            type: "text/markdown;charset=utf-8",
                           });
                           const link = document.createElement("a");
                           link.href = URL.createObjectURL(blob);
-                          link.download = result.commodity + "-研究记录.txt";
+                          link.download = result.commodity + "-研究记录.md";
                           link.click();
                           URL.revokeObjectURL(link.href);
                         }}
@@ -436,7 +437,7 @@ function Futures() {
                         导出记录 <ArrowUpRight size={13} />
                       </button>
                     </div>
-                    <div>{result.result}</div>
+                    <Answer>{result.result}</Answer>
                   </article>
                 ) : result.status === "failed" ? (
                   <div className="research-failure">

@@ -1,7 +1,7 @@
-param([string[]]$Service = @('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','migrate-services'))
+param([string[]]$Service = @('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','sources','migrate-services'))
 $ErrorActionPreference='Stop'
 $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$allowed=@('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','migrate-services')
+$allowed=@('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','sources','migrate-services')
 foreach($name in $Service){if($name -notin $allowed){throw ('Unknown service: '+$name)}}
 $go=if(Test-Path 'D:\workspace\.tools\go\bin\go.exe'){'D:\workspace\.tools\go\bin\go.exe'}else{'go'}
 $release=Join-Path $repoRoot ('bin\releases\'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'-'+[Guid]::NewGuid().ToString('N').Substring(0,8))

@@ -28,6 +28,10 @@ DO $$ BEGIN
  IF to_regclass('toolhub.asset_files') IS NOT NULL THEN
   IF EXISTS(SELECT 1 FROM toolhub.asset_files WHERE encode(sha256(body),'hex')<>hash) THEN RAISE EXCEPTION 'Skill file hash mismatch'; END IF;
  END IF;
+ IF to_regclass('sources.source_blobs') IS NOT NULL THEN
+  IF EXISTS(SELECT 1 FROM sources.source_blobs WHERE encode(sha256(body),'hex')<>hash) THEN RAISE EXCEPTION 'Source capture hash mismatch'; END IF;
+  IF EXISTS(SELECT 1 FROM sources.source_captures c LEFT JOIN sources.source_blobs b USING(hash) WHERE b.hash IS NULL) THEN RAISE EXCEPTION 'Source capture original missing'; END IF;
+ END IF;
 END $$;
 '@
     & (Join-Path $PostgresBin 'psql.exe') -h $dbUri.Host -p $dbUri.Port -U $credentials[0] -d $verifyDatabase -v ON_ERROR_STOP=1 -Atc $serviceChecks

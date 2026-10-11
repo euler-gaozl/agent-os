@@ -193,6 +193,7 @@ func (s *Store) UploadKnowledge(ctx context.Context, ref Ref, name, source strin
 		return f, e
 	}
 	batch := &pgx.Batch{}
+	batch.Queue("UPDATE knowledge_files SET name_vector=to_tsvector('simple',$2) WHERE id=$1", f.ID, scopeToken(ref)+" "+SearchText(name))
 	for i, text := range chunks(content, kb.ChunkSize) {
 		batch.Queue("INSERT INTO knowledge_chunks(id,file_id,ordinal,content,search_vector) VALUES($1,$2,$3,$4,to_tsvector('simple',$5))", Hash([]byte(fmt.Sprint(f.ID, ":", i))), f.ID, i, text, scopeToken(ref)+" "+SearchText(text))
 	}
@@ -286,13 +287,33 @@ func (s *Store) Retrieve(ctx context.Context, ref Ref, kb KnowledgeBase, query s
 		if e != nil {
 			return result, e
 		}
+		for rows.Next() {
+			var id, content, source, document, name string
+			if e = rows.Scan(&id, &content, &source, &document, &name); e != nil {
+				rows.Close()
+				return result, e
+			}
+			result.Hits = append(result.Hits, map[string]any{"chunk_id": id, "content": content, "source": source, "document_id": document, "title": name})
+		}
+		e = rows.Err()
+		rows.Close()
+		if e != nil || len(result.Hits) > 0 {
+			return result, e
+		}
+		// File names are searchable independently from chunk contents, including
+		// legacy uploads backfilled by the indexer. Return the first chunk as a
+		// preview; the caller can read the complete document using document_id.
+		rows, e = s.DB.Query(queryCtx, `SELECT c.id,c.content,d.source,d.id,f.name FROM knowledge_files f JOIN documents d ON d.id=f.document_id JOIN knowledge_chunks c ON c.file_id=f.id AND c.ordinal=0 WHERE f.kb_id=$1 AND f.kb_revision=$2 AND f.status='ready' AND f.name_vector @@ plainto_tsquery('simple',$3) LIMIT 8`, ref.ID, ref.Revision, scopeToken(ref)+" "+strings.Join(terms, " "))
+		if e != nil {
+			return result, e
+		}
 		defer rows.Close()
 		for rows.Next() {
 			var id, content, source, document, name string
 			if e = rows.Scan(&id, &content, &source, &document, &name); e != nil {
 				return result, e
 			}
-			result.Hits = append(result.Hits, map[string]any{"chunk_id": id, "content": content, "source": source, "document_id": document, "title": name})
+			result.Hits = append(result.Hits, map[string]any{"chunk_id": id, "content": content, "source": source, "document_id": document, "title": name, "matched_on": "file_name"})
 		}
 		return result, rows.Err()
 	}
@@ -490,6 +511,9 @@ func (s *Store) RunIndexer(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-tick.C:
+			if _, e := s.IndexNamesBatch(ctx); e != nil && ctx.Err() != nil {
+				return ctx.Err()
+			}
 			if _, e := s.IndexLocalBatch(ctx); e != nil && ctx.Err() != nil {
 				return ctx.Err()
 			}

@@ -102,3 +102,34 @@ func TestIncrementalBackfillAndScopedOriginalDocument(t *testing.T) {
 		t.Fatal("unindexable query accepted")
 	}
 }
+
+func TestFileNameSearchAndLegacyBackfillRemainVersionScoped(t *testing.T) {
+	s := knowledgeStore(t)
+	ctx := context.Background()
+	ref := Ref{ID: "titles", Revision: 1}
+	f, e := s.UploadKnowledge(ctx, ref, "验收口径.txt", "fixture://title", []byte("AZ-731: 120 -> 105. Planned +20."))
+	if e != nil {
+		t.Fatal(e)
+	}
+	check := func() {
+		t.Helper()
+		result, e := s.Retrieve(ctx, ref, KnowledgeBase{Engine: "local"}, "验收口径")
+		if e != nil || len(result.Hits) != 1 || result.Hits[0]["document_id"] != f.DocumentID || result.Hits[0]["matched_on"] != "file_name" {
+			t.Fatal(result, e)
+		}
+	}
+	check()
+	if _, e = s.DB.Exec(ctx, "UPDATE knowledge_files SET name_vector=NULL"); e != nil {
+		t.Fatal(e)
+	}
+	if n, e := s.IndexNamesBatch(ctx); e != nil || n != 1 {
+		t.Fatal(n, e)
+	}
+	check()
+	for _, wrong := range []Ref{{ID: "titles", Revision: 2}, {ID: "another", Revision: 1}} {
+		result, e := s.Retrieve(ctx, wrong, KnowledgeBase{Engine: "local"}, "验收口径")
+		if e != nil || len(result.Hits) != 0 {
+			t.Fatal("name query crossed scope", result, e)
+		}
+	}
+}

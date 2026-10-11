@@ -10,7 +10,7 @@ if(-not(Test-Path -LiteralPath $adminConfig)){throw 'Initialize local PostgreSQL
 $settings=Get-Content -LiteralPath $adminConfig -Raw|ConvertFrom-Json
 $uri=[uri]$settings.DATABASE_URL
 if($uri.Host -eq '127.0.0.1' -and $uri.Port -eq 55432){& (Join-Path $PSScriptRoot 'Start-Database.ps1')}
-$all=@('registry','runtime','storage','sandbox','toolhub','knowledge','indexer','control','futures','worker')
+$all=@('registry','runtime','storage','sandbox','toolhub','knowledge','indexer','sources','control','futures','worker')
 $selected=if($Service.Count){$Service}else{$all}
 foreach($role in $selected){if($role -notin ($all+@('telemetry'))){throw ('Unknown service '+$role)}}
 $previous=@();if(Test-Path -LiteralPath $manifestPath){$previous=@(Get-Content -LiteralPath $manifestPath -Raw|ConvertFrom-Json)}
@@ -24,7 +24,7 @@ if('worker' -in $selected){
  if(-not(Test-Path -LiteralPath (Join-Path $repoRoot 'harness/node_modules'))){throw 'Install pinned harness dependencies before starting workers.'}
 }
 foreach($ui in @('control','futures')){if($ui -in $selected){$dir=if($ui -eq 'control'){'web/dist'}else{'web/dist-futures'};if(-not(Test-Path -LiteralPath (Join-Path $repoRoot ($dir+'/index.html')))){throw ('Build frontend before starting '+$ui)}}}
-$ports=@{control=8090;toolhub=8091;storage=8092;sandbox=8093;runtime=8094;knowledge=8095;registry=8096;indexer=8097;futures=8098}
+$ports=@{control=8090;toolhub=8091;storage=8092;sandbox=8093;runtime=8094;knowledge=8095;registry=8096;indexer=8097;futures=8098;sources=8101}
 $started=@();$savedInstance=$env:INSTANCE_ID
 try{
  foreach($role in $selected){

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { Answer } from "./markdown";
 import {
   Activity,
   ArrowLeft,
@@ -1050,7 +1051,7 @@ function AgentEditor({
                   <small>步骤 {run.step}</small>
                 </div>
                 {run.state?.result && (
-                  <article className="answer-text">{run.state.result}</article>
+                  <article className="answer-text"><Answer>{run.state.result}</Answer></article>
                 )}
                 {run.state?.error && (
                   <div className="error-message">{run.state.error}</div>
@@ -1950,7 +1951,7 @@ function Runs({ runs, notify }: { runs: any[]; notify: (m: string) => void }) {
             {usage && <p className="field-hint">整项任务（含子任务）模型尝试 {usage.attempts} 次 · 已报告输入 {usage.prompt_tokens} / 输出 {usage.completion_tokens} tokens{usage.unknown_usage_attempts ? ` · ${usage.unknown_usage_attempts} 次用量未确认，仍占用保守预算` : ""}。实际费用以供应商账单为准。</p>}
             <h3>{selected.task}</h3>
             <article className="answer-text">
-              {selected.state.result || selected.state.error || "等待执行结果…"}
+              <Answer>{selected.state.result || selected.state.error || "等待执行结果…"}</Answer>
             </article>
             <div className="button-row">
               {selected.state.harness_artifact && (

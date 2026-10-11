@@ -40,6 +40,8 @@ func permitted(service, caller, method, path string) bool {
 	}
 	get := method == "GET"
 	switch service {
+	case "sources":
+		return (caller == "sources" && method == "POST" && path == "/mcp") || (caller == "control" && get && strings.HasPrefix(path, "/captures/"))
 	case "registry":
 		if caller == "control" {
 			return !strings.HasPrefix(path, "/v1/credentials/resolve")

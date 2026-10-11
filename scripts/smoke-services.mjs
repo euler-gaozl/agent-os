@@ -21,7 +21,7 @@ function passed(name){evidence.checks.push(name);console.log('PASS '+name)}
 let sampler=setInterval(()=>{try{const raw=docker('stats','--no-stream','--format','{{json .}}');const at=new Date().toISOString();evidence.resources.push(...raw.split('\n').filter(Boolean).map(x=>({time:at,...JSON.parse(x)})))}catch{}},4000);
 try{
  await until(async()=>{const s=await request('/status');return s.instances.filter(x=>x.active).length>=12},'service heartbeats');
- for(const role of ['toolhub','knowledge','storage','sandbox','worker']){
+ for(const role of ['toolhub','knowledge','storage','sandbox','worker','sources']){
   let denied=false;try{sql('SET ROLE agentos_'+role+'; SELECT sealed FROM public.secrets LIMIT 1')}catch{denied=true}assert(denied,role+' database privilege');
  }
  assert(!config('control').DATABASE_URL && !config('futures').DATABASE_URL);passed('separate database identities and SQL denial; UI has no database credentials');
@@ -63,7 +63,7 @@ try{
  assert(Number(sql("SELECT fence FROM runs WHERE id='"+run.id+"'"))>=2);passed('real worker SIGKILL, fenced takeover, DSH replay and one committed note');
  assert.equal(sql("SELECT count(*) FROM calls WHERE run_id='"+run.id+"' AND kind='tool' AND status='completed'"),'4');passed('cross-service MCP call, KB search and bound original document read');
  dc('stop','toolhub');const partial=await request('/resources');assert.equal(partial.services.toolhub,false);assert.equal(partial.services.registry,true);assert(partial.items.some(x=>x.id==='ci-agent'));assert((await request('/tasks',undefined,{business:true})).length===1);dc('start','toolhub');passed('ToolHub outage leaves registry catalog and business history usable');
- for(const role of ['registry','runtime','knowledge','indexer','storage','control','futures']){const ids=dc('ps','-q',role).split('\n');const before=JSON.parse(docker('inspect',ids[0]))[0].RestartCount;crash(ids[0]);await until(()=>{const state=JSON.parse(docker('inspect',ids[0]))[0];return state.RestartCount>before&&state.State.Health?.Status==='healthy'},role+' automatic restart',60)}
+ for(const role of ['registry','runtime','knowledge','indexer','storage','control','futures','sources']){const ids=dc('ps','-q',role).split('\n');const before=JSON.parse(docker('inspect',ids[0]))[0].RestartCount;crash(ids[0]);await until(()=>{const state=JSON.parse(docker('inspect',ids[0]))[0];return state.RestartCount>before&&state.State.Health?.Status==='healthy'},role+' automatic restart',60)}
  assert((await request('/knowledge/query',{knowledge:{id:'ci-kb',revision:1},query:'甲醇库存'})).hits.length===1);passed('independent service crash restart retains data');
  dc('stop','postgres');await sleep(2000);
  for(const role of ['registry','runtime','knowledge']){let unhealthy=false;try{dc('exec','-T',role,'/app/healthcheck')}catch{unhealthy=true}assert(unhealthy,role+' must not report ready without DB')}

@@ -106,7 +106,11 @@ func (s *Store) LocalTool(ctx context.Context, inv Invocation) ([]byte, error) {
 		}
 		var body []byte
 		var media string
-		e = tx.QueryRow(ctx, "SELECT body,media_type FROM artifacts WHERE hash=$1 FOR KEY SHARE", args.Hash).Scan(&body, &media)
+		e = tx.QueryRow(ctx, `WITH RECURSIVE visible AS (
+ SELECT id FROM runs WHERE id=$2 UNION ALL SELECT child.id FROM runs child JOIN visible parent ON child.parent_id=parent.id
+) SELECT a.body,a.media_type FROM artifacts a WHERE a.hash=$1 AND EXISTS(
+ SELECT 1 FROM artifact_refs ref JOIN visible v ON ref.root='run:'||v.id WHERE ref.hash=a.hash
+) FOR KEY SHARE OF a`, args.Hash, r.ID).Scan(&body, &media)
 		if e == nil {
 			if Hash(body) != args.Hash {
 				return nil, errors.New("artifact hash mismatch")

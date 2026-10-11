@@ -11,6 +11,7 @@ import (
 	"github.com/euler-gaozl/agent-os/internal/servicehost"
 	"github.com/euler-gaozl/agent-os/internal/servicehttp"
 	"github.com/euler-gaozl/agent-os/services/knowledge"
+	"github.com/euler-gaozl/agent-os/services/sources"
 	"github.com/euler-gaozl/agent-os/services/toolhub"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -44,7 +45,7 @@ func run(output string) error {
 	if e = os.MkdirAll(output, 0700); e != nil {
 		return e
 	}
-	for _, name := range []string{"toolhub", "knowledge"} {
+	for _, name := range []string{"toolhub", "knowledge", "sources"} {
 		if _, e = admin.DB.Exec(ctx, "CREATE SCHEMA IF NOT EXISTS "+pgx.Identifier{name}.Sanitize()); e != nil {
 			return e
 		}
@@ -102,9 +103,18 @@ func run(output string) error {
 	if e = knowledge.ImportLegacy(ctx, kbPool); e != nil {
 		return e
 	}
+	sourcePool, e := scoped("sources")
+	if e != nil {
+		return e
+	}
+	defer sourcePool.Close()
+	if e = sources.Migrate(ctx, sourcePool); e != nil {
+		return e
+	}
 	execution := []string{"runs", "events", "calls", "model_attempts", "harness_exchanges", "documents", "artifacts", "artifact_refs", "app_runs", "business_runs", "instances"}
 	grants := map[string][]string{"runtime": execution, "worker": execution, "registry": {"resources", "secrets"}, "storage": {"documents", "artifacts", "artifact_refs"}, "sandbox": {"runs", "sandbox_jobs"}, "telemetry": {"events", "telemetry_exports"}, "toolhub": nil, "knowledge": nil, "indexer": nil, "control": nil, "futures": nil}
 	identities := map[string]string{}
+	grants["sources"] = nil
 	identityFile := filepath.Join(output, "identities.json")
 	if raw, err := os.ReadFile(identityFile); err == nil {
 		if e = json.Unmarshal(raw, &identities); e != nil {
@@ -123,6 +133,9 @@ func run(output string) error {
 	if e = writeConfig(identityFile, identities); e != nil {
 		return e
 	}
+	if e = admin.PutSecret(ctx, "SOURCES_MCP_TOKEN", identities["sources"]); e != nil {
+		return e
+	}
 	for role, tables := range grants {
 		cfg := map[string]string{}
 		for _, key := range []string{"SERVICE_TOKEN", "ADMIN_TOKEN", "BUSINESS_TOKEN", "DEV_LOCAL", "REGISTRY_URL", "RUNTIME_URL", "TOOLHUB_URL", "KNOWLEDGE_URL", "STORAGE_URL", "SANDBOX_URL", "AGENTOS_NODE", "DSH_RUNNER", "WEB_DIR", "FUTURES_WEB_DIR", "MCP_ALLOWED_HOSTS", "SANDBOX_IMAGE", "LANGFUSE_URL"} {
@@ -131,6 +144,9 @@ func run(output string) error {
 			}
 		}
 		cfg["DB_MAX_CONNS"] = "3"
+		if role == "sources" {
+			cfg["SOURCE_ALLOWED_HOSTS"] = servicehost.Env("SOURCE_ALLOWED_HOSTS", strings.Join(sources.DefaultHosts, ","))
+		}
 		cfg["SERVICE_TOKEN"] = identities[role]
 		cfg["SERVICE_PEERS"] = string(contracts.JSON(peers))
 		cfg["GOMEMLIMIT"] = "96MiB"
@@ -164,6 +180,9 @@ func run(output string) error {
 		}
 		if role == "knowledge" || role == "indexer" {
 			schema = "knowledge"
+		}
+		if role == "sources" {
+			schema = "sources"
 		}
 		password := contracts.ID() + contracts.ID()
 		old := map[string]string{}

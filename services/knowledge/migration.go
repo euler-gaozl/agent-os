@@ -46,7 +46,7 @@ func ImportLegacy(ctx context.Context, p *pgxpool.Pool) error {
 		`INSERT INTO documents SELECT d.* FROM public.documents d WHERE d.id IN(SELECT document_id FROM public.knowledge_files) ON CONFLICT DO NOTHING`,
 		`INSERT INTO artifacts SELECT a.* FROM public.artifacts a WHERE a.hash IN(SELECT artifact_hash FROM public.knowledge_files) ON CONFLICT DO NOTHING`,
 		`INSERT INTO artifact_refs SELECT r.* FROM public.artifact_refs r WHERE r.root IN(SELECT 'knowledge:'||id FROM public.knowledge_files) ON CONFLICT DO NOTHING`,
-		`INSERT INTO knowledge_files SELECT * FROM public.knowledge_files ON CONFLICT DO NOTHING`,
+		`INSERT INTO knowledge_files(id,kb_id,kb_revision,document_id,artifact_hash,name,status,error,track_id,config,receipt,created_at,updated_at) SELECT id,kb_id,kb_revision,document_id,artifact_hash,name,status,error,track_id,config,receipt,created_at,updated_at FROM public.knowledge_files ON CONFLICT DO NOTHING`,
 		`INSERT INTO knowledge_chunks(id,file_id,ordinal,content) SELECT id,file_id,ordinal,content FROM public.knowledge_chunks ON CONFLICT DO NOTHING`,
 		`INSERT INTO service_migrations(version) VALUES(1)`,
 	} {

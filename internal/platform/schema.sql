@@ -77,3 +77,6 @@ CREATE INDEX IF NOT EXISTS knowledge_chunks_search ON knowledge_chunks USING gin
 CREATE INDEX IF NOT EXISTS knowledge_chunks_search_pending ON knowledge_chunks(id) WHERE search_vector IS NULL;
 CREATE INDEX IF NOT EXISTS calls_run_kind ON calls(run_id,kind);
 CREATE INDEX IF NOT EXISTS model_attempts_call ON model_attempts(call_id);
+ALTER TABLE knowledge_files ADD COLUMN IF NOT EXISTS name_vector tsvector;
+CREATE INDEX IF NOT EXISTS knowledge_files_name_search ON knowledge_files USING gin(name_vector);
+CREATE INDEX IF NOT EXISTS knowledge_files_name_pending ON knowledge_files(id) WHERE name_vector IS NULL;

@@ -37,7 +37,7 @@ jobs:
       - run: go vet ./...
       - run: node scripts/check-secrets.mjs
       - run: go test -race -count=1 ./...
-      - run: pnpm install --frozen-lockfile && pnpm run build
+      - run: pnpm install --frozen-lockfile && pnpm test && pnpm run build
         working-directory: web
   services:
     runs-on: ubuntu-latest
