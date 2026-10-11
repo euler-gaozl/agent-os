@@ -6,7 +6,17 @@ const dc=(...args)=>execFileSync('docker',['compose','-f','compose.yaml','-f','d
 const docker=(...args)=>execFileSync('docker',args,{encoding:'utf8',timeout:30000,stdio:['pipe','pipe','pipe']}).trim();
 // Crash the application process. `docker kill` is an operator stop and can
 // suppress restart policy, so it is not a valid supervisor recovery test.
-const crash=id=>docker('exec','--user','10001',id,'sh','-c','kill -KILL "$(pidof service)"');
+const crash=id=>{
+ const before=JSON.parse(docker('inspect',id))[0].RestartCount;
+ try{docker('exec','--user','10001',id,'sh','-c','target=$(pidof service); test -n "$target" || exit 4; kill -KILL "$target"')}
+ catch(e){
+  // Killing the application can make container init exit before this exec
+  // shell returns; Docker then kills the shell too. Accept only SIGKILL's
+  // exit status here, and still require observed restart/fenced recovery.
+  if(e.status!==137)throw e;
+ }
+ return before;
+};
 const sql=q=>dc('exec','-T','postgres','psql','-U','agentos','-d','agentos','-At','-v','ON_ERROR_STOP=1','-c',q);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const until=async(fn,label,seconds=90)=>{const end=Date.now()+seconds*1000;while(Date.now()<end){try{const v=await fn();if(v)return v}catch{}await sleep(1000)}throw Error('Timeout: '+label)};
@@ -56,7 +66,8 @@ try{
  await until(()=>sql("SELECT count(*) FROM calls WHERE run_id='"+run.id+"' AND request->>'name'='note_save' AND status='completed'")==='1','first durable tool receipt');
  const owner=sql("SELECT hostname FROM instances WHERE id=(SELECT owner FROM runs WHERE id='"+run.id+"')");assert(owner);
  const workers=dc('ps','-q','worker').split('\n');const victim=workers.find(id=>JSON.parse(docker('inspect',id))[0].Config.Hostname===owner);assert(victim,'owner container');
- crash(victim);
+ const workerRestarts=crash(victim);
+ await until(()=>JSON.parse(docker('inspect',victim))[0].RestartCount>workerRestarts,'worker supervisor restart',60);
  const completed=await until(async()=>{const r=await request('/tasks/'+run.id,undefined,{business:true});if(r.status==='failed'||r.status==='needs_review')throw Error(JSON.stringify(r));return r.status==='completed'?r:null},'DSH task recovery',150);
  assert.match(completed.result,/Controlled/);
  assert.equal(sql("SELECT count(*) FROM documents WHERE title='CI durable receipt'"),'1');
