@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/euler-gaozl/agent-os/internal/contracts"
@@ -332,18 +334,48 @@ func (s *Store) CheckNext(ctx context.Context, owner string) (bool, error) {
 	return true, tx.Commit(ctx)
 }
 func (s *Store) Monitor(ctx context.Context, owner string) error {
-	tick := time.NewTicker(time.Second)
-	defer tick.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-tick.C:
-			if _, e := s.CheckNext(ctx, owner); e != nil && ctx.Err() == nil {
-				return fmt.Errorf("ToolHub monitor: %w", e)
-			}
-		}
+	return s.MonitorWorkers(ctx, owner, 2)
+}
+
+// Probe work must not take down the catalog API after a transient database
+// error. Bounded workers also prevent one slow MCP from blocking all checks.
+func (s *Store) MonitorWorkers(ctx context.Context, owner string, workers int) error {
+	if workers < 1 || workers > 8 {
+		return errors.New("ToolHub probe workers must be 1..8")
 	}
+	var wg sync.WaitGroup
+	for worker := 0; worker < workers; worker++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			failures := 0
+			for ctx.Err() == nil {
+				worked, e := s.CheckNext(ctx, fmt.Sprintf("%s/probe-%d", owner, worker))
+				delay := time.Second
+				if e != nil {
+					failures = min(failures+1, 5)
+					delay = time.Duration(1<<failures) * time.Second
+					if ctx.Err() == nil {
+						slog.Warn("toolhub probe deferred", "worker", worker, "retry_seconds", delay.Seconds())
+					}
+				} else {
+					failures = 0
+					if worked {
+						continue
+					}
+				}
+				timer := time.NewTimer(delay)
+				select {
+				case <-ctx.Done():
+					timer.Stop()
+					return
+				case <-timer.C:
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	return ctx.Err()
 }
 func (s *Store) Audit(ctx context.Context, kind, id string, rev int, after int64) ([]map[string]any, error) {
 	rows, e := s.DB.Query(ctx, "SELECT seq,action,actor,details,created_at FROM asset_audit WHERE kind=$1 AND id=$2 AND revision=$3 AND seq>$4 ORDER BY seq LIMIT 100", kind, id, rev, after)
