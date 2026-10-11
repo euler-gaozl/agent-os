@@ -1,0 +1,126 @@
+name: agent-os
+x-environment: &environment
+  DATABASE_URL: postgres://agentos:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/agentos?sslmode=disable
+  SERVICE_TOKEN: ${SERVICE_TOKEN:?set SERVICE_TOKEN}
+  ADMIN_TOKEN: ${ADMIN_TOKEN:?set ADMIN_TOKEN}
+  MASTER_KEY: ${MASTER_KEY:?set MASTER_KEY}
+  DEV_LOCAL: '0'
+  TOOLHUB_URL: http://toolhub:8091
+  STORAGE_URL: http://storage:8092
+  SANDBOX_URL: http://sandbox:8093
+  REGISTRY_URL: http://registry:8096
+  RUNTIME_URL: http://runtime:8094
+  KNOWLEDGE_URL: http://knowledge:8095
+x-service: &service
+  build: .
+  image: agent-os:0.3.0
+  restart: unless-stopped
+  read_only: true
+  tmpfs: [/tmp]
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  depends_on:
+    migrate: {condition: service_completed_successfully}
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: agentos
+      POSTGRES_DB: agentos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes: [postgres-data:/var/lib/postgresql]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U agentos -d agentos']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  migrate:
+    build: .
+    image: agent-os:0.3.0
+    environment: *environment
+    command: [--role, migrate]
+    depends_on:
+      postgres: {condition: service_healthy}
+  seed:
+    <<: *service
+    environment: *environment
+    command: [--role, seed]
+    restart: 'no'
+  control:
+    <<: *service
+    environment:
+      <<: *environment
+      LISTEN: 0.0.0.0:8090
+    command: [--role, control]
+  gateway:
+    image: nginx:1.28-alpine
+    volumes: ['./deploy/nginx.conf:/etc/nginx/nginx.conf:ro']
+    ports: ['127.0.0.1:8090:8090']
+    depends_on: [control]
+    restart: unless-stopped
+  worker:
+    <<: *service
+    environment: *environment
+    command: [--role, worker]
+  registry:
+    <<: *service
+    environment:
+      <<: *environment
+      LISTEN: 0.0.0.0:8096
+    command: [--role, registry]
+  runtime:
+    <<: *service
+    environment:
+      <<: *environment
+      LISTEN: 0.0.0.0:8094
+    command: [--role, runtime]
+  knowledge:
+    <<: *service
+    environment:
+      <<: *environment
+      LISTEN: 0.0.0.0:8095
+    command: [--role, knowledge]
+  indexer:
+    <<: *service
+    environment: *environment
+    command: [--role, indexer]
+  futures:
+    <<: *service
+    environment:
+      <<: *environment
+      LISTEN: 0.0.0.0:8098
+      BUSINESS_TOKEN: ${BUSINESS_TOKEN:?set BUSINESS_TOKEN}
+    command: [--role, futures]
+    ports: ['127.0.0.1:8098:8098']
+  toolhub:
+    <<: *service
+    environment:
+      <<: *environment
+      LISTEN: 0.0.0.0:8091
+    command: [--role, toolhub]
+  storage:
+    <<: *service
+    environment:
+      <<: *environment
+      LISTEN: 0.0.0.0:8092
+    command: [--role, storage]
+  sandbox:
+    <<: *service
+    profiles: [sandbox]
+    user: '0'
+    environment:
+      <<: *environment
+      LISTEN: 0.0.0.0:8093
+      SANDBOX_IMAGE: ${SANDBOX_IMAGE:-}
+    volumes: ['${SANDBOX_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock']
+    command: [--role, sandbox]
+  telemetry:
+    <<: *service
+    profiles: [telemetry]
+    environment:
+      <<: *environment
+      LANGFUSE_URL: ${LANGFUSE_URL:-}
+    command: [--role, telemetry]
+volumes:
+  postgres-data:

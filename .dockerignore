@@ -1,0 +1,9 @@
+.git
+.state
+.tools
+bin
+web/node_modules
+web/dist
+web/dist-futures
+*.log
+.env*

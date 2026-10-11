@@ -48,3 +48,13 @@ coverage/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Local platform tools, executable outputs and test state
+.tools/
+.tmp/
+bin/
+web/dist/
+web/dist-futures/
+*.exe
+*.test
+*.out

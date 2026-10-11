@@ -1,0 +1,20 @@
+flowchart TB
+  Console[统一中台：配置 · 测试 · 发布] --> Registry[Registry：不可变 Agent 版本]
+  Resources[Skill · MCP · 提示词 · 知识库] --> Registry
+  Registry --> Published[Agent 发布设置]
+  Business[期货业务工作台] --> BFF[独立业务 BFF]
+  Published --> BFF
+  BFF --> Runtime[Runtime：持久化任务队列]
+  Console --> Runtime
+  Runtime --> Workers[Go Worker 多实例：租约 · 取消 · 子任务]
+  Workers --> DSH[DSH 官方核心：循环 · 会话 · Compact]
+  DSH --> Bridge[模型与工具桥接：持久化响应重放]
+  Bridge --> Models[Go 模型传输：凭证 · 调用账本]
+  Bridge --> ToolHub[ToolHub：参数验证 · 业务效果 · 回执]
+  ToolHub --> Knowledge[Knowledge 服务]
+  ToolHub --> Sandbox[容器 Sandbox]
+  ToolHub --> MCP[外部 MCP]
+  Workers --> PG[(PostgreSQL：任务状态与版本)]
+  Bridge --> PG
+  ToolHub --> PG
+  Bridge --> Artifacts[原始 DSH 事件与证据产物]
