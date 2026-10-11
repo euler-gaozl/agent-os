@@ -61,3 +61,11 @@ CREATE TABLE IF NOT EXISTS business_runs(
  commodity text NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
 INSERT INTO schema_versions(version) VALUES(3) ON CONFLICT DO NOTHING;
 CREATE UNIQUE INDEX IF NOT EXISTS knowledge_graph_endpoint ON resources((spec->>'endpoint')) WHERE kind='knowledge' AND spec->>'engine'='lightrag';
+CREATE TABLE IF NOT EXISTS harness_exchanges(
+ run_id text NOT NULL REFERENCES runs(id), seq integer NOT NULL, method text NOT NULL,
+ input_hash text NOT NULL, request jsonb NOT NULL, rule_revision bigint NOT NULL,
+ response jsonb, PRIMARY KEY(run_id,seq));
+ALTER TABLE business_runs ADD COLUMN IF NOT EXISTS agent_id text;
+ALTER TABLE business_runs ADD COLUMN IF NOT EXISTS agent_revision integer;
+ALTER TABLE runs ADD COLUMN IF NOT EXISTS engine text NOT NULL DEFAULT 'legacy-go';
+ALTER TABLE runs ALTER COLUMN engine SET DEFAULT 'dsh-0.2.0-rc.2';

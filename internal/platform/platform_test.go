@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -21,6 +22,11 @@ const testToken = "test-only-service-token-32-characters-long"
 
 func testStore(t testing.TB) (*Store, string) {
 	t.Helper()
+	entry, pathErr := filepath.Abs("../../harness/runner.mjs")
+	if pathErr != nil {
+		t.Fatal(pathErr)
+	}
+	t.Setenv("DSH_RUNNER", entry)
 	base := os.Getenv("TEST_DATABASE_URL")
 	if base == "" {
 		t.Skip("TEST_DATABASE_URL absent; real PostgreSQL integration test not executed")
@@ -301,7 +307,7 @@ func completion(w http.ResponseWriter, m Message) {
 		return "stop"
 	}()}}, "usage": map[string]int{"total_tokens": 7}})
 }
-func TestRecoveryAfterToolCommitBeforeCheckpoint(t *testing.T) {
+func TestLegacyRecoveryAfterToolCommitBeforeCheckpoint(t *testing.T) {
 	s, _ := testStore(t)
 	ctx := context.Background()
 	var modelCalls atomic.Int32
@@ -313,6 +319,8 @@ func TestRecoveryAfterToolCommitBeforeCheckpoint(t *testing.T) {
 	snap := basicSnapshot(model.URL)
 	submit(t, s, snap)
 	r := claim(t, s, "old")
+	_, _ = s.DB.Exec(ctx, "UPDATE runs SET engine='legacy-go' WHERE id=$1", r.ID)
+	r.Engine = "legacy-go"
 	tc := ToolCall{ID: "save", Type: "function", Function: FunctionCall{Name: "note_save", Arguments: string(invocation(r).Arguments)}}
 	r.State.Messages = append(r.State.Messages, Message{Role: "assistant", ToolCalls: []ToolCall{tc}})
 	r.Step = 1
@@ -359,6 +367,8 @@ func startTestWorker(t *testing.T, dsn, hub, id string) *exec.Cmd {
 		t.Fatal(e)
 	}
 	cmd := exec.Command(exe, "-test.run=^TestWorkerSubprocess$")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	cmd.Env = append(os.Environ(), "AGENTOS_WORKER_TEST=1", "TEST_DATABASE_URL="+dsn, "TEST_TOOLHUB_URL="+hub, "TEST_WORKER_ID="+id)
 	if e = cmd.Start(); e != nil {
 		t.Fatal(e)
@@ -424,7 +434,8 @@ func TestRealProcessKillAndTakeover(t *testing.T) {
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
-	t.Fatal("replacement process did not recover task")
+	last, _ := s.Run(context.Background(), id)
+	t.Fatalf("replacement process did not recover task: %s %s", last.Status, last.State.Error)
 }
 
 func TestMCPHandshakeAndSSE(t *testing.T) {

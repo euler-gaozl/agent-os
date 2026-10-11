@@ -19,28 +19,31 @@ type BusinessAction struct {
 }
 
 func (s *Server) futuresRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /api/actions", wrap(func(w http.ResponseWriter, r *http.Request) error {
+	mux.HandleFunc("GET /api/agents", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		resources, e := s.Store.Resources(r.Context())
 		if e != nil {
 			return e
 		}
 		out := []any{}
 		for _, resource := range resources {
-			if resource.Kind != "action" {
+			if resource.Kind != "agent" {
 				continue
 			}
-			var a BusinessAction
+			var a Agent
 			if e = json.Unmarshal(resource.Spec, &a); e != nil {
 				return e
 			}
-			out = append(out, map[string]any{"id": resource.ID, "revision": resource.Revision, "name": a.Name, "description": a.Description})
+			if !a.Publication.Enabled || a.Publication.App != "futures" {
+				continue
+			}
+			out = append(out, map[string]any{"id": resource.ID, "revision": resource.Revision, "name": a.Publication.Name, "description": a.Publication.Description})
 		}
 		jsonResponse(w, 200, out)
 		return nil
 	}))
 	mux.HandleFunc("POST /api/tasks", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var in struct {
-			Action    Ref    `json:"action"`
+			Agent     Ref    `json:"agent"`
 			Commodity string `json:"commodity"`
 			Period    string `json:"period"`
 			Question  string `json:"question"`
@@ -51,12 +54,18 @@ func (s *Server) futuresRoutes(mux *http.ServeMux) {
 		if strings.TrimSpace(in.Commodity) == "" || len(in.Commodity) > 100 || len(in.Period) > 300 || len(in.Question) > 20000 {
 			return errors.New("commodity and bounded research question required")
 		}
-		var action BusinessAction
-		if e := s.Store.Resource(r.Context(), "action", in.Action, &action); e != nil {
+		var agent Agent
+		if e := s.Store.Resource(r.Context(), "agent", in.Agent, &agent); e != nil {
 			return e
 		}
-		// Business requests choose a published capability, never credentials or low-level tools.
-		body := JSON(map[string]any{"agent": action.Agent, "task": fmt.Sprintf("%s\n品种：%s\n资料时间范围：%s\n用户问题：%s", action.Instruction, in.Commodity, in.Period, in.Question), "constraints": action.Constraints})
+		var latest int
+		if e := s.Store.DB.QueryRow(r.Context(), "SELECT max(revision) FROM resources WHERE kind='agent' AND id=$1", in.Agent.ID).Scan(&latest); e != nil {
+			return e
+		}
+		if !agent.Publication.Enabled || agent.Publication.App != "futures" || latest != in.Agent.Revision {
+			return errors.New("agent is unpublished or version changed; refresh the workspace")
+		}
+		body := JSON(map[string]any{"agent": in.Agent, "task": fmt.Sprintf("品种：%s\n资料时间范围：%s\n用户问题：%s", in.Commodity, in.Period, in.Question)})
 		request, e := http.NewRequestWithContext(r.Context(), "POST", s.RuntimeURL+"/v1/runs", bytes.NewReader(body))
 		if e != nil {
 			return e
@@ -85,7 +94,7 @@ func (s *Server) futuresRoutes(mux *http.ServeMux) {
 		if e = json.Unmarshal(raw, &accepted); e != nil {
 			return e
 		}
-		if _, e = s.Store.DB.Exec(r.Context(), "INSERT INTO business_runs(run_id,action_id,action_revision,commodity) VALUES($1,$2,$3,$4) ON CONFLICT(run_id) DO NOTHING", accepted.ID, in.Action.ID, in.Action.Revision, in.Commodity); e != nil {
+		if _, e = s.Store.DB.Exec(r.Context(), "INSERT INTO business_runs(run_id,action_id,action_revision,commodity,agent_id,agent_revision) VALUES($1,'',0,$4,$2,$3) ON CONFLICT(run_id) DO NOTHING", accepted.ID, in.Agent.ID, in.Agent.Revision, in.Commodity); e != nil {
 			return e
 		}
 		jsonResponse(w, 201, map[string]string{"id": accepted.ID})

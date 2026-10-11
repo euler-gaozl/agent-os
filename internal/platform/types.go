@@ -19,9 +19,10 @@ type Ref struct {
 	Revision int    `json:"revision"`
 }
 type ModelConfig struct {
-	BaseURL string `json:"base_url"`
-	Model   string `json:"model"`
-	KeyEnv  string `json:"key_env"`
+	MaxTokens int    `json:"max_tokens,omitempty"`
+	BaseURL   string `json:"base_url"`
+	Model     string `json:"model"`
+	KeyEnv    string `json:"key_env"`
 }
 type Tool struct {
 	Name        string          `json:"name"`
@@ -42,18 +43,21 @@ type Skill struct {
 	Content string `json:"content"`
 }
 type Agent struct {
-	Name         string      `json:"name"`
-	Prompt       string      `json:"prompt"`
-	Prompts      []Ref       `json:"prompts"`
-	Skills       []Ref       `json:"skills"`
-	Connectors   []Ref       `json:"connectors"`
-	Tools        []string    `json:"tools"`
-	Model        ModelConfig `json:"model"`
-	MaxSteps     int         `json:"max_steps"`
-	ContextBytes int         `json:"context_bytes"`
-	MaxChildren  int         `json:"max_children"`
-	ChildAgents  []Ref       `json:"child_agents"`
-	Knowledge    []Ref       `json:"knowledge"`
+	ContextTokens int         `json:"context_tokens"`
+	Constraints   []string    `json:"constraints,omitempty"`
+	Publication   Publication `json:"publication"`
+	Name          string      `json:"name"`
+	Prompt        string      `json:"prompt"`
+	Prompts       []Ref       `json:"prompts"`
+	Skills        []Ref       `json:"skills"`
+	Connectors    []Ref       `json:"connectors"`
+	Tools         []string    `json:"tools"`
+	Model         ModelConfig `json:"model"`
+	MaxSteps      int         `json:"max_steps"`
+	ContextBytes  int         `json:"context_bytes"`
+	MaxChildren   int         `json:"max_children"`
+	ChildAgents   []Ref       `json:"child_agents"`
+	Knowledge     []Ref       `json:"knowledge"`
 }
 type Snapshot struct {
 	Agent      Agent                    `json:"agent"`
@@ -80,15 +84,17 @@ type Message struct {
 	ReasoningContent string     `json:"reasoning_content,omitempty"`
 }
 type RunState struct {
-	Messages       []Message       `json:"messages"`
-	Summary        string          `json:"summary,omitempty"`
-	Pinned         []string        `json:"pinned"`
-	PlanRevision   int64           `json:"plan_revision"`
-	ChildrenLoaded map[string]bool `json:"children_loaded,omitempty"`
-	Result         string          `json:"result,omitempty"`
-	Error          string          `json:"error,omitempty"`
+	HarnessArtifact string          `json:"harness_artifact,omitempty"`
+	Messages        []Message       `json:"messages"`
+	Summary         string          `json:"summary,omitempty"`
+	Pinned          []string        `json:"pinned"`
+	PlanRevision    int64           `json:"plan_revision"`
+	ChildrenLoaded  map[string]bool `json:"children_loaded,omitempty"`
+	Result          string          `json:"result,omitempty"`
+	Error           string          `json:"error,omitempty"`
 }
 type Run struct {
+	Engine          string    `json:"engine"`
 	ID              string    `json:"id"`
 	ParentID        *string   `json:"parent_id"`
 	Task            string    `json:"task"`
@@ -162,6 +168,15 @@ func Has(values []string, s string) bool {
 	return false
 }
 func (a *Agent) Validate() error {
+	if a.ContextTokens == 0 {
+		a.ContextTokens = 32000
+	}
+	if a.ContextTokens < 8192 || a.ContextTokens > 1000000 {
+		return errors.New("context_tokens outside 8192..1000000")
+	}
+	if e := a.Publication.Validate(); e != nil {
+		return e
+	}
 	if strings.TrimSpace(a.Name) == "" || strings.TrimSpace(a.Prompt) == "" {
 		return errors.New("name and prompt required")
 	}

@@ -14,11 +14,9 @@ import (
 func TestBusinessUsesRuntimeAndHidesPlatformConfiguration(t *testing.T) {
 	s, _ := testStore(t)
 	ctx := context.Background()
-	a, e := s.PutResource(ctx, "agent", "fixture", JSON(basicSnapshot("http://127.0.0.1").Agent))
-	if e != nil {
-		t.Fatal(e)
-	}
-	action, e := s.PutResource(ctx, "action", "fixture-action", JSON(BusinessAction{Name: "Fixture capability", Description: "Protocol test", Agent: Ref{a.ID, a.Revision}, Instruction: "fixture research"}))
+	agent := basicSnapshot("http://127.0.0.1").Agent
+	agent.Publication = Publication{true, "futures", "Fixture research", "Protocol test"}
+	a, e := s.PutResource(ctx, "agent", "fixture", JSON(agent))
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -46,11 +44,11 @@ func TestBusinessUsesRuntimeAndHidesPlatformConfiguration(t *testing.T) {
 		}
 		return b
 	}
-	actions := send("GET", "/api/actions", nil)
+	actions := send("GET", "/api/agents", nil)
 	if strings.Contains(string(actions), "instruction") || strings.Contains(string(actions), "agent") {
 		t.Fatal("private action configuration exposed")
 	}
-	input := map[string]any{"action": Ref{action.ID, action.Revision}, "commodity": "test-fixture", "question": "fixture only", "period": "test"}
+	input := map[string]any{"agent": Ref{a.ID, a.Revision}, "commodity": "test-fixture", "question": "fixture only", "period": "test"}
 	raw := send("POST", "/api/tasks", input)
 	var accepted struct {
 		ID string `json:"id"`

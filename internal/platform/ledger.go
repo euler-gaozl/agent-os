@@ -54,13 +54,13 @@ func (s *Store) BeginModel(ctx context.Context, r Run, id string, request []byte
 		return "", nil, ErrFence
 	}
 	var status, hash string
-	var response []byte
-	e = tx.QueryRow(ctx, "SELECT status,request_hash,response FROM calls WHERE id=$1", id).Scan(&status, &hash, &response)
+	var response, previousRequest []byte
+	e = tx.QueryRow(ctx, "SELECT status,request_hash,response,request FROM calls WHERE id=$1", id).Scan(&status, &hash, &response, &previousRequest)
 	if e != nil && !errors.Is(e, pgx.ErrNoRows) {
 		return "", nil, e
 	}
 	if e == nil {
-		if hash != Hash(request) {
+		if hash != Hash(request) && canonicalHash(previousRequest) != canonicalHash(request) {
 			return "", nil, errors.New("model request changed within same logical call")
 		}
 		if status == "completed" {
@@ -222,7 +222,7 @@ func (s *Store) Constraints(ctx context.Context, id string, values []string) err
 	if e != nil {
 		return e
 	}
-	tag, e := tx.Exec(ctx, "UPDATE runs SET constraints=$2,rule_revision=rule_revision+1,updated_at=now() WHERE id=ANY($1) AND status IN('queued','running','waiting_unknown','waiting_children','failed')", ids, JSON(values))
+	tag, e := tx.Exec(ctx, "UPDATE runs SET constraints=COALESCE(snapshot#>'{agent,constraints}','[]'::jsonb)||$2::jsonb,rule_revision=rule_revision+1,updated_at=now() WHERE id=ANY($1) AND status IN('queued','running','waiting_unknown','waiting_children','failed')", ids, JSON(values))
 	if e != nil {
 		return e
 	}

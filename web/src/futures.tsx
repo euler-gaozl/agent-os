@@ -47,15 +47,15 @@ function Futures() {
     input = useRef<HTMLTextAreaElement>(null);
   const load = useCallback(async () => {
     const [a, t, r] = await Promise.all([
-      api<Action[]>("/actions"),
+      api<Action[]>("/agents"),
       api<any[]>("/tasks"),
       api("/readiness"),
     ]);
     setActions(
       [...a].sort(
         (left, right) =>
-          Number(right.id === "supply-inventory") -
-          Number(left.id === "supply-inventory"),
+          Number(right.id === "published-supply-inventory") -
+          Number(left.id === "published-supply-inventory"),
       ),
     );
     setTasks(t);
@@ -108,7 +108,7 @@ function Futures() {
       const r = await api(
         "/tasks",
         {
-          action: { id: a.id, revision: a.revision },
+          agent: { id: a.id, revision: a.revision },
           commodity,
           period,
           question,

@@ -378,7 +378,13 @@ func (s *Server) registryRoutes(mux *http.ServeMux) {
 		if e != nil {
 			return e
 		}
-		jsonResponse(w, 200, v)
+		visible := []Resource{}
+		for _, item := range v {
+			if item.Kind != "action" {
+				visible = append(visible, item)
+			}
+		}
+		jsonResponse(w, 200, visible)
 		return nil
 	}))
 	mux.HandleFunc("POST /v1/resources", wrap(func(w http.ResponseWriter, r *http.Request) error {
@@ -389,7 +395,7 @@ func (s *Server) registryRoutes(mux *http.ServeMux) {
 		if e := decode(w, r, &in); e != nil {
 			return e
 		}
-		if !safeName.MatchString(in.ID) || !Has([]string{"agent", "skill", "prompt", "connector", "knowledge", "action"}, in.Kind) {
+		if !safeName.MatchString(in.ID) || !Has([]string{"agent", "skill", "prompt", "connector", "knowledge"}, in.Kind) {
 			return errors.New("invalid resource kind or id")
 		}
 		switch in.Kind {
@@ -411,14 +417,6 @@ func (s *Server) registryRoutes(mux *http.ServeMux) {
 				}
 			}
 			in.Spec = JSON(kb)
-		case "action":
-			var a BusinessAction
-			if e := json.Unmarshal(in.Spec, &a); e != nil {
-				return e
-			}
-			if a.Name == "" || a.Instruction == "" || a.Agent.ID == "" || a.Agent.Revision < 1 {
-				return errors.New("action requires name, instruction and versioned agent")
-			}
 		case "agent":
 			var a Agent
 			if e := json.Unmarshal(in.Spec, &a); e != nil {

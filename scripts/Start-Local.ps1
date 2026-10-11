@@ -18,6 +18,9 @@ if (Test-Path -LiteralPath $manifestPath) {
 $occupied = Get-NetTCPConnection -State Listen -LocalPort 8090,8091,8092,8093,8094,8095,8096,8098 -ErrorAction SilentlyContinue
 if ($occupied) { throw 'A platform port is occupied. Stop the owning platform processes before starting.' }
 $databaseSettings = Get-Content -LiteralPath $config -Raw | ConvertFrom-Json
+$nodeCommand = if ($databaseSettings.AGENTOS_NODE) { $databaseSettings.AGENTOS_NODE } elseif ($env:AGENTOS_NODE) { $env:AGENTOS_NODE } else { 'node' }
+if (-not (Get-Command $nodeCommand -ErrorAction SilentlyContinue)) { throw 'Node 24 is required for DSH. Set AGENTOS_NODE to its executable path.' }
+if (-not (Test-Path -LiteralPath (Join-Path $repoRoot 'harness\node_modules\@deepseek-ai\dsh-agent-loop\package.json'))) { throw 'Install the pinned DSH packages: pnpm --dir harness install --frozen-lockfile' }
 $databaseUri = [Uri]$databaseSettings.DATABASE_URL
 if ($databaseUri.Host -eq '127.0.0.1' -and $databaseUri.Port -eq 55432) { & (Join-Path $PSScriptRoot 'Start-Database.ps1') }
 $previousInstance = $env:INSTANCE_ID

@@ -48,19 +48,11 @@ import {
 } from "./shared";
 import "./console.css";
 
-type Page =
-  | "agents"
-  | "tools"
-  | "knowledge"
-  | "actions"
-  | "runs"
-  | "services"
-  | "settings";
+type Page = "agents" | "tools" | "knowledge" | "runs" | "services" | "settings";
 const nav = [
   { id: "agents", name: "自定义 Agent", icon: Bot },
   { id: "tools", name: "ToolHub", icon: Box },
   { id: "knowledge", name: "知识库", icon: BookOpen },
-  { id: "actions", name: "业务能力", icon: Workflow },
   { id: "runs", name: "运行记录", icon: Activity },
   { id: "services", name: "服务与实例", icon: Network },
 ];
@@ -75,11 +67,14 @@ const blankAgent = () => ({
   tools: ["knowledge_search", "note_save", "artifact_read", "document_read"],
   model: {
     base_url: "https://api.deepseek.com",
-    model: "deepseek-chat",
+    model: "deepseek-flash",
     key_env: "DEEPSEEK_API_KEY",
   },
+  publication: { enabled: false, app: "futures", name: "", description: "" },
+  constraints: [],
   max_steps: 12,
   context_bytes: 64000,
+  context_tokens: 32000,
   max_children: 2,
 });
 function Console() {
@@ -239,7 +234,7 @@ function Console() {
             <div>
               我的工作区
               <small>
-                <i className="online-dot" /> 服务在线 · v0.3
+                <i className="online-dot" /> 服务在线 · v0.4
               </small>
             </div>
             <MoreHorizontal size={17} />
@@ -293,7 +288,6 @@ function Console() {
                       agents: "AGENTS",
                       tools: "CAPABILITY LIBRARY",
                       knowledge: "KNOWLEDGE",
-                      actions: "BUSINESS CAPABILITIES",
                       runs: "OBSERVABILITY",
                       services: "INFRASTRUCTURE",
                       settings: "MODEL ACCESS",
@@ -310,8 +304,6 @@ function Console() {
                         "统一管理 Skill、MCP 与提示词，按版本为 Agent 提供能力。",
                       knowledge:
                         "保留原始资料与出处，为 Agent 提供可追溯的检索服务。",
-                      actions:
-                        "把一个完整业务流程发布为简单入口，业务端只需提交任务。",
                       runs: "查看执行结果、调用回执和恢复记录。",
                       services: "各服务独立运行，共享当前工作区的持久化状态。",
                       settings: "统一管理模型访问凭证，Agent 通过名称引用。",
@@ -355,15 +347,6 @@ function Console() {
                 >
                   <Plus size={16} />
                   创建知识库
-                </button>
-              )}
-              {page === "actions" && (
-                <button
-                  className="button primary"
-                  onClick={() => setDialog({ kind: "action" })}
-                >
-                  <Plus size={16} />
-                  发布业务能力
                 </button>
               )}
             </header>
@@ -426,6 +409,7 @@ function Console() {
                         <footer>
                           <span>
                             <i className="subtle-dot" />
+                            {r.spec.publication?.enabled ? "已发布 · " : ""}
                             {r.spec.model.model}
                           </span>
                           <ArrowUpRight size={16} />
@@ -453,9 +437,9 @@ function Console() {
                   </div>
                   <button
                     className="text-button"
-                    onClick={() => change("actions")}
+                    onClick={() => setEditor(null)}
                   >
-                    管理业务能力 <ArrowUpRight size={15} />
+                    配置与发布 Agent <ArrowUpRight size={15} />
                   </button>
                 </div>
               </>
@@ -473,36 +457,6 @@ function Console() {
                 notify={notify}
                 edit={(r) => setDialog({ kind: "knowledge", resource: r })}
               />
-            )}
-            {page === "actions" && (
-              <div className="agent-grid">
-                {resources
-                  .filter((r) => r.kind === "action")
-                  .map((r) => (
-                    <button
-                      className="agent-card"
-                      key={r.id}
-                      onClick={() => setDialog({ kind: "action", resource: r })}
-                    >
-                      <div className="card-top">
-                        <span className="agent-icon color-1">
-                          <Workflow size={23} />
-                        </span>
-                        <span className="version">v{r.revision}</span>
-                      </div>
-                      <h3>{r.spec.name}</h3>
-                      <p>{r.spec.description}</p>
-                      <div className="binding-summary">
-                        <Bot size={15} />
-                        {r.spec.agent.id} <span>v{r.spec.agent.revision}</span>
-                      </div>
-                      <footer>
-                        <span>已配置业务入口</span>
-                        <ArrowUpRight size={15} />
-                      </footer>
-                    </button>
-                  ))}
-              </div>
             )}
             {page === "runs" && <Runs runs={runs} notify={notify} />}
             {page === "services" && <Services status={status} />}
@@ -643,7 +597,10 @@ function AgentEditor({
   saved: (r: Resource) => Promise<void>;
   notify: (m: string) => void;
 }) {
-  const [draft, setDraft] = useState<any>(resource?.spec || blankAgent()),
+  const [draft, setDraft] = useState<any>({
+      ...blankAgent(),
+      ...resource?.spec,
+    }),
     [id, setID] = useState(resource?.id || ""),
     [tab, setTab] = useState("prompt"),
     [busy, setBusy] = useState(false),
@@ -695,7 +652,12 @@ function AgentEditor({
         });
         setRunID(accepted.id);
         notify("已保存版本并开始真实试运行。");
-      } else notify("Agent 已保存为新版本。");
+      } else
+        notify(
+          draft.publication?.enabled
+            ? `已发布 v${r.revision}，业务工作台现在使用这个版本。`
+            : "Agent 已保存为新版本。",
+        );
     } catch (e) {
       notify((e as Error).message);
     } finally {
@@ -728,7 +690,8 @@ function AgentEditor({
           disabled={busy}
           onClick={() => void persist()}
         >
-          {busy ? <Spinner /> : <Check size={15} />}保存版本
+          {busy ? <Spinner /> : <Check size={15} />}
+          {draft.publication?.enabled ? "保存并发布" : "保存版本"}
         </button>
       </div>
       <div className="editor-layout">
@@ -739,6 +702,7 @@ function AgentEditor({
               ["tools", "能力绑定"],
               ["knowledge", "知识库"],
               ["model", "模型与执行"],
+              ["publish", "发布"],
             ].map(([key, name]) => (
               <button
                 key={key}
@@ -778,6 +742,20 @@ function AgentEditor({
                     placeholder="你是一位……\n你的任务是……\n工作步骤……\n输出要求……"
                     value={draft.prompt}
                     onChange={(e) => update("prompt", e.target.value)}
+                  />
+                </Field>
+                <Field
+                  label="固定约束（每行一条）"
+                  hint="每次请求保留，独立于上下文摘要。"
+                >
+                  <textarea
+                    value={(draft.constraints || []).join("\n")}
+                    onChange={(e) =>
+                      update(
+                        "constraints",
+                        e.target.value.split("\n").filter(Boolean),
+                      )
+                    }
                   />
                 </Field>
                 <h3 className="section-label">复用提示词</h3>
@@ -864,8 +842,98 @@ function AgentEditor({
                 />
               </>
             )}
+            {tab === "publish" && (
+              <>
+                <div className="info-banner">
+                  <ArrowUpRight size={20} />
+                  <div>
+                    <b>把这个 Agent 放到业务工作台</b>
+                    <p>
+                      名称和说明会显示在业务工作台，用户点击后向这个 Agent
+                      提交任务。
+                    </p>
+                  </div>
+                </div>
+                <label className="binding-option">
+                  <input
+                    type="checkbox"
+                    checked={!!draft.publication?.enabled}
+                    onChange={(e) =>
+                      update("publication", {
+                        ...draft.publication,
+                        app: "futures",
+                        enabled: e.target.checked,
+                        name: draft.publication?.name || draft.name,
+                      })
+                    }
+                  />
+                  <span>
+                    <b>发布到期货研究工作台</b>
+                    <small>
+                      保存版本后生效；关闭并保存即可撤下入口，已有任务继续保留。
+                    </small>
+                  </span>
+                </label>
+                <Field label="业务端显示名称">
+                  <input
+                    value={draft.publication?.name || ""}
+                    placeholder={draft.name}
+                    onChange={(e) =>
+                      update("publication", {
+                        ...draft.publication,
+                        app: "futures",
+                        name: e.target.value,
+                      })
+                    }
+                  />
+                </Field>
+                <Field label="这位 Agent 能帮用户做什么">
+                  <textarea
+                    value={draft.publication?.description || ""}
+                    placeholder="例如：围绕供给变化和库存结构，收集并核对基本面证据。"
+                    onChange={(e) =>
+                      update("publication", {
+                        ...draft.publication,
+                        app: "futures",
+                        description: e.target.value,
+                      })
+                    }
+                  />
+                </Field>
+                <h3 className="section-label">期货工作台收集的任务参数</h3>
+                <div className="binding-list">
+                  {[
+                    ["品种", "必填，例如豆粕、甲醇"],
+                    ["资料时间范围", "近月、远月或指定日历区间"],
+                    ["研究问题", "用户这次要核对的具体问题"],
+                  ].map(([label, hint]) => (
+                    <div className="binding-option" key={label}>
+                      <FileText size={18} />
+                      <span>
+                        <b>{label}</b>
+                        <small>{hint}</small>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="field-hint">
+                  提示词、Skill、MCP、知识库与固定约束沿用本 Agent
+                  配置。业务端只显示名称、说明和任务结果。
+                </p>
+              </>
+            )}
             {tab === "model" && (
               <>
+                <div className="info-banner">
+                  <Bot size={20} />
+                  <div>
+                    <b>DeepSeek Harness</b>
+                    <p>
+                      DSH 执行 Agent
+                      循环与上下文压缩。中台管理任务、凭证和调用回执。
+                    </p>
+                  </div>
+                </div>
                 <h3 className="section-label">模型连接</h3>
                 <Field label="服务地址">
                   <input
@@ -906,7 +974,7 @@ function AgentEditor({
                 <div className="two-fields">
                   {[
                     ["max_steps", "最多模型步骤"],
-                    ["context_bytes", "请求上下文预算 / 字节"],
+                    ["context_tokens", "上下文预算 / 估算 tokens"],
                     ["max_children", "最多直属子任务"],
                   ].map(([key, name]) => (
                     <Field key={key} label={name}>
@@ -1238,9 +1306,6 @@ function ResourceDialog({
     } else if (kind === "connector") {
       const { name, endpoint, key_env, protocol, tools, read_only } = spec;
       clean = { name, endpoint, key_env, protocol, tools, read_only };
-    } else if (kind === "action") {
-      const { name, description, agent, instruction, constraints } = spec;
-      clean = { name, description, agent, instruction, constraints };
     } else {
       clean = { name: spec.name, content: spec.content };
     }
@@ -1256,7 +1321,6 @@ function ResourceDialog({
             connector: " MCP 连接",
             skill: " Skill",
             prompt: "提示词",
-            action: "业务能力",
           } as any
         )[kind]
       }
@@ -1495,49 +1559,6 @@ function ResourceDialog({
               新配置生成新版本。原文件保留，旧 Agent
               仍使用原绑定；新版本需重新上传并建索引。
             </p>
-          </>
-        )}
-        {kind === "action" && (
-          <>
-            <Field label="业务描述">
-              <input
-                value={spec.description}
-                onChange={(e) => set("description", e.target.value)}
-              />
-            </Field>
-            <Field label="执行 Agent">
-              <select
-                value={spec.agent.id + "@" + spec.agent.revision}
-                onChange={(e) => {
-                  const [id, revision] = e.target.value.split("@");
-                  set("agent", { id, revision: Number(revision) });
-                }}
-              >
-                <option value="">选择已保存的 Agent</option>
-                {resources
-                  .filter((r) => r.kind === "agent")
-                  .map((r) => (
-                    <option key={r.id} value={r.id + "@" + r.revision}>
-                      {r.spec.name} · v{r.revision}
-                    </option>
-                  ))}
-              </select>
-            </Field>
-            <Field label="这项能力的完整任务指令">
-              <textarea
-                className="code-editor"
-                value={spec.instruction}
-                onChange={(e) => set("instruction", e.target.value)}
-              />
-            </Field>
-            <Field label="业务约束（每行一条）">
-              <textarea
-                value={spec.constraints.join("\n")}
-                onChange={(e) =>
-                  set("constraints", e.target.value.split("\n").filter(Boolean))
-                }
-              />
-            </Field>
           </>
         )}
         {error && <div className="error-message">{error}</div>}
@@ -1895,11 +1916,28 @@ function Runs({ runs, notify }: { runs: any[]; notify: (m: string) => void }) {
         <Modal title="执行详情" close={() => setSelected(null)} wide>
           <div className="modal-body">
             <Badge state={selected.status} />
+            <p className="field-hint">
+              执行器：{selected.engine || "历史任务"}
+            </p>
             <h3>{selected.task}</h3>
             <article className="answer-text">
               {selected.state.result || selected.state.error || "等待执行结果…"}
             </article>
             <div className="button-row">
+              {selected.state.harness_artifact && (
+                <button
+                  className="button"
+                  onClick={() =>
+                    void downloadArtifact(
+                      selected.state.harness_artifact,
+                      `dsh-${selected.id}.json`,
+                    ).catch((e) => notify(e.message))
+                  }
+                >
+                  <FileText size={15} />
+                  下载完整 DSH 执行记录
+                </button>
+              )}
               <button className="button" onClick={() => void open(selected.id)}>
                 <RefreshCw size={15} />
                 更新详情

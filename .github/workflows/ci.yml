@@ -28,11 +28,13 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - run: go vet ./...
-      - run: go test -race -count=1 ./...
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
       - run: npm install -g pnpm@11.25.0
+      - run: pnpm install --frozen-lockfile
+        working-directory: harness
+      - run: go vet ./...
+      - run: go test -race -count=1 ./...
       - run: pnpm install --frozen-lockfile && pnpm run build
         working-directory: web

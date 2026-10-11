@@ -14,6 +14,7 @@ $env:PATH = 'D:\workspace\.tools\go\bin;C:\Users\MSI\.cache\codex-runtimes\codex
 $pnpmCommand = 'C:\Users\MSI\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\fallback\pnpm.cmd'
 ./scripts/Initialize-Local.ps1
 go build -trimpath -o bin/agentos.exe ./cmd/agentos
+& $pnpmCommand --dir harness install --frozen-lockfile
 & $pnpmCommand --dir web install --frozen-lockfile
 & $pnpmCommand --dir web run build
 ./scripts/Start-Local.ps1 -Workers 2
@@ -29,7 +30,10 @@ go build -trimpath -o bin/agentos.exe ./cmd/agentos
 2. 知识库选择本地、Milvus 或 LightRAG；上传资料，等待状态变为“可检索”，先用检索测试确认来源正确。
 3. 自定义 Agent 绑定资源，写角色提示词，配置模型 base URL、模型名称和凭证名称。保存产生新版本。
 4. 右侧试运行使用真实服务；无模型凭证会明确失败，不返回演示答案。试运行会保存版本和任务记录。
-5. 业务能力选择 Agent 的确定版本并填写固定说明与约束。修改 Agent 不会自动更新已有业务能力；显式发布新版本才生效。
+5. 在 Agent 的“发布”页填写业务显示名称和说明，开启期货工作台发布并保存。已开启发布时按钮为“保存并发布”，业务入口立即使用新版本；关闭并保存撤下入口。任务参数为品种、时间范围和研究问题。
+6. 运行详情显示实际执行器，并可下载完整 DSH 事件记录。中断后从持久化响应重放，已完成工具不重复执行。
+
+DSH 使用 Node 24；可通过 `AGENTOS_NODE` 指定完整可执行文件路径，已有本机配置已写好。依赖固定在 `harness/pnpm-lock.yaml`，升级前必须验证重放兼容。v0.3 升级时先停止旧 Worker，再执行迁移与启动；不要混跑新旧 Worker。
 
 第一批业务包位于 `packs/`。启动只补缺失资源，避免覆盖用户编辑。当前本机通过界面上传了研究方法文档，并把期货 Agent 保存为 v2；这不是市场基本面资料库。新环境种子包为 v1，不携带个人本地数据。
 
@@ -37,7 +41,7 @@ go build -trimpath -o bin/agentos.exe ./cmd/agentos
 
 中台“模型与凭证”写入命名凭证，例如 `DEEPSEEK_API_KEY`。凭证在数据库中 AES-GCM 加密；环境变量优先于存储凭证，`MASTER_KEY` 只在本机配置。API 不回显明文。更换 MASTER_KEY 前必须设计重加密迁移，不能直接换值，否则已有凭证无法解密。
 
-默认模型配置是 DeepSeek 的 OpenAI-compatible chat/completions；没有内置账户或 API Key。可换兼容服务，但模型调用、工具 schema 与返回结构需要实际验证。默认 readiness 只检查 DeepSeek 凭证是否存在，不代表服务网络、余额或某个自定义模型已经可用。
+新环境默认模型是 `deepseek-flash`；迁移保留用户已有模型配置。传输为 DeepSeek 的 OpenAI-compatible chat/completions；没有内置账户或 API Key。可换兼容服务，但模型调用、工具 schema 与返回结构需要实际验证。默认 readiness 只检查 DeepSeek 凭证是否存在，不代表服务网络、余额或某个自定义模型已经可用。
 
 本地使用 `DEV_LOCAL=1` 时入口限回环并校验来源；不要改成公开地址。远端部署用独立 `SERVICE_TOKEN`、`ADMIN_TOKEN`、`BUSINESS_TOKEN`（至少 32 个随机字符），以及 HTTPS 反向代理。当前没有企业账号/RBAC，不能直接作为多人公网平台。
 

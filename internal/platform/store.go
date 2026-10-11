@@ -45,6 +45,9 @@ func (s *Store) Migrate(ctx context.Context) error {
 	if _, err = tx.Exec(ctx, schema); err != nil {
 		return err
 	}
+	if err = migratePublications(ctx, tx); err != nil {
+		return err
+	}
 	return tx.Commit(ctx)
 }
 func event(ctx context.Context, tx pgx.Tx, id, kind string, v any) error {
@@ -148,12 +151,13 @@ func (s *Store) Snapshot(ctx context.Context, ref Ref, depth int) (Snapshot, err
 	return out, nil
 }
 func insertRun(ctx context.Context, tx pgx.Tx, key, task string, snap Snapshot, parent *string, pinned []string) (string, error) {
+	constraints := append(append([]string{}, snap.Agent.Constraints...), pinned...)
 	id := ID()
 	inputHash := Hash(JSON([]any{task, snap, parent, pinned}))
 	state := RunState{Pinned: pinned, Messages: []Message{{Role: "user", Content: task}}}
 	var actual, oldHash string
 	e := tx.QueryRow(ctx, `INSERT INTO runs(id,submission_key,input_hash,parent_id,snapshot,task,state,constraints) VALUES($1,$2,$3,$4,$5,$6,$7,$8)
- ON CONFLICT(submission_key) DO UPDATE SET submission_key=EXCLUDED.submission_key RETURNING id,input_hash`, id, key, inputHash, parent, JSON(snap), task, JSON(state), JSON(pinned)).Scan(&actual, &oldHash)
+ ON CONFLICT(submission_key) DO UPDATE SET submission_key=EXCLUDED.submission_key RETURNING id,input_hash`, id, key, inputHash, parent, JSON(snap), task, JSON(state), JSON(constraints)).Scan(&actual, &oldHash)
 	if e != nil {
 		return "", e
 	}
@@ -180,12 +184,12 @@ func (s *Store) Submit(ctx context.Context, key, task string, snap Snapshot, pin
 	return id, tx.Commit(ctx)
 }
 
-const runColumns = "id,parent_id,task,snapshot,status,step,state,owner,fence,constraints,rule_revision,cancel_requested,created_at,updated_at"
+const runColumns = "id,parent_id,task,snapshot,status,step,state,owner,fence,constraints,rule_revision,cancel_requested,created_at,updated_at,engine"
 
 func scanRun(row pgx.Row) (Run, error) {
 	var r Run
 	var snap, state, constraints []byte
-	e := row.Scan(&r.ID, &r.ParentID, &r.Task, &snap, &r.Status, &r.Step, &state, &r.Owner, &r.Fence, &constraints, &r.RuleRevision, &r.CancelRequested, &r.CreatedAt, &r.UpdatedAt)
+	e := row.Scan(&r.ID, &r.ParentID, &r.Task, &snap, &r.Status, &r.Step, &state, &r.Owner, &r.Fence, &constraints, &r.RuleRevision, &r.CancelRequested, &r.CreatedAt, &r.UpdatedAt, &r.Engine)
 	if e != nil {
 		return r, e
 	}
@@ -202,7 +206,7 @@ func (s *Store) Run(ctx context.Context, id string) (Run, error) {
 	return scanRun(s.DB.QueryRow(ctx, "SELECT "+runColumns+" FROM runs WHERE id=$1", id))
 }
 func (s *Store) Runs(ctx context.Context) ([]Run, error) {
-	rows, e := s.DB.Query(ctx, `SELECT id,parent_id,left(task,500),jsonb_build_object('agent',jsonb_build_object('name',snapshot#>>'{agent,name}'),'agent_ref',snapshot->'agent_ref'),status,step,'{}'::jsonb,owner,fence,'[]'::jsonb,rule_revision,cancel_requested,created_at,updated_at FROM runs ORDER BY created_at DESC LIMIT 100`)
+	rows, e := s.DB.Query(ctx, `SELECT id,parent_id,left(task,500),jsonb_build_object('agent',jsonb_build_object('name',snapshot#>>'{agent,name}'),'agent_ref',snapshot->'agent_ref'),status,step,'{}'::jsonb,owner,fence,'[]'::jsonb,rule_revision,cancel_requested,created_at,updated_at,engine FROM runs ORDER BY created_at DESC LIMIT 100`)
 	if e != nil {
 		return nil, e
 	}

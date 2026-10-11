@@ -37,7 +37,7 @@ func TestSnapshotPinsResourceVersions(t *testing.T) {
 		t.Fatal("running task changed when skill was edited", e)
 	}
 }
-func TestCompactionRetainsOriginalAndConstraints(t *testing.T) {
+func TestLegacyCompactionRetainsOriginalAndConstraints(t *testing.T) {
 	s, _ := testStore(t)
 	ctx := context.Background()
 	model := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -91,7 +91,7 @@ func TestModelTruncationCannotDriveTools(t *testing.T) {
 		t.Fatal("truncated model plan had effects")
 	}
 }
-func TestFinalOutputCheckpointResumesWithoutModel(t *testing.T) {
+func TestLegacyFinalOutputCheckpointResumesWithoutModel(t *testing.T) {
 	s, _ := testStore(t)
 	ctx := context.Background()
 	var count atomic.Int32
@@ -102,6 +102,8 @@ func TestFinalOutputCheckpointResumesWithoutModel(t *testing.T) {
 	defer model.Close()
 	submit(t, s, basicSnapshot(model.URL))
 	r := claim(t, s, "old")
+	_, _ = s.DB.Exec(ctx, "UPDATE runs SET engine='legacy-go' WHERE id=$1", r.ID)
+	r.Engine = "legacy-go"
 	r.Step = 1
 	r.State.PlanRevision = r.RuleRevision
 	r.State.Messages = append(r.State.Messages, Message{Role: "assistant", Content: "already durable"})

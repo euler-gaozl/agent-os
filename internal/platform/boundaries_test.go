@@ -120,7 +120,7 @@ func TestConstraintChangesReachActiveChildren(t *testing.T) {
 	}
 }
 
-func TestToolSchemasCountTowardContextBudget(t *testing.T) {
+func TestLegacyToolSchemasCountTowardContextBudget(t *testing.T) {
 	snap := basicSnapshot("http://127.0.0.1")
 	snap.Agent.ContextBytes = 4096
 	snap.Connectors = []Connector{{Name: "large", Tools: []Tool{tool("query", strings.Repeat("large schema", 1000), `{"type":"object"}`)}}}
