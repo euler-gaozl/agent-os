@@ -102,19 +102,32 @@ func (s *Store) Resource(ctx context.Context, kind string, r Ref, dst any) error
 	}
 	return json.Unmarshal(b, dst)
 }
-func (s *Store) Resources(ctx context.Context) ([]Resource, error) {
-	rows, e := s.DB.Query(ctx, "SELECT DISTINCT ON(kind,id) kind,id,revision,spec FROM resources ORDER BY kind,id,revision DESC")
+func (s *Store) Resources(ctx context.Context, after ...string) ([]Resource, error) {
+	cursor := ""
+	if len(after) > 0 {
+		cursor = after[0]
+	}
+	rows, e := s.DB.Query(ctx, `SELECT kind,id,revision,spec FROM resources a WHERE kind!='action'
+ AND ($2 OR kind NOT IN ('skill','connector')) AND (kind||':'||id) COLLATE "C">$1
+ AND revision=(SELECT max(b.revision) FROM resources b WHERE b.kind=a.kind AND b.id=a.id)
+ ORDER BY (kind||':'||id) COLLATE "C" LIMIT 100`, cursor, s.CatalogURL == "")
 	if e != nil {
 		return nil, e
 	}
 	defer rows.Close()
 	out := []Resource{}
+	size := 0
 	for rows.Next() {
 		var r Resource
 		if e = rows.Scan(&r.Kind, &r.ID, &r.Revision, &r.Spec); e != nil {
 			return nil, e
 		}
 		if s.CatalogURL == "" || (r.Kind != "skill" && r.Kind != "connector") {
+			n := len(JSON(r))
+			if len(out) > 0 && size+n > 2<<20 {
+				break
+			}
+			size += n
 			out = append(out, r)
 		}
 	}

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/euler-gaozl/agent-os/internal/catalog"
 	"github.com/euler-gaozl/agent-os/internal/servicehttp"
 	"io"
 	"log/slog"
@@ -399,6 +400,18 @@ func RegisterInstance(ctx context.Context, s *Store, id, role string) {
 }
 
 func (s *Server) registryRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /v1/catalog", wrap(func(w http.ResponseWriter, r *http.Request) error {
+		q, e := catalog.Parse(r.URL.Query())
+		if e != nil {
+			return e
+		}
+		page, e := s.Store.Catalog(r.Context(), q)
+		if e != nil {
+			return e
+		}
+		jsonResponse(w, 200, page)
+		return nil
+	}))
 	mux.HandleFunc("GET /v1/status", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		_, e := s.Store.Secret(r.Context(), "DEEPSEEK_API_KEY")
 		jsonResponse(w, 200, map[string]bool{"deepseek_configured": e == nil})
@@ -445,7 +458,7 @@ func (s *Server) registryRoutes(mux *http.ServeMux) {
 		return nil
 	}))
 	mux.HandleFunc("GET /v1/resources", wrap(func(w http.ResponseWriter, r *http.Request) error {
-		v, e := s.Store.Resources(r.Context())
+		v, e := s.Store.Resources(r.Context(), r.URL.Query().Get("after"))
 		if e != nil {
 			return e
 		}

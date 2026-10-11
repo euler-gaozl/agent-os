@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Answer } from "./markdown";
+import { CatalogPager, useBindingCatalog } from "./catalog";
 import {
   Activity,
   ArrowLeft,
@@ -46,6 +47,8 @@ import {
   Spinner,
   type Ref,
   type Resource,
+  type CatalogPage,
+  resourceDetail,
 } from "./shared";
 import "./console.css";
 import { ToolGovernance } from "./tool-governance";
@@ -96,24 +99,34 @@ function Console() {
       kind: string;
       resource?: Resource;
     } | null>(null),
-    [search, setSearch] = useState("");
+    [search, setSearch] = useState(""),
+    [toolKind,setToolKind]=useState("skill"),
+    [cursors,setCursors]=useState<string[]>([""]),
+    [nextCursor,setNextCursor]=useState("");
+  const after=cursors[cursors.length-1];
+  const kind=page==="tools"?toolKind:page==="knowledge"?"knowledge":"agent";
+  const requestVersion=useRef(0);
   const load = useCallback(async () => {
+    const version=++requestVersion.current;
     const [r, run, st] = await Promise.allSettled([
-      api<{items:Resource[];services:Record<string,boolean>}>("/resources"),
+      api<CatalogPage>("/catalog?"+new URLSearchParams({kind,q:search,after})),
       api<any[]>("/runs"),
       api<any>("/status"),
     ]);
+    if(version!==requestVersion.current)return;
     if([r,run,st].some(x=>x.status==="rejected" && x.reason?.status===401)){setReady(false);setError("请使用管理访问令牌登录。");return;}
     const failures:string[]=[];
-    if(r.status==="fulfilled") {setResources(r.value.items); for(const [name,ok] of Object.entries(r.value.services)) if(!ok) failures.push(name);} else failures.push("资源目录");
+    if(r.status==="fulfilled") {setResources(r.value.items);setNextCursor(r.value.next_cursor); for(const [name,ok] of Object.entries(r.value.services)) if(!ok) failures.push(name);} else {failures.push("资源目录");setNextCursor("");}
     if(run.status==="fulfilled") setRuns(run.value); else failures.push("运行记录");
     if(st.status==="fulfilled") setStatus(st.value); else failures.push("服务状态");
     setReady(true);
     setError(failures.length ? failures.join("、")+" 暂不可用；其他服务仍可使用。" : "");
-  }, []);
+  }, [kind,search,after]);
+  const searchCatalog=(q:string)=>{requestVersion.current++;setSearch(q);setCursors([""]);setNextCursor("");setResources([])};
   const importInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    void load().catch((e) => setError(e.message));
+    const timer=setTimeout(()=>void load().catch((e) => setError(e.message)),200);
+    return ()=>clearTimeout(timer);
   }, [load]);
   useEffect(() => {
     const id = setInterval(() => void load().catch(() => {}), 7000);
@@ -146,9 +159,11 @@ function Console() {
     );
   }
   const change = (id: Page) => {
+    requestVersion.current++;
     setPage(id);
     setEditor(undefined);
     setSearch("");
+    setResources([]);setCursors([""]);setNextCursor("");
   };
   const importFile = async (file: File, kind: string) => {
     if (kind === "skill" && file.name.endsWith(".zip")) {
@@ -213,11 +228,6 @@ function Console() {
             >
               <item.icon size={18} />
               {item.name}
-              {item.id === "agents" && (
-                <span className="nav-count">
-                  {resources.filter((r) => r.kind === "agent").length}
-                </span>
-              )}
             </button>
           ))}
         </nav>
@@ -368,7 +378,7 @@ function Console() {
                 <div className="section-toolbar">
                   <div className="tabs">
                     <button className="selected">
-                      全部 Agent{" "}
+                      本页 Agent{" "}
                       <span>
                         {resources.filter((r) => r.kind === "agent").length}
                       </span>
@@ -380,22 +390,18 @@ function Console() {
                       aria-label="搜索 Agent"
                       placeholder="搜索 Agent…"
                       value={search}
-                      onChange={(e) => setSearch(e.target.value)}
+                      onChange={(e) => searchCatalog(e.target.value)}
                     />
                   </label>
                 </div>
                 <div className="agent-grid">
                   {resources
-                    .filter(
-                      (r) =>
-                        r.kind === "agent" &&
-                        (r.spec.name + r.id).includes(search),
-                    )
+                    .filter((r) => r.kind === "agent")
                     .map((r, i) => (
                       <button
                         className="agent-card"
                         key={r.id}
-                        onClick={() => setEditor(r)}
+                        onClick={() => void act(async()=>setEditor(await resourceDetail(r)))}
                       >
                         <div className="card-top">
                           <span className={"agent-icon color-" + (i % 3)}>
@@ -408,15 +414,15 @@ function Console() {
                         <div className="capability-chips">
                           <span>
                             <Box size={12} />
-                            {r.spec.skills?.length || 0} Skill
+                            {r.spec.skill_count || 0} Skill
                           </span>
                           <span>
                             <Link2 size={12} />
-                            {r.spec.connectors?.length || 0} MCP
+                            {r.spec.connector_count || 0} MCP
                           </span>
                           <span>
                             <BookOpen size={12} />
-                            {r.spec.knowledge?.length || 0} 知识库
+                            {r.spec.knowledge_count || 0} 知识库
                           </span>
                         </div>
                         <footer>
@@ -460,15 +466,17 @@ function Console() {
             {page === "tools" && (
               <ToolLibrary
                 resources={resources}
-                edit={(kind, resource) => setDialog({ kind, resource })}
+                kind={toolKind} setKind={(k)=>{setToolKind(k);searchCatalog("")}} query={search} setQuery={searchCatalog}
+                edit={(kind, resource) => void act(async()=>setDialog({ kind, resource:resource?await resourceDetail(resource):undefined }))}
                 importFile={(f, k) => void act(() => importFile(f, k))}
               />
             )}
             {page === "knowledge" && (
               <Knowledge
                 resources={resources}
+                queryText={search} searchCatalog={searchCatalog}
                 notify={notify}
-                edit={(r) => setDialog({ kind: "knowledge", resource: r })}
+                edit={(r) => void act(async()=>setDialog({ kind: "knowledge", resource:await resourceDetail(r) }))}
               />
             )}
             {page === "runs" && <Runs runs={runs} notify={notify} />}
@@ -476,6 +484,7 @@ function Console() {
             {page === "settings" && (
               <Settings notify={notify} saved={load} status={status} />
             )}
+            {["agents","tools","knowledge"].includes(page) && <CatalogPager after={after} next={nextCursor} previous={cursors.length>1} advance={()=>{requestVersion.current++;setCursors([...cursors,nextCursor]);setResources([]);setNextCursor("")}} back={()=>{requestVersion.current++;setCursors(cursors.slice(0,-1));setResources([]);setNextCursor("")}}/>}
           </main>
         )}
       </div>
@@ -510,17 +519,23 @@ function Console() {
 function Bindings({
   kind,
   chosen,
-  resources,
   change,
+  excludeID,
 }: {
   kind: string;
   chosen: Ref[];
   resources: Resource[];
   change: (v: Ref[]) => void;
+  excludeID?:string;
 }) {
-  const options = resources.filter((r) => r.kind === kind);
+  const catalog=useBindingCatalog(kind);
+  const visible=catalog.items.filter(r=>r.id!==excludeID);
+  const options=[...chosen.filter(c=>!visible.some(r=>r.id===c.id)).map(c=>({kind,id:c.id,revision:c.revision,spec:{name:c.id}})),...visible];
   return (
     <div className="binding-list">
+      <input aria-label="搜索可绑定资源" placeholder="搜索名称或 ID…" value={catalog.query} onChange={e=>catalog.search(e.target.value)}/>
+      {catalog.error && <small className="inline-warning">{catalog.error}</small>}
+      {chosen.some(c=>!visible.some(r=>r.id===c.id)) && <small>已绑定的历史版本或其他页资源仍保留；勾选表示绑定，不代表验活通过。</small>}
       {options.length ? (
         options.map((r) => {
           const current = chosen.find((x) => x.id === r.id);
@@ -591,9 +606,10 @@ function Bindings({
               } as any
             )[kind]
           }
-          。先在对应资源页创建，再回来绑定。
+          。可以修改搜索条件，或在对应资源页创建。
         </div>
       )}
+      <div className="button-row">{catalog.after && <button type="button" className="text-button" onClick={catalog.reset}>返回第一页</button>}{catalog.next && <button type="button" className="text-button" onClick={catalog.advance}>下一页资源</button>}</div>
     </div>
   );
 }
@@ -830,6 +846,7 @@ function AgentEditor({
                 <h3 className="section-label">允许委派的 Agent</h3>
                 <Bindings
                   kind="agent"
+                  excludeID={id}
                   chosen={draft.child_agents || []}
                   resources={resources.filter((r) => r.id !== id)}
                   change={(v) => update("child_agents", v)}
@@ -1128,13 +1145,13 @@ function ToolLibrary({
   resources,
   edit,
   importFile,
+  kind,setKind,query,setQuery,
 }: {
   resources: Resource[];
   edit: (kind: string, r?: Resource) => void;
   importFile: (f: File, k: string) => void;
+  kind:string;setKind:(kind:string)=>void;query:string;setQuery:(query:string)=>void;
 }) {
-  const [kind, setKind] = useState("skill"),
-    [query, setQuery] = useState("");
   const file = useRef<HTMLInputElement>(null);
   return (
     <>
@@ -1151,7 +1168,7 @@ function ToolLibrary({
               onClick={() => setKind(k)}
             >
               {label}
-              <span>{resources.filter((r) => r.kind === k).length}</span>
+              {kind===k && <span>{resources.length}</span>}
             </button>
           ))}
         </div>
@@ -1214,9 +1231,7 @@ function ToolLibrary({
           <span />
         </div>
         {resources
-          .filter(
-            (r) => r.kind === kind && (r.spec.name + r.id).includes(query),
-          )
+          .filter((r) => r.kind === kind)
           .map((r) => (
             <div
               className="resource-row"
@@ -1609,10 +1624,12 @@ function Knowledge({
   resources,
   notify,
   edit,
+  queryText,searchCatalog,
 }: {
   resources: Resource[];
   notify: (m: string) => void;
   edit: (r: Resource) => void;
+  queryText:string;searchCatalog:(q:string)=>void;
 }) {
   const [selected, setSelected] = useState<Resource | null>(null),
     [files, setFiles] = useState<any[]>([]),
@@ -1639,6 +1656,7 @@ function Knowledge({
   if (!selected)
     return (
       <>
+        <label className="search-input compact"><Search size={16}/><input aria-label="搜索知识库" placeholder="搜索知识库名称或 ID…" value={queryText} onChange={e=>searchCatalog(e.target.value)}/></label>
         <div className="knowledge-grid">
           {resources
             .filter((r) => r.kind === "knowledge")
@@ -1646,10 +1664,7 @@ function Knowledge({
               <button
                 className="knowledge-card"
                 key={r.id}
-                onClick={() => {
-                  setSelected(r);
-                  setResult(null);
-                }}
+                onClick={() => void resourceDetail(r).then(full=>{setSelected(full);setResult(null)}).catch(e=>notify(e.message))}
               >
                 <div className="card-top">
                   <span className="agent-icon color-1">

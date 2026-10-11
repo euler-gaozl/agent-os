@@ -2,11 +2,20 @@ import { useEffect, useState, type ReactNode } from "react";
 import { X, LoaderCircle, FileText, ArrowUpRight } from "lucide-react";
 export type Ref = { id: string; revision: number };
 export type Resource = {
+	summary?: boolean;
   kind: string;
   id: string;
   revision: number;
   spec: Record<string, any>;
 };
+export type CatalogPage = {items: Resource[]; next_cursor: string; services: Record<string, boolean>};
+export async function resourceDetail(r: Resource): Promise<Resource> {
+  if (!r.summary) return r;
+  const prefix = r.kind === "skill" || r.kind === "connector" ? "/toolhub/assets/" : "/resources/";
+  const full = await api<Resource>(prefix + encodeURIComponent(r.kind) + "/" + encodeURIComponent(r.id) + "/" + r.revision);
+  if (full.summary || full.id !== r.id || full.kind !== r.kind || full.revision !== r.revision) throw new Error("资源详情版本不匹配，请刷新后重试。");
+  return full;
+}
 export const labels: Record<string, string> = {
   healthy: "检查通过",
   unhealthy: "验活失败",
@@ -29,6 +38,7 @@ export async function api<T = any>(
   body?: unknown,
   key?: string,
 ): Promise<T> {
+  if (body && typeof body === "object" && "summary" in body && body.summary) throw new Error("目录摘要不能作为资源定义保存，请先读取完整版本。");
   const token = sessionStorage.getItem("admin-token");
   const response = await fetch("/api" + path, {
     method: body === undefined ? "GET" : "POST",

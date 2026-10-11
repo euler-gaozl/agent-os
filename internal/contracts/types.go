@@ -130,6 +130,7 @@ type Document struct {
 	Supersedes *string        `json:"supersedes,omitempty"`
 }
 type Resource struct {
+	Summary  bool            `json:"summary,omitempty"`
 	Kind     string          `json:"kind"`
 	ID       string          `json:"id"`
 	Revision int             `json:"revision"`

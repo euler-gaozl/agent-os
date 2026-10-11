@@ -119,17 +119,23 @@ func (s *Store) List(ctx context.Context, kind, after string, limit int) ([]Asse
 	if limit < 1 || limit > 200 {
 		limit = 100
 	}
-	rows, e := s.DB.Query(ctx, "SELECT "+columns+" FROM assets a JOIN asset_state s USING(kind,id,revision) WHERE ($1='' OR a.kind=$1) AND (a.kind||':'||a.id)>$2 AND a.revision=(SELECT max(b.revision) FROM assets b WHERE b.kind=a.kind AND b.id=a.id) ORDER BY a.kind,a.id LIMIT $3", kind, after, limit)
+	rows, e := s.DB.Query(ctx, "SELECT "+columns+` FROM assets a JOIN asset_state s USING(kind,id,revision) WHERE ($1='' OR a.kind=$1) AND (a.kind||':'||a.id) COLLATE "C">$2 AND a.revision=(SELECT max(b.revision) FROM assets b WHERE b.kind=a.kind AND b.id=a.id) ORDER BY (a.kind||':'||a.id) COLLATE "C" LIMIT $3`, kind, after, limit)
 	if e != nil {
 		return nil, e
 	}
 	defer rows.Close()
 	out := []Asset{}
+	size := 0
 	for rows.Next() {
 		a, e := scan(rows)
 		if e != nil {
 			return nil, e
 		}
+		n := len(contracts.JSON(a))
+		if len(out) > 0 && size+n > 2<<20 {
+			break
+		}
+		size += n
 		out = append(out, a)
 	}
 	return out, rows.Err()

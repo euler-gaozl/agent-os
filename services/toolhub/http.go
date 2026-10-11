@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/euler-gaozl/agent-os/internal/catalog"
 	"net/http"
 	"strconv"
 
@@ -27,6 +28,18 @@ func newProbe(p Policy, c contracts.Connector) *mcp.MCPClient {
 }
 func (s *Server) Handler() http.Handler { return servicehttp.New(s.HTTP, s.Store.DB.Ping, s.Routes) }
 func (s *Server) Routes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /v1/assets/catalog", servicehttp.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+		q, e := catalog.Parse(r.URL.Query())
+		if e != nil {
+			return e
+		}
+		page, e := s.Store.Catalog(r.Context(), q)
+		if e != nil {
+			return e
+		}
+		servicehttp.JSONResponse(w, 200, page)
+		return nil
+	}))
 	mux.HandleFunc("POST /v1/skill-file", servicehttp.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var in struct {
 			RunID   string `json:"run_id"`

@@ -30,7 +30,7 @@ try{
   if(role==='control'||role==='futures')args.push('--publish',role==='control'?'8090':'8098');
   try{
    const receipt=JSON.parse(exec(process.execPath,args));
-   await until(async()=>{const catalog=await api('/resources');return catalog.services.registry&&catalog.services.toolhub&&catalog.items.some(x=>x.id==='ci-agent')},role+' catalog through shared Console');
+   await until(async()=>{const catalog=await api('/catalog');return catalog.services.registry&&catalog.services.toolhub&&catalog.items.some(x=>x.id==='ci-agent'&&x.summary)},role+' catalog through shared Console');
    const history=await api('/tasks',undefined,true);assert(history.some(x=>x.status==='completed'));
    const search=await api('/knowledge/query',{knowledge:{id:'ci-kb',revision:1},query:'甲醇库存'});assert.equal(search.hits.length,1);
    if(role==='worker'){
