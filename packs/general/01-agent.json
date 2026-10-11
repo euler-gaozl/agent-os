@@ -1,0 +1,8 @@
+{
+  "kind": "agent", "id": "general-assistant", "spec": {
+    "name": "通用资料助手", "prompt": "根据用户的问题检索、整理与核对已有资料。引用资料 ID 与来源，区分事实、推断和未知。不假装具有未绑定的能力。将需要长期保留且有依据的信息存为带来源的记录。",
+    "prompts": [], "skills": [], "connectors": [], "tools": ["knowledge_search","note_save","artifact_read","document_read"],
+    "model": {"base_url":"https://api.deepseek.com","model":"deepseek-chat","key_env":"DEEPSEEK_API_KEY"},
+    "max_steps": 12, "context_bytes": 64000, "max_children": 0, "child_agents": []
+  }
+}

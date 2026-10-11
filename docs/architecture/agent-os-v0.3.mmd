@@ -1,0 +1,52 @@
+flowchart TB
+    subgraph Interfaces[交互层：两个独立应用]
+        Console[能力中台 8090<br/>资源配置 / Agent 编辑 / 右侧试运行]
+        Futures[期货工作台 8098<br/>任务按钮 / 研究进度 / 证据结果]
+    end
+    subgraph Platform[平台服务：独立 Go 进程]
+        Control[中台 BFF]
+        Business[期货 BFF<br/>业务动作绑定 Agent 版本]
+        Registry[Registry 8096<br/>提示词 / Skill / MCP / Agent / 知识配置]
+        Runtime[Runtime API 8094<br/>提交 / 取消 / 约束 / 核对]
+        Workers[Worker 1 ... N<br/>模型编排 / 租约 / 检查点 / Compact]
+        ToolHub[ToolHub 8091<br/>工具校验 / 效果 / 回执]
+        Storage[Storage 8092<br/>文档 / 记忆 / 不可变产物]
+        Knowledge[Knowledge 8095<br/>上传 / 来源 / 检索]
+        Indexer[Indexer 1 ... N<br/>持久化导入状态 / 分片索引]
+        Sandbox[Sandbox 8093<br/>固定镜像 / 受限 JavaScript]
+        Telemetry[可选事件导出]
+    end
+    Console --> Control
+    Futures --> Business
+    Control --> Registry
+    Control --> Runtime
+    Control --> Knowledge
+    Control --> Storage
+    Business --> Runtime
+    Runtime --> Queue[(PostgreSQL 持久化待执行状态)]
+    Queue --> Workers
+    Workers --> Model[DeepSeek / 兼容模型服务]
+    Workers --> ToolHub
+    ToolHub --> Storage
+    ToolHub --> Knowledge
+    ToolHub --> Sandbox
+    ToolHub --> MCP[外部 MCP Streamable HTTP]
+    Knowledge --> Indexer
+    Indexer --> Milvus[可选 Milvus + Embedding]
+    Indexer --> Graph[可选独立 LightRAG 工作区]
+    Knowledge --> Milvus
+    Knowledge --> Graph
+    Sandbox --> Docker[专用 Docker daemon<br/>无网络 / 只读 / 资源限制]
+    Telemetry --> Langfuse[可选 Langfuse OTLP]
+    subgraph Persistence[首版物理存储：同一 PostgreSQL，无独立服务数据库隔离]
+        DB[(版本化资源 / runs / events / calls / model_attempts<br/>原始文件 bytea / documents / 引用 / 记忆<br/>knowledge_files / chunks / 加密凭证 / business_runs)]
+    end
+    Registry --- DB
+    Runtime --- DB
+    Workers --- DB
+    ToolHub --- DB
+    Storage --- DB
+    Knowledge --- DB
+    Indexer --- DB
+    Business --- DB
+    Telemetry --- DB

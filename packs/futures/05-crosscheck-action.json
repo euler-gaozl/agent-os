@@ -1,0 +1,1 @@
+{"kind":"action","id":"source-crosscheck","spec":{"name":"交叉核对资料","description":"比较多个来源，找出样本、单位、日期和统计范围的差异。","agent":{"id":"futures-research","revision":1},"instruction":"核对用户提供或知识库检索到的资料，保留冲突，区分口径变化与真实变化；逐项链接原始证据。","constraints":["不能用行情涨跌反推基本面原因。","没有原文不得声称已经核验；每条数字保留日期、单位与来源。"]}}

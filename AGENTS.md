@@ -2,9 +2,9 @@
 
 ## 项目状态
 
-先读 README.md、docs/architecture/agent-os-v0.1-independent-review.txt 和 docs/architecture/next-steps.md。
+先读 README.md、docs/architecture/contracts-v0.3.md、docs/validation-v0.3.md 和 docs/architecture/next-steps.md；v0.1 独立评审保留为历史基线。
 
-当前为架构阶段。不能将设计目标、官方组件功能列表、模拟结果写成已经实现或经过运行验证的能力。
+当前为 v0.3 本地可运行实现。不能将设计目标、官方组件功能列表、接口模拟结果写成真实外部服务已验证或生产能力。
 
 ## 本地布局与技术选型
 
@@ -17,6 +17,8 @@
 ## 架构边界
 
 - 核心 Runtime 和 ToolHub 不写入期货专属规则；业务逻辑以独立能力包实现。
+- 中台统一管理资源和 Agent；知识库、ToolHub、Runtime、Registry 是独立服务。期货前端和业务 BFF 单独部署，不把基础设施配置暴露给业务用户。
+- 服务首版共享 PostgreSQL schema；跨服务数据库访问的现状必须如实记录，不能宣称数据库已完全解耦。
 - 明确运行状态权威、重试策略拥有者和 Compact 决策者，避免框架之间重复管理。
 - 执行前登记调用意图，结果不确定时先核对；不能将无回执直接等同于未执行。
 - 模型上下文、运行状态、业务事实、证据和长期记忆分别管理。

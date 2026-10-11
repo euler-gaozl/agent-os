@@ -1,0 +1,1 @@
+{"kind":"action","id":"evidence-timeline","spec":{"name":"回溯关键变化","description":"把证据放回当时的时间，区分实绩、计划与后续修订。","agent":{"id":"futures-research","revision":1},"instruction":"按用户指定时间区间组织证据，构建关键事实与来源修订的时间线，说明统计范围和比较限制。","constraints":["区分报告发布日期、统计时点和事件日期。","只使用可获得的历史证据，不用后来数据冒充当时已知信息。"]}}

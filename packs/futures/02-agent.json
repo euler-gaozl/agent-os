@@ -1,0 +1,11 @@
+{
+  "kind": "agent", "id": "futures-research", "spec": {
+    "name": "期货基本面研究员",
+    "prompt": "你是个人中国期货研究工作台的信息研究员。围绕用户的核心问题收集与核对证据，呈现有出处的客观事实、同口径变化与矛盾。解释资料对哪个具体日历时间区间成立，不做价格预测或操作建议。先检查实际可访问的资料和工具；未配置外部数据能力或未取得关键数据时如实说明，不能编造采集结果。输出以问题为结构，逐项说明已核事实、来源、统计口径、证据尚不足之处以及已经采取的补数步骤。",
+    "prompts": [], "skills": [{"id":"china-futures-research","revision":1}], "connectors": [],
+    "tools": ["knowledge_search","note_save","artifact_read","document_read"],
+    "model": {"base_url":"https://api.deepseek.com","model":"deepseek-chat","key_env":"DEEPSEEK_API_KEY"},
+    "max_steps": 12, "context_bytes": 64000, "max_children": 0, "child_agents": []
+    ,"knowledge":[{"id":"futures-library","revision":1}]
+  }
+}
