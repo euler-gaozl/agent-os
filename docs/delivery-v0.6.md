@@ -53,7 +53,24 @@
 
 - 已增加单服务 Compose、镜像 ID 固定、配置摘要验证、单服务升级/回滚/副本调整及失败后恢复入口；Console 仍为统一中台。数据库升级选择服务所有者，不重写其他服务身份或配置。
 - 本机仅迁移并重启 Knowledge 和 Sandbox；其余 10 个进程 PID 保持不变，全部服务配置文件内容摘要不变。备份 `20261011-221516.dump` 保留；本次只是 dump 目录检查，恢复验证另行执行。
-- Linux 旧版本二进制回滚与失败发布测试正在 CI 验收；共享执行表的剩余耦合仍未关闭，见[独立部署契约](independent-deployment.md)。
+- [CI 38146316990](https://github.com/euler-gaozl/agent-os/actions/runs/38146316990) 已通过 Knowledge 的真实旧版本二进制部署、升级、回滚、两副本和错误镜像失败后的恢复；全部配置文件字节和其他容器 ID 不变。
+- [CI 38147567156](https://github.com/euler-gaozl/agent-os/actions/runs/38147567156) 已通过其余 11 个服务的独立部署入口：Registry、ToolHub、Storage、Runtime、Indexer、Sources、Sandbox、Telemetry、Worker、Console、Futures。每次断言其他容器 ID、启动时间和重启计数不变，统一中台目录/知识检索/业务历史仍可用。独立双 Worker 真实执行 DSH，完成 4 项工具调用；模型与 OTLP 接收端为夹具，不冒充真实 Langfuse 联调。这个部署场景包含额外可选服务和副本，不作为整个平台 2 CPU 容量结果。
+- Sandbox 独立作业库 + Runtime HTTP 授权 + 真实容器强杀恢复已在 [CI 38147321703](https://github.com/euler-gaozl/agent-os/actions/runs/38147321703) 通过；本机先更新 Runtime，再更新 Sandbox，并撤销 Sandbox 的 public.runs SQL 权限，验证权限拒绝。其他 10 个进程未更换。
+- 备份 `20261011-221516.dump` 已恢复到隔离数据库：41 个资源版本、4 份执行域文档、89 个产物；产物 hash 不符和悬空引用均为 0。没有用恢复覆盖用户数据库。
+- 共享执行表的剩余耦合仍未关闭，见[独立部署契约](independent-deployment.md)。
+
+## 补充的浏览器与可用性检查
+
+- 从中台打开 Skill 包引用文件，显示受控标记 SKILL-REF-284；点击重新检测后检查时间实际更新。截图保存在 `.state/live-e2e/toolhub-skill-browser.jpg`。
+- 从页面上传 UI-KB-609 受控文本，检索命中，下载原文与上传前 SHA-256 完全一致。原文件、下载副本和 `.state/live-e2e/knowledge-browser.jpg` 均保存在 D 盘，资料属于独立验收知识库。
+- ToolHub 后台探测改为有界并发（默认 2，可配置 1–8）、错误退避，不因一次数据库探测错误关闭目录 HTTP API。慢 MCP 与快速 Skill 检查并行、取消及错误存储测试通过；一次测试夹具未读完 HTTP 请求体导致退出挂起，修正夹具后重新跑完整 ToolHub 测试通过。
+- 增加各服务所需表/字段/权限的零行 SQL 就绪检查，防止只因数据库可连接就接收未迁移版本的流量；Console/Futures 仍无数据库依赖。新提交需继续通过对应 Linux 检查。
+
+## 下一批必须关闭的代码问题
+
+- 目录聚合和部分运行列表仍返回完整 spec / snapshot，存在随数据量增长的内存风险；需改为有界摘要、分页和按需详情读取，并验证编辑与绑定功能不丢字段。
+- Runtime/Storage 的资料效果与回执尚未通过跨库协议解耦，Telemetry 仍直接读取执行库；独立部署检查不代替这两项数据边界验收。
+- 真正 Milvus/LightRAG/Embedding/Langfuse 服务联调、目标规模结果、长期资料生命周期与真实跨机 HA 继续分别记录，不能合称全部生产化完成。
 
 ## 容量实测和失败
 
