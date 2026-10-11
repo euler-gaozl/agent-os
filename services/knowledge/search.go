@@ -53,8 +53,13 @@ const localChunkQuery = `WITH candidates AS MATERIALIZED (
 ) SELECT c.id,c.content,d.source,d.id,f.name FROM candidates c
  JOIN knowledge_files f ON f.id=c.file_id JOIN documents d ON d.id=f.document_id
  WHERE f.kb_id=$1 AND f.kb_revision=$2 AND f.status='ready' LIMIT 8`
-const localNameQuery = `WITH candidates AS MATERIALIZED (
- SELECT id,name,document_id,kb_id,kb_revision,status FROM knowledge_files WHERE name_vector @@ plainto_tsquery('simple',$3) LIMIT 64
+// Plan the indexed filename predicate independently of LIMIT. Combining the two
+// caused an optimistic sequential scan for absent terms at one million files.
+// The second materialization still bounds rows consumed by the joins to 64.
+const localNameQuery = `WITH matches AS MATERIALIZED (
+ SELECT id,name,document_id,kb_id,kb_revision,status FROM knowledge_files WHERE name_vector @@ plainto_tsquery('simple',$3)
+), candidates AS MATERIALIZED (
+ SELECT * FROM matches LIMIT 64
 ) SELECT c.id,c.content,d.source,d.id,f.name FROM candidates f
  JOIN documents d ON d.id=f.document_id JOIN knowledge_chunks c ON c.file_id=f.id AND c.ordinal=0
  WHERE f.kb_id=$1 AND f.kb_revision=$2 AND f.status='ready' LIMIT 8`
