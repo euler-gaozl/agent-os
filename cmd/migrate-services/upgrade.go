@@ -33,7 +33,7 @@ func upgradeService(parent context.Context, dsn, service string) error {
 	case "sandbox":
 		roles, tables = []string{service}, []string{"sandbox_jobs"}
 	case "telemetry":
-		roles, tables = []string{service}, []string{"telemetry_exports"}
+		roles, tables = []string{service}, []string{"telemetry_exports", "telemetry_inbox"}
 	default:
 		return errors.New("unknown service; no migration performed")
 	}

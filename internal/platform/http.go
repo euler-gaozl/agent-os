@@ -568,6 +568,7 @@ func (s *Server) registryRoutes(mux *http.ServeMux) {
 
 }
 func (s *Server) runtimeRoutes(mux *http.ServeMux) {
+	s.telemetryDeliveryRoutes(mux)
 	mux.HandleFunc("GET /v1/status", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		rows, e := s.Store.DB.Query(r.Context(), "SELECT id,role,hostname,pid,heartbeat_at,heartbeat_at>now()-interval '15 seconds' FROM instances ORDER BY role,id")
 		if e != nil {

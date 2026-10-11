@@ -21,7 +21,7 @@
 
 - 核心 Runtime 和 ToolHub 不写入期货专属规则；业务逻辑以独立能力包实现。
 - 中台统一管理资源和 Agent；知识库、ToolHub、Runtime、Registry 等服务独立部署。期货前端和业务 BFF 单独部署，不把基础设施配置暴露给业务用户。
-- ToolHub、Knowledge、Sources 各自拥有 schema/账号；Console/Futures 不访问数据库。Sandbox 已改为 HTTP 校验 Runtime 权威状态，仅需自己的作业表。Runtime/Worker/Storage 仍共享部分执行事务表，Telemetry 仍读取执行事件；必须如实记录，不能宣称数据库已完全解耦。
+- ToolHub、Knowledge、Sources 各自拥有 schema/账号；Console/Futures 不访问数据库。Sandbox 通过 HTTP 校验 Runtime 权威状态，仅需自己的作业表。Telemetry 通过带租约/fence 的事件投递接口写入本域 inbox，落盘后才确认，不能读执行库；Runtime 事件是事务性 outbox，不能用最大序号游标跳过晚提交事件。Runtime/Worker/Storage 仍共享部分执行事务表，不能宣称数据库已完全解耦。
 - 明确运行状态权威、重试策略拥有者和 Compact 决策者，避免框架之间重复管理。
 - DSH 版本及重放可见的适配行为必须固定；升级前验证未完成任务兼容。旧 Go 循环仅供迁移前历史任务恢复。
 - 执行前登记调用意图，结果不确定时先核对；不能将无回执直接等同于未执行。

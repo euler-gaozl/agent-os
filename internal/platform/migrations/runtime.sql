@@ -12,6 +12,13 @@ CREATE TABLE IF NOT EXISTS events(
  seq bigserial PRIMARY KEY, run_id text NOT NULL REFERENCES runs(id), kind text NOT NULL,
  payload jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
 CREATE INDEX IF NOT EXISTS events_run ON events(run_id,seq);
+-- Events are the transactional outbox. Do not use a maximum-sequence cursor:
+-- PostgreSQL sequence allocation order is not transaction commit order.
+ALTER TABLE events ADD COLUMN IF NOT EXISTS telemetry_owner text NOT NULL DEFAULT '';
+ALTER TABLE events ADD COLUMN IF NOT EXISTS telemetry_fence bigint NOT NULL DEFAULT 0;
+ALTER TABLE events ADD COLUMN IF NOT EXISTS telemetry_until timestamptz;
+ALTER TABLE events ADD COLUMN IF NOT EXISTS telemetry_delivered_at timestamptz;
+CREATE INDEX IF NOT EXISTS events_telemetry_pending ON events(seq) WHERE telemetry_delivered_at IS NULL;
 CREATE TABLE IF NOT EXISTS calls(
  id text PRIMARY KEY, run_id text NOT NULL REFERENCES runs(id), kind text NOT NULL,
  request_hash text NOT NULL, request jsonb NOT NULL, status text NOT NULL,

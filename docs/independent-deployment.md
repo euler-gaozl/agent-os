@@ -15,13 +15,17 @@
 | Worker | 8099 / worker | 消费 Runtime 运行状态；固定 DSH 和 Node | 执行库、Registry、ToolHub、所绑定的工具与模型 |
 | Storage | 8092 / service | documents、artifacts、artifact_refs | 执行库；这些表当前仍参与 Runtime 的本地事务 |
 | Sandbox | 8093 / sandbox | sandbox_jobs | Runtime 授权 HTTP API、专用隔离 Docker daemon |
-| Telemetry | 8100 / service | telemetry_exports 游标 | 执行库的事件、Registry 中的凭证、Langfuse |
+| Telemetry | 8100 / service | 本域 telemetry_inbox、telemetry_exports | Runtime 事件投递 API、Registry 中的凭证、Langfuse |
 | Console | 8090 / control | 无数据库 | 聚合服务 HTTP API |
 | Futures | 8098 / futures | 无数据库 | Registry 发布目录和 Runtime 任务 API |
 
 所有服务的实例心跳写入 Runtime；心跳失败不阻止其他服务提供本域功能。端口不代表必须映射到公网。独立部署允许不同主机和不同服务版本，但必须保留上表的依赖与兼容性。
 
-**尚未完成的数据解耦**：Runtime/Worker 直接读写执行库；Storage 资料效果与 Runtime 回执共用事务；Telemetry 读取执行事件。当前拆分了部署和 DDL 所有权，不能因此宣称这些服务可分别迁到任意数据库。后续拆库必须先实现效果 outbox/inbox 和恢复核对协议。ToolHub、Knowledge、Sources 已有独立 schema 及 HTTP 边界，可以为它们配置独立 PostgreSQL，但迁移历史资料和跨库灾备还需专项验收。
+**尚未完成的数据解耦**：Runtime/Worker 直接读写执行库；Storage 资料效果与 Runtime 回执共用事务。当前拆分了部署和 DDL 所有权，不能因此宣称这些服务可分别迁到任意数据库。后续拆库必须先实现效果 outbox/inbox 和恢复核对协议。ToolHub、Knowledge、Sources 已有独立 schema 及 HTTP 边界，可以为它们配置独立 PostgreSQL，但迁移历史资料和跨库灾备还需专项验收。
+
+Telemetry 新版无跨域 SQL：Runtime 的事务事件行同时是 outbox，`POST /v1/telemetry/claim` 每次最多 32 条、租约 30 秒并递增 fence；接收端在自己的 inbox 提交后才调用 ack。逐行投递标记避免序号较小的晚提交事件被最大游标跳过。重复 inbox 必须具有相同事件身份；过期实例回执会被拒绝。事件接收与批量导出各有一个有界循环、超时和错误退避，Runtime 故障不阻止导出已接收事件。外部 OTLP 为至少一次投递，使用稳定 trace/span ID；不能承诺第三方端恰好一次。导出的内容仅为事件标识、类型和时间。
+
+先升级 Runtime schema 和 Runtime，再迁移 Telemetry schema、部署 Telemetry，最后撤销其旧 `events` SQL 权限；全新初始化已采用最小权限。历史 `telemetry_exports` 保留并用于跳过已导出的记录；迁到独立数据库时必须搬迁这张表与完整 inbox。回滚到旧跨域 SQL 导出器需要恢复旧数据库连接和只读需求对应的权限，不属于无需准备的普通回滚。独立库灾备必须协调 outbox/inbox 恢复点：单独恢复较旧的 inbox 备份会缺少 Runtime 已确认的事件，需要从保留的执行事件重新投递；本版不自动 GC 事件或回执。
 
 Sandbox 新版只需要自己的作业表，通过 Runtime 的 `POST /v1/sandbox/authorize` 校验持久化调用意图、参数摘要、绑定工具、fence、规则版本和取消状态。等待作业锁后再次校验；Runtime 不可用时拒绝启动新执行。部署顺序是先升级 Runtime，再升级 Sandbox，最后撤销 Sandbox 对 `public.runs` 的旧权限；初始化作业已采用新权限。回滚到使用跨域 SQL 的旧 Sandbox 前需要恢复对应旧配置/权限，不能把协议迁移当作普通兼容发布。实际独立库迁移时要保留完整 sandbox_jobs 和确定性容器 ID，不得丢弃待核对作业。
 
