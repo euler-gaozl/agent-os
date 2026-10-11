@@ -51,7 +51,7 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 	if e != nil {
 		return e
 	}
-	cmd := exec.CommandContext(ctx, node, entry)
+	cmd := exec.CommandContext(ctx, node, "--max-old-space-size=192", entry)
 	// The harness gets no service/database/model credentials. Tool and model calls cross the pipe.
 	for _, key := range []string{"PATH", "SystemRoot", "WINDIR", "TEMP", "TMP", "LANG"} {
 		if value := os.Getenv(key); value != "" {

@@ -47,6 +47,7 @@ import {
   type Resource,
 } from "./shared";
 import "./console.css";
+import { ToolGovernance } from "./tool-governance";
 
 type Page = "agents" | "tools" | "knowledge" | "runs" | "services" | "settings";
 const nav = [
@@ -92,16 +93,17 @@ function Console() {
     } | null>(null),
     [search, setSearch] = useState("");
   const load = useCallback(async () => {
-    const [r, run, st] = await Promise.all([
-      api<Resource[]>("/resources"),
+    const [r, run, st] = await Promise.allSettled([
+      api<{items:Resource[];services:Record<string,boolean>}>("/resources"),
       api<any[]>("/runs"),
-      api("/status"),
+      api<any>("/status"),
     ]);
-    setResources(r);
-    setRuns(run);
-    setStatus(st);
+    const failures:string[]=[];
+    if(r.status==="fulfilled") {setResources(r.value.items); for(const [name,ok] of Object.entries(r.value.services)) if(!ok) failures.push(name);} else failures.push("资源目录");
+    if(run.status==="fulfilled") setRuns(run.value); else failures.push("运行记录");
+    if(st.status==="fulfilled") setStatus(st.value); else failures.push("服务状态");
     setReady(true);
-    setError("");
+    setError(failures.length ? failures.join("、")+" 暂不可用；其他服务仍可使用。" : "");
   }, []);
   const importInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -143,6 +145,11 @@ function Console() {
     setSearch("");
   };
   const importFile = async (file: File, kind: string) => {
+    if (kind === "skill" && file.name.endsWith(".zip")) {
+      const id = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "-") || "imported-skill";
+      await api("/toolhub/assets", { kind, id, spec: { name: id, content: "Bundle SKILL.md" }, bundle: await base64(file) });
+      await load(); notify("Skill 包已登记。请在检测与启停中审阅后启用。"); return;
+    }
     const text = await file.text();
     let resource: any;
     if (file.name.endsWith(".json")) {
@@ -1133,7 +1140,7 @@ function ToolLibrary({
             hidden
             ref={file}
             type="file"
-            accept={kind === "connector" ? ".json" : ".md,.txt,.json"}
+            accept={kind === "connector" ? ".json" : kind === "skill" ? ".md,.txt,.json,.zip" : ".md,.txt,.json"}
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) importFile(f, kind);
@@ -1191,10 +1198,9 @@ function ToolLibrary({
             (r) => r.kind === kind && (r.spec.name + r.id).includes(query),
           )
           .map((r) => (
-            <button
+            <div
               className="resource-row"
               key={r.id}
-              onClick={() => edit(kind, r)}
             >
               <span>
                 <span className="resource-small-icon">
@@ -1205,14 +1211,14 @@ function ToolLibrary({
                   )}
                 </span>
                 <span>
-                  <b>{r.spec.name || r.id}</b>
+                  <button className="text-button" onClick={() => edit(kind, r)}><b>{r.spec.name || r.id}</b></button>
                   <small>{r.id}</small>
                 </span>
               </span>
               <p>{r.spec.content?.slice(0, 100) || r.spec.endpoint}</p>
               <span className="version">v{r.revision}</span>
-              <ChevronRight size={16} />
-            </button>
+              {kind === "prompt" ? <button className="icon-button" aria-label="编辑资源" onClick={() => edit(kind, r)}><ChevronRight size={16} /></button> : <ToolGovernance resource={r} />}
+            </div>
           ))}
         {!resources.some((r) => r.kind === kind) && (
           <Empty
@@ -1769,7 +1775,7 @@ function Knowledge({
                     title="下载原文件"
                     aria-label={"下载 " + f.name}
                     onClick={() =>
-                      void downloadArtifact(f.artifact_hash, f.name).catch(
+                      void downloadArtifact(f.artifact_hash, f.name, true).catch(
                         (e) => notify(e.message),
                       )
                     }

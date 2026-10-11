@@ -19,12 +19,12 @@ func TestSnapshotPinsResourceVersions(t *testing.T) {
 		t.Fatal(e)
 	}
 	a := basicSnapshot("http://127.0.0.1").Agent
-	a.Skills = []Ref{{skill.ID, skill.Revision}}
+	a.Skills = []Ref{{ID: skill.ID, Revision: skill.Revision}}
 	resource, e := s.PutResource(ctx, "agent", "research", JSON(a))
 	if e != nil {
 		t.Fatal(e)
 	}
-	snap, e := s.Snapshot(ctx, Ref{resource.ID, resource.Revision}, 0)
+	snap, e := s.Snapshot(ctx, Ref{ID: resource.ID, Revision: resource.Revision}, 0)
 	if e != nil {
 		t.Fatal(e)
 	}

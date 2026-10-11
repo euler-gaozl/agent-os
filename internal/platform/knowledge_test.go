@@ -21,7 +21,7 @@ func testKB(t *testing.T, s *Store, id string, kb KnowledgeBase) Ref {
 	if e != nil {
 		t.Fatal(e)
 	}
-	return Ref{r.ID, r.Revision}
+	return Ref{ID: r.ID, Revision: r.Revision}
 }
 func TestKnowledgeUploadRetentionDedupAndVersionIsolation(t *testing.T) {
 	s, _ := testStore(t)

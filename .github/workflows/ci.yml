@@ -38,3 +38,42 @@ jobs:
       - run: go test -race -count=1 ./...
       - run: pnpm install --frozen-lockfile && pnpm run build
         working-directory: web
+  services:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      POSTGRES_PASSWORD: disposable-ci-database-only
+      SERVICE_TOKEN: disposable-ci-bootstrap-token-000000000000
+      ADMIN_TOKEN: disposable-ci-admin-token-0000000000000000
+      BUSINESS_TOKEN: disposable-ci-business-token-000000000000
+      MASTER_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      MCP_ALLOWED_HOSTS: fixture:8111
+      COMPOSE_FILE: compose.yaml:deploy/compose.ci.yaml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Validate and build independently deployable services
+        run: |
+          mkdir -p .state/services .state/ci-evidence
+          docker compose --profile maintenance --profile sandbox --profile telemetry config --quiet
+          docker compose --profile maintenance --profile sandbox --profile telemetry build
+      - name: Initialize disposable database and scoped identities
+        run: |
+          docker compose up -d --wait postgres
+          docker compose run --rm migrate
+      - name: Run bounded platform with replica pairs
+        run: docker compose up -d --wait --wait-timeout 120
+      - name: Real service contracts, authorization and crash recovery
+        run: node scripts/smoke-services.mjs
+      - name: Save sanitized service status
+        if: always()
+        run: docker compose ps --all --format json > .state/ci-evidence/containers.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-service-evidence
+          path: .state/ci-evidence/
+      - name: Dispose CI containers and test database
+        if: always()
+        run: docker compose --profile sandbox --profile telemetry down -v

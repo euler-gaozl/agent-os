@@ -1,0 +1,14 @@
+services:
+  runtime:
+    cpus: 0.05
+    deploy: {replicas: 2}
+  toolhub:
+    cpus: 0.05
+    deploy: {replicas: 2}
+  fixture:
+    image: node:24-alpine
+    command: [node, /fixture.mjs]
+    volumes: ['./scripts/ci-fixture.mjs:/fixture.mjs:ro']
+    read_only: true
+    mem_limit: 128m
+    cpus: 0.10

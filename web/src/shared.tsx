@@ -8,6 +8,11 @@ export type Resource = {
   spec: Record<string, any>;
 };
 export const labels: Record<string, string> = {
+  healthy: "检查通过",
+  unhealthy: "验活失败",
+  unchecked: "待检测",
+  drifted: "工具定义已变化",
+  rejected: "安全检查未通过",
   queued: "排队中",
   running: "执行中",
   waiting_children: "等待子任务",
@@ -39,7 +44,7 @@ export async function api<T = any>(
     const error = await response
       .json()
       .catch(() => ({ error: response.statusText }));
-    throw new Error(error.error || response.statusText);
+    throw new Error(error.error || error.findings?.map((f: any) => f.Message || f.message).join("；") || response.statusText);
   }
   return response.json();
 }
@@ -51,9 +56,9 @@ export function Badge({ state }: { state: string }) {
     </span>
   );
 }
-export async function downloadArtifact(hash: string, name: string) {
+export async function downloadArtifact(hash: string, name: string, knowledge = false) {
   const token = sessionStorage.getItem("admin-token");
-  const response = await fetch("/api/artifacts/" + encodeURIComponent(hash), {
+  const response = await fetch((knowledge ? "/api/knowledge/artifacts/" : "/api/artifacts/") + encodeURIComponent(hash), {
     headers: {
       "X-AgentOS-Client": "web",
       ...(token ? { Authorization: "Bearer " + token } : {}),

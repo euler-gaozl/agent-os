@@ -1,26 +1,24 @@
 name: agent-os
-x-environment: &environment
-  DATABASE_URL: postgres://agentos:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/agentos?sslmode=disable
-  SERVICE_TOKEN: ${SERVICE_TOKEN:?set SERVICE_TOKEN}
-  ADMIN_TOKEN: ${ADMIN_TOKEN:?set ADMIN_TOKEN}
-  MASTER_KEY: ${MASTER_KEY:?set MASTER_KEY}
-  DEV_LOCAL: '0'
-  TOOLHUB_URL: http://toolhub:8091
-  STORAGE_URL: http://storage:8092
-  SANDBOX_URL: http://sandbox:8093
-  REGISTRY_URL: http://registry:8096
-  RUNTIME_URL: http://runtime:8094
-  KNOWLEDGE_URL: http://knowledge:8095
 x-service: &service
-  build: .
-  image: agent-os:0.3.0
   restart: unless-stopped
+  init: true
   read_only: true
-  tmpfs: [/tmp]
+  tmpfs: ['/tmp:size=32m,mode=1777']
   security_opt: [no-new-privileges:true]
   cap_drop: [ALL]
+  pids_limit: 128
+  mem_limit: 128m
+  cpus: 0.10
+  stop_grace_period: 15s
+  healthcheck: &health
+    test: [CMD, /app/healthcheck]
+    interval: 5s
+    timeout: 4s
+    retries: 6
+    start_period: 10s
+  logging: {driver: json-file, options: {max-size: '10m', max-file: '3'}}
   depends_on:
-    migrate: {condition: service_completed_successfully}
+    postgres: {condition: service_healthy}
 services:
   postgres:
     image: postgres:18
@@ -28,6 +26,7 @@ services:
       POSTGRES_USER: agentos
       POSTGRES_DB: agentos
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    command: [postgres, -c, shared_buffers=128MB, -c, work_mem=4MB, -c, max_connections=64]
     volumes: [postgres-data:/var/lib/postgresql]
     healthcheck:
       test: [CMD-SHELL, 'pg_isready -U agentos -d agentos']
@@ -35,92 +34,130 @@ services:
       timeout: 3s
       retries: 20
     restart: unless-stopped
+    mem_limit: 512m
+    cpus: 0.40
   migrate:
-    build: .
-    image: agent-os:0.3.0
-    environment: *environment
-    command: [--role, migrate]
+    profiles: [maintenance]
+    build: {context: ., target: migration, args: {SERVICE: migrate-services}}
+    image: agent-os-migrate:0.5.0
+    volumes: ['./.state/services:/config']
+    environment:
+      DATABASE_URL: postgres://agentos:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/agentos?sslmode=disable
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?set ADMIN_TOKEN}
+      BUSINESS_TOKEN: ${BUSINESS_TOKEN:?set BUSINESS_TOKEN}
+      MASTER_KEY: ${MASTER_KEY:?set MASTER_KEY}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?set SERVICE_TOKEN}
+      DEV_LOCAL: '0'
+      REGISTRY_URL: http://registry:8096
+      RUNTIME_URL: http://runtime:8094
+      TOOLHUB_URL: http://toolhub:8091
+      KNOWLEDGE_URL: http://knowledge:8095
+      STORAGE_URL: http://storage:8092
+      SANDBOX_URL: http://sandbox:8093
+      DSH_RUNNER: /app/harness/runner.mjs
+      AGENTOS_NODE: /usr/local/bin/node
+      MCP_ALLOWED_HOSTS: ${MCP_ALLOWED_HOSTS:-}
     depends_on:
       postgres: {condition: service_healthy}
-  seed:
-    <<: *service
-    environment: *environment
-    command: [--role, seed]
-    restart: 'no'
   control:
     <<: *service
+    build: {context: ., target: control, args: {SERVICE: control}}
+    image: agent-os-control:0.5.0
+    volumes: ['./.state/services/control.json:/run/service.json:ro']
     environment:
-      <<: *environment
       LISTEN: 0.0.0.0:8090
-    command: [--role, control]
-  gateway:
-    image: nginx:1.28-alpine
-    volumes: ['./deploy/nginx.conf:/etc/nginx/nginx.conf:ro']
+      HEALTH_URL: http://127.0.0.1:8090/readyz
+      HEALTH_TOKEN_KEY: ADMIN_TOKEN
     ports: ['127.0.0.1:8090:8090']
-    depends_on: [control]
-    restart: unless-stopped
-  worker:
-    <<: *service
-    environment: *environment
-    command: [--role, worker]
-  registry:
-    <<: *service
-    environment:
-      <<: *environment
-      LISTEN: 0.0.0.0:8096
-    command: [--role, registry]
-  runtime:
-    <<: *service
-    environment:
-      <<: *environment
-      LISTEN: 0.0.0.0:8094
-    command: [--role, runtime]
-  knowledge:
-    <<: *service
-    environment:
-      <<: *environment
-      LISTEN: 0.0.0.0:8095
-    command: [--role, knowledge]
-  indexer:
-    <<: *service
-    environment: *environment
-    command: [--role, indexer]
-  futures:
-    <<: *service
-    environment:
-      <<: *environment
-      LISTEN: 0.0.0.0:8098
-      BUSINESS_TOKEN: ${BUSINESS_TOKEN:?set BUSINESS_TOKEN}
-    command: [--role, futures]
-    ports: ['127.0.0.1:8098:8098']
   toolhub:
     <<: *service
+    build: {context: ., target: service, args: {SERVICE: toolhub}}
+    image: agent-os-toolhub:0.5.0
+    volumes: ['./.state/services/toolhub.json:/run/service.json:ro']
     environment:
-      <<: *environment
       LISTEN: 0.0.0.0:8091
-    command: [--role, toolhub]
+      HEALTH_URL: http://127.0.0.1:8091/readyz
   storage:
     <<: *service
+    build: {context: ., target: service, args: {SERVICE: storage}}
+    image: agent-os-storage:0.5.0
+    volumes: ['./.state/services/storage.json:/run/service.json:ro']
     environment:
-      <<: *environment
       LISTEN: 0.0.0.0:8092
-    command: [--role, storage]
+      HEALTH_URL: http://127.0.0.1:8092/readyz
   sandbox:
     <<: *service
+    build: {context: ., target: sandbox, args: {SERVICE: sandbox}}
+    image: agent-os-sandbox:0.5.0
+    volumes: ['./.state/services/sandbox.json:/run/service.json:ro']
     profiles: [sandbox]
-    user: '0'
+    # Configure a rootless/isolated container daemon before enabling execution.
     environment:
-      <<: *environment
       LISTEN: 0.0.0.0:8093
+      HEALTH_URL: http://127.0.0.1:8093/readyz
       SANDBOX_IMAGE: ${SANDBOX_IMAGE:-}
-    volumes: ['${SANDBOX_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock']
-    command: [--role, sandbox]
+      DOCKER_HOST: ${DOCKER_HOST:-}
+  runtime:
+    <<: *service
+    build: {context: ., target: service, args: {SERVICE: runtime}}
+    image: agent-os-runtime:0.5.0
+    volumes: ['./.state/services/runtime.json:/run/service.json:ro']
+    environment:
+      LISTEN: 0.0.0.0:8094
+      HEALTH_URL: http://127.0.0.1:8094/readyz
+  knowledge:
+    <<: *service
+    build: {context: ., target: service, args: {SERVICE: knowledge}}
+    image: agent-os-knowledge:0.5.0
+    volumes: ['./.state/services/knowledge.json:/run/service.json:ro']
+    environment:
+      LISTEN: 0.0.0.0:8095
+      HEALTH_URL: http://127.0.0.1:8095/readyz
+  registry:
+    <<: *service
+    build: {context: ., target: service, args: {SERVICE: registry}}
+    image: agent-os-registry:0.5.0
+    volumes: ['./.state/services/registry.json:/run/service.json:ro']
+    environment:
+      LISTEN: 0.0.0.0:8096
+      HEALTH_URL: http://127.0.0.1:8096/readyz
+  indexer:
+    <<: *service
+    build: {context: ., target: service, args: {SERVICE: indexer}}
+    image: agent-os-indexer:0.5.0
+    volumes: ['./.state/services/indexer.json:/run/service.json:ro']
+    environment:
+      LISTEN: 0.0.0.0:8097
+      HEALTH_URL: http://127.0.0.1:8097/readyz
+  futures:
+    <<: *service
+    build: {context: ., target: futures, args: {SERVICE: futures}}
+    image: agent-os-futures:0.5.0
+    volumes: ['./.state/services/futures.json:/run/service.json:ro']
+    environment:
+      LISTEN: 0.0.0.0:8098
+      HEALTH_URL: http://127.0.0.1:8098/readyz
+      HEALTH_TOKEN_KEY: BUSINESS_TOKEN
+    ports: ['127.0.0.1:8098:8098']
+  worker:
+    <<: *service
+    build: {context: ., target: worker, args: {SERVICE: worker}}
+    image: agent-os-worker:0.5.0
+    volumes: ['./.state/services/worker.json:/run/service.json:ro']
+    environment:
+      LISTEN: 0.0.0.0:8099
+      HEALTH_URL: http://127.0.0.1:8099/readyz
+    mem_limit: 384m
+    cpus: 0.40
+    deploy: {replicas: 2}
   telemetry:
     <<: *service
-    profiles: [telemetry]
+    build: {context: ., target: service, args: {SERVICE: telemetry}}
+    image: agent-os-telemetry:0.5.0
+    volumes: ['./.state/services/telemetry.json:/run/service.json:ro']
     environment:
-      <<: *environment
-      LANGFUSE_URL: ${LANGFUSE_URL:-}
-    command: [--role, telemetry]
+      LISTEN: 0.0.0.0:8100
+      HEALTH_URL: http://127.0.0.1:8100/readyz
+    profiles: [telemetry]
 volumes:
   postgres-data:

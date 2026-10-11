@@ -42,6 +42,9 @@ func (s *Store) PutSecret(ctx context.Context, name, value string) error {
 	return e
 }
 func (s *Store) Secret(ctx context.Context, name string) (string, error) {
+	if s.Remote != nil && s.Remote.RegistryURL != "" {
+		return s.Remote.Secret(ctx, name)
+	}
 	if name == "" {
 		return "", nil
 	}

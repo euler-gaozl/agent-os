@@ -66,7 +66,7 @@ func testStore(t testing.TB) (*Store, string) {
 	return s, dsn
 }
 func basicSnapshot(endpoint string) Snapshot {
-	return Snapshot{AgentRef: Ref{"test", 1}, Agent: Agent{Name: "Test agent", Prompt: "Use recorded facts only.", Tools: []string{"note_save", "knowledge_search", "spawn_agent"}, Model: ModelConfig{BaseURL: endpoint, Model: "fixture-only"}, MaxSteps: 6, ContextBytes: 64000, MaxChildren: 2}}
+	return Snapshot{AgentRef: Ref{ID: "test", Revision: 1}, Agent: Agent{Name: "Test agent", Prompt: "Use recorded facts only.", Tools: []string{"note_save", "knowledge_search", "spawn_agent"}, Model: ModelConfig{BaseURL: endpoint, Model: "fixture-only"}, MaxSteps: 6, ContextBytes: 64000, MaxChildren: 2}}
 }
 func submit(t *testing.T, s *Store, snap Snapshot) string {
 	t.Helper()

@@ -3,27 +3,10 @@ package platform
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"github.com/jackc/pgx/v5"
-	"strings"
 )
 
 // Publication is part of the immutable Agent version, not a second business resource.
-type Publication struct {
-	Enabled     bool   `json:"enabled"`
-	App         string `json:"app"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-}
-
-func (p Publication) Validate() error {
-	if p.Enabled && (!safeName.MatchString(p.App) || strings.TrimSpace(p.Name) == "" || len(p.Name) > 120 || len(p.Description) > 2000) {
-		return errors.New("publication requires an app id, name (120 bytes) and description (2000 bytes)")
-	}
-	return nil
-}
-
-// Migrate legacy action definitions exactly once. Original immutable revisions remain readable.
 func migratePublications(ctx context.Context, tx pgx.Tx) error {
 	var exists bool
 	if e := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schema_versions WHERE version=4)").Scan(&exists); e != nil {
@@ -72,7 +55,7 @@ func migratePublications(ctx context.Context, tx pgx.Tx) error {
 		a.Name = old.a.Name
 		a.Prompt += "\n\n" + old.a.Instruction
 		a.Constraints = append(a.Constraints, old.a.Constraints...)
-		a.Publication = Publication{true, "futures", old.a.Name, old.a.Description}
+		a.Publication = Publication{Enabled: true, App: "futures", Name: old.a.Name, Description: old.a.Description}
 		if e = a.Validate(); e != nil {
 			return e
 		}

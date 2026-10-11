@@ -12,20 +12,43 @@ RUN corepack enable && corepack prepare pnpm@11.25.0 --activate && pnpm install 
 COPY harness/runner.mjs ./
 
 FROM golang:1.27.2-alpine AS backend
+ARG SERVICE
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY cmd/ cmd/
 COPY internal/ internal/
-RUN CGO_ENABLED=0 go build -trimpath -o /agentos ./cmd/agentos
+COPY services/ services/
+RUN CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /service ./cmd/${SERVICE} && CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /healthcheck ./cmd/healthcheck
 
-FROM node:24-alpine
-RUN apk add --no-cache ca-certificates docker-cli && adduser -D -u 10001 agentos
+FROM alpine:3.23 AS service
+RUN apk add --no-cache ca-certificates && adduser -D -u 10001 agentos
 WORKDIR /app
-COPY --from=backend /agentos /usr/local/bin/agentos
-COPY --from=web /src/web/dist /app/web/dist
-COPY --from=web /src/web/dist-futures /app/web/dist-futures
-COPY packs/ /app/packs/
-COPY --from=harness /app/harness /app/harness
+COPY --from=backend /service /app/service
+COPY --from=backend /healthcheck /app/healthcheck
 USER 10001
-ENTRYPOINT ["agentos"]
+ENTRYPOINT ["/app/service", "--config", "/run/service.json"]
+
+FROM service AS control
+COPY --from=web /src/web/dist /app/web/dist
+FROM service AS futures
+COPY --from=web /src/web/dist-futures /app/web/dist-futures
+
+FROM node:24-alpine AS worker
+RUN apk add --no-cache ca-certificates && adduser -D -u 10001 agentos
+WORKDIR /app
+COPY --from=backend /service /app/service
+COPY --from=backend /healthcheck /app/healthcheck
+COPY --from=harness /app/harness /app/harness
+ENV NODE_OPTIONS=--max-old-space-size=192
+USER 10001
+ENTRYPOINT ["/app/service", "--config", "/run/service.json"]
+
+FROM service AS sandbox
+USER root
+RUN apk add --no-cache docker-cli
+USER 10001
+
+FROM service AS migration
+USER root
+ENTRYPOINT ["sh", "-c", "/app/service --output /config && chown 10001:10001 /config/*.json"]

@@ -15,7 +15,7 @@ func TestBusinessUsesRuntimeAndHidesPlatformConfiguration(t *testing.T) {
 	s, _ := testStore(t)
 	ctx := context.Background()
 	agent := basicSnapshot("http://127.0.0.1").Agent
-	agent.Publication = Publication{true, "futures", "Fixture research", "Protocol test"}
+	agent.Publication = Publication{Enabled: true, App: "futures", Name: "Fixture research", Description: "Protocol test"}
 	a, e := s.PutResource(ctx, "agent", "fixture", JSON(agent))
 	if e != nil {
 		t.Fatal(e)
@@ -48,7 +48,7 @@ func TestBusinessUsesRuntimeAndHidesPlatformConfiguration(t *testing.T) {
 	if strings.Contains(string(actions), "instruction") || strings.Contains(string(actions), "agent") {
 		t.Fatal("private action configuration exposed")
 	}
-	input := map[string]any{"agent": Ref{a.ID, a.Revision}, "commodity": "test-fixture", "question": "fixture only", "period": "test"}
+	input := map[string]any{"agent": Ref{ID: a.ID, Revision: a.Revision}, "commodity": "test-fixture", "question": "fixture only", "period": "test"}
 	raw := send("POST", "/api/tasks", input)
 	var accepted struct {
 		ID string `json:"id"`
@@ -98,7 +98,7 @@ func TestControlProxyPreservesSubmissionIdempotency(t *testing.T) {
 	defer control.Close()
 	var first string
 	for i := 0; i < 2; i++ {
-		req, _ := http.NewRequest("POST", control.URL+"/api/runs", bytes.NewReader(JSON(map[string]any{"agent": Ref{a.ID, a.Revision}, "task": "proxy fixture", "constraints": []string{}})))
+		req, _ := http.NewRequest("POST", control.URL+"/api/runs", bytes.NewReader(JSON(map[string]any{"agent": Ref{ID: a.ID, Revision: a.Revision}, "task": "proxy fixture", "constraints": []string{}})))
 		req.Header.Set("Authorization", "Bearer "+testToken)
 		req.Header.Set("Idempotency-Key", "same-proxy-key")
 		resp, e := http.DefaultClient.Do(req)

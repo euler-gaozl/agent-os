@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/euler-gaozl/agent-os/internal/servicehttp"
 	"io"
 	"log/slog"
 	"net"
@@ -45,17 +46,7 @@ func decode(w http.ResponseWriter, r *http.Request, dst any) error {
 	return nil
 }
 func wrap(h handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if e := h(w, r); e != nil {
-			status := http.StatusBadRequest
-			if errors.Is(e, ErrUnknown) {
-				status = 409
-			} else if errors.Is(e, ErrFence) {
-				status = 412
-			}
-			jsonResponse(w, status, map[string]string{"error": e.Error()})
-		}
-	}
+	return servicehttp.Wrap(h)
 }
 func (s *Server) auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -124,6 +115,7 @@ func (s *Server) Handler() http.Handler {
 		s.registryRoutes(mux)
 	case "runtime":
 		s.runtimeRoutes(mux)
+		s.toolRoutes(mux)
 	case "knowledge":
 		s.knowledgeRoutes(mux)
 	case "futures":
@@ -191,10 +183,50 @@ func (s *Server) toolRoutes(mux *http.ServeMux) {
 		if inv.OperationID == "" || !strings.HasPrefix(inv.OperationID, inv.RunID+"/") {
 			return errors.New("operation id must be scoped to run")
 		}
+		// Recheck governance even for direct Runtime calls. Never trust the
+		// worker's saved snapshot as authorization for a withdrawn asset.
+		if s.Store.Remote != nil {
+			run, err := s.Store.Run(r.Context(), inv.RunID)
+			if err != nil {
+				return err
+			}
+			for _, ref := range run.Snapshot.Agent.Skills {
+				var v Skill
+				if err = s.Store.Resource(r.Context(), "skill", ref, &v); err != nil {
+					return err
+				}
+			}
+			for _, ref := range run.Snapshot.Agent.Connectors {
+				var v Connector
+				if err = s.Store.Resource(r.Context(), "connector", ref, &v); err != nil {
+					return err
+				}
+			}
+		}
+		remoteDocument := false
+		if inv.Name == "document_read" && s.Store.Remote != nil {
+			var args struct{ ID string }
+			if e := json.Unmarshal(inv.Arguments, &args); e != nil {
+				return e
+			}
+			var local bool
+			if e := s.Store.DB.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM documents WHERE id=$1)", args.ID).Scan(&local); e != nil {
+				return e
+			}
+			remoteDocument = !local
+		}
 		var result []byte
 		var e error
-		if strings.HasPrefix(inv.Name, "mcp_") || inv.Name == "sandbox_exec" || inv.Name == "kb_search" {
+		if strings.HasPrefix(inv.Name, "mcp_") || inv.Name == "sandbox_exec" || inv.Name == "kb_search" || remoteDocument {
 			result, e = s.Store.ExternalTool(r.Context(), inv, func(ctx context.Context, run Run) ([]byte, error) {
+				if remoteDocument {
+					var args map[string]any
+					if e := json.Unmarshal(inv.Arguments, &args); e != nil {
+						return nil, e
+					}
+					args["run_id"] = run.ID
+					return internalRequest(ctx, s.KnowledgeURL+"/v1/document", s.Token, args)
+				}
 				if inv.Name == "kb_search" {
 					var args map[string]any
 					if e := json.Unmarshal(inv.Arguments, &args); e != nil {
@@ -208,11 +240,11 @@ func (s *Server) toolRoutes(mux *http.ServeMux) {
 				}
 				if c, name, found := connectorForTool(run.Snapshot, inv.Name); found {
 					var e error
-					c.secret, e = s.Store.Secret(ctx, c.KeyEnv)
+					c.AuthToken, e = s.Store.Secret(ctx, c.KeyEnv)
 					if e != nil {
 						return nil, e
 					}
-					return ExecuteMCP(ctx, c, name, inv.Arguments)
+					return executeCheckedMCP(ctx, c, name, inv.Arguments)
 				}
 				return nil, errors.New("connector missing")
 			})
@@ -359,6 +391,37 @@ func RegisterInstance(ctx context.Context, s *Store, id, role string) {
 }
 
 func (s *Server) registryRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /v1/status", wrap(func(w http.ResponseWriter, r *http.Request) error {
+		_, e := s.Store.Secret(r.Context(), "DEEPSEEK_API_KEY")
+		jsonResponse(w, 200, map[string]bool{"deepseek_configured": e == nil})
+		return nil
+	}))
+	mux.HandleFunc("GET /v1/resources/{kind}/{id}/{revision}", wrap(func(w http.ResponseWriter, r *http.Request) error {
+		rev, e := strconv.Atoi(r.PathValue("revision"))
+		if e != nil {
+			return e
+		}
+		var spec json.RawMessage
+		if e = s.Store.Resource(r.Context(), r.PathValue("kind"), Ref{ID: r.PathValue("id"), Revision: rev}, &spec); e != nil {
+			return e
+		}
+		jsonResponse(w, 200, Resource{Kind: r.PathValue("kind"), ID: r.PathValue("id"), Revision: rev, Spec: spec})
+		return nil
+	}))
+	mux.HandleFunc("POST /v1/credentials/resolve", wrap(func(w http.ResponseWriter, r *http.Request) error {
+		var in struct {
+			Name string `json:"name"`
+		}
+		if e := decode(w, r, &in); e != nil {
+			return e
+		}
+		value, e := s.Store.Secret(r.Context(), in.Name)
+		if e != nil {
+			return e
+		}
+		jsonResponse(w, 200, map[string]string{"value": value})
+		return nil
+	}))
 	mux.HandleFunc("POST /v1/credentials", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var in struct {
 			Name  string `json:"name"`
@@ -470,7 +533,7 @@ func (s *Server) registryRoutes(mux *http.ServeMux) {
 			return e
 		}
 		var e error
-		c.secret, e = s.Store.Secret(r.Context(), c.KeyEnv)
+		c.AuthToken, e = s.Store.Secret(r.Context(), c.KeyEnv)
 		if e != nil {
 			return e
 		}
@@ -484,6 +547,49 @@ func (s *Server) registryRoutes(mux *http.ServeMux) {
 
 }
 func (s *Server) runtimeRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /v1/status", wrap(func(w http.ResponseWriter, r *http.Request) error {
+		rows, e := s.Store.DB.Query(r.Context(), "SELECT id,role,hostname,pid,heartbeat_at,heartbeat_at>now()-interval '15 seconds' FROM instances ORDER BY role,id")
+		if e != nil {
+			return e
+		}
+		defer rows.Close()
+		out := []any{}
+		for rows.Next() {
+			var id, role, host string
+			var pid int
+			var at time.Time
+			var active bool
+			if e = rows.Scan(&id, &role, &host, &pid, &at, &active); e != nil {
+				return e
+			}
+			out = append(out, map[string]any{"id": id, "role": role, "hostname": host, "pid": pid, "heartbeat_at": at, "active": active})
+		}
+		if e = rows.Err(); e != nil {
+			return e
+		}
+		jsonResponse(w, 200, map[string]any{"instances": out})
+		return nil
+	}))
+	mux.HandleFunc("POST /v1/instances", wrap(func(w http.ResponseWriter, r *http.Request) error {
+		var in struct {
+			ID, Role, Hostname string
+			PID                int
+		}
+		if e := decode(w, r, &in); e != nil {
+			return e
+		}
+		if !safeName.MatchString(in.ID) || !safeName.MatchString(in.Role) || len(in.Hostname) > 255 {
+			return errors.New("invalid instance identity")
+		}
+		if caller := servicehttp.Caller(r.Context()); caller != "" && caller != in.Role {
+			return &servicehttp.StatusError{Status: 403, Message: "instance role must match service identity"}
+		}
+		if _, e := s.Store.DB.Exec(r.Context(), "INSERT INTO instances(id,role,hostname,pid) VALUES($1,$2,$3,$4) ON CONFLICT(id) DO UPDATE SET heartbeat_at=now(),pid=$4", in.ID, in.Role, in.Hostname, in.PID); e != nil {
+			return e
+		}
+		jsonResponse(w, 200, map[string]bool{"registered": true})
+		return nil
+	}))
 	mux.HandleFunc("GET /v1/runs", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		v, e := s.Store.Runs(r.Context())
 		if e != nil {

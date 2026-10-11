@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/euler-gaozl/agent-os/internal/serviceclient"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -15,7 +16,11 @@ import (
 //go:embed schema.sql
 var schema string
 
-type Store struct{ DB *pgxpool.Pool }
+type Store struct {
+	DB         *pgxpool.Pool
+	CatalogURL string
+	Remote     *serviceclient.Client
+}
 
 func Open(ctx context.Context, url string) (*Store, error) {
 	config, err := pgxpool.ParseConfig(url)
@@ -31,7 +36,7 @@ func Open(ctx context.Context, url string) (*Store, error) {
 		p.Close()
 		return nil, err
 	}
-	return &Store{p}, nil
+	return &Store{DB: p}, nil
 }
 func (s *Store) Migrate(ctx context.Context) error {
 	tx, err := s.DB.Begin(ctx)
@@ -55,6 +60,11 @@ func event(ctx context.Context, tx pgx.Tx, id, kind string, v any) error {
 	return e
 }
 func (s *Store) PutResource(ctx context.Context, kind, id string, spec json.RawMessage) (Resource, error) {
+	if s.CatalogURL != "" && (kind == "skill" || kind == "connector") {
+		var result Resource
+		e := s.Remote.Request(ctx, "POST", s.CatalogURL+"/v1/assets", map[string]any{"kind": kind, "id": id, "spec": spec}, &result)
+		return result, e
+	}
 	tx, e := s.DB.Begin(ctx)
 	if e != nil {
 		return Resource{}, e
@@ -72,9 +82,17 @@ func (s *Store) PutResource(ctx context.Context, kind, id string, spec json.RawM
 	if e != nil {
 		return Resource{}, e
 	}
-	return Resource{kind, id, rev, spec}, tx.Commit(ctx)
+	return Resource{Kind: kind, ID: id, Revision: rev, Spec: spec}, tx.Commit(ctx)
 }
 func (s *Store) Resource(ctx context.Context, kind string, r Ref, dst any) error {
+	if s.Remote != nil {
+		if s.CatalogURL != "" && (kind == "skill" || kind == "connector") {
+			return s.Remote.Resource(ctx, kind, r, dst)
+		}
+		if s.Remote.RegistryURL != "" {
+			return s.Remote.Resource(ctx, kind, r, dst)
+		}
+	}
 	var b []byte
 	e := s.DB.QueryRow(ctx, "SELECT spec FROM resources WHERE kind=$1 AND id=$2 AND revision=$3", kind, r.ID, r.Revision).Scan(&b)
 	if e != nil {
@@ -94,9 +112,14 @@ func (s *Store) Resources(ctx context.Context) ([]Resource, error) {
 		if e = rows.Scan(&r.Kind, &r.ID, &r.Revision, &r.Spec); e != nil {
 			return nil, e
 		}
-		out = append(out, r)
+		if s.CatalogURL == "" || (r.Kind != "skill" && r.Kind != "connector") {
+			out = append(out, r)
+		}
 	}
-	return out, rows.Err()
+	if e = rows.Err(); e != nil {
+		return nil, e
+	}
+	return out, nil
 }
 func (s *Store) Snapshot(ctx context.Context, ref Ref, depth int) (Snapshot, error) {
 	out := Snapshot{AgentRef: ref, Children: map[string]Snapshot{}, Knowledge: map[string]KnowledgeBase{}}
