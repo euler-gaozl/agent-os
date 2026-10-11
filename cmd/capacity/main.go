@@ -66,10 +66,10 @@ func run() error {
 			return e
 		}
 		queries := []string{
-			`INSERT INTO artifacts(hash,body,media_type) SELECT md5(i::text),convert_to(repeat(md5(i::text),32),'UTF8'),'text/plain' FROM generate_series($1::int,$2::int) i`,
+			`INSERT INTO artifacts(hash,body,media_type) SELECT encode(sha256(convert_to(repeat(md5(i::text),32),'UTF8')),'hex'),convert_to(repeat(md5(i::text),32),'UTF8'),'text/plain' FROM generate_series($1::int,$2::int) i`,
 			`INSERT INTO documents(id,kind,title,content,source,metadata,scope) SELECT md5(i::text),'evidence','容量样本 record'||i,repeat(md5(i::text),32),'fixture://capacity/'||i,'{}','knowledge:capacity' FROM generate_series($1::int,$2::int) i`,
-			`INSERT INTO knowledge_files(id,kb_id,kb_revision,document_id,artifact_hash,name,status,config,name_vector) SELECT md5(i::text),'capacity',1,md5(i::text),md5(i::text),'容量样本 record'||i,'ready','{"engine":"local"}',to_tsvector('simple',$3||' 容量 量样 样本 record'||i) FROM generate_series($1::int,$2::int) i`,
-			`INSERT INTO artifact_refs(root,hash) SELECT 'knowledge:'||md5(i::text),md5(i::text) FROM generate_series($1::int,$2::int) i`,
+			`INSERT INTO knowledge_files(id,kb_id,kb_revision,document_id,artifact_hash,name,status,config,name_vector) SELECT md5(i::text),'capacity',1,md5(i::text),encode(sha256(convert_to(repeat(md5(i::text),32),'UTF8')),'hex'),'容量样本 record'||i,'ready','{"engine":"local"}',to_tsvector('simple',$3||' 容量 量样 样本 record'||i) FROM generate_series($1::int,$2::int) i`,
+			`INSERT INTO artifact_refs(root,hash) SELECT 'knowledge:'||md5(i::text),encode(sha256(convert_to(repeat(md5(i::text),32),'UTF8')),'hex') FROM generate_series($1::int,$2::int) i`,
 			`INSERT INTO knowledge_chunks(id,file_id,ordinal,content,search_vector) SELECT md5(i||':'||j),md5(i::text),j,left('甲醇供给 库存 record'||i||' bucket'||(i%1000)||' ordinal'||j||' '||repeat(md5(i||':'||j)||' ',30),800),to_tsvector('simple',$3||' 甲醇 醇供 供给 库存 record'||i||' bucket'||(i%1000)||' ordinal'||j) FROM generate_series($1::int,$2::int) i CROSS JOIN generate_series(0,9) j`,
 		}
 		for _, q := range queries {

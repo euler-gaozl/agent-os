@@ -80,3 +80,5 @@ CREATE INDEX IF NOT EXISTS model_attempts_call ON model_attempts(call_id);
 ALTER TABLE knowledge_files ADD COLUMN IF NOT EXISTS name_vector tsvector;
 CREATE INDEX IF NOT EXISTS knowledge_files_name_search ON knowledge_files USING gin(name_vector);
 CREATE INDEX IF NOT EXISTS knowledge_files_name_pending ON knowledge_files(id) WHERE name_vector IS NULL;
+ALTER TABLE sandbox_jobs ADD COLUMN IF NOT EXISTS cleaned_at timestamptz;
+CREATE INDEX IF NOT EXISTS sandbox_jobs_cleanup ON sandbox_jobs(created_at) WHERE cleaned_at IS NULL;

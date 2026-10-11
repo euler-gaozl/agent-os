@@ -1,0 +1,145 @@
+package platform
+
+import (
+	"context"
+	"encoding/json"
+	"os"
+	"os/exec"
+	"strings"
+	"testing"
+	"time"
+)
+
+// A real subprocess is killed by the parent test. Unlike a cancelled context,
+// SIGKILL cannot run Go defers or request Docker cleanup.
+func TestSandboxBrokerChild(t *testing.T) {
+	dsn := os.Getenv("SANDBOX_TEST_CHILD_DSN")
+	if dsn == "" {
+		t.Skip("subprocess only")
+	}
+	var inv Invocation
+	if e := json.Unmarshal([]byte(os.Getenv("SANDBOX_TEST_CHILD_INV")), &inv); e != nil {
+		t.Fatal(e)
+	}
+	s, e := Open(context.Background(), dsn)
+	if e != nil {
+		t.Fatal("open child database")
+	}
+	defer s.DB.Close()
+	if _, e = (&Server{Store: s}).sandbox(context.Background(), inv); e != nil {
+		t.Fatal(e)
+	}
+}
+func TestDockerSandboxIsolationReplayAndBrokerCrash(t *testing.T) {
+	if os.Getenv("TEST_DOCKER_SANDBOX") != "1" {
+		t.Skip("isolated Linux Docker daemon required")
+	}
+	if !strings.Contains(os.Getenv("SANDBOX_IMAGE"), "@sha256:") {
+		t.Fatal("pinned test image required")
+	}
+	s, dsn := testStore(t)
+	ctx := context.Background()
+	snap := basicSnapshot("https://fixture.invalid")
+	snap.Agent.Tools = []string{"sandbox_exec"}
+	submit(t, s, snap)
+	r := claim(t, s, "sandbox-acceptance")
+	if _, e := s.DB.Exec(ctx, "UPDATE runs SET lease_until=now()+interval '3 minutes' WHERE id=$1", r.ID); e != nil {
+		t.Fatal(e)
+	}
+	inv := invocation(r)
+	inv.Name = "sandbox_exec"
+	inv.Arguments = JSON(map[string]string{"code": `const fs=require('fs'),net=require('net'),os=require('os');let root='';try{fs.writeFileSync('/forbidden','x');root='writable'}catch(e){root=e.code}const socket=net.connect({host:'1.1.1.1',port:443});socket.setTimeout(500);socket.on('error',e=>console.log(JSON.stringify({uid:process.getuid(),root,network:e.code,interfaces:Object.keys(os.networkInterfaces())})));socket.on('timeout',()=>{socket.destroy();console.log('network timed out')});`})
+	server := &Server{Store: s}
+	body, e := server.sandbox(ctx, inv)
+	if e != nil {
+		t.Fatal(e)
+	}
+	var result struct {
+		Output string `json:"stdout_and_stderr"`
+		Exit   string `json:"exit_code"`
+	}
+	if e = json.Unmarshal(body, &result); e != nil {
+		t.Fatal(e)
+	}
+	if result.Exit != "0" || !strings.Contains(result.Output, `"uid":65534`) || (!strings.Contains(result.Output, "EROFS") && !strings.Contains(result.Output, "EACCES")) || !strings.Contains(result.Output, "ENETUNREACH") {
+		t.Fatal("sandbox restrictions not observed", result)
+	}
+	again, e := server.sandbox(ctx, inv)
+	if e != nil || string(again) != string(body) {
+		t.Fatal("sandbox replay changed", e)
+	}
+	var count int
+	if e = s.DB.QueryRow(ctx, "SELECT count(*) FROM sandbox_jobs WHERE cleaned_at IS NOT NULL").Scan(&count); e != nil || count != 1 {
+		t.Fatal("receipt cleanup missing", e)
+	}
+	inv.OperationID = r.ID + "/tool/crash"
+	inv.Arguments = JSON(map[string]string{"code": `console.log('BROKER_CRASH_RECEIPT');while(true){}`})
+	child := exec.Command(os.Args[0], "-test.run=^TestSandboxBrokerChild$")
+	child.Env = append(os.Environ(), "SANDBOX_TEST_CHILD_DSN="+dsn, "SANDBOX_TEST_CHILD_INV="+string(JSON(inv)))
+	if e = child.Start(); e != nil {
+		t.Fatal(e)
+	}
+	defer child.Process.Kill()
+	name := "agentos-" + Hash([]byte(inv.OperationID))[:32]
+	defer docker(context.Background(), "rm", "-f", name)
+	waitState := func(want string, seconds int) {
+		t.Helper()
+		until := time.Now().Add(time.Duration(seconds) * time.Second)
+		for time.Now().Before(until) {
+			state, e := docker(ctx, "inspect", "--format", "{{.State.Status}}", name)
+			if e == nil && strings.TrimSpace(state) == want {
+				return
+			}
+			time.Sleep(200 * time.Millisecond)
+		}
+		t.Fatal("container state timeout", want)
+	}
+	waitState("running", 15)
+	inspect, e := docker(ctx, "inspect", name)
+	if e != nil {
+		t.Fatal(e)
+	}
+	var configs []struct {
+		HostConfig struct {
+			NetworkMode    string
+			ReadonlyRootfs bool
+			Memory         int64
+			NanoCpus       int64
+			PidsLimit      int64
+			CapDrop        []string
+		}
+		Config struct {
+			User string
+			Cmd  []string
+		}
+	}
+	if e = json.Unmarshal([]byte(inspect), &configs); e != nil || len(configs) != 1 {
+		t.Fatal("container inspection failed")
+	}
+	c := configs[0]
+	if c.HostConfig.NetworkMode != "none" || !c.HostConfig.ReadonlyRootfs || c.HostConfig.Memory != 128<<20 || c.HostConfig.NanoCpus != 500000000 || c.HostConfig.PidsLimit != 64 || c.Config.User != "65534:65534" || len(c.Config.Cmd) < 1 || c.Config.Cmd[0] != "timeout" {
+		t.Fatal("sandbox resource config incorrect", c)
+	}
+	if e = child.Process.Kill(); e != nil {
+		t.Fatal(e)
+	}
+	_ = child.Wait()
+	// No broker exists now: the container must stop on its own within 30 seconds.
+	waitState("exited", 40)
+	if _, e = s.DB.Exec(ctx, "UPDATE sandbox_jobs SET created_at=now()-interval '1 minute' WHERE id=$1", inv.OperationID); e != nil {
+		t.Fatal(e)
+	}
+	if e = server.reapSandboxBatch(ctx); e != nil {
+		t.Fatal(e)
+	}
+	var saved []byte
+	var cleaned bool
+	if e = s.DB.QueryRow(ctx, "SELECT result,cleaned_at IS NOT NULL FROM sandbox_jobs WHERE id=$1", inv.OperationID).Scan(&saved, &cleaned); e != nil || !cleaned || !strings.Contains(string(saved), "BROKER_CRASH_RECEIPT") {
+		t.Fatal("orphan result not durably recovered", e)
+	}
+	restored, e := server.sandbox(ctx, inv)
+	if e != nil || string(restored) != string(saved) {
+		t.Fatal("orphan retry did not replay stored result", e)
+	}
+	t.Log("real container restrictions, replay, broker SIGKILL, independent timeout, orphan receipt recovery and cleanup passed")
+}

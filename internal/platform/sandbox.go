@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type boundedBuffer struct {
@@ -64,7 +65,11 @@ func (s *Server) sandbox(ctx context.Context, inv Invocation) ([]byte, error) {
 		return nil, e
 	}
 	defer tx.Rollback(ctx)
-	if _, e = checkInvocation(ctx, tx, inv); e != nil {
+	run, e := checkInvocation(ctx, tx, inv)
+	if e != nil {
+		return nil, e
+	}
+	if e = authorize(run, inv); e != nil {
 		return nil, e
 	}
 	if e = tx.Commit(ctx); e != nil {
@@ -86,12 +91,24 @@ func (s *Server) sandbox(ctx context.Context, inv Invocation) ([]byte, error) {
 	if _, e = conn.Exec(ctx, "SELECT pg_advisory_lock(hashtextextended($1,21))", lockKey); e != nil {
 		return nil, e
 	}
-	defer conn.Exec(context.Background(), "SELECT pg_advisory_unlock(hashtextextended($1,21))", lockKey)
+	defer unlockSandbox(conn, lockKey)
+	// Revalidate after waiting for another replica; the run may have been
+	// cancelled or fenced while this request was waiting for the job lock.
+	guard, e := conn.Begin(ctx)
+	if e != nil {
+		return nil, e
+	}
+	_, e = checkInvocation(ctx, guard, inv)
+	_ = guard.Rollback(ctx)
+	if e != nil {
+		return nil, e
+	}
 	var oldHash, status string
 	var result []byte
+	var created time.Time
 	name := "agentos-" + Hash([]byte(inv.OperationID))[:32]
 	hash := invocationHash(inv)
-	e = conn.QueryRow(ctx, "SELECT input_hash,status,result FROM sandbox_jobs WHERE id=$1", inv.OperationID).Scan(&oldHash, &status, &result)
+	e = conn.QueryRow(ctx, "SELECT input_hash,status,result,created_at FROM sandbox_jobs WHERE id=$1", inv.OperationID).Scan(&oldHash, &status, &result, &created)
 	if e != nil && !errors.Is(e, pgx.ErrNoRows) {
 		return nil, e
 	}
@@ -100,10 +117,11 @@ func (s *Server) sandbox(ctx context.Context, inv Invocation) ([]byte, error) {
 			return nil, errors.New("sandbox operation arguments changed")
 		}
 		if status == "completed" {
+			cleanupSandbox(conn, inv.OperationID, name)
 			return result, nil
 		}
 	} else {
-		if _, e = conn.Exec(ctx, "INSERT INTO sandbox_jobs(id,input_hash,container_name,status) VALUES($1,$2,$3,'pending')", inv.OperationID, hash, name); e != nil {
+		if e = conn.QueryRow(ctx, "INSERT INTO sandbox_jobs(id,input_hash,container_name,status) VALUES($1,$2,$3,'pending') RETURNING created_at", inv.OperationID, hash, name).Scan(&created); e != nil {
 			return nil, e
 		}
 	}
@@ -113,7 +131,11 @@ func (s *Server) sandbox(ctx context.Context, inv Invocation) ([]byte, error) {
 	if e = json.Unmarshal(inv.Arguments, &args); e != nil {
 		return nil, e
 	}
-	jobCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	deadline := created.Add(35 * time.Second)
+	if !deadline.After(time.Now()) {
+		return expireSandbox(ctx, conn, inv.OperationID, name)
+	}
+	jobCtx, cancel := context.WithDeadline(ctx, deadline)
 	defer cancel()
 	state, inspectErr := docker(jobCtx, "inspect", "--format", "{{.State.Status}}", name)
 	if inspectErr != nil {
@@ -121,7 +143,7 @@ func (s *Server) sandbox(ctx context.Context, inv Invocation) ([]byte, error) {
 		if !strings.Contains(strings.ToLower(state), "no such") {
 			return nil, fmt.Errorf("sandbox inspect failed: %s", truncateUTF8(state, 300))
 		}
-		out, e := docker(jobCtx, "create", "--name", name, "--network", "none", "--read-only", "--memory", "128m", "--cpus", "0.5", "--pids-limit", "64", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--user", "65534:65534", "--tmpfs", "/tmp:rw,noexec,nosuid,size=16m", "--label", "agentos.job="+inv.OperationID, image, "node", "--eval", args.Code)
+		out, e := docker(jobCtx, "create", "--name", name, "--network", "none", "--read-only", "--memory", "128m", "--cpus", "0.5", "--pids-limit", "64", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--user", "65534:65534", "--tmpfs", "/tmp:rw,noexec,nosuid,size=16m", "--log-opt", "max-size=1m", "--log-opt", "max-file=1", "--label", "agentos.job="+inv.OperationID, image, "timeout", "-s", "KILL", "30", "node", "--eval", args.Code)
 		if e != nil {
 			return nil, fmt.Errorf("sandbox create failed: %s", truncateUTF8(out, 300))
 		}
@@ -138,7 +160,7 @@ func (s *Server) sandbox(ctx context.Context, inv Invocation) ([]byte, error) {
 		cleanupCtx, c := context.WithTimeout(context.Background(), 5*time.Second)
 		_, _ = docker(cleanupCtx, "kill", name)
 		c()
-		return nil, errors.New("sandbox interrupted; container stopped, reconcile on retry")
+		return nil, errors.New("sandbox interrupted; stop requested, durable job will be reconciled on retry or by reaper")
 	}
 	output, e := docker(jobCtx, "logs", name)
 	if e != nil {
@@ -153,8 +175,119 @@ func (s *Server) sandbox(ctx context.Context, inv Invocation) ([]byte, error) {
 		return nil, e
 	}
 	// Keep container until its result is durable. Cleanup can safely repeat.
-	cleanupCtx, c := context.WithTimeout(context.Background(), 5*time.Second)
-	_, _ = docker(cleanupCtx, "rm", name)
-	c()
+	cleanupSandbox(conn, inv.OperationID, name)
 	return result, nil
+}
+
+func unlockSandbox(conn *pgxpool.Conn, id string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	if _, e := conn.Exec(ctx, "SELECT pg_advisory_unlock(hashtextextended($1,21))", id); e != nil {
+		_ = conn.Conn().Close(ctx)
+	}
+}
+func cleanupSandbox(conn *pgxpool.Conn, id, name string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	out, e := docker(ctx, "rm", name)
+	if e == nil || strings.Contains(strings.ToLower(out), "no such container") {
+		_, _ = conn.Exec(ctx, "UPDATE sandbox_jobs SET cleaned_at=now() WHERE id=$1 AND status='completed'", id)
+	}
+}
+func expireSandbox(ctx context.Context, conn *pgxpool.Conn, id, name string) ([]byte, error) {
+	state, e := docker(ctx, "inspect", "--format", "{{.State.Status}}", name)
+	output, exitCode := "", "not_started"
+	if e != nil && !strings.Contains(strings.ToLower(state), "no such") {
+		return nil, errors.New("cannot reconcile sandbox daemon state")
+	}
+	if e == nil {
+		if strings.TrimSpace(state) == "running" {
+			if _, e = docker(ctx, "kill", name); e != nil {
+				return nil, errors.New("sandbox stop not confirmed")
+			}
+		}
+		output, e = docker(ctx, "logs", name)
+		if e != nil {
+			return nil, e
+		}
+		exitCode, e = docker(ctx, "inspect", "--format", "{{.State.ExitCode}}", name)
+		if e != nil {
+			return nil, e
+		}
+	}
+	result := JSON(map[string]any{"stdout_and_stderr": output, "exit_code": strings.TrimSpace(exitCode), "deadline_expired": true, "output_capped_at_bytes": 65536, "container": name})
+	if _, e = conn.Exec(ctx, "UPDATE sandbox_jobs SET status='completed',result=$2 WHERE id=$1 AND status<>'completed'", id, result); e != nil {
+		return nil, e
+	}
+	cleanupSandbox(conn, id, name)
+	return result, nil
+}
+
+// ReapSandbox reconciles orphaned jobs across replicas. A container-side timeout
+// bounds computation even if every broker dies. Logs remain until the receipt is
+// durable; the reaper then removes only containers referenced by its job table.
+func (s *Server) ReapSandbox(ctx context.Context) error {
+	tick := time.NewTicker(5 * time.Second)
+	defer tick.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-tick.C:
+			if !strings.Contains(os.Getenv("SANDBOX_IMAGE"), "@sha256:") {
+				continue
+			}
+			_ = s.reapSandboxBatch(ctx)
+		}
+	}
+}
+func (s *Server) reapSandboxBatch(ctx context.Context) error {
+	rows, e := s.Store.DB.Query(ctx, "SELECT id FROM sandbox_jobs WHERE cleaned_at IS NULL AND created_at<now()-interval '35 seconds' ORDER BY created_at LIMIT 16")
+	if e != nil {
+		return e
+	}
+	ids := []string{}
+	for rows.Next() {
+		var id string
+		if e = rows.Scan(&id); e != nil {
+			rows.Close()
+			return e
+		}
+		ids = append(ids, id)
+	}
+	e = rows.Err()
+	rows.Close()
+	if e != nil {
+		return e
+	}
+	for _, id := range ids {
+		jobCtx, cancel := context.WithTimeout(ctx, 12*time.Second)
+		conn, e := s.Store.DB.Acquire(jobCtx)
+		if e != nil {
+			cancel()
+			return e
+		}
+		func() {
+			defer conn.Release()
+			var locked bool
+			if e := conn.QueryRow(jobCtx, "SELECT pg_try_advisory_lock(hashtextextended($1,21))", id).Scan(&locked); e != nil || !locked {
+				return
+			}
+			defer unlockSandbox(conn, id)
+			var name, status string
+			if e := conn.QueryRow(jobCtx, "SELECT container_name,status FROM sandbox_jobs WHERE id=$1 AND cleaned_at IS NULL", id).Scan(&name, &status); e != nil {
+				return
+			}
+			if name != "agentos-"+Hash([]byte(id))[:32] {
+				return
+			}
+			if status == "completed" {
+				cleanupSandbox(conn, id, name)
+			} else {
+				_, _ = expireSandbox(jobCtx, conn, id, name)
+			}
+		}()
+		cancel()
+	}
+	return nil
 }

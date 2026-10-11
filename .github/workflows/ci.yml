@@ -43,9 +43,21 @@ jobs:
         working-directory: harness
       - run: go vet ./...
       - run: node scripts/check-secrets.mjs
+      - name: Prepare isolated sandbox daemon on disposable CI VM
+        run: |
+          docker run -d --name agentos-test-dind --privileged -p 127.0.0.1:12375:2375 -e DOCKER_TLS_CERTDIR= docker:28-dind --tls=false
+          for i in $(seq 1 60); do docker -H tcp://127.0.0.1:12375 info >/dev/null 2>&1 && break; sleep 1; done
+          docker -H tcp://127.0.0.1:12375 pull node:24-alpine
+          IMAGE=$(docker -H tcp://127.0.0.1:12375 image inspect node:24-alpine --format '{{index .RepoDigests 0}}')
+          echo "SANDBOX_IMAGE=$IMAGE" >> "$GITHUB_ENV"
+          echo 'DOCKER_HOST=tcp://127.0.0.1:12375' >> "$GITHUB_ENV"
+          echo 'TEST_DOCKER_SANDBOX=1' >> "$GITHUB_ENV"
       - run: go test -race -count=1 ./...
       - run: pnpm install --frozen-lockfile && pnpm test && pnpm run build
         working-directory: web
+      - name: Dispose isolated sandbox daemon
+        if: always()
+        run: env -u DOCKER_HOST docker rm -f agentos-test-dind
   services:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -113,7 +125,7 @@ jobs:
           (while true; do docker stats --no-stream --format '{{json .}}' capacity-db capacity-client 2>/dev/null >> .state/capacity-evidence/resources.jsonl; sleep 5; done) &
           SAMPLER=$!
           trap 'kill "$SAMPLER" 2>/dev/null || true' EXIT
-          docker run --name capacity-client --network agentos-capacity --cpus=0.5 --memory=512m --read-only --cap-drop=ALL --security-opt=no-new-privileges -v /tmp/capacity:/app/capacity:ro -v "$PWD/.state/capacity-evidence:/evidence" -e CAPACITY_DISPOSABLE=agentos-capacity-fixtures-only -e CAPACITY_DOCUMENTS="$DOCUMENTS" -e CAPACITY_DATABASE_URL=postgres://agentos:disposable-capacity-only@capacity-db:5432/agentos_capacity?sslmode=disable alpine:3.23 /app/capacity
+          docker run --name capacity-client --user "$(id -u):$(id -g)" --network agentos-capacity --cpus=0.5 --memory=512m --read-only --cap-drop=ALL --security-opt=no-new-privileges -v /tmp/capacity:/app/capacity:ro -v "$PWD/.state/capacity-evidence:/evidence" -e CAPACITY_DISPOSABLE=agentos-capacity-fixtures-only -e CAPACITY_DOCUMENTS="$DOCUMENTS" -e CAPACITY_DATABASE_URL=postgres://agentos:disposable-capacity-only@capacity-db:5432/agentos_capacity?sslmode=disable alpine:3.23 /app/capacity
       - uses: actions/upload-artifact@v4
         if: always()
         with:
