@@ -84,7 +84,7 @@ docker run --rm --network agentos-private --read-only --cap-drop=ALL \
 
 迁移设置 3 秒锁等待、单语句 120 秒、总计 3 分钟预算，不能无界阻塞在线服务。新增大索引可能超过该预算，需要为该版本安排独立索引构建/维护流程；不能通过取消超时硬顶生产负载。升级采用先兼容扩展、再发布消费者、最后单独清理旧字段的步骤。自动回滚只回滚程序，不逆向删除 schema 或用户资料；破坏性 schema 变更不适用该流程。
 
-Windows 可在备份后直接执行新的迁移二进制 `--config .state/dev.json --service knowledge`，不必经过要求全停的历史 `Start-Local.ps1 -Migrate`。然后使用 `Build-Services.ps1 -Service knowledge`、`Stop-Local.ps1 -Service knowledge`、`Start-Local.ps1 -Service knowledge` 单独替换。
+Windows 现使用 `D:\workspace\agent-platform\ops\Platform.ps1` 的 `build/update/rollback/release-recover`；build 只产生候选清单，必须显式 update 才激活。完整路径和进程故障实绩见 [Windows 发布恢复](windows-release-recovery-20261012.md)。跨 schema/配置边界的迁移不属于普通兼容更新；旧 `Start-Local -Migrate` 在 format2 禁止执行，不能用重写全部配置绕过部署摘要。P2 拆仓继续落实每域迁移责任与对应的协调流程。
 
 ## 验收范围
 

@@ -36,7 +36,7 @@ Sandbox 的真实 Docker 隔离、主动干扰截止进程和执行服务强杀�
 & D:\workspace\agent-platform\ops\Platform.ps1 start -Workers 2
 ```
 
-启动脚本首次生成独立服务配置；12 个进程包括两个 Worker。升级使用 `Start-Local.ps1 -Migrate`，需先备份并停止旧进程。已有 Agent 不会被初始化脚本覆盖。模型密钥在中台“设置”中保存，Agent 中的凭证名称需与其一致。公开资料适配器可用 `node scripts/enable-public-sources.mjs` 登记到本机 ToolHub 并绑定期货 Agent（可重复执行，不重复生成相同版本）。详细工具路径、配置、停止与恢复见[v0.5 操作手册](docs/operations-v0.5.md)。
+本机保留 12 个进程，包括两个 Worker。兼容程序更新使用 `Platform.ps1 build/update/rollback`，中断的发布使用 `release-recover`；构建只生成候选包，不改变当前版本。完整依赖、配置和协议检查见 [Windows 发布恢复](docs/windows-release-recovery-20261012.md)。版本化部署不会因配置丢失自动运行管理员迁移；跨 schema/配置变更需单独协调。模型密钥在中台“设置”中保存，Agent 中的凭证名称需与其一致。公开资料适配器可用 `node scripts/enable-public-sources.mjs` 登记到本机 ToolHub 并绑定期货 Agent（可重复执行，不重复生成相同版本）。历史服务配置说明见[v0.5 操作手册](docs/operations-v0.5.md)。
 
 ## 架构与验收
 

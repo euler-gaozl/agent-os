@@ -19,6 +19,7 @@ New-ProtectedDirectory $testRoot
 $layout=@{format=1;project_root=$repo;state_root=(Join-Path $testRoot 'run');config_root=(Join-Path $testRoot 'config');release_root=(Join-Path $testRoot 'releases');log_root=(Join-Path $testRoot 'logs');database_root=(Join-Path $testRoot 'unused-postgres');postgres_bin='D:\workspace\.tools\postgresql\pgsql\bin';harness_root=(Join-Path $testRoot 'unused-harness');console_web_root=(Join-Path $testRoot 'unused-web');futures_web_root=(Join-Path $testRoot 'unused-futures');layout_path=(Join-Path $testRoot 'layout.json')}
 foreach($directory in @($layout.state_root,$layout.config_root,$layout.release_root,$layout.log_root,(Join-Path $layout.config_root 'services'))){$null=New-Item -ItemType Directory -Path $directory -Force}
 Write-PlatformJson $layout.layout_path $layout
+$layout=Get-PlatformLayout $repo $layout.layout_path
 Write-PlatformJson (Join-Path $layout.config_root 'dev.json') @{DATABASE_URL='postgres://synthetic@invalid:55555/unused'}
 Write-PlatformJson (Join-Path $layout.config_root 'services/toolhub.json') @{fixture='prevents implicit migration'}
 $configPath=Join-Path $layout.config_root 'services/telemetry.json'

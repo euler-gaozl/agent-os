@@ -30,7 +30,11 @@
 
 独立评审只做源码复核，没有独立执行测试；发现并修复了依赖基线未经验证、历史契约未绑定产物、纯 Go 构建依赖 Node、旧格式回退、根上方 junction、非目标退出导致恢复死锁、缺配置触发全量迁移。最新版未再确认阻断问题。测试运行由主执行器完成。
 
-当前 13 个原安装单元已登记为 format2，运行中的 12 个进程未替换。真实服务的候选构建/更新/回滚以及新格式整库备份恢复仍待下面的实绩补充，不能仅凭夹具宣布 P1 完成。
+13 个原安装单元已登记为 format2，登记本身未替换进程。随后从干净提交 `bd25195927263d963e11be6d8f9348361f84c7b1` 构建 Knowledge、Worker、Control、Futures 完整候选，各自实际更新后回滚，共八次切换通过；Worker 保持两个实例，各次非目标进程身份不变，两套 Web 响应入口摘要均等于所选包。报告：`local/evidence/real-releases-09729a36aaac4112be7f316e2fae68a0.json`。没有通过这些维护测试发起模型调用或 schema 迁移。
+
+新备份 `local/backups/release-catalog-20261012-v1` 已在停写窗口捕获，包含 current 和 previous 的完整发布集合。随后按 format2 冷启动原 12 个实例，Doctor 核心检查通过，无 pending，catalog generation=9；报告 `local/evidence/post-release-backup-bd25195.json`。隔离整库恢复正在另行执行，其结果未被本段提前标记为通过。
+
+首次新增 Windows CI [38246029224](https://github.com/euler-gaozl/agent-os/actions/runs/38246029224) 在发布夹具启动前失败：Actions 默认检出路径为 `D:\a`，不符合已明确的 `D:\workspace` 布局约束。已让 CI 将固定检出克隆到受支持目录，并在夹具启动任何进程前校验 layout；后续 CI 结果另记。没有放松本机路径检查来掩盖差异。
 
 ## 本机入口
 

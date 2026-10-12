@@ -20,11 +20,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Prepare the supported D workspace layout
+        shell: pwsh
+        run: |
+          $target = 'D:\workspace\agent-platform\repos\agent-os'
+          New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null
+          git clone --no-hardlinks -- $env:GITHUB_WORKSPACE $target
+          if ($LASTEXITCODE) { throw 'Cannot prepare the Windows platform checkout.' }
       - name: Real Windows launch, orphan cleanup and interrupted maintenance
         shell: pwsh
+        working-directory: D:/workspace/agent-platform/repos/agent-os
         run: ./scripts/Test-WindowsProcesses.ps1 -NodeBinary (Get-Command node).Source -GoBinary (Get-Command go).Source
       - name: Independent service update, rollback and interrupted release recovery
         shell: pwsh
+        working-directory: D:/workspace/agent-platform/repos/agent-os
         run: ./scripts/Test-WindowsReleases.ps1 -GoBinary (Get-Command go).Source
       - name: Retain synthetic evidence including failed cases
         if: always()
