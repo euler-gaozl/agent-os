@@ -1,6 +1,6 @@
 # P2 独立源码与发布验收
 
-2026-10-12。P2 进行中；本记录覆盖正在分批交付的六个服务，不代表 12 个服务或整个平台已完成。
+2026-10-12。P2 进行中；已有十个服务独立仓库，七个启用服务已切换到 Owner 版本，Telemetry 保持停用，Runtime/Worker 正在进入本机发布关卡。Console/Futures 尚未拆仓，不代表 12 个服务或整个平台已完成。
 
 ## 所有权
 
@@ -14,12 +14,16 @@
 | [agent-os-toolhub](https://github.com/euler-gaozl/agent-os-toolhub/pull/1) | toolhub 的 assets/state/files/audit | HTTP Registry 命名凭证、Runtime 回执 | 独立检出/数据库/本机更新回滚/修复版 CI 通过 |
 | [agent-os-storage](https://github.com/euler-gaozl/agent-os-storage/pull/1) | artifacts、artifact_refs | Runtime 提交授权根；不读执行库 | 同上；源码移除所有文档/笔记 SQL |
 | [agent-os-sources](https://github.com/euler-gaozl/agent-os-sources/pull/1) | sources 的 blobs/captures | 受限 HTTPS 公开来源 | 同上；正文格式限制如 README，不代表全品种覆盖 |
+| [agent-os-knowledge](https://github.com/euler-gaozl/agent-os-knowledge/pull/1) | knowledge schema；唯一迁移者 | HTTP Registry、Runtime；可选外部检索后端 | 独立源码、角色权限、CI、本机更新回滚通过 |
+| [agent-os-indexer](https://github.com/euler-gaozl/agent-os-indexer/pull/1) | 通过固定 Knowledge indexing 模块消费同域队列 | 固定 indexing 协议；外部索引 HTTP | 同上；旧/新二进制丢回复/轮询恢复通过 |
+| [agent-os-runtime](https://github.com/euler-gaozl/agent-os-runtime/pull/1) | 执行域 14 表；唯一迁移者 | HTTP Registry、ToolHub、Storage、Knowledge、Sandbox | 固定 execution 模块、受限角色、CI/旧新 Worker 接管通过；本机切换待验收 |
+| [agent-os-worker](https://github.com/euler-gaozl/agent-os-worker/pull/1) | 固定 Runtime execution 模块，自己不写迁移/SQL | DSH/Node、模型 HTTP、ToolHub、Storage、Registry | 独立构建/可搬迁发布包、Linux/Windows CI、六组接管通过；本机切换待验收 |
 
-每个仓库有独立 Go module、命令、镜像、服务配置例子、事务迁移和 PostgreSQL 测试。正常进程不做 DDL；迁移只改变本域表，在一个事务内提交表结构及授权，锁/语句超时有界。不重写其他服务配置或访问其数据库。Runtime/Worker 和 Knowledge/Indexer 后续保留必要的事务域，不以强拆事务伪造独立性。
+每个仓库有独立 Go module、命令、镜像和配置例子。拥有数据域的服务负责事务迁移和 PostgreSQL 测试；Worker/Indexer 只消费固定的窄事务模块，没有迁移入口。正常进程不做 DDL；迁移只改变本域表，在一个事务内提交结构及授权，锁/语句超时有界。Runtime/Worker 和 Knowledge/Indexer 保留必要事务域，不以强拆事务伪造独立性。
 
 ## 可重复构建
 
-SDK 固定 `v0.1.0-rc.2` / `f45ca168dee81f864533a8f77f8c203960caad1a`，规范 Go 模块校验值 `h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=`。通过 Go 下载器从固定 Git tag 获取，三个消费者提交 vendor，构建时 `GOWORK=off`、`GOPROXY=off`、`-mod=vendor`；不依赖兄弟目录替换或给 CI 配个人跨仓库令牌。先前自制 ZIP 校验失败已保留并废弃，不能使用其缓存重新生成依赖。
+SDK 固定 `v0.1.0-rc.2` / `f45ca168dee81f864533a8f77f8c203960caad1a`，规范 Go 模块校验值 `h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=`。通过 Go 下载器从固定 Git tag 获取，各消费者提交 vendor，构建时 `GOWORK=off`、`GOPROXY=off`、`-mod=vendor`；不依赖兄弟目录替换或给 CI 配个人跨仓库令牌。先前自制 ZIP 校验失败已保留并废弃，不能使用其缓存重新生成依赖。
 
 `deploy/service-sources.json` 固定已拆服务的仓库和提交。集成构建要求 Owner HEAD 与锁一致、目录干净、完整 HTTP/data/tools/engines 合约一致；缺映射直接拒绝。构建时清理继承的 Go flags、环境文件、workspace、目标平台；生成后核验 Go 模块、SDK 版本、VCS 提交与 clean 标志，再次检查源码未变化。发布描述使用 Owner 合约及来源。其余未拆角色明确仍从集成仓库构建，不能宣称已经拆仓。
 
@@ -106,3 +110,19 @@ Owner CI at the deployed source passed Linux PostgreSQL/race/vet/build/Docker an
 
 Knowledge `9d24da4` adds the now-executed binary fixture and rollback documentation; Indexer `ccbfbd2` adds documentation only. No production Go source or fixed indexing module changed. The source lock advances to those documentation/test commits; build metadata must be refreshed before describing them as selected runtime sources. P2 now has eight independent service repositories, seven enabled owner processes and one disabled optional Telemetry process. Runtime/Worker and Console/Futures still require extraction. The overall goal, including DSH source/storage and complete business/UI/failure validation, remains active.
 The independent review of the first binary fixture then identified two test-hardening gaps: PostgreSQL URI query identity keys could override its rewritten user/database, and the fault path ignored Kill/Wait outcomes. The helper now removes user/password/dbname/database overrides, validates the parsed scope, connects to assert actual current_user/current_database, and distinguishes tolerant cleanup from explicit fault injection. Injection requires a live process, a successful Kill, a failed exit, and unchanged durable state/track before the replacement starts. The unknown branch asserts zero polls. Both real executable scenarios passed again with these assertions: `local/evidence/p2-indexer-binary-handoff-99bccde24a924fed87e5af5b2fdef767/result.json`. The fixture cluster was stopped. The earlier report remains available; no evidence indicated it actually used overriding query parameters, but it is superseded by this stricter proof. These changes are tests only; the pinned indexing protocol is unchanged.
+The final test/documentation source selections were rebuilt from clean integration `752c908` and activated for both roles: Knowledge `5ba230c`, Indexer `ccbfbd2`, staged set `cf140e83082547b8b2395598f98d79cb`. This metadata refresh again preserved all knowledge table/readback hashes and non-target processes: `local/evidence/knowledge-owner-releases-9ea6a6fb428d47ef8d65127facb23fb7/result.json`. All seven enabled owners then had matching current PID/instance/fresh heartbeat: `local/evidence/owner-heartbeats-565967f3ec8e4d19adc84b6468f848e6.json`. Latest owner CI passed: [Knowledge 38264013356](https://github.com/euler-gaozl/agent-os-knowledge/actions/runs/38264013356), [Indexer 38264023759](https://github.com/euler-gaozl/agent-os-indexer/actions/runs/38264023759). Independent static review accepted the fixture identity and explicit-kill corrections without claiming to have executed them. The fixed indexing module remains rc.1/e26584d. The latest platform backup/isolated restore still predates these owner releases; a new checkpoint is required before claiming the eight-owner installation is covered by that recovery proof.
+
+## Runtime / Worker 独立源码与恢复关卡
+
+Runtime 固定事务模块 `v0.1.0-rc.1` 对应 `03bee5165d30708b9e68c76a51a0c4fde2713666`，规范 Go checksum `h1:eg1C7/5XjRmYFnD8XwBvhYc8i1EuwnicjBqfZPCJAyA=`；Worker 只 vendor `execution` 和 `internal/runstate` 两个包，不能引用 Runtime HTTP、工具实现或迁移。Runtime 的 `Exchange` 保留原意图/首次事件事务、归档确认、模型/工具回执、fence 及重放顺序；Worker 保留原 DSH 管道和历史 Go 恢复循环。模型/ToolHub HTTP 属于 Worker，业务效果及笔记事务属于 Runtime。没有重写 DSH 决策循环，P2.5 源码纳管与存储增强仍未完成。
+
+- Runtime 独立 clone、空模块缓存、真实 PostgreSQL 18、受限角色、并发/笔记/丢确认/模型预算/治理检查、vet 和三个程序构建通过：`p2-runtime-source-251793afc8d7478b88b8232c12668eca`；[固定模块 CI 38268513538](https://github.com/euler-gaozl/agent-os-runtime/actions/runs/38268513538) 通过。当前 Owner 选择推进到仅新增测试/说明的 `971949d`，其 CI 另行核对；事务模块 tag 不变。
+- Worker `014f577` 独立 clone、空模块缓存、Go 测试/vet/build 通过：`p2-worker-isolated-340dc02f99ad40d2a952f7ba78b111af/result.json`。使用完整固定 DSH 内核及合成模型/ToolHub HTTP，内存 ledger 仅供传输测试；不以此宣称 SQL 恢复。真实 Node 子进程的凭证环境隔离、传输失败与回执拒绝均测试。
+- Windows 离线完整包搬迁通过，旧根目录不存在、1473 个文件哈希一致，无目录链接：`p2-worker-package-1fbde8c4c2994decb07d82e9372110ee/result.json`。故意污染 GOOS/GOARCH/GOFLAGS 仍构建本机平台，打包核对 Node/Go 目标及干净源码身份。独立评审只读复核了产物，不冒充自己执行测试。
+- 首次 Worker CI `38271844739` Windows 通过，Linux 在包内相对命令文件链接处被全禁链接规则拒绝。`b07b739` 改为允许在包内解析的相对文件链接并记录/核对其目标；仍拒绝目录、绝对或越界链接。修正后的 [38272420124](https://github.com/euler-gaozl/agent-os-worker/actions/runs/38272420124) 两个平台均通过，包含真正搬迁后跑 DSH、Linux race 与 Docker build；本机新固定二进制来自独立 clone `p2-worker-fixed-build-57186b153e294ce6b9687c6d0ae98ba2`。
+- 六组实际二进制接管通过：旧 Windows Worker `5bfc84c9` 与新 `b07b739`，legacy-go、DSH 原协议、evidence-v1 各做旧→新和新→旧。工具经真实 Runtime HTTP 提交笔记和回执后，代理阻止回复，此时成功 Kill 且退出失败，再由另一版本领取。新 owner/fence=2 仍在 running 时检查旧请求必须返回 ErrFence，资料无变化后放行。每组恰好一条笔记、一条工具 HTTP、两条模型 HTTP。最终证据 `p2-worker-binary-handoff-3b30a659311644a9aaa476619ea0f654/result.json`；集群已停止，无付费调用。模型、ToolHub 代理、Storage HTTP 是明确夹具，不能算完整部署链路或 Node 进程树清理验收。
+- 第一版二进制测试遗漏 Worker 自身身份配置而退出，失败保留 `4da23e3...`。后续评审指出旧 fence 断言位于 completed 后且接受任意错误；最终版已改为 active running 窗口与精确 ErrFence，复验六组通过，评审核对源码/二进制哈希后关闭缺口。原失败/较弱证据不覆盖最终报告。
+
+Worker 新账号仅需执行权限，但旧 monorepo Worker readiness 会 SELECT 全部 Runtime 表。因此本机保留旧 SELECT 授权，不能把新角色最小权限测试当作旧版本回滚证明。没有执行 REVOKE 或拆开笔记/效果/回执的原子事务。
+
+集成的 33 项选源/拒绝测试通过：`service-sources-d2a595f2b39c4406a4942e9b17fc522d/result.json`；十个真实 Owner 合约及 checksum 选择核对通过：`p2-ten-real-owner-contracts.json`。Runtime/Worker 缺锁不再回退主仓；Worker 的 runner/lockfile 必须来自同一个 Owner 提交，Windows 发布包用 hoisted 安装且拒绝目录链接。以上条目还没有执行正式 Runtime/Worker update/rollback；当前七个启用 Owner 与原 Worker/Runtime 继续运行。

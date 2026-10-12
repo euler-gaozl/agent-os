@@ -67,19 +67,26 @@ try{
                 $nodeVersion=& $NodeBinary --version
                 if($LASTEXITCODE -or $nodeVersion -notmatch '^v24\.'){throw 'This pinned Harness release requires Node 24.'}
                 Copy-Item -LiteralPath $NodeBinary -Destination (Join-Path $directory 'node.exe')
+                if($owner){
+                    $notice=Join-Path $owner.root ('licenses/node-'+$nodeVersion.Trim()+'.txt')
+                    if(-not(Test-Path -LiteralPath $notice)){throw 'Selected Worker source does not include notices for this Node version.'}
+                    Copy-Item -LiteralPath $notice -Destination (Join-Path $directory 'NODE-LICENSE.txt')
+                }
                 $harness=Join-Path $directory 'harness';$null=New-Item -ItemType Directory -Path $harness
-                $tracked=(& git ls-files -- harness) -split '\r?\n'
+                $harnessSource=if($owner){$owner.root}else{$repoRoot}
+                $tracked=(& git -C $harnessSource ls-files -- harness) -split '\r?\n'
                 foreach($relative in $tracked|Where-Object{$_}){
-                    $source=Resolve-ReleasePath $repoRoot $relative
+                    $source=Resolve-ReleasePath $harnessSource $relative
                     $target=Resolve-ReleasePath $harness $relative.Substring('harness/'.Length)
                     $null=New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force
                     Copy-Item -LiteralPath $source -Destination $target
                 }
                 # Install into THIS dependency tree; old absolute junctions must not escape.
-                & $Pnpm --dir $harness install --frozen-lockfile --ignore-scripts --prod --store-dir 'D:\workspace\.tools\pnpm-store'
+                & $Pnpm --dir $harness install --frozen-lockfile --ignore-scripts --prod --config.node-linker=hoisted --store-dir 'D:\workspace\.tools\pnpm-store'
                 if($LASTEXITCODE){throw 'Pinned Harness dependency installation failed.'}
                 & (Join-Path $directory 'node.exe') --test (Join-Path $harness 'session-seams.test.mjs')
                 if($LASTEXITCODE){throw 'Staged Harness interface checks failed.'}
+                if(@(Get-ChildItem -LiteralPath $harness -Recurse -Force|Where-Object{$_.Attributes -band [IO.FileAttributes]::ReparsePoint}).Count){throw 'Windows Harness bundle must not contain directory or file links.'}
                 $assets.node=Get-ReleaseRelative $layout.release_root (Join-Path $directory 'node.exe')
                 $assets.harness=Get-ReleaseRelative $layout.release_root $harness
             }
@@ -95,6 +102,7 @@ try{
                 $assets.web=Get-ReleaseRelative $layout.release_root $output
             }
             $provenance=@{kind='source-build';commit=$revision;dirty=$dirty;built_at=[datetime]::UtcNow.ToString('o')}
+            if($owner){$after=Get-SelectedServiceSource $repoRoot $role $contract;if($after.commit -cne $owner.commit){throw 'Service source changed while packaging runtime assets.'}}
             if($owner){$provenance=@{kind='independent-source-build';repository=$owner.repository;commit=$owner.commit;integration_commit=$revision;dirty=$dirty;sdk=$owner.sdk;owner_modules=$owner.owner_modules;built_at=[datetime]::UtcNow.ToString('o')}}
             $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance
         }

@@ -18,7 +18,7 @@ try{
     Expect-Rejection 'missing lock never falls back to integration source' {Get-SelectedServiceSource $integration registry $contract}
     Write-PlatformJson $lockPath @{format=1;services=@{sandbox=@{repository='agent-os-sandbox';commit=('a'*40)}}}
     Expect-Rejection 'missing role mapping never falls back' {Get-SelectedServiceSource $integration registry $contract}
-    foreach($role in @('toolhub','storage','sources','knowledge','indexer')){
+    foreach($role in @('toolhub','storage','sources','knowledge','indexer','runtime','worker')){
         Expect-Rejection ('missing extracted mapping never falls back: '+$role) {Get-SelectedServiceSource $integration $role $contract}
     }
     [IO.File]::WriteAllText((Join-Path $owner 'go.mod'),"module github.com/euler-gaozl/agent-os-registry`ngo 1.27.0`n")
@@ -46,7 +46,7 @@ try{
     Expect-Rejection 'engine-only contract drift refused' {Get-SelectedServiceSource $integration registry @{http=$contract.http;data=$contract.data;tools=$contract.tools;engines=@('unexpected-engine')}}
     $lock.services.registry.repository='../outside';Write-PlatformJson $lockPath $lock
     Expect-Rejection 'repository path escape refused' {Get-SelectedServiceSource $integration registry $contract}
-    if($null -ne (Get-SelectedServiceSource $integration worker $contract)){throw 'Unsplit role unexpectedly mapped'}
+    if($null -ne (Get-SelectedServiceSource $integration control $contract)){throw 'Unsplit role unexpectedly mapped'}
     $checks.Add('not-yet-extracted role explicitly stays integration-owned')
     $indexer=Join-Path $root 'agent-os-indexer'
     foreach($dir in @('deploy','vendor')){New-Item -ItemType Directory -Path (Join-Path $indexer $dir) -Force|Out-Null}
@@ -82,6 +82,41 @@ try{
         $lock.services.indexer.commit=(& git -C $indexer rev-parse HEAD).Trim()
         $lock.services.indexer.owner_modules=@($wrong.Clone());Write-PlatformJson $lockPath $lock
         Expect-Rejection ('matching declarations differing from go.sum refused: '+$field) {Get-SelectedServiceSource $integration indexer $contract}
+    }
+    $worker=Join-Path $root 'agent-os-worker'
+    foreach($dir in @('deploy','vendor')){New-Item -ItemType Directory -Path (Join-Path $worker $dir) -Force|Out-Null}
+    $dependency=@{module='github.com/euler-gaozl/agent-os-runtime';version='v0.1.0-rc.1';commit=('c'*40);module_sum='h1:synthetic-owner';go_mod_sum='h1:synthetic-gomod';package='execution';protocol='runtime-execution-v1'}
+    [IO.File]::WriteAllText((Join-Path $worker 'go.mod'),"module github.com/euler-gaozl/agent-os-worker`ngo 1.27.0`nrequire (`n github.com/euler-gaozl/agent-os-runtime v0.1.0-rc.1`n)`n")
+    [IO.File]::WriteAllText((Join-Path $worker 'go.sum'),"github.com/euler-gaozl/agent-os-runtime v0.1.0-rc.1 h1:synthetic-owner`ngithub.com/euler-gaozl/agent-os-runtime v0.1.0-rc.1/go.mod h1:synthetic-gomod`n")
+    [IO.File]::WriteAllText((Join-Path $worker 'vendor/modules.txt'),"# github.com/euler-gaozl/agent-os-runtime v0.1.0-rc.1`n## explicit`n")
+    Write-PlatformJson (Join-Path $worker 'deploy/release-contract.json') @{format=1;role='worker';migration_owner='runtime';contract=$contract;backward_compatible=$true;execution_protocol='runtime-execution-v1'}
+    Write-PlatformJson (Join-Path $worker 'source-provenance.json') @{sdk=@{commit=('a'*40);module_sum='h1:synthetic-fixture'};owner_modules=@($dependency)}
+    & git -C $worker init -q -b main
+    & git -C $worker -c user.name=Fixture -c user.email=fixture@example.invalid add .
+    & git -C $worker -c user.name=Fixture -c user.email=fixture@example.invalid commit -q -m 'Synthetic consumer boundary fixture'
+    if($LASTEXITCODE){throw 'Worker fixture Git initialization failed'}
+    $indexCommit=(& git -C $worker rev-parse HEAD).Trim()
+    $lock.services.worker=@{repository='agent-os-worker';commit=$indexCommit;owner_modules=@($dependency.Clone())}
+    Write-PlatformJson $lockPath $lock
+    $consumer=Get-SelectedServiceSource $integration worker $contract
+    if($consumer.owner_modules.Count -ne 1 -or $consumer.owner_modules[0].commit -cne $dependency.commit){throw 'Owner dependency provenance omitted'}
+    $checks.Add('fixed worker narrow worker transaction owner accepted with external migration owner')
+    foreach($field in @('commit','version','module_sum','protocol')){
+        $saved=$lock.services.worker.owner_modules[0][$field];$lock.services.worker.owner_modules[0][$field]='drift';Write-PlatformJson $lockPath $lock
+        Expect-Rejection ('worker transaction dependency drift refused: '+$field) {Get-SelectedServiceSource $integration worker $contract}
+        $lock.services.worker.owner_modules[0][$field]=$saved
+    }
+    $lock.services.worker.Remove('owner_modules');Write-PlatformJson $lockPath $lock
+    Expect-Rejection 'missing worker transaction dependency lock refused' {Get-SelectedServiceSource $integration worker $contract}
+    foreach($field in @('module_sum','go_mod_sum')){
+        $wrong=$dependency.Clone();$wrong[$field]='h1:shared-incorrect-declaration'
+        Write-PlatformJson (Join-Path $worker 'source-provenance.json') @{sdk=@{commit=('a'*40);module_sum='h1:synthetic-fixture'};owner_modules=@($wrong)}
+        & git -C $worker add -- source-provenance.json
+        & git -C $worker -c user.name=Fixture -c user.email=fixture@example.invalid commit -q -m 'Synthetic incorrect owner checksum declaration'
+        if($LASTEXITCODE){throw 'Worker fixture change failed'}
+        $lock.services.worker.commit=(& git -C $worker rev-parse HEAD).Trim()
+        $lock.services.worker.owner_modules=@($wrong.Clone());Write-PlatformJson $lockPath $lock
+        Expect-Rejection ('matching declarations differing from go.sum refused: '+$field) {Get-SelectedServiceSource $integration worker $contract}
     }
     Write-PlatformJson (Join-Path $root 'result.json') @{passed=$true;checks=@($checks);scope='synthetic source selection only; no service activation or database';model_calls=0}
     Write-Output ('Source ownership checks passed: '+(Join-Path $root 'result.json'))

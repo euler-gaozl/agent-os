@@ -1,7 +1,7 @@
 # The integration repository coordinates fixed service versions. It never
 # supplies business source to independently owned service builds.
 function Get-SelectedServiceSource([string]$IntegrationRoot,[string]$Role,[System.Collections.IDictionary]$Contract){
-    $extracted=@('registry','sandbox','telemetry','toolhub','storage','sources','knowledge','indexer')
+    $extracted=@('registry','sandbox','telemetry','toolhub','storage','sources','knowledge','indexer','runtime','worker')
     if($Role -notin $extracted){return $null}
     $lockPath=Join-Path $IntegrationRoot 'deploy/service-sources.json'
     if(-not(Test-Path -LiteralPath $lockPath)){throw 'Independent service source lock is required.'}
@@ -21,7 +21,7 @@ function Get-SelectedServiceSource([string]$IntegrationRoot,[string]$Role,[Syste
     $status=@(& git -C $sourceRoot status --porcelain)
     if($LASTEXITCODE -or $status.Count){throw ('Independent service source must be clean: '+$Role)}
     $owner=Read-ReleaseJson (Join-Path $sourceRoot 'deploy/release-contract.json')
-    $migrationOwner=if($Role -eq 'indexer'){'knowledge'}else{$Role}
+    $migrationOwner=if($Role -eq 'indexer'){'knowledge'}elseif($Role -eq 'worker'){'runtime'}else{$Role}
     if($owner.format -ne 1 -or $owner.role -cne $Role -or $owner.migration_owner -cne $migrationOwner -or
         -not $owner.contract -or $owner.backward_compatible -ne $true -or (Get-ContractIdentity $owner.contract) -cne (Get-ContractIdentity $Contract)){
         throw ('Owner release contract is not compatible with this integration: '+$Role)
@@ -33,15 +33,16 @@ function Get-SelectedServiceSource([string]$IntegrationRoot,[string]$Role,[Syste
     if(-not(Test-Path -LiteralPath (Join-Path $sourceRoot 'vendor/modules.txt'))){throw 'Pinned vendored dependencies missing.'}
     $dependencies=@($proof['owner_modules']|Where-Object{$null -ne $_})
     $lockedDependencies=@($entry['owner_modules']|Where-Object{$null -ne $_})
-    if($Role -eq 'indexer'){
-        if($dependencies.Count -ne 1 -or $lockedDependencies.Count -ne 1 -or $owner['indexing_protocol'] -cne 'knowledge-indexing-v1'){
-            throw 'Indexer requires one fixed Knowledge transaction module and protocol.'
+    if($Role -in @('indexer','worker')){
+        $policy=if($Role -eq 'indexer'){@{module='github.com/euler-gaozl/agent-os-knowledge';package='indexing';protocol='knowledge-indexing-v1';field='indexing_protocol'}}else{@{module='github.com/euler-gaozl/agent-os-runtime';package='execution';protocol='runtime-execution-v1';field='execution_protocol'}}
+        if($dependencies.Count -ne 1 -or $lockedDependencies.Count -ne 1 -or $owner[$policy.field] -cne $policy.protocol){
+            throw 'Consumer requires one fixed transaction-owner module and protocol.'
         }
         $dependency=$dependencies[0]
-        if($dependency.module -cne 'github.com/euler-gaozl/agent-os-knowledge' -or $dependency.package -cne 'indexing' -or
-            $dependency.protocol -cne $owner.indexing_protocol -or $dependency.version -cnotmatch '^v\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?$' -or
+        if($dependency.module -cne $policy.module -or $dependency.package -cne $policy.package -or
+            $dependency.protocol -cne $policy.protocol -or $dependency.version -cnotmatch '^v\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?$' -or
             $dependency.commit -cnotmatch '^[a-f0-9]{40}$' -or -not $dependency.module_sum.StartsWith('h1:') -or -not $dependency.go_mod_sum.StartsWith('h1:')){
-            throw 'Indexer transaction owner provenance is incomplete.'
+            throw 'Consumer transaction owner provenance is incomplete.'
         }
         foreach($field in @('module','version','commit','module_sum','go_mod_sum','protocol','package')){
             if($dependency[$field] -cne $lockedDependencies[0][$field]){throw ('Transaction owner dependency differs from integration lock: '+$field)}
