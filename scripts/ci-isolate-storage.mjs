@@ -11,7 +11,7 @@ const configPath='.state/services/storage.json';
 const config=JSON.parse(fs.readFileSync(configPath,'utf8'));
 const url=new URL(config.DATABASE_URL);
 assert.equal(url.pathname,'/agentos');
-assert.equal(sql('agentos','SELECT (SELECT count(*) FROM artifacts)+(SELECT count(*) FROM artifact_refs)'), '0', 'Refuse to discard retained data');
+assert.equal(sql('agentos','SELECT (SELECT count(*) FROM public.artifacts)+(SELECT count(*) FROM public.artifact_refs)+(SELECT count(*) FROM public.knowledge_files)+(SELECT count(*) FROM public.knowledge_chunks)'), '0', 'Refuse to discard retained or legacy knowledge data');
 sql('agentos','CREATE DATABASE agentos_storage_ci');
 url.pathname='/agentos_storage_ci';config.DATABASE_URL=url.href;
 const ddl=new URL(url);ddl.username='agentos';ddl.password=process.env.POSTGRES_PASSWORD;
@@ -26,7 +26,9 @@ dc('run','--rm','--no-deps','--entrypoint','/app/service','migrate','--retire-st
 assert.equal(sql('agentos',"SELECT has_table_privilege('agentos_storage','documents','SELECT,INSERT,UPDATE,DELETE')"),'f');
 // Bootstrap legacy tables are empty. Removing them means a hidden direct SQL
 // fallback fails even if future provisioning accidentally broadens privileges.
-sql('agentos','DROP TABLE artifact_refs; DROP TABLE artifacts');
+// These are empty legacy public tables, not the live knowledge schema. Drop
+// named dependants first; never use CASCADE to hide an unexpected dependency.
+sql('agentos','DROP TABLE public.knowledge_chunks; DROP TABLE public.knowledge_files; DROP TABLE public.artifact_refs; DROP TABLE public.artifacts');
 assert.equal(sql('agentos',"SELECT to_regclass('artifacts') IS NULL AND to_regclass('artifact_refs') IS NULL"),'t');
 const staged='.state/ci-storage-config.json';
 fs.writeFileSync(staged,JSON.stringify(config),{mode:0o600});

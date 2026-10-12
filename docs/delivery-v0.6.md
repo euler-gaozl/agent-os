@@ -7,6 +7,10 @@
 - 本机先发布 Storage，再发布 Runtime/两个 Worker，撤销后两者的产物 SQL 权限后，受控 DSH 运行 `b45209c6a5814e6e173c85325f511a79` 完成两次模型协议请求和 artifact_read。旧/新原始事件产物哈希均一致；其他 8 个经进程身份核实的服务及全部配置 hash 未变。进程清单中另有 7 条历史失效记录，未当作活进程通过项。备份 `20261012-084117.dump` 恢复到隔离库：43 个资源版本、4 份笔记、89 个产物，无产物哈希错误/悬空引用。
 - 当前后续修改把 Agent 持久化笔记归到 Runtime，移除生产 Storage 的 documents DDL/API/权限/readiness；Console 管理入口改走 Runtime。已有 note_save 事务、scope 和模型协议不变。真实独立数据库测试、提交前回滚/提交后重放、DSH 恢复、管理权限、旧角色授权退役和原资料保留通过；本机全量 Go 测试通过。独立只读评审发现旧入口漏路由和旧授权残留，两项已修正并单独测试。此项本机正式服务升级及 Linux 全链路仍待执行，不沿用 be5be64 的通过结果。
 
+- 笔记所有权修改 `8cdb613` 已在本机按 Runtime → Console → Storage 发布，然后执行独立退役命令；旧 Storage 账号查询 documents 实际得到 PostgreSQL 42501。升级前后原有 4 份笔记的完整管理响应 SHA-256 相同，其他 9 个经身份核实的运行进程及全部配置 hash 不变。受控 DSH 任务 `ab4ac313db387dfc71cae9f1919501a3` 执行 note_save → document_read → artifact_read，共 4 次模型协议夹具请求、3 个完成回执，无付费调用；产物哈希独立核验通过。
+- 发布后备份 `20261012-091334.dump` 已恢复到隔离库：45 个资源版本、5 份笔记、103 个产物，无哈希错误或悬空引用，其他服务原资料完整性检查通过。
+- 新边界 [CI 38190664443](https://github.com/euler-gaozl/agent-os/actions/runs/38190664443) 的 Go race/Web 作业通过，但容器作业在隔离环境初始化失败：旧 public.knowledge_files 的外键阻止移除空的 public.artifacts。修正夹具，先核对历史知识文件/块也全部为空，再按依赖顺序显式删除指定旧表；不使用 CASCADE，不涉及 Knowledge 自有 schema，也不用于本机资料。该修正待重新运行，不将失败记为通过。同代码的真实 Langfuse 和检索后端作业已通过。
+
 ## 2026-10-12 Web 与接口增量
 
 - 中台六页、Agent 五个配置页、独立业务工作台完成整体视觉和交互调整。桌面/390px 窄屏、弹窗键盘操作、真实资料回读、受控 12 秒乱序响应检查见 [UI 验收](ui-validation-v0.6.md)。独立评估 agent 只读指出的七项问题均已修正并复核，评审没有冒充运行测试。
