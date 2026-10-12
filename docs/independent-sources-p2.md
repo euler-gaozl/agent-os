@@ -11,7 +11,7 @@
 | [agent-os-registry](https://github.com/euler-gaozl/agent-os-registry/pull/1) | resources、secrets | HTTP ToolHub；可选 Runtime 心跳 | 独立源码/构建/迁移/CI、本机更新回滚通过 |
 | [agent-os-sandbox](https://github.com/euler-gaozl/agent-os-sandbox/pull/1) | sandbox_jobs | HTTP Runtime；执行另需 Linux Docker | broker 更新回滚通过；本机隔离执行不可用 |
 | [agent-os-telemetry](https://github.com/euler-gaozl/agent-os-telemetry/pull/1) | telemetry_inbox、telemetry_exports | HTTP Runtime claim/ack、Registry 命名凭证、Langfuse | 构建/CI 和零实例 catalog 切换通过；exporter 未配置 |
-| [agent-os-toolhub](https://github.com/euler-gaozl/agent-os-toolhub/pull/1) | toolhub 的 assets/state/files/audit | HTTP Registry 命名凭证、Runtime 回执 | 独立检出/数据库/本机更新回滚通过；修复版 CI 继续核验 |
+| [agent-os-toolhub](https://github.com/euler-gaozl/agent-os-toolhub/pull/1) | toolhub 的 assets/state/files/audit | HTTP Registry 命名凭证、Runtime 回执 | 独立检出/数据库/本机更新回滚/修复版 CI 通过 |
 | [agent-os-storage](https://github.com/euler-gaozl/agent-os-storage/pull/1) | artifacts、artifact_refs | Runtime 提交授权根；不读执行库 | 同上；源码移除所有文档/笔记 SQL |
 | [agent-os-sources](https://github.com/euler-gaozl/agent-os-sources/pull/1) | sources 的 blobs/captures | 受限 HTTPS 公开来源 | 同上；正文格式限制如 README，不代表全品种覆盖 |
 
@@ -69,5 +69,7 @@ ToolHub 保留注册/检查/启停/版本漂移/监视租约原行为，用受�
 第一批报告 `local/evidence/first-owner-releases-0f074c2819f847f2bbbc7e4397176755/result.json`；第二批报告 `local/evidence/second-owner-releases-607867e55e8c41e4b8611745e7048f7e/result.json`。第二批使用各自受限数据库账号，在数据库内计算所有现有不可变产物/引用、原始捕获、工具资源/文件及启用状态的行哈希；每次切换前后相同。还通过真实认证 HTTP 回读原有产物、采集原文和工具目录，字节哈希不变。没有清库、造一套空数据替代迁移，未读取/输出凭证值。
 
 随后验证每个当前进程的 PID、启动配置 INSTANCE_ID 与 Runtime 的新鲜心跳（10 秒内）一致，且实际发布描述的 Owner commit 等于源码锁：`local/evidence/owner-heartbeats-650bb28c1b8f49cc84979c7d29d86256.json`。最终 Doctor 核心通过，保留两个 Worker，模型调用 0。Telemetry 没有实例，不声称心跳/导出已验证；Sandbox 仍仅为 broker。这些是 Windows 单机实绩，不替代物理节点 HA、真实 Agent 故障和后续业务验收。
+
+六个修正后的固定 Owner CI 全部成功（Linux PostgreSQL/race/vet/build/Docker、Windows unit/build）：[Registry 38257018318](https://github.com/euler-gaozl/agent-os-registry/actions/runs/38257018318)、[Sandbox 38257037210](https://github.com/euler-gaozl/agent-os-sandbox/actions/runs/38257037210)、[Telemetry 38257055443](https://github.com/euler-gaozl/agent-os-telemetry/actions/runs/38257055443)、[ToolHub 38257072335](https://github.com/euler-gaozl/agent-os-toolhub/actions/runs/38257072335)、[Storage 38257088118](https://github.com/euler-gaozl/agent-os-storage/actions/runs/38257088118)、[Sources 38257104366](https://github.com/euler-gaozl/agent-os-sources/actions/runs/38257104366)。独立 Owner 的 CI 不等于 Linux 集成已切换到全部新仓；后者需等其余六个服务抽离后接入统一编排验收。
 
 下一批先确定 Knowledge/Indexer 与 Runtime/Worker 两个必要共享事务域的窄库归属、迁移拥有者和版本固定方式；禁止把索引/执行 SQL 放回通用 SDK，也不能在两仓复制整套业务存储逻辑。最后拆两个 BFF/Web 并移除集成仓库的业务源码构建路径，再进入 P2.5 DSH 源码和存储改造。
