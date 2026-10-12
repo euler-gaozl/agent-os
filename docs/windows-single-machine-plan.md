@@ -139,6 +139,8 @@ Knowledge、两个 Worker、Console、Futures 各自执行真实更新与回滚�
 
 P1 完成，开始 P2：先拆 Registry/Sandbox/Telemetry 的源码与构建边界，再推进其他服务，最后处理执行域和索引域的共享事务包。源码 Harness、完整 UI、实际 Agent 故障和真实业务研究仍按 P2.5–P5 执行；完整 Goal 保持 active。P1 的兼容发布不包含跨协议/configuration/schema 的自动迁移或机器宕机 HA。
 
+P2 起步检查确认旧草稿不能直接转正：`agent-os-sdk/recordstore` 仍有 documents/artifacts SQL 与删除逻辑，`servicehost` 仍内置所有角色的 schema readiness 和策略；Registry/Sandbox/Telemetry 的现有启动器还依赖多域 `internal/platform`。先将 SQL/迁移/权限就绪条件归回各自服务，SDK 只保留协议、传输和由服务传入策略的通用启动设施。Worker/Indexer 要独立建仓，不沿用草稿把它们算进 Runtime/Knowledge 仓库的结构。首批独立构建必须在 `GOWORK=off`、无兄弟目录替换的环境通过；跨私有仓库的依赖分发不能靠把宽权限个人令牌塞入 CI 蒙混过去。
+
 ### P1 发布事务增量（2026-10-12 19:53 后）
 
 已实现完整服务发布包、唯一 current/previous/pending catalog、单服务 update/rollback/release-recover，支持 Worker 固定依赖和 Web 各自资源。16 项 Windows 真进程夹具通过，含发布和恢复流程中断、非目标独立退出、依赖篡改及完整包还原；正式原安装已登记为 format2。当时尚待的真实发布和备份恢复已经在上节完成，保留此实施次序。详细边界、评审修复和失败记录见 [发布恢复记录](windows-release-recovery-20261012.md)。
