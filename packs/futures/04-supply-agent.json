@@ -16,7 +16,8 @@
       "knowledge_search",
       "note_save",
       "artifact_read",
-      "document_read"
+      "document_read",
+      "run_recall"
     ],
     "model": {
       "base_url": "https://api.deepseek.com",
@@ -38,7 +39,8 @@
     "constraints": [
       "只呈现事实与资料变化，不给出价格预测或交易建议。",
       "原始数据、计划和第三方预测分开。",
-      "近月、远月和长期使用具体日历区间；缺失数据不得编造。"
+      "近月、远月和长期使用具体日历区间；缺失数据不得编造。",
+      "证据回查：摘要遗漏来源时，使用 run_recall 找回本任务及后代已提交的回执，再回读原文核验。has_more=false 只表示当前筛选下的回执页结束，不能证明资料覆盖完整或外部不存在其他证据。"
     ],
     "publication": {
       "enabled": true,

@@ -4,7 +4,15 @@
 
 新增固定 `evidence-v1` 执行协议：首次事件批次与调用意图同事务落盘，经 Storage 分段和清单确认后才执行模型/工具；`run_recall` 可在摘要遗失来源 ID 后重新找到本任务及后代的工具回执和事件目录。旧任务保持原 engine/协议，具体预算与边界见[存储契约](architecture/storage-evidence-v1.md)。
 
-本机真实 PostgreSQL + 官方 DSH 验收通过：18,873,986 事件字节、40 批、16 次 Compact；受控摘要省略来源，真实 DSH 子进程中断后由新 fence 恢复，回查原回执并重读资料。已完成模型调用未增加尝试，留存产物 18,895,143 字节，未重复存全部前缀。其他测试覆盖丢失 Storage 确认、取消保留暂存、失败末批、旧协议重放、跨任务权限、分页与回执重放。全部 Go 回归/vet、Web 四项测试/双入口构建及发布脚本五项测试通过。使用受控模型，付费请求为零；新提交 Linux 和本机服务升级尚待执行。
+本机真实 PostgreSQL + 官方 DSH 压力验收通过：18,873,986 事件字节、40 批、16 次 Compact；受控摘要省略来源，真实 DSH 子进程中断后由新 fence 恢复，回查原回执并重读资料。已完成模型调用未增加尝试，留存产物 18,895,143 字节，未重复存全部前缀。其他测试覆盖丢失 Storage 确认、取消保留暂存、失败末批、旧协议重放、跨任务权限、分页与回执重放。压力测试使用受控模型，付费请求为零；真实供应商另见下条。
+
+代码 `45bfb18` 的 [Platform 38205614232](https://github.com/euler-gaozl/agent-os/actions/runs/38205614232) 全部通过，包含 Go race、真实 Docker 沙箱、Worker SIGKILL 接管、独立数据库和 12 个部署单位。Registry/ToolHub/Runtime 的不兼容工具镜像、Worker 的不兼容引擎镜像在替换前被真实发布入口拒绝，原容器 ID 不变。2 核、2944 MiB 平台容器总限额下，12 个受控任务均完成，最长 84.106 秒；4 个读客户端各至少 90 秒，共 3199 次读取全部成功，P95 89.34 ms，采样内存峰值 358.292 MiB。外部模型/MCP/OTLP 为夹具；外部检索和沙箱代码工作负载不在预算内，不外推目标资料量或物理 HA。原报告 `.state/platform-45bfb18/linux-service-evidence/`。同提交的 [磁盘满 38205614200](https://github.com/euler-gaozl/agent-os/actions/runs/38205614200)、[真实检索 38205614176](https://github.com/euler-gaozl/agent-os/actions/runs/38205614176)、[Langfuse 38205614169](https://github.com/euler-gaozl/agent-os/actions/runs/38205614169) 也通过。
+
+本机备份 `20261012-125311.dump` 已恢复到隔离库，46 个资源版本、6 份笔记和 111 个产物，无哈希错误或悬空引用。停止旧 Runtime/全部 Worker、执行域迁移、确认双 Worker 均为新构建后再启动新 Runtime；最终 12 个进程升级完成，原有笔记响应与全部服务配置 hash 不变。受控任务 `860d85640e95b3fb2f24d332146e372e` 经真实 Web API 完成 note_save → run_recall 列表/原回执 → document_read，逐段核验 10 份 manifest。证据 `.state/ui-review/evidence-upgrade-proof.json`、`evidence-recall-local.json`。
+
+真实 DeepSeek 运行 `3997c8df87d562b954a0225393da440c` 使用新协议，5 次模型请求、4 次工具调用，通过原回执重读受控文档；核对撤回 42、修订 35、基准 40、减少 5、未来计划 9 和文档 ID。供应商报告输入 7655/output 988 tokens，测试前后余额接口均为 49.91 元，不能将可能延迟记账解读为免费。本次未强制触发 Compact；不替代上面的压力恢复测试。模型末段把回执分页结束用于补充资料的范围说明，仍需限制此类推断；默认 Agent 新增固定约束，明确回执目录结束不证明外部资料覆盖完整。详细回执和原输出在 `.state/live-e2e/evidence-recall-*`，未修改原回答。
+
+页面新增回查勾选项并纠正下载文案：新协议下载执行记录清单，旧协议仍下载完整 JSON。真实浏览器下载文件与运行记录 SHA-256 一致，截图与下载件仅保留在 D 盘 `.state/ui-review/`。补测事件目录的翻页、未确认批次排除、跨树拒绝和取消后读拒绝；全部 Go 回归、Web 四项测试/双入口构建通过。`enable-evidence-recall.mjs --apply` 给五个默认 Agent 新建版本，保留原版本和其他配置；再次执行变更数为零。三个业务入口分别指向供给与库存 v6、交叉核对 v5、时间线 v5。此页面/默认绑定与补充测试增量另走后续提交检查，不冒充 `45bfb18` 已包含。
 
 独立只读复审发现 Builtin 固定下标使沙箱校验错用 schema，已改成按名称查找并补回归；同时补了 Worker 引擎、Runtime/ToolHub/Registry/Worker 工具集合的发布/回滚前置检查。必须全部更新 Worker 后才启用新 Runtime，旧 Runtime 也不能服务绑定新工具的任务。评审仅读源码，不作为运行测试。
 

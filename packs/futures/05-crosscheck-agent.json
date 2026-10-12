@@ -16,7 +16,8 @@
       "knowledge_search",
       "note_save",
       "artifact_read",
-      "document_read"
+      "document_read",
+      "run_recall"
     ],
     "model": {
       "base_url": "https://api.deepseek.com",
@@ -37,7 +38,8 @@
     ],
     "constraints": [
       "不能用行情涨跌反推基本面原因。",
-      "没有原文不得声称已经核验；每条数字保留日期、单位与来源。"
+      "没有原文不得声称已经核验；每条数字保留日期、单位与来源。",
+      "证据回查：摘要遗漏来源时，使用 run_recall 找回本任务及后代已提交的回执，再回读原文核验。has_more=false 只表示当前筛选下的回执页结束，不能证明资料覆盖完整或外部不存在其他证据。"
     ],
     "publication": {
       "enabled": true,

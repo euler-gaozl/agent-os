@@ -27,3 +27,5 @@
 夹具仅验证页面异步状态，不代替 ToolHub 后台行为。真实 PostgreSQL 的 `TestHTTPBaselineEditPreservesBundleAndRequiresFreshApproval` 另外验证附件按指定旧版本复制、旧版不变、新版重新审批、无效基线/跨 ID/损坏附件拒绝。全量 Go 测试与 vet、Web 类型检查/双入口构建、四项 Web 渲染和资源详情测试通过。本轮没有重跑收费模型任务；之前的真实模型证据保留在交付账本。
 
 尚不据此宣称所有浏览器/辅助技术组合已验收，也不把 UI 完成代替独立部署、容量和物理节点高可用验收。
+
+后续证据回查增量：真实页面的新建 Agent 默认勾选“找回本任务的历史证据”；旧版本不被自动改写。运行详情能阅读真实 DeepSeek 回查结果及工具回执。新协议按钮改为“下载执行记录清单”并说明分批格式，实际点击下载后与持久化运行的 manifest SHA-256 一致；浏览器默认下载副本已移至 D 盘并核对，截图 `evidence-result-browser.png` 和下载件 `evidence-manifest-browser.json` 保留在 `.state/ui-review/`。旧 DSH 任务保留原完整记录下载入口。

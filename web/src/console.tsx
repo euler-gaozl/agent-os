@@ -2531,12 +2531,14 @@ function Runs({ runs, notify }: { runs: any[]; notify: (m: string) => void }) {
                   onClick={() =>
                     void downloadArtifact(
                       selected.state.harness_artifact,
-                      `dsh-${selected.id}.json`,
+                      `dsh-${selected.engine === "dsh-0.2.0-rc.2-evidence-v1" ? "manifest-" : ""}${selected.id}.json`,
                     ).catch((e) => notify(e.message))
                   }
                 >
                   <FileText size={15} />
-                  下载完整 DSH 执行记录
+                  {selected.engine === "dsh-0.2.0-rc.2-evidence-v1"
+                    ? "下载执行记录清单"
+                    : "下载完整 DSH 执行记录"}
                 </button>
               )}
               <button className="button" onClick={() => void open(selected.id)}>
@@ -2573,6 +2575,11 @@ function Runs({ runs, notify }: { runs: any[]; notify: (m: string) => void }) {
                 </button>
               )}
             </div>
+            {selected.engine === "dsh-0.2.0-rc.2-evidence-v1" && (
+              <p className="muted">
+                执行记录按批次保存。下载清单包含当前批次的文件索引、校验值及前序清单入口。
+              </p>
+            )}
             <details>
               <summary>修订当前任务及未结束子任务的约束</summary>
               <textarea
