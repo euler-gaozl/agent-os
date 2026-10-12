@@ -1,6 +1,6 @@
 # P2 独立源码与发布验收
 
-2026-10-13。P2 进行中；已有十二个服务独立仓库，九个启用服务已切换到 Owner 版本（包含双 Worker，共十个进程），Telemetry 保持停用。Console/Futures 已通过独立构建与搬迁夹具，CI/本机切换待验收；集成业务源码退役尚未完成。
+2026-10-13。P2 进行中；已有十二个服务独立仓库，十一个启用服务已切换到 Owner 版本（包含双 Worker，共十二个进程），Telemetry 保持停用。Console/Futures 独立构建、Linux/Windows CI 与本机更新回滚已通过；Linux 集成切换与业务源码退役尚未完成。
 
 ## 所有权
 
@@ -18,6 +18,8 @@
 | [agent-os-indexer](https://github.com/euler-gaozl/agent-os-indexer/pull/1) | 通过固定 Knowledge indexing 模块消费同域队列 | 固定 indexing 协议；外部索引 HTTP | 同上；旧/新二进制丢回复/轮询恢复通过 |
 | [agent-os-runtime](https://github.com/euler-gaozl/agent-os-runtime/pull/1) | 执行域 14 表；唯一迁移者 | HTTP Registry、ToolHub、Storage、Knowledge、Sandbox | 固定 execution 模块、受限角色、CI/旧新 Worker 接管、本机更新回滚通过 |
 | [agent-os-worker](https://github.com/euler-gaozl/agent-os-worker/pull/1) | 固定 Runtime execution 模块，自己不写迁移/SQL | DSH/Node、模型 HTTP、ToolHub、Storage、Registry | 独立构建/可搬迁包、Linux/Windows CI、六组接管、本机更新回滚通过 |
+| [agent-os-console](https://github.com/euler-gaozl/agent-os-console/pull/1) | 无数据库；拥有中台 BFF 和 Web | HTTP 聚合各服务，角色仍为 control | 独立完整包/搬迁、Linux/Windows CI、本机更新回滚通过 |
+| [agent-os-futures](https://github.com/euler-gaozl/agent-os-futures/pull/1) | 无数据库；拥有业务 BFF 和 Web | HTTP Registry/Runtime，只提供业务接口 | 同上；正式配置已补独立业务用户身份 |
 
 每个仓库有独立 Go module、命令、镜像和配置例子。拥有数据域的服务负责事务迁移和 PostgreSQL 测试；Worker/Indexer 只消费固定的窄事务模块，没有迁移入口。正常进程不做 DDL；迁移只改变本域表，在一个事务内提交结构及授权，锁/语句超时有界。Runtime/Worker 和 Knowledge/Indexer 保留必要事务域，不以强拆事务伪造独立性。
 
@@ -25,7 +27,7 @@
 
 SDK 固定 `v0.1.0-rc.2` / `f45ca168dee81f864533a8f77f8c203960caad1a`，规范 Go 模块校验值 `h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=`。通过 Go 下载器从固定 Git tag 获取，各消费者提交 vendor，构建时 `GOWORK=off`、`GOPROXY=off`、`-mod=vendor`；不依赖兄弟目录替换或给 CI 配个人跨仓库令牌。先前自制 ZIP 校验失败已保留并废弃，不能使用其缓存重新生成依赖。
 
-`deploy/service-sources.json` 固定已拆服务的仓库和提交。集成构建要求 Owner HEAD 与锁一致、目录干净、完整 HTTP/data/tools/engines 合约一致；缺映射直接拒绝。构建时清理继承的 Go flags、环境文件、workspace、目标平台；生成后核验 Go 模块、SDK 版本、VCS 提交与 clean 标志，再次检查源码未变化。发布描述使用 Owner 合约及来源。其余未拆角色明确仍从集成仓库构建，不能宣称已经拆仓。
+`deploy/service-sources.json` 固定十二个服务的仓库和提交。Windows 集成构建要求 Owner HEAD 与锁一致、目录干净、完整 HTTP/data/tools/engines 合约一致；缺映射直接拒绝。构建时清理继承的 Go flags、环境文件、workspace、目标平台；生成后核验 Go 模块、SDK 版本、VCS 提交与 clean 标志，再次检查源码未变化。发布描述使用 Owner 合约及来源。Linux 集成尚未完成切换，旧迁移入口仍待退役，不能将 Windows 结果外推为新的 Linux 组合通过。
 
 `scripts/Build-Services.ps1` 只创建候选完整包；激活仍由唯一发布 catalog 与维护事务完成。当前/上一版本保持 HTTP 和数据兼容才可自动回滚；跨 schema/config/协议变更仍需协调迁移。
 
@@ -148,3 +150,21 @@ Worker 新账号仅需执行权限，但旧 monorepo Worker readiness 会 SELECT
 集成选择器现在覆盖全部 12 个服务，control 显式映射 agent-os-console；已拆角色缺映射一律拒绝，Web 构建来自同一 Owner 的 web 目录，不能回退集成源码。39 项选源/拒绝夹具通过：`service-sources-a12b76e4f18546ec890f681809fc8a48/result.json`。旧 migrate-services 仍暂留显式历史协调迁移；集成仓库业务源码和 Linux 全链路编排的最终退役尚未完成，不能以 12 个仓库数量宣称 P2 已关卡通过。
 
 前一集成 `57e477a` 的 Platform CI 已确认成功：[38273456738](https://github.com/euler-gaozl/agent-os/actions/runs/38273456738)，platform/services 通过，optional capacity 未运行。Worker Node notices 新候选 `6ef52dbe0e2548ee91c22bcfefa0e4b9` 验证已进入哈希资产清单，报告 `local/evidence/worker-notice-inventory.json`，当时尚未激活；旧已登记包未就地修改。两个 Web Owner 的 Linux/Windows CI 和本机更新回滚结果在通过后补记。
+
+### 两个 Web 本机发布通过；后续仍有集成退役工作
+
+[Console CI 38276861659](https://github.com/euler-gaozl/agent-os-console/actions/runs/38276861659) 与 [Futures CI 38276914527](https://github.com/euler-gaozl/agent-os-futures/actions/runs/38276914527) 在精确 Owner 提交上成功：Linux/Windows 两套 Go/Web/完整包搬迁与实际程序验证，Linux 另有 race/Docker build。
+
+本机预检揭示 Futures 原配置没有 BUSINESS_TOKEN 或 ADMIN_TOKEN，旧程序依靠 DEV_LOCAL 和服务令牌回退。此前仅观察“与服务 token 不同”不能证明用户 token 存在，该推断已撤回。正式切换前，在维护锁内将原配置 DPAPI 加密留存，生成独立 BUSINESS_TOKEN，保留所有旧字段，明确更新 current/previous 的配置绑定并重启原 Futures 二进制。原版本 readiness 通过、非目标实例不变；记录 `local/evidence/futures-user-identity-76a8dc9729054051b8f5401151d1e695/journal.json`，前后私密配置均只以 DPAPI 保存。新旧二进制均支持此字段，不为适配旧配置撤销 owner 的身份校验。
+
+正式候选为干净集成 `7917d99` 构建的 `local/releases/staged/cb8d17df3d4c4030892f16b2e07815a2.json`。Console 和 Futures 各完成 update → rollback → update，六次真实发布全部 readiness/非目标实例检查通过。13 个执行/笔记表指纹、7 项原 Web API 响应哈希不变；每次核对所选 Web 全部 4 个文件的 HTTP 字节与发布包一致。报告 `local/evidence/web-owner-releases-d00c9df43088410b87b0d0c99fb07cb3/result.json`，Doctor 核心通过。首次静态校验将 net/http 对 /index.html 的正常 301 当作失败，已保留失败报告、回滚到旧 Console 后以 / 正确验证并重新运行完整六次关卡；没有将失败覆盖为成功。
+
+Worker 的许可证资产补全候选随后单独激活，两个实例就绪、非目标进程不变：`release-039b6657f86741f7a93c23820544adbd-update.json`，Worker Go/runner/依赖版本未改。最新十二个启用进程（十一个服务，其中 Worker 两个实例）的 PID、实例 ID、新鲜心跳及实际 Owner 提交均匹配：`owner-heartbeats-088691c22ab74196aa53d4f11d6cb129.json`。Telemetry 保持零实例，Sandbox 仍仅 broker。浏览器实际加载中台 Agent 列表和期货研究首页，两页未捕获 JS error；只算页面加载检查，不替代 P3 的逐功能/窄屏验收。
+
+十二仓独立源码与 Windows 发布增量已通过上述范围。P2 尚需让 Linux 全链路和迁移初始化实际消费各 Owner，并移除集成仓库旧业务实现；保留中的旧 Linux CI 不能被称为十二仓组合验证。P2.5 源码 Harness 与存储、P3–P5 仍在完整目标内。
+
+### 十二仓选择版本的完整恢复点
+
+维护窗口备份 `local/backups/p2-twelve-owner-windows-20261013` 覆盖当前/上一发布集合、新 Futures 用户身份和新增模型验收笔记。全部十二个服务进程停止后捕获，完成后启动。实际创建独立 PostgreSQL 集群、恢复原库，43 个关系/序列的指纹、结构和授权匹配；十个应用角色认证成功，两个加密凭证解密成功（不输出值）。catalog generation=65，25 个发布引用、3002 个文件均验证，两个 Worker 包及离线 Harness 重建通过。测试不启动 Worker、供应商调用为零，隔离集群已停止。报告 `local/restore-checks/c2f49a7a061143f8a94f262438217ebd/result.json`。这证明上述固定 Windows 版本可恢复，不包含后续 Linux 切换或尚未实现的 P2.5。
+
+备份重启后的十二个 PID/实例/新鲜心跳复核通过：`owner-heartbeats-cc3a277b190b4eeaa993cb58d521e059.json`。集成 `7917d99` 的旧组合 [Platform CI 38277169058](https://github.com/euler-gaozl/agent-os/actions/runs/38277169058) 已成功（platform/services 通过、capacity 跳过）。新的 Linux 切换与覆盖移交清单见 [P2 Linux 集成](p2-linux-cutover.md)。

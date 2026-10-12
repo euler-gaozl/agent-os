@@ -1,0 +1,86 @@
+name: Independent owner images
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  select:
+    # Read credentials are never exposed to forks. This is a separate required
+    # gate; skipping it does not mean independent integration was verified.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.select.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - id: select
+        shell: bash
+        run: echo "matrix=$(node scripts/owner-build-matrix.mjs)" >> "$GITHUB_OUTPUT"
+      - run: node --test scripts/owner-build-matrix.test.mjs
+      - shell: pwsh
+        run: ./scripts/Test-OwnerImageContracts.ps1
+  images:
+    needs: select
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix: ${{ fromJSON(needs.select.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: repos/agent-os
+          persist-credentials: false
+      - name: Require scoped read identity
+        shell: bash
+        env:
+          OWNER_READ_KEY: ${{ secrets[matrix.secret] }}
+        run: test -n "$OWNER_READ_KEY" || { echo 'Owner read identity is missing; private source checks cannot run'; exit 1; }
+      - uses: actions/checkout@v4
+        with:
+          repository: euler-gaozl/${{ matrix.repository }}
+          ref: ${{ matrix.commit }}
+          path: repos/${{ matrix.repository }}
+          ssh-key: ${{ secrets[matrix.secret] }}
+          ssh-strict: true
+          persist-credentials: false
+          submodules: false
+      - name: Verify the fixed owner, build and inspect its image
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: repos/agent-os/go.mod
+          cache: false
+      - name: Build and verify actual image binaries
+        shell: pwsh
+        run: ./repos/agent-os/scripts/Build-OwnerImages.ps1 -Service '${{ matrix.role }}' -OutputDirectory '${{ runner.temp }}/owner-images-${{ matrix.role }}'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: owner-image-${{ matrix.role }}
+          path: ${{ runner.temp }}/owner-images-${{ matrix.role }}/result.json
+          if-no-files-found: error
+  verified:
+    name: All independent owner images verified
+    if: always()
+    needs: [select, images]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every matrix job to have run successfully
+        env:
+          SELECTION: ${{ needs.select.result }}
+          IMAGES: ${{ needs.images.result }}
+        run: test "$SELECTION" = success && test "$IMAGES" = success
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: owner-image-*
+          path: .state/owner-reports
+      - run: node scripts/verify-owner-image-reports.mjs .state/owner-reports
