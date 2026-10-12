@@ -5,6 +5,8 @@ param(
 )
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'lib/platform-recovery.ps1')
+. (Join-Path $PSScriptRoot 'lib/platform-paths.ps1')
+. (Join-Path $PSScriptRoot 'lib/platform-releases.ps1')
 $BackupDirectory=[IO.Path]::GetFullPath($BackupDirectory)
 $manifestPath=Join-Path $BackupDirectory 'manifest.json'
 $expected=[Text.Encoding]::UTF8.GetString((Unprotect-RecoveryBytes ([IO.File]::ReadAllBytes((Join-Path $BackupDirectory 'manifest-digest.dpapi')))))
@@ -34,6 +36,9 @@ $adminName='agentos_restore_'+$identifier.Substring(0,12)
 $server=$null;$stopped=$false;$cleanupFailed=$false
 $report=@{format=1;started_at=[datetime]::UtcNow.ToString('o');backup_manifest_sha256=$expected;status='incomplete';databases=@();role_logins=@();credential_decryptions=0;provider_calls=0;workers_started=0;isolated_cluster=$true;configuration_roundtrip=$true}
 try {
+    if($manifest.ContainsKey('complete_release_archive')){
+        $report.complete_release_archive=Restore-ReleaseCatalog (Join-Path $BackupDirectory 'release-catalog') (Join-Path $verificationRoot 'releases')
+    }
     $null=Invoke-PostgresTool -PostgresBin $PostgresBin -Tool initdb -Arguments @('-D',$data,'--username',$adminName,'--pwfile',$passwordFile,'--encoding=UTF8','--locale=C','--auth-host=scram-sha-256','--auth-local=scram-sha-256')
     Remove-Item -LiteralPath $passwordFile
     $listener=[Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback,0);$listener.Start();$port=$listener.LocalEndpoint.Port;$listener.Stop()

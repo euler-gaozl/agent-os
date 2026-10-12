@@ -11,6 +11,7 @@ $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'lib/platform-recovery.ps1')
 . (Join-Path $PSScriptRoot 'lib/platform-lock.ps1')
 . (Join-Path $PSScriptRoot 'lib/platform-paths.ps1')
+. (Join-Path $PSScriptRoot 'lib/platform-releases.ps1')
 $ProjectRoot=[IO.Path]::GetFullPath($ProjectRoot)
 $layout=Get-PlatformLayout $ProjectRoot $LayoutPath
 if(-not $PostgresBin){$PostgresBin=$layout.postgres_bin}
@@ -22,6 +23,7 @@ $Destination=[IO.Path]::GetFullPath($Destination)
 if(-not $Destination.StartsWith('D:\workspace\agent-platform\local\backups\',[StringComparison]::OrdinalIgnoreCase)){throw 'Coordinated backups must remain under D:\workspace\agent-platform\local\backups.'}
 $maintenance=Enter-PlatformMaintenance $StateRoot $MaintenanceLock
 try {
+Assert-NoPendingRelease (Read-ReleaseCatalog $layout)
 Assert-AllDeploymentsQuiescent $layout
 $admin=Read-RecoveryJson (Join-Path $configRoot 'dev.json')
 $adminConnection=Get-DatabaseConnection $admin.DATABASE_URL
@@ -81,19 +83,25 @@ try {
         Write-Output ('Captured database '+$number+' with '+$before.Count+' verified table fingerprints.')
     }
     $releaseDirectory=Join-Path $Destination 'releases';$null=New-Item -ItemType Directory -Path $releaseDirectory
-    $index=Read-RecoveryJson (Join-Path $layout.release_root 'current.json')
-    foreach($role in $index.Keys|Sort-Object){
-        $binary=[IO.Path]::GetFullPath($index[$role])
-        if(-not(Test-PathWithin $binary $layout.release_root)){throw 'Release binary outside platform root.'}
+    $catalog=Read-ReleaseCatalog $layout
+    $roles=if($catalog.format -eq 2){$catalog.services.Keys}else{$catalog.legacy.Keys}
+    foreach($role in $roles|Sort-Object){
+        $binary=(Get-PlatformRelease $layout $role -Verify).assets.binary
         $relative='releases/'+$role+'.exe';Copy-Item -LiteralPath $binary -Destination (Join-Path $Destination $relative);Add-BackupFile $relative
     }
+    if($catalog.format -eq 2){
+        $manifest.complete_release_archive=Export-ReleaseCatalog $layout (Join-Path $Destination 'release-catalog')
+        foreach($file in Get-ChildItem -LiteralPath (Join-Path $Destination 'release-catalog') -File -Recurse){Add-BackupFile ([IO.Path]::GetRelativePath($Destination,$file.FullName).Replace('\','/'))}
+    }
+    $workerRelease=Get-PlatformRelease $layout worker -Verify
     $runnerRoot=Join-Path $Destination 'harness';$null=New-Item -ItemType Directory -Path $runnerRoot
-    foreach($name in @('runner.mjs','package.json','pnpm-lock.yaml','session-seams.test.mjs')){Copy-Item -LiteralPath (Join-Path $layout.harness_root $name) -Destination (Join-Path $runnerRoot $name);Add-BackupFile ('harness/'+$name)}
-    $node=if($layout.ContainsKey('node_binary')){$layout.node_binary}elseif($configs.worker.ContainsKey('AGENTOS_NODE')){$configs.worker.AGENTOS_NODE}else{(Get-Command node).Source}
+    foreach($name in @('runner.mjs','package.json','pnpm-lock.yaml','session-seams.test.mjs')){Copy-Item -LiteralPath (Join-Path $workerRelease.assets.harness $name) -Destination (Join-Path $runnerRoot $name);Add-BackupFile ('harness/'+$name)}
+    $node=$workerRelease.assets.node
     Copy-Item -LiteralPath $node -Destination (Join-Path $Destination 'releases/node.exe');Add-BackupFile 'releases/node.exe'
     foreach($ui in @('dist','dist-futures')){
         $target=Join-Path $Destination ('web/'+$ui);$null=New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target)
-        $source=if($ui -eq 'dist'){$layout.console_web_root}else{$layout.futures_web_root}
+        $uiRole=if($ui -eq 'dist'){'control'}else{'futures'}
+        $source=(Get-PlatformRelease $layout $uiRole -Verify).assets.web
         Copy-Item -LiteralPath $source -Destination $target -Recurse
         foreach($file in Get-ChildItem -LiteralPath $target -File -Recurse){Add-BackupFile ([IO.Path]::GetRelativePath($Destination,$file.FullName).Replace('\','/'))}
     }

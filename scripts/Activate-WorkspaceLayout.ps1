@@ -11,6 +11,7 @@ $report=@{started_at=[datetime]::UtcNow.ToString('o');status='incomplete';databa
 try {
     $old=Get-PlatformLayout $root
     $next=Get-PlatformLayout $root $LayoutPath
+    foreach($candidate in @($old,$next)){if((Read-RecoveryJson (Join-Path $candidate.release_root 'current.json')).ContainsKey('format')){throw 'This historical layout activation only accepts legacy catalogs.'}}
     if($old.state_root -eq $next.state_root){throw 'The new layout must use a separate process state directory.'}
     if($old.database_root -ne $next.database_root){throw 'Activation does not move a database. Stop and verify PostgreSQL separately before a physical relocation.'}
     $oldPointer=if(Test-Path -LiteralPath $pointer){Get-Content -LiteralPath $pointer -Raw}else{$null}

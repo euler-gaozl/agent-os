@@ -7,6 +7,7 @@ $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $old=Get-PlatformLayout $root
 $maintenance=Enter-PlatformMaintenance $old.state_root
 try {
+    if((Read-RecoveryJson (Join-Path $old.release_root 'current.json')).ContainsKey('format')){throw 'This historical layout preparation only accepts the legacy catalog.'}
     # Verification reports never contain secrets; require the exact authenticated
     # backup manifest to have passed a fresh-cluster restoration first.
     $VerifiedBackup=[IO.Path]::GetFullPath($VerifiedBackup)

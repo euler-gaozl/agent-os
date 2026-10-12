@@ -1,25 +1,33 @@
-param([ValidateRange(1,16)][int]$Workers=2,[string[]]$Service=@(),[switch]$Migrate,[string]$LayoutPath='',[IO.FileStream]$MaintenanceLock=$null)
+param([ValidateRange(1,16)][int]$Workers=2,[string[]]$Service=@(),[switch]$Migrate,[string]$LayoutPath='',[IO.FileStream]$MaintenanceLock=$null,[string]$PendingOperation='')
 $ErrorActionPreference='Stop'
 $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 . (Join-Path $PSScriptRoot 'lib/platform-lock.ps1')
 . (Join-Path $PSScriptRoot 'lib/platform-paths.ps1')
 . (Join-Path $PSScriptRoot 'lib/platform-processes.ps1')
+. (Join-Path $PSScriptRoot 'lib/platform-releases.ps1')
 $layout=Get-PlatformLayout $repoRoot $LayoutPath
 $maintenance=Enter-PlatformMaintenance $layout.state_root $MaintenanceLock
 try {
 $manifestPath=Join-Path $layout.state_root 'processes.json'
 $indexPath=Join-Path $layout.release_root 'current.json'
 if(-not(Test-Path -LiteralPath $indexPath)){throw 'Run scripts/Build-Services.ps1 first.'}
-$index=Get-Content -LiteralPath $indexPath -Raw|ConvertFrom-Json -AsHashtable
+$catalog=Read-ReleaseCatalog $layout
+if($Migrate -and $catalog.format -eq 2){throw 'Versioned deployments require a coordinated schema/configuration migration; ordinary startup cannot change the registered configuration.'}
+if($PendingOperation){if(-not $MaintenanceLock -or $Service.Count -ne 1 -or $Migrate){throw 'Pending startup is only allowed for the locked single-service release operation.'}}
+else{Assert-NoPendingRelease $catalog}
+$all=@('registry','runtime','storage','sandbox','toolhub','knowledge','indexer','sources','control','futures','worker')
+$selected=if($Service.Count){$Service}else{$all}
+foreach($role in $selected){if($role -notin ($all+@('telemetry'))){throw ('Unknown service '+$role)}}
+$selected=@(($all+@('telemetry'))|Where-Object{$_ -in $selected})
+if($catalog.format -eq 2){
+ foreach($role in $selected){if(-not(Test-Path -LiteralPath (Join-Path $layout.config_root ('services/'+$role+'.json')))){throw ('Missing registered service configuration: '+$role+'. Restore it from the verified backup; ordinary startup will not run a migration.')}}
+}
 $adminConfig=Join-Path $layout.config_root 'dev.json'
 if(-not(Test-Path -LiteralPath $adminConfig)){throw 'Initialize local PostgreSQL first.'}
 $settings=Get-Content -LiteralPath $adminConfig -Raw|ConvertFrom-Json
 $uri=[uri]$settings.DATABASE_URL
 if($uri.Host -eq '127.0.0.1' -and $uri.Port -eq 55432){$held=if($MaintenanceLock){$MaintenanceLock}else{$maintenance};& (Join-Path $PSScriptRoot 'Start-Database.ps1') -LayoutPath $LayoutPath -MaintenanceLock $held}
-$all=@('registry','runtime','storage','sandbox','toolhub','knowledge','indexer','sources','control','futures','worker')
-$selected=if($Service.Count){$Service}else{$all}
-foreach($role in $selected){if($role -notin ($all+@('telemetry'))){throw ('Unknown service '+$role)}}
-$selected=@(($all+@('telemetry'))|Where-Object{$_ -in $selected})
+$releases=@{};foreach($role in $selected){$releases[$role]=Get-PlatformRelease $layout $role $PendingOperation -Verify}
 $previous=Read-PlatformProcesses $layout
 $knownRoots='D:\workspace\agent-platform\ops\managed-roots.json'
 if(Test-Path -LiteralPath $knownRoots){
@@ -38,20 +46,19 @@ if(Test-Path -LiteralPath $knownRoots){
 }
 foreach($entry in $previous){if($entry.role -notin $selected){continue};$state=Get-PlatformInstanceState $entry $layout;if($state.process -or $state.members.Count -or $state.requires_stop){throw ('Service, descendants or unfinished stop present: '+$entry.role+'. Complete stop for only that service before restarting.')}}
 $previous=@($previous|Where-Object{$_['role'] -notin $selected})
-$needConfig=-not(Test-Path -LiteralPath (Join-Path $layout.config_root 'services/toolhub.json'))
+$needConfig=$catalog.format -eq 1 -and -not(Test-Path -LiteralPath (Join-Path $layout.config_root 'services/toolhub.json'))
 if($Migrate -or $needConfig){
  . (Join-Path $PSScriptRoot 'lib/platform-recovery.ps1')
  Assert-AllDeploymentsQuiescent $layout
  Push-Location $repoRoot
- try{& $index['migrate-services'] --config $adminConfig --output (Join-Path $layout.config_root 'services');if($LASTEXITCODE -ne 0){throw 'Service migration failed; old data retained.'}}finally{Pop-Location}
+ try{$migrator=Get-PlatformRelease $layout 'migrate-services' -Verify;& $migrator.assets.binary --config $adminConfig --output (Join-Path $layout.config_root 'services');if($LASTEXITCODE -ne 0){throw 'Service migration failed; old data retained.'}}finally{Pop-Location}
 }
 if('worker' -in $selected){
- $workerConfig=Get-Content (Join-Path $layout.config_root 'services/worker.json') -Raw|ConvertFrom-Json -AsHashtable
- $nodeCommand=if($layout.ContainsKey('node_binary')){$layout.node_binary}elseif($workerConfig['AGENTOS_NODE']){$workerConfig['AGENTOS_NODE']}else{'node'}
+ $nodeCommand=$releases.worker.assets.node
  if(-not(Get-Command $nodeCommand -ErrorAction SilentlyContinue)){throw 'Worker requires Node 24; configure AGENTOS_NODE in .state/dev.json and migrate.'}
- if(-not(Test-Path -LiteralPath (Join-Path $layout.harness_root 'node_modules'))){throw 'Install pinned harness dependencies before starting workers.'}
+ if(-not(Test-Path -LiteralPath (Join-Path $releases.worker.assets.harness 'node_modules'))){throw 'The Worker release is missing its installed dependencies. Build a complete bundle before starting.'}
 }
-foreach($ui in @('control','futures')){if($ui -in $selected){$dir=if($ui -eq 'control'){$layout.console_web_root}else{$layout.futures_web_root};if(-not(Test-Path -LiteralPath (Join-Path $dir 'index.html'))){throw ('Build frontend before starting '+$ui)}}}
+foreach($ui in @('control','futures')){if($ui -in $selected){if(-not(Test-Path -LiteralPath (Join-Path $releases[$ui].assets.web 'index.html'))){throw ('Build frontend before starting '+$ui)}}}
 $ports=@{control=8090;toolhub=8091;storage=8092;sandbox=8093;runtime=8094;knowledge=8095;registry=8096;indexer=8097;futures=8098;sources=8101}
 $started=@();$null=New-Item -ItemType Directory -Force -Path $layout.log_root
 $launchRoot=Join-Path $layout.config_root 'launches'
@@ -63,19 +70,21 @@ try{
  foreach($role in $selected){
   $count=if($role -eq 'worker'){$Workers}else{1}
   if($ports.ContainsKey($role)){if(Get-NetTCPConnection -State Listen -LocalPort $ports[$role] -ErrorAction SilentlyContinue){throw ('Port occupied for '+$role)}}
-  $binary=[IO.Path]::GetFullPath($index[$role]);if(-not(Test-PathWithin $binary $layout.release_root)){throw 'Executable outside managed release directory.'}
+  $release=$releases[$role];$binary=$release.assets.binary
   $config=Join-Path $layout.config_root ('services/'+$role+'.json');if(-not(Test-Path -LiteralPath $config)){throw ('Missing service config '+$role)}
   for($i=0;$i -lt $count;$i++){
    $identifier=[Guid]::NewGuid().ToString('N');$instance=$role+'-'+$identifier
    $launchConfig=Join-Path $launchRoot ($instance+'.json')
    $configBytes=[IO.File]::ReadAllBytes($config)
+   $configHash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($configBytes)).ToLower()
+   if($release.format -eq 2 -and $release.reference['config_sha256'] -cne $configHash){throw ('Configuration differs from the registered deployment for '+$role+'. Reconcile the planned configuration change before startup.')}
    try{$effective=[Text.Encoding]::UTF8.GetString($configBytes)|ConvertFrom-Json -AsHashtable}catch{throw ('Invalid service configuration: '+$role)}
    $effective.INSTANCE_ID=$instance
-   if($role -eq 'worker'){$effective.DSH_RUNNER=Join-Path $layout.harness_root 'runner.mjs';$effective.AGENTOS_NODE=(Get-Command $nodeCommand).Source}
-   if($role -eq 'control'){$effective.WEB_DIR=$layout.console_web_root}
-   if($role -eq 'futures'){$effective.FUTURES_WEB_DIR=$layout.futures_web_root}
+   if($role -eq 'worker'){$effective.DSH_RUNNER=Join-Path $release.assets.harness 'runner.mjs';$effective.AGENTOS_NODE=$release.assets.node}
+   if($role -eq 'control'){$effective.WEB_DIR=$release.assets.web}
+   if($role -eq 'futures'){$effective.FUTURES_WEB_DIR=$release.assets.web}
    Write-PlatformJson $launchConfig $effective
-   $entry=@{pid=0;role=$role;id=$instance;started_at=$null;binary=$binary;status='launching';intent_at=[datetime]::UtcNow.ToString('o');job_name=('Global\AgentOS-'+$identifier);launch_config=$launchConfig;launch_config_sha256=(Get-FileHash -LiteralPath $launchConfig -Algorithm SHA256).Hash.ToLower();source_config_sha256=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($configBytes)).ToLower()}
+   $entry=@{pid=0;role=$role;id=$instance;started_at=$null;binary=$binary;status='launching';intent_at=[datetime]::UtcNow.ToString('o');job_name=('Global\AgentOS-'+$identifier);launch_config=$launchConfig;launch_config_sha256=(Get-FileHash -LiteralPath $launchConfig -Algorithm SHA256).Hash.ToLower();source_config_sha256=$configHash;release_reference=$release.reference}
    $effective=$null;[Array]::Clear($configBytes,0,$configBytes.Length)
    $started+=@($entry)
    Write-PlatformJson $manifestPath @($previous+$started)

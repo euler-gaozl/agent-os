@@ -68,6 +68,7 @@ function Protect-MovingTree([string]$Directory){
 }
 try{
     $old=Get-PlatformLayout $sourceRoot
+    if((Read-RecoveryJson (Join-Path $old.release_root 'current.json')).ContainsKey('format')){throw 'This historical relocation only accepts the legacy catalog.'}
     if($old.database_root -ne (Join-Path $sourceRoot '.state/postgres')){throw 'Database is not in the expected original location.'}
     if($old.state_root -ne (Join-Path $base 'local/run') -or $old.config_root -ne (Join-Path $base 'local/config')){throw 'Activate separated runtime paths before moving source and data.'}
     $legacyBin=Join-Path $old.release_root ('legacy-'+[datetime]::UtcNow.ToString('yyyyMMdd-HHmmss'))

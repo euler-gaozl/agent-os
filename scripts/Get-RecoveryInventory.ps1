@@ -7,6 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = [IO.Path]::GetFullPath($ProjectRoot)
 . (Join-Path $PSScriptRoot 'lib/platform-paths.ps1')
+. (Join-Path $PSScriptRoot 'lib/platform-releases.ps1')
 $layout=Get-PlatformLayout $ProjectRoot $LayoutPath
 if (-not $StateRoot) { $StateRoot = $layout.state_root }
 $StateRoot = [IO.Path]::GetFullPath($StateRoot)
@@ -40,17 +41,20 @@ if(Test-Path -LiteralPath $adminPath){$files += [pscustomobject]@{role='bootstra
 $indexPath=Join-Path $layout.release_root 'current.json'
 $releases=@()
 if(Test-Path -LiteralPath $indexPath){
-    $index=Get-Content -LiteralPath $indexPath -Raw|ConvertFrom-Json -AsHashtable
-    foreach($role in $index.Keys|Sort-Object){
-        $binary=[IO.Path]::GetFullPath($index[$role])
+    $catalog=Read-ReleaseCatalog $layout;Assert-NoPendingRelease $catalog
+    $roles=if($catalog.format -eq 2){$catalog.services.Keys}else{$catalog.legacy.Keys}
+    foreach($role in $roles|Sort-Object){
+        $release=Get-PlatformRelease $layout $role -Verify
+        $binary=$release.assets.binary
         if(-not(Test-PathWithin $binary $layout.release_root)){throw ('Release outside the managed root: '+$role)}
         $exists=Test-Path -LiteralPath $binary
-        $releases += [pscustomobject]@{role=$role;path=$binary;exists=$exists;sha256=if($exists){(Get-FileHash -LiteralPath $binary -Algorithm SHA256).Hash.ToLower()}else{$null}}
+        $releases += [pscustomobject]@{role=$role;path=$binary;exists=$exists;reference=$release.reference;sha256=if($exists){(Get-FileHash -LiteralPath $binary -Algorithm SHA256).Hash.ToLower()}else{$null}}
     }
 }
 $harness=@()
+$workerRelease=Get-PlatformRelease $layout worker
 foreach($relative in @('harness/runner.mjs','harness/package.json','harness/pnpm-lock.yaml')){
-    $file=Join-Path $layout.harness_root ([IO.Path]::GetFileName($relative))
+    $file=Join-Path $workerRelease.assets.harness ([IO.Path]::GetFileName($relative))
     if(Test-Path -LiteralPath $file){$harness += [pscustomobject]@{path=$relative;sha256=(Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLower()}}
 }
 $report=[pscustomobject]@{

@@ -23,10 +23,15 @@ jobs:
       - name: Real Windows launch, orphan cleanup and interrupted maintenance
         shell: pwsh
         run: ./scripts/Test-WindowsProcesses.ps1 -NodeBinary (Get-Command node).Source -GoBinary (Get-Command go).Source
+      - name: Independent service update, rollback and interrupted release recovery
+        shell: pwsh
+        run: ./scripts/Test-WindowsReleases.ps1 -GoBinary (Get-Command go).Source
       - name: Retain synthetic evidence including failed cases
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: windows-process-recovery
-          path: D:/workspace/agent-platform/local/evidence/windows-processes-*
+          path: |
+            D:/workspace/agent-platform/local/evidence/windows-processes-*
+            D:/workspace/agent-platform/local/evidence/windows-releases-*
           if-no-files-found: error

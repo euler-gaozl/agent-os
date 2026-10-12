@@ -8,6 +8,7 @@ $ErrorActionPreference = 'Stop'
 $ProjectRoot = [IO.Path]::GetFullPath($ProjectRoot)
 . (Join-Path $PSScriptRoot 'lib/platform-paths.ps1')
 . (Join-Path $PSScriptRoot 'lib/platform-processes.ps1')
+. (Join-Path $PSScriptRoot 'lib/platform-releases.ps1')
 $layout=Get-PlatformLayout $ProjectRoot $LayoutPath
 if (-not $StateRoot) { $StateRoot = $layout.state_root }
 $StateRoot = [IO.Path]::GetFullPath($StateRoot)
@@ -21,6 +22,18 @@ function Read-Object([string]$Path) {
     try { return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json -AsHashtable }
     catch { Add-Issue 'error' 'invalid_local_json' ('Cannot parse local file: ' + [IO.Path]::GetFileName($Path)); return $null }
 }
+$releaseStatus=@{format=$null;generation=$null;services=@()}
+try{
+    $releaseCatalog=Read-ReleaseCatalog $layout;$releaseStatus.format=$releaseCatalog.format
+    if($releaseCatalog.format -eq 2){
+        $releaseStatus.generation=$releaseCatalog.generation
+        foreach($role in $releaseCatalog.services.Keys|Sort-Object){
+            $releaseEntry=$releaseCatalog.services[$role]
+            $releaseStatus.services+=@{role=$role;current=$releaseEntry.current.id;previous=$(if($releaseEntry['previous']){$releaseEntry.previous.id}else{$null});pending=$(if($releaseEntry['pending']){$releaseEntry.pending.phase}else{$null})}
+            if($releaseEntry['pending']){Add-Issue 'error' 'release_pending' ('Interrupted release for '+$role+'; run release-recover for this service.')}
+        }
+    }
+}catch{Add-Issue 'error' 'release_catalog_invalid' 'Release catalog cannot be read or validated.'}
 $manifest = @(Read-Object (Join-Path $StateRoot 'processes.json') | Where-Object { $null -ne $_ })
 $expected = @('registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','sources','control','futures')
 $ports = @{ control=8090;toolhub=8091;storage=8092;sandbox=8093;runtime=8094;knowledge=8095;registry=8096;indexer=8097;futures=8098;sources=8101 }
@@ -88,7 +101,7 @@ $report = [pscustomobject]@{
     schema_version=1; observed_at=[datetime]::UtcNow.ToString('o'); project_root=$ProjectRoot; state_root=$StateRoot
     source_revision=$revision; source_has_changes=$dirty;configuration_root=$configRoot;database_root=$layout.database_root;release_root=$layout.release_root
     host=[pscustomobject]@{os='Windows';logical_processors=$computer.NumberOfLogicalProcessors;physical_memory_gib=[math]::Round($computer.TotalPhysicalMemory/1GB,1)}
-    services=$services;processes=$processes
+    services=$services;processes=$processes;release_status=$releaseStatus
     resource_snapshot=[pscustomobject]@{service_working_set_mib=[math]::Round($total,2);postgres_processes=$databaseProcesses.Count;postgres_working_set_mib=[math]::Round($databaseTotal/1MB,2);scope='Instantaneous working sets; shared pages may be counted more than once. Not a workload benchmark.'}
     dependencies=[pscustomobject]@{docker_cli=$docker;wsl_command=[bool](Get-Command wsl -ErrorAction SilentlyContinue);wsl_distribution='not_probed';sandbox_image_configured=$sandboxConfigured}
     issues=@($issues.ToArray());core_probe_passed=(@($issues | Where-Object severity -eq 'error').Count -eq 0)
