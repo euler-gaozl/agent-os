@@ -42,7 +42,7 @@ Console `/api/notes` 转发到 Runtime `/v1/notes`，仅 control 身份可调用
 
 ## 迁移、资源与边界
 
-新增四表和两个索引，迁移按执行域运行，角色需要 note_audits_seq_seq 的序列权限。readiness 检查新表存在。恢复校验新增版本归属、当前版本及审计回执引用检查。
+新增四表和三个查询索引（另含主键/唯一约束索引），迁移按执行域运行，角色需要 note_audits_seq_seq 的序列权限。readiness 检查新表存在。恢复校验新增版本归属、当前版本及审计回执引用检查。
 
 启用新写入前，必须升级所有 Runtime 读取实例、全部 Worker 及工具消费者。旧 Runtime 不认识 retired 状态，会错误检索撤回记录。镜像工具集合标签只能检查单次发布，不证明整个集群已更新；具体屏障见[部署契约](../independent-deployment.md)。
 
