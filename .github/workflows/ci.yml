@@ -41,6 +41,8 @@ jobs:
       - run: npm install -g pnpm@11.25.0
       - run: pnpm install --frozen-lockfile
         working-directory: harness
+      - name: Characterize pinned Harness durability and event retention interfaces
+        run: node --test harness/*.test.mjs
       - run: go vet ./...
       - run: node scripts/check-secrets.mjs
       - run: node --test scripts/*.test.mjs

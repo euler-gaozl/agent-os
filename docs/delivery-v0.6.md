@@ -1,5 +1,17 @@
 # 端到端交付账本
 
+## 2026-10-12 单机交付重新规划与 DSH 评估
+
+用户确定先交付 Windows 单机版，再考虑服务器。实施权威改为 [完整单机计划](windows-single-machine-plan.md)，涵盖 12 个服务独立仓库、分组工作区、本机维护、UI、真实业务与恢复验收。DSH 的 [源码与存储决策](architecture/dsh-source-and-storage-decision.md) 纳入同一个新 Goal：源码纳管确定实施，持久化/上下文优先通过插件，必要的 Session/Loop 修改以压力和恢复证据决定，不另写决策循环。用户删除旧 Goal 后，新 Goal 已真实创建并处于 active。
+
+独立评估 agent 已做源码与规划只读评审，意见和职责边界见 [评审记录](reviews/windows-plan-and-harness-20261012.md)。完整恢复集合、扩展能力与服务交付分开验收、真实研究指标以及 Windows 故障动作已补入计划。
+
+本轮 P0 实际新增并执行只读 `Doctor-Local.ps1` 和 `Get-RecoveryInventory.ps1`：12 个已有进程身份符合记录，所有有 HTTP 端口的核心服务 health/readiness 检查通过；Sandbox 未配置隔离执行环境，明确列 warning，没有以 API 存活冒充执行可用。前两份诊断因脚本未完整复现 Futures 的令牌 fallback 报 readiness 未验证，修正探针后第三份通过；未修改运行配置，失败报告保留。恢复清单发现当前服务实际使用 1 个权威数据库，列出 13 个配置文件、13 个固定二进制及 Harness 输入 hash；这不是已完成的新备份恢复。原始报告在 `D:\workspace\agent-platform\local\evidence\`，不提交秘密值。
+
+当前固定 DSH 发布包的三项特征测试全部实际通过：flush 等待插件、flush 失败传播、surface 替换保留原始事件。没有付费模型调用，没有将这些特征测试称为新持久化实现、内存稳定或完整故障验收。
+
+早先抽取的 11 个源码目录没有通过独立构建，私有 SDK 解析和共享边界尚需修正，未建立新的远端服务仓库、未切换本机运行版本。草稿已归入 `D:\workspace\agent-platform\local\source-split-draft\repos`，正式 `repos` 目录留待分仓验收。当前有效代码和数据库仍在 `D:\workspace\agent-os`，没有直接搬运行中数据库。P0 仍在进行，不能把本轮规划完成写成整个平台已交付。
+
 ## 2026-10-12 工作记忆生命周期增量
 
 新增显式 note_revise/note_retire、不可变原文和版本链、撤回/过期有效视图、原因与可信身份审计，以及中台“工作记忆”目录和原文/版本/修改记录详情。协议、分页、权限及已知限制见[生命周期契约](architecture/notes-lifecycle.md)。不改变旧 note_save schema，不自动清理正式资料。
