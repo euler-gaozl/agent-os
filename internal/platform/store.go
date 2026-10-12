@@ -15,6 +15,7 @@ import (
 type Store struct {
 	DB         *pgxpool.Pool
 	CatalogURL string
+	StorageURL string
 	Remote     *serviceclient.Client
 }
 

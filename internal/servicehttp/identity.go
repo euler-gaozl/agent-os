@@ -98,7 +98,10 @@ func permitted(service, caller, method, path string) bool {
 			return method == "POST" && (path == "/v1/retrieve" || path == "/v1/document")
 		}
 	case "storage":
-		return caller == "control"
+		if caller == "runtime" || caller == "worker" {
+			return method == "PUT" && strings.HasPrefix(path, "/v1/artifacts/") || caller == "runtime" && method == "POST" && path == "/v1/artifacts/page"
+		}
+		return caller == "control" && !strings.HasPrefix(path, "/v1/artifacts/")
 	case "sandbox":
 		return caller == "runtime" && method == "POST" && path == "/execute"
 	}

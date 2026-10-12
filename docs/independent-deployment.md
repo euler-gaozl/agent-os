@@ -78,6 +78,14 @@ Windows 可在备份后直接执行新的迁移二进制 `--config .state/dev.js
 ## 验收范围
 
 新增 Linux CI 使用真实旧版本 Knowledge 二进制 `a0d6c81` 验证迁移后的数据读取、单服务升级、回滚、两副本、错误镜像发布失败后恢复。断言其他服务容器 ID 不变，所有身份配置字节不变。模型使用受控夹具，不消耗真实 API。共享执行库拆分、跨机故障转移、每个历史版本的兼容矩阵仍单列未完成；不能用 Knowledge 一项结果代替所有服务的版本兼容验收。
+## Storage 产物 HTTP 边界增量
+
+Runtime/Worker 的产物写入改为 Storage 的 `PUT /v1/artifacts/{sha256}`：二进制最多 4 MiB，同时提交运行引用根；相同内容和根重传幂等。Runtime 先从自己的运行树计算可见根，再调用 `POST /v1/artifacts/page` 分页回读。Storage 校验哈希、窗口和引用，原子增加保留引用，不查询运行表；只有 Runtime 能调用分页授权接口，Worker 只能上传，Console 仍使用管理下载接口。
+
+新初始化不再授予 Runtime/Worker 读取 artifacts/artifact_refs 的 SQL 权限。迁移现有部署时，先备份，先发布兼容新旧管理接口的 Storage，再更新 Runtime/Worker 并配置各自的 `STORAGE_URL`，验证后撤销旧产物 SQL 权限。回滚旧消费者前必须恢复原权限与数据连接；若已经迁移独立存储数据库，旧二进制无法凭原执行库直接回读，需先完成资料回迁，不能盲目回滚。
+
+这是产物边界的增量，**documents/note_save 的效果与回执仍保留执行域事务，未完全拆解**。本机真实 PostgreSQL 测试将 Runtime 的产物表移除，Storage schema 中没有运行表，验证 HTTP 写入、重试、子任务引用、跨运行拒绝、Unicode 分页、角色和大小限制；Linux CI 与现有部署升级结果单独记录。跨机时必须使用受信网络或 TLS/mTLS。没有启动自动删除资料的 GC。
+
 ## 有界资源目录升级
 
 中台使用 `GET /api/catalog`，Registry 提供 `/v1/catalog`，ToolHub 提供 `/v1/assets/catalog`。支持 `kind`、名称/ID 子串 `q`、`after` 和 `limit`（1–100），返回 `items`、`next_cursor`；中台另返回各来源的 `services` 状态。摘要带 `summary:true`，不能提交为资源定义。完整版本继续通过既有按 kind/id/revision 的详情接口读取。

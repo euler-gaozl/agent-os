@@ -119,7 +119,7 @@ func run(output string) error {
 	if e = sources.Migrate(ctx, sourcePool); e != nil {
 		return e
 	}
-	execution := []string{"runs", "events", "calls", "model_attempts", "harness_exchanges", "documents", "artifacts", "artifact_refs", "app_runs", "business_runs", "instances"}
+	execution := []string{"runs", "events", "calls", "model_attempts", "harness_exchanges", "documents", "app_runs", "business_runs", "instances"}
 	grants := map[string][]string{"runtime": execution, "worker": execution, "registry": {"resources", "secrets"}, "storage": {"documents", "artifacts", "artifact_refs"}, "sandbox": {"sandbox_jobs"}, "telemetry": {"telemetry_inbox", "telemetry_exports"}, "toolhub": nil, "knowledge": nil, "indexer": nil, "control": nil, "futures": nil}
 	identities := map[string]string{}
 	grants["sources"] = nil

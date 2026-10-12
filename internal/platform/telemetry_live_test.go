@@ -23,6 +23,7 @@ func TestLangfuseLiveIngestionAndReadback(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
+	started := time.Now()
 	runtime, inbox := telemetryPair(t)
 	id := submit(t, runtime, basicSnapshot("http://127.0.0.1"))
 	if _, e := runtime.DB.Exec(ctx, "INSERT INTO events(run_id,kind,payload) VALUES($1,'ci_verified_event',$2)", id, JSON(map[string]string{"private_test_marker": "PRIVATE_EVENT_BODY_MUST_NOT_EXPORT"})); e != nil {
@@ -39,13 +40,31 @@ func TestLangfuseLiveIngestionAndReadback(t *testing.T) {
 		t.Fatal("durable exporter acknowledgement", expected, e)
 	}
 	t.Log("PASS actual Langfuse OTLP accepted durable inbox batch")
+	identities := map[string]string{}
+	rows, e := inbox.DB.Query(ctx, "SELECT seq,kind FROM telemetry_inbox WHERE run_id=$1", id)
+	if e != nil {
+		t.Fatal(e)
+	}
+	for rows.Next() {
+		var seq int64
+		var kind string
+		if e = rows.Scan(&seq, &kind); e != nil {
+			t.Fatal(e)
+		}
+		identities[Hash([]byte(fmt.Sprint(id, seq)))[:16]] = kind
+	}
+	rows.Close()
+	if e = rows.Err(); e != nil {
+		t.Fatal(e)
+	}
 	type observation struct {
 		ID      string `json:"id"`
 		TraceID string `json:"traceId"`
 		Name    string `json:"name"`
 	}
 	read := func() ([]observation, error) {
-		req, e := http.NewRequestWithContext(ctx, "GET", strings.TrimRight(base, "/")+"/api/public/v2/observations?traceId="+url.QueryEscape(id)+"&fields=core,basic,metadata&limit=100", nil)
+		query := url.Values{"traceId": {id}, "fields": {"core,basic,metadata"}, "limit": {"100"}, "fromStartTime": {started.Add(-time.Minute).UTC().Format(time.RFC3339Nano)}, "toStartTime": {started.Add(5 * time.Minute).UTC().Format(time.RFC3339Nano)}}
+		req, e := http.NewRequestWithContext(ctx, "GET", strings.TrimRight(base, "/")+"/api/public/v2/observations?"+query.Encode(), nil)
 		if e != nil {
 			return nil, e
 		}
@@ -71,26 +90,25 @@ func TestLangfuseLiveIngestionAndReadback(t *testing.T) {
 		e = json.Unmarshal(b, &result)
 		return result.Data, e
 	}
-	wait := func() {
+	wait := func(copies int) {
 		t.Helper()
 		deadline := time.Now().Add(60 * time.Second)
 		for {
 			items, e := read()
-			if e == nil && len(items) == expected {
-				seen := map[string]bool{}
-				found := false
+			if e == nil && len(items) == expected*copies {
+				seen := map[string]int{}
 				for _, item := range items {
-					if item.TraceID != id || seen[item.ID] {
-						t.Fatal("wrong or duplicate observation identity")
+					if item.TraceID != id || identities[item.ID] != item.Name || item.Name == "" {
+						t.Fatal("upstream observation does not match durable event identity")
 					}
-					seen[item.ID] = true
-					if item.Name == "ci_verified_event" {
-						found = true
+					seen[item.ID]++
+				}
+				for identity := range identities {
+					if seen[identity] != copies {
+						t.Fatal("unexpected retransmission multiplicity", seen[identity], copies)
 					}
 				}
-				if found {
-					return
-				}
+				return
 			}
 			if time.Now().After(deadline) {
 				t.Fatal("export accepted but real observations not readable", e, len(items))
@@ -98,7 +116,7 @@ func TestLangfuseLiveIngestionAndReadback(t *testing.T) {
 			time.Sleep(time.Second)
 		}
 	}
-	wait()
+	wait(1)
 	t.Log("PASS actual v2 observations API returns original trace IDs/event names; private payload excluded")
 	// Reproduce a crash after upstream ingest but before local export commit.
 	if _, e := inbox.DB.Exec(ctx, "UPDATE telemetry_inbox SET exported_at=NULL"); e != nil {
@@ -108,6 +126,9 @@ func TestLangfuseLiveIngestionAndReadback(t *testing.T) {
 		t.Fatal(e)
 	}
 	time.Sleep(3 * time.Second)
-	wait()
-	t.Log("PASS retransmission uses the same upstream observation identities")
+	// Langfuse v4 explicitly does not deduplicate ingested observations. A lost
+	// acknowledgement is an at-least-once delivery: stable IDs, duplicate rows.
+	// https://langfuse.com/faq/all/tracing-data-updates
+	wait(2)
+	t.Log("PASS retransmission keeps each durable event identity and produces two rows per identity in Langfuse v4; upstream metrics are not exactly-once")
 }

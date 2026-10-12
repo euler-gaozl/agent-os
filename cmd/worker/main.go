@@ -13,7 +13,7 @@ import (
 func main() {
 	servicehost.Main("worker", "0", func(ctx context.Context, p *pgxpool.Pool, c servicehttp.Config) (http.Handler, func(context.Context) error, error) {
 		client := servicehost.Client()
-		store := &platform.Store{DB: p, Remote: &client, CatalogURL: client.CatalogURL}
+		store := &platform.Store{DB: p, Remote: &client, CatalogURL: client.CatalogURL, StorageURL: servicehost.Env("STORAGE_URL", "http://127.0.0.1:8092")}
 		worker := &platform.Worker{Store: store, ID: servicehost.Env("INSTANCE_ID", "worker-"+contracts.ID()[:8]), Token: c.Token, ToolHubURL: client.CatalogURL}
 		return servicehttp.New(c, p.Ping, func(*http.ServeMux) {}), worker.Run, nil
 	})

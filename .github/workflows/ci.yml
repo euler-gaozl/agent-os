@@ -43,6 +43,7 @@ jobs:
         working-directory: harness
       - run: go vet ./...
       - run: node scripts/check-secrets.mjs
+      - run: node --test scripts/*.test.mjs
       - name: Prepare isolated sandbox daemon on disposable CI VM
         run: |
           docker run -d --name agentos-test-dind --privileged -p 127.0.0.1:12375:2375 -e DOCKER_TLS_CERTDIR= docker:28-dind --tls=false

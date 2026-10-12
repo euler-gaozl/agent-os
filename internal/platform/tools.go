@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/euler-gaozl/agent-os/internal/contracts"
+	"github.com/euler-gaozl/agent-os/internal/recordstore"
 	"github.com/euler-gaozl/agent-os/internal/toolcontract"
+	"time"
 )
 
 var Builtins = toolcontract.Builtins
@@ -103,6 +105,38 @@ func (s *Store) LocalTool(ctx context.Context, inv Invocation) ([]byte, error) {
 		}
 		if e = json.Unmarshal(inv.Arguments, &args); e != nil {
 			return nil, e
+		}
+		if s.StorageURL != "" {
+			if s.Remote == nil {
+				return nil, errors.New("artifact store client is not configured")
+			}
+			rows, err := tx.Query(ctx, `WITH RECURSIVE visible AS (
+SELECT id FROM runs WHERE id=$1 UNION ALL SELECT child.id FROM runs child JOIN visible parent ON child.parent_id=parent.id
+) SELECT 'run:'||id FROM visible LIMIT 129`, r.ID)
+			if err != nil {
+				return nil, err
+			}
+			roots := []string{}
+			for rows.Next() {
+				var root string
+				if err = rows.Scan(&root); err != nil {
+					rows.Close()
+					return nil, err
+				}
+				roots = append(roots, root)
+			}
+			err = rows.Err()
+			rows.Close()
+			if err != nil {
+				return nil, err
+			}
+			if len(roots) > 128 {
+				return nil, errors.New("artifact visibility hierarchy exceeds limit")
+			}
+			readCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			e = s.Remote.Request(readCtx, "POST", s.StorageURL+"/v1/artifacts/page", recordstore.ArtifactPageRequest{Hash: args.Hash, Offset: args.Offset, Limit: args.Limit, Roots: roots, AdoptRoot: "run:" + r.ID}, &result)
+			cancel()
+			break
 		}
 		var body []byte
 		var media string

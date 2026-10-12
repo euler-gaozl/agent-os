@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
+import {overlapDuration} from './lib/load-window.mjs';
 const exec=promisify(execFile);
 const run=async(program,args)=>(await exec(program,args,{encoding:'utf8',timeout:120000,maxBuffer:4<<20})).stdout.trim();
 const dc=(...args)=>run('docker',['compose','-f','compose.yaml','-f','deploy/compose.ci.yaml',...args]);
@@ -64,7 +65,12 @@ try{
     assert.match(response.value.result,/Controlled service contract test completed/);
     const calls=await api('/runs/'+id+'/calls');assert.equal(calls.status,200);
     assert.equal(calls.value.filter(x=>x.kind==='tool'&&x.status==='completed').length,4);
-    const item=evidence.tasks.find(x=>x.id===id);item.completed_ms=Date.now()-began;item.elapsed_ms=item.completed_ms-item.submitted_ms;pending.delete(id);
+    const events=await api('/runs/'+id+'/events');assert.equal(events.status,200);
+    const claims=events.value.filter(x=>x.kind==='claimed'),done=events.value.filter(x=>x.kind==='checkpoint'&&x.payload.status==='completed');
+    assert.equal(claims.length,1,'This workload must have one uninterrupted execution lease');assert.equal(done.length,1);
+    const item=evidence.tasks.find(x=>x.id===id);
+    item.started_ms=Date.parse(claims[0].created_at)-began;item.completed_ms=Date.parse(done[0].created_at)-began;
+    item.observed_completed_ms=Date.now()-began;item.elapsed_ms=item.completed_ms-item.submitted_ms;pending.delete(id);
    }
   }
   assert(Date.now()-began<evidence.criteria.task_deadline_seconds*1000,'Task deadline exceeded');if(pending.size)await sleep(1000);
@@ -72,9 +78,9 @@ try{
  const results=await Promise.allSettled([...readers,monitor]);for(const result of results)if(result.status==='rejected')throw result.reason;
  assert.equal(evidence.read_clients.length,evidence.criteria.read_clients);
  assert(evidence.read_clients.every(x=>x.duration_ms>=evidence.criteria.read_load_seconds*1000&&x.requests>0),'Every reader must actually run for the full declared window');
- const overlapStart=Math.max(...evidence.read_clients.map(x=>x.started_ms),Math.min(...evidence.tasks.map(x=>x.submitted_ms)));
- const overlapEnd=Math.min(...evidence.read_clients.map(x=>x.finished_ms),Math.max(...evidence.tasks.map(x=>x.completed_ms)));
- evidence.mixed_load_overlap_ms=Math.max(0,overlapEnd-overlapStart);
+ const overlapStart=Math.max(...evidence.read_clients.map(x=>x.started_ms)),overlapEnd=Math.min(...evidence.read_clients.map(x=>x.finished_ms));
+ evidence.overlap_basis='Union of persisted claimed-to-completed intervals, clipped to all readers; excludes gaps and polling delay. Same-host CI clocks.';
+ evidence.mixed_load_overlap_ms=overlapDuration(evidence.tasks.map(x=>[x.started_ms,x.completed_ms]),overlapStart,overlapEnd);
  assert(evidence.mixed_load_overlap_ms>=10000,'Tasks and all read clients must overlap for at least ten seconds');
  stop=true;await sampler;
  const good=evidence.requests.filter(x=>x.status===200),other=evidence.requests.filter(x=>x.status!==200&&x.status!==429);
