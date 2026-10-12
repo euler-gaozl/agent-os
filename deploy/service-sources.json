@@ -3,26 +3,26 @@
   "services": {
     "registry": {
       "repository": "agent-os-registry",
-      "commit": "98c899074541ad04b6921ee734a410c0aee05d37"
+      "commit": "6deeab66b6035ad20ef0b0b595322c9973c0016d"
     },
     "sandbox": {
       "repository": "agent-os-sandbox",
-      "commit": "241abe525588f2c0e1f604d61580cd7ada3ba282"
+      "commit": "9348b8e6ead28da5e1585ee69e469e4b10620d08"
     },
     "telemetry": {
       "repository": "agent-os-telemetry",
-      "commit": "93f18c5f0891513a2bf3f6e38053a1f7bc4c9c20"
+      "commit": "fcaca2e96927c4fd2139b681a471dd83a7612932"
     },
     "toolhub": {
-      "commit": "3186161f42a55e0e5ab7a02707c167b033022036",
+      "commit": "98f8fecc5a139b3f1b0e4d76f4a11c9d8e0c0d07",
       "repository": "agent-os-toolhub"
     },
     "storage": {
-      "commit": "772a9723cf82079092e6ced7f1f7b38dc3a36d77",
+      "commit": "f1efbf98e0f6ee0a41c17ac8a54960208a1c322d",
       "repository": "agent-os-storage"
     },
     "sources": {
-      "commit": "6ac8500e0dacae8c586653c6a91aee09d85edf2c",
+      "commit": "82a90ce5b2ca620d15932b03aab9b4d3feb93bd0",
       "repository": "agent-os-sources"
     }
   }
