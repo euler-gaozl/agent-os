@@ -131,6 +131,23 @@ DSH 专项依据与修改边界见 [源码与存储系统决策](architecture/ds
 
 ## 7. 工作节奏和变更规则
 
+### P1 路径解耦增量（2026-10-12 17:48）
+
+已将运行配置、进程清单、日志、固定二进制、Node、Web 和 Harness 依赖实际切换到 `D:\workspace\agent-platform\local\{config,run,logs,releases}`。源码仍为 `D:\workspace\agent-os`，数据库仍为该目录 `.state\postgres`；本批没有物理搬动两者，不能写成全部迁移完成。忽略 Git 的 `.local/layout.path` 原子指向 `ops/layout-<uuid>.json`；每次切换保留不可变旧布局快照。
+
+管理入口支持显式布局，默认兼容历史路径。不同布局共用 `ops/maintenance.lock`，登记各自的进程和发布根；停止数据库、迁移和备份前检查所有已登记部署，避免 staged 布局漏掉旧进程。PostgreSQL 归属核对 PID、启动时间、可执行文件、数据目录和监听归属。`scripts/Platform.ps1` 已提供 start/stop/status/doctor/build/backup/restore-check；单服务 update/rollback 尚未实现为本机统一入口，继续作为 P1 剩余任务。
+
+实际执行并保留证据：
+
+- 重复启动、跨布局重复 Worker、跨布局其他角色仍运行时尝试迁移，均在改变部署前拒绝。
+- 缺 Sandbox 扩展键的严格模式诊断正常输出 warning；没有假报隔离执行可用。
+- 停第 4 个实例的一次性异常、新布局缺 Web、新部署 readiness 失败、已有 active pointer 被 Windows 文件读锁阻止替换：均保留失败结果并恢复原角色的 12 个进程与两个 Worker；指针提交失败还核对原布局内容及旧指针字节未变。
+- 统一 backup 入口另测停止到第 4 个实例失败：保留原错误，不产生备份目录，恢复原 12 个进程。持续停止失败不能承诺自动恢复，明确报恢复未完成。
+- 正常激活后，Agent、文档、笔记、运行列表四个只读接口的响应 SHA-256 与切换前一致；未为本批验收调用模型。
+- 新路径的完整备份 `local\backups\separated-layout-20261012-v2` 经全新集群恢复通过：43 个关系及权限/结构、10 个账号、2 个加密凭证、离线 Harness 依赖与 3 个接口测试一致；报告 `local\restore-checks\4064c617c4724a058dcc207952cb8e9f\result.json`。首次新路径备份被存活进程保护拒绝，自动恢复服务；当时未记录该进程身份，不能声称已找到原因。已补拒绝时的进程名/PID 诊断；重试通过不代替原失败定位，后续 Windows 子进程故障验收继续覆盖。
+
+原始故障报告、激活报告和接口指纹在 `local\evidence\activation-*.json`、`layout-activation-*.json`、`backup-stop-fault.json`、`*-layout-api-fingerprints.json`。只记录脱敏事实，不提交配置、响应正文或备份。下一步依序完成源码与数据库的停止后搬迁、冷启动、统一单服务更新/回滚，再进入 P2 独立仓库关卡。
+
 每阶段更新本文件状态和交付账本：本次做了什么、证据在哪、未通过什么、下一步依赖是什么。独立评审负责找遗漏，测试负责证明行为，二者不能互相替代。不承诺未经测量的完成日期，不用“生产级”替代可核验指标。
 
 原始资料、凭证、日志和报告只在 D 盘本机保护目录留存；提交 GitHub 的仅为选择后的代码、无秘密配置例子和脱敏验收说明。模型费用沿用已授权小额上限，优先复用既有模型证据及受控故障测试；改变协议或真实业务链路时才补必要的付费验证。

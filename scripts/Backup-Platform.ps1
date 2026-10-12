@@ -2,26 +2,33 @@ param(
     [string]$ProjectRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..')),
     [string]$StateRoot='',
     [Parameter(Mandatory)][string]$Destination,
-    [string]$PostgresBin='D:\workspace\.tools\postgresql\pgsql\bin',
-    [string]$Pnpm='pnpm'
+    [string]$PostgresBin='',
+    [string]$Pnpm='pnpm',
+    [string]$LayoutPath='',
+    [IO.FileStream]$MaintenanceLock=$null
 )
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'lib/platform-recovery.ps1')
 . (Join-Path $PSScriptRoot 'lib/platform-lock.ps1')
+. (Join-Path $PSScriptRoot 'lib/platform-paths.ps1')
 $ProjectRoot=[IO.Path]::GetFullPath($ProjectRoot)
-if(-not $StateRoot){$StateRoot=Join-Path $ProjectRoot '.state'}
+$layout=Get-PlatformLayout $ProjectRoot $LayoutPath
+if(-not $PostgresBin){$PostgresBin=$layout.postgres_bin}
+if(-not $StateRoot){$StateRoot=$layout.state_root}
+$configRoot=if($layout.layout_path){$layout.config_root}else{$StateRoot}
 $StateRoot=[IO.Path]::GetFullPath($StateRoot)
+$layout.state_root=$StateRoot
 $Destination=[IO.Path]::GetFullPath($Destination)
 if(-not $Destination.StartsWith('D:\workspace\agent-platform\local\backups\',[StringComparison]::OrdinalIgnoreCase)){throw 'Coordinated backups must remain under D:\workspace\agent-platform\local\backups.'}
-$maintenance=Enter-PlatformMaintenance $StateRoot
+$maintenance=Enter-PlatformMaintenance $StateRoot $MaintenanceLock
 try {
-Assert-RecoveryQuiescent $ProjectRoot $StateRoot
-$admin=Read-RecoveryJson (Join-Path $StateRoot 'dev.json')
+Assert-AllDeploymentsQuiescent $layout
+$admin=Read-RecoveryJson (Join-Path $configRoot 'dev.json')
 $adminConnection=Get-DatabaseConnection $admin.DATABASE_URL
 $serviceNames=@('registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','telemetry','sources','control','futures')
 $configs=@{};$configFiles=@{};$databaseNames=@{}
 foreach($name in $serviceNames){
-    $relative='services/'+$name+'.json';$path=Join-Path $StateRoot $relative
+    $relative='services/'+$name+'.json';$path=Join-Path $configRoot $relative
     if(-not(Test-Path -LiteralPath $path)){throw ('Missing service configuration: '+$name)}
     $configs[$name]=Read-RecoveryJson $path
     $configFiles[$relative]=[Convert]::ToBase64String([IO.File]::ReadAllBytes($path))
@@ -31,9 +38,9 @@ foreach($name in $serviceNames){
         $databaseNames[$connection.database]=$true
     }
 }
-$configFiles['dev.json']=[Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $StateRoot 'dev.json')))
+$configFiles['dev.json']=[Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $configRoot 'dev.json')))
 New-ProtectedDirectory $Destination
-$manifest=@{format=1;status='incomplete';created_at=[datetime]::UtcNow.ToString('o');source_root=$ProjectRoot;vault_protection='Windows DPAPI CurrentUser; same user profile required';databases=@();files=@();quiescence='all owned service processes stopped';external_writes_during_restore='forbidden'}
+$manifest=@{format=1;status='incomplete';created_at=[datetime]::UtcNow.ToString('o');source_root=$ProjectRoot;source_layout=$layout;vault_protection='Windows DPAPI CurrentUser; same user profile required';databases=@();files=@();quiescence='all owned service processes stopped';external_writes_during_restore='forbidden'}
 $manifestPath=Join-Path $Destination 'manifest.json'
 function Write-Manifest { $manifest|ConvertTo-Json -Depth 10|Set-Content -LiteralPath $manifestPath -Encoding utf8 }
 function Add-BackupFile([string]$Relative){$path=Join-Path $Destination $Relative;$manifest.files+=@{path=$Relative;sha256=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLower();bytes=(Get-Item -LiteralPath $path).Length}}
@@ -69,19 +76,20 @@ try {
         Write-Output ('Captured database '+$number+' with '+$before.Count+' verified table fingerprints.')
     }
     $releaseDirectory=Join-Path $Destination 'releases';$null=New-Item -ItemType Directory -Path $releaseDirectory
-    $index=Read-RecoveryJson (Join-Path $ProjectRoot 'bin/current.json')
+    $index=Read-RecoveryJson (Join-Path $layout.release_root 'current.json')
     foreach($role in $index.Keys|Sort-Object){
         $binary=[IO.Path]::GetFullPath($index[$role])
-        if(-not $binary.StartsWith((Join-Path $ProjectRoot 'bin')+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){throw 'Release binary outside platform root.'}
+        if(-not(Test-PathWithin $binary $layout.release_root)){throw 'Release binary outside platform root.'}
         $relative='releases/'+$role+'.exe';Copy-Item -LiteralPath $binary -Destination (Join-Path $Destination $relative);Add-BackupFile $relative
     }
     $runnerRoot=Join-Path $Destination 'harness';$null=New-Item -ItemType Directory -Path $runnerRoot
-    foreach($name in @('runner.mjs','package.json','pnpm-lock.yaml','session-seams.test.mjs')){Copy-Item -LiteralPath (Join-Path $ProjectRoot ('harness/'+$name)) -Destination (Join-Path $runnerRoot $name);Add-BackupFile ('harness/'+$name)}
-    $node=if($configs.worker.ContainsKey('AGENTOS_NODE')){$configs.worker.AGENTOS_NODE}else{(Get-Command node).Source}
+    foreach($name in @('runner.mjs','package.json','pnpm-lock.yaml','session-seams.test.mjs')){Copy-Item -LiteralPath (Join-Path $layout.harness_root $name) -Destination (Join-Path $runnerRoot $name);Add-BackupFile ('harness/'+$name)}
+    $node=if($layout.ContainsKey('node_binary')){$layout.node_binary}elseif($configs.worker.ContainsKey('AGENTOS_NODE')){$configs.worker.AGENTOS_NODE}else{(Get-Command node).Source}
     Copy-Item -LiteralPath $node -Destination (Join-Path $Destination 'releases/node.exe');Add-BackupFile 'releases/node.exe'
     foreach($ui in @('dist','dist-futures')){
         $target=Join-Path $Destination ('web/'+$ui);$null=New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target)
-        Copy-Item -LiteralPath (Join-Path $ProjectRoot ('web/'+$ui)) -Destination $target -Recurse
+        $source=if($ui -eq 'dist'){$layout.console_web_root}else{$layout.futures_web_root}
+        Copy-Item -LiteralPath $source -Destination $target -Recurse
         foreach($file in Get-ChildItem -LiteralPath $target -File -Recurse){Add-BackupFile ([IO.Path]::GetRelativePath($Destination,$file.FullName).Replace('\','/'))}
     }
     # Build a dedicated offline package store; do not rely on node_modules links
@@ -90,7 +98,7 @@ try {
     & $Pnpm --dir $runnerRoot fetch --prod --frozen-lockfile --ignore-scripts --store-dir $store
     if($LASTEXITCODE -ne 0){throw 'Cannot retain offline Harness dependencies; backup remains incomplete.'}
     foreach($file in Get-ChildItem -LiteralPath $store -File -Recurse){Add-BackupFile ([IO.Path]::GetRelativePath($Destination,$file.FullName).Replace('\','/'))}
-    Assert-RecoveryQuiescent $ProjectRoot $StateRoot
+    Assert-AllDeploymentsQuiescent $layout
     Assert-NoDatabaseClients $PostgresBin $adminConnection @($databaseNames.Keys)
     # Recheck every database against the common pre-capture baseline, including
     # databases captured earlier. Managed start/migrate/build hold this same lock.
@@ -109,4 +117,4 @@ try {
     $manifest.status='failed';$manifest.failure='Backup did not complete; do not use as a verified restoration point.';Write-Manifest
     throw
 }
-} finally {$maintenance.Dispose()}
+} finally {if($maintenance){$maintenance.Dispose()}}

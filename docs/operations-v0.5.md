@@ -6,6 +6,28 @@
 
 ## Windows
 
+### 当前本机维护入口（2026-10-12 更新）
+
+运行配置、发布文件、进程记录、日志已归入 `D:\workspace\agent-platform\local`。本机源码目前仍在 `D:\workspace\agent-os`，数据库仍在该源码目录的 `.state\postgres`；物理搬迁尚未执行。不要因为新 local 目录存在就手工移动运行中的数据库。
+
+```powershell
+./scripts/Platform.ps1 status
+./scripts/Platform.ps1 doctor
+./scripts/Platform.ps1 start -Workers 2
+./scripts/Platform.ps1 stop                 # 保留数据库
+./scripts/Platform.ps1 stop -WithDatabase   # 所有登记部署停下后才停本机数据库
+./scripts/Platform.ps1 backup -Pnpm $pnpmCommand
+./scripts/Platform.ps1 restore-check -BackupDirectory 'D:\workspace\agent-platform\local\backups\<备份名>' -Pnpm $pnpmCommand
+```
+
+源码中的 `.local/layout.path` 被 Git 忽略，指向本机 `ops/layout-<uuid>.json`。也可给脚本传 `-LayoutPath`。不要覆盖旧布局文件；切换用 `Activate-WorkspaceLayout.ps1`，准备路径用 `Prepare-WorkspaceLayout.ps1`，二者会验证已恢复备份、固定版本与配置。当前准备脚本是本次从旧目录分离状态的迁移入口，并非新用户的一键安装器。
+
+`backup` 在共同维护锁中停止当前实例，备份全部配置所指向的同一 PostgreSQL 集群内权威数据库，保留 DPAPI 配置密钥和离线运行依赖，再恢复原角色与 Worker 数。失败与重启失败分开报告。`restore-check` 新建隔离集群，核对数据、权限、账号和加密凭证，不启动 Worker、不调用模型。DPAPI 需要原 Windows 用户配置文件；它不覆盖重装系统后恢复。不要在维护期间手工直连写库。
+
+单服务 update/rollback 的本机统一入口仍待实现；下面是保留的历史操作流程，不把手工更换二进制计为已经完成新的发布闭环。
+
+### 历史初始化与发布示例
+
 首次环境初始化仍使用 `Initialize-Local.ps1`；它不覆盖已有密码。先安装 `harness`、`web` 的 lockfile 依赖，构建前端，然后：
 
 ```powershell

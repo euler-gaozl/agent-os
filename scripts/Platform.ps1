@@ -1,0 +1,64 @@
+param(
+    [Parameter(Position=0)][ValidateSet('start','stop','status','doctor','backup','restore-check','build')][string]$Action='status',
+    [string]$LayoutPath='',
+    [ValidateRange(1,16)][int]$Workers=2,
+    [string[]]$Service=@(),
+    [string]$Destination='',
+    [string]$BackupDirectory='',
+    [string]$Pnpm='pnpm',
+    [switch]$WithDatabase
+)
+$ErrorActionPreference='Stop'
+$root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+. (Join-Path $PSScriptRoot 'lib/platform-paths.ps1')
+. (Join-Path $PSScriptRoot 'lib/platform-lock.ps1')
+$layout=Get-PlatformLayout $root $LayoutPath
+switch($Action){
+    start {& (Join-Path $PSScriptRoot 'Start-Local.ps1') -LayoutPath $LayoutPath -Workers $Workers -Service $Service}
+    stop {
+        & (Join-Path $PSScriptRoot 'Stop-Local.ps1') -LayoutPath $LayoutPath -Service $Service
+        if($WithDatabase){& (Join-Path $PSScriptRoot 'Stop-Database.ps1') -LayoutPath $LayoutPath}
+    }
+    status {
+        $raw=& (Join-Path $PSScriptRoot 'Doctor-Local.ps1') -LayoutPath $LayoutPath
+        $report=$raw|ConvertFrom-Json
+        [pscustomobject]@{core_ready=$report.core_probe_passed;services=$report.services;issues=$report.issues;source=$layout.project_root;data=$layout.database_root}|ConvertTo-Json -Depth 6
+    }
+    doctor {& (Join-Path $PSScriptRoot 'Doctor-Local.ps1') -LayoutPath $LayoutPath}
+    build {
+        if($Service.Count){& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Service $Service}
+        else{& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath}
+    }
+    'restore-check' {
+        if(-not $BackupDirectory){throw 'restore-check requires -BackupDirectory.'}
+        & (Join-Path $PSScriptRoot 'Test-PlatformRecovery.ps1') -BackupDirectory $BackupDirectory -PostgresBin $layout.postgres_bin -Pnpm $Pnpm
+    }
+    backup {
+        if(-not $Destination){$Destination='D:\workspace\agent-platform\local\backups\platform-'+(Get-Date -Format 'yyyyMMdd-HHmmss')}
+        $maintenance=Enter-PlatformMaintenance $layout.state_root
+        $restart=@();$workerCount=1
+        $operationFailure=$null;$restartFailure=$null;$stopAttempted=$false
+        try{
+            $manifest=Join-Path $layout.state_root 'processes.json'
+            if(Test-Path -LiteralPath $manifest){
+                $entries=@(Get-Content -LiteralPath $manifest -Raw|ConvertFrom-Json)
+                $running=@($entries|Where-Object{$p=Get-Process -Id $_.pid -ErrorAction SilentlyContinue;$p -and $p.Path -eq $_.binary -and $p.StartTime.ToUniversalTime().Ticks -eq ([datetime]$_.started_at).ToUniversalTime().Ticks})
+                $restart=@($running.role|Sort-Object -Unique);$workerCount=[Math]::Max(1,@($running|Where-Object role -eq 'worker').Count)
+            }
+            $stopAttempted=$true
+            & (Join-Path $PSScriptRoot 'Stop-Local.ps1') -LayoutPath $LayoutPath -MaintenanceLock $maintenance
+            & (Join-Path $PSScriptRoot 'Backup-Platform.ps1') -LayoutPath $LayoutPath -Destination $Destination -Pnpm $Pnpm -MaintenanceLock $maintenance
+        }catch{$operationFailure=$_}
+        finally{
+            try{
+                if($stopAttempted -and $restart.Count){
+                    & (Join-Path $PSScriptRoot 'Stop-Local.ps1') -LayoutPath $LayoutPath -MaintenanceLock $maintenance
+                    & (Join-Path $PSScriptRoot 'Start-Local.ps1') -LayoutPath $LayoutPath -Workers $workerCount -Service $restart -MaintenanceLock $maintenance
+                }
+            }catch{$restartFailure=$_}
+            finally{$maintenance.Dispose()}
+        }
+        if($operationFailure){if($restartFailure){Write-Warning 'Backup failed and restarting the previous deployment also failed; inspect the process manifest.'};throw $operationFailure}
+        if($restartFailure){throw 'Backup was captured, but the previous deployment did not restart; inspect the process manifest.'}
+    }
+}

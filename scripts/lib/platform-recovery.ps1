@@ -118,7 +118,7 @@ function Get-DatabaseFingerprints([string]$PostgresBin,[hashtable]$Connection){
     }
     return ,$result
 }
-function Assert-RecoveryQuiescent([string]$ProjectRoot,[string]$StateRoot){
+function Assert-RecoveryQuiescent([string]$ProjectRoot,[string]$StateRoot,[string]$ReleaseRoot=''){
     $manifestPath=Join-Path $StateRoot 'processes.json'
     if(Test-Path -LiteralPath $manifestPath){
         foreach($entry in @(Read-RecoveryJson $manifestPath)){
@@ -127,6 +127,20 @@ function Assert-RecoveryQuiescent([string]$ProjectRoot,[string]$StateRoot){
         }
     }
     # Manifest absence is not proof of a stopped service: reject orphan binaries.
-    $prefix=[IO.Path]::GetFullPath((Join-Path $ProjectRoot 'bin'))+[IO.Path]::DirectorySeparatorChar
-    if(@(Get-Process|Where-Object{$_.Path -and $_.Path.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)}).Count){throw 'Platform executable still running; coordinated backup refused.'}
+    if(-not $ReleaseRoot){$ReleaseRoot=Join-Path $ProjectRoot 'bin'}
+    $prefix=[IO.Path]::GetFullPath($ReleaseRoot)+[IO.Path]::DirectorySeparatorChar
+    $orphans=@(Get-Process|Where-Object{$_.Path -and $_.Path.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)})
+    if($orphans.Count){throw ('Platform executable still running; coordinated backup refused: '+(($orphans|ForEach-Object{$_.ProcessName+' PID '+$_.Id}) -join ', '))}
+}
+function Assert-AllDeploymentsQuiescent([hashtable]$Layout){
+    Assert-RecoveryQuiescent $Layout.project_root $Layout.state_root $Layout.release_root
+    $catalog='D:\workspace\agent-platform\ops\managed-roots.json'
+    if(Test-Path -LiteralPath $catalog){
+        foreach($entry in @(Read-RecoveryJson $catalog)){
+            foreach($key in @('project_root','state_root','release_root')){
+                if(-not [IO.Path]::GetFullPath($entry[$key]).StartsWith('D:\workspace\',[StringComparison]::OrdinalIgnoreCase)){throw 'Invalid managed deployment root.'}
+            }
+            Assert-RecoveryQuiescent $entry.project_root $entry.state_root $entry.release_root
+        }
+    }
 }

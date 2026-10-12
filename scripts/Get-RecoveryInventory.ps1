@@ -1,18 +1,22 @@
 param(
     [string]$ProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..')),
     [string]$StateRoot = '',
-    [Parameter(Mandatory)][string]$ReportPath
+    [Parameter(Mandatory)][string]$ReportPath,
+    [string]$LayoutPath=''
 )
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = [IO.Path]::GetFullPath($ProjectRoot)
-if (-not $StateRoot) { $StateRoot = Join-Path $ProjectRoot '.state' }
+. (Join-Path $PSScriptRoot 'lib/platform-paths.ps1')
+$layout=Get-PlatformLayout $ProjectRoot $LayoutPath
+if (-not $StateRoot) { $StateRoot = $layout.state_root }
 $StateRoot = [IO.Path]::GetFullPath($StateRoot)
+$configRoot=if($layout.layout_path){$layout.config_root}else{$StateRoot}
 $groups = @{}
 $files = @()
 $missing = @()
 $roles = @('registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','telemetry','sources','control','futures')
 foreach ($role in $roles) {
-    $configPath = Join-Path $StateRoot ('services/' + $role + '.json')
+    $configPath = Join-Path $configRoot ('services/' + $role + '.json')
     if (-not (Test-Path -LiteralPath $configPath)) { $missing += $role; continue }
     # Config values remain in memory only. Never emit parsed objects or DSNs.
     try { $config=Get-Content -LiteralPath $configPath -Raw|ConvertFrom-Json }
@@ -29,22 +33,22 @@ foreach ($role in $roles) {
     }
     $groups[$identity].roles += $role
 }
-$adminPath=Join-Path $StateRoot 'dev.json'
+$adminPath=Join-Path $configRoot 'dev.json'
 if(Test-Path -LiteralPath $adminPath){$files += [pscustomobject]@{role='bootstrap-admin';path=$adminPath;sha256=(Get-FileHash -LiteralPath $adminPath -Algorithm SHA256).Hash.ToLower();protected_copy_verified=$false}}
-$indexPath=Join-Path $ProjectRoot 'bin/current.json'
+$indexPath=Join-Path $layout.release_root 'current.json'
 $releases=@()
 if(Test-Path -LiteralPath $indexPath){
     $index=Get-Content -LiteralPath $indexPath -Raw|ConvertFrom-Json -AsHashtable
     foreach($role in $index.Keys|Sort-Object){
         $binary=[IO.Path]::GetFullPath($index[$role])
-        if(-not $binary.StartsWith((Join-Path $ProjectRoot 'bin')+'\',[StringComparison]::OrdinalIgnoreCase)){throw ('Release outside the current project bin root: '+$role)}
+        if(-not(Test-PathWithin $binary $layout.release_root)){throw ('Release outside the managed root: '+$role)}
         $exists=Test-Path -LiteralPath $binary
         $releases += [pscustomobject]@{role=$role;path=$binary;exists=$exists;sha256=if($exists){(Get-FileHash -LiteralPath $binary -Algorithm SHA256).Hash.ToLower()}else{$null}}
     }
 }
 $harness=@()
 foreach($relative in @('harness/runner.mjs','harness/package.json','harness/pnpm-lock.yaml')){
-    $file=Join-Path $ProjectRoot $relative
+    $file=Join-Path $layout.harness_root ([IO.Path]::GetFileName($relative))
     if(Test-Path -LiteralPath $file){$harness += [pscustomobject]@{path=$relative;sha256=(Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLower()}}
 }
 $report=[pscustomobject]@{

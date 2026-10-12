@@ -1,19 +1,23 @@
 param(
     [string]$ProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..')),
     [string]$StateRoot = '',
-    [string]$ReportPath = ''
+    [string]$ReportPath = '',
+    [string]$LayoutPath = ''
 )
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = [IO.Path]::GetFullPath($ProjectRoot)
-if (-not $StateRoot) { $StateRoot = Join-Path $ProjectRoot '.state' }
+. (Join-Path $PSScriptRoot 'lib/platform-paths.ps1')
+$layout=Get-PlatformLayout $ProjectRoot $LayoutPath
+if (-not $StateRoot) { $StateRoot = $layout.state_root }
 $StateRoot = [IO.Path]::GetFullPath($StateRoot)
+$configRoot=if($layout.layout_path){$layout.config_root}else{$StateRoot}
 $issues = [Collections.Generic.List[object]]::new()
 function Add-Issue([string]$Severity, [string]$Code, [string]$Message) {
     $issues.Add([pscustomobject]@{ severity = $Severity; code = $Code; message = $Message })
 }
 function Read-Object([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path)) { return $null }
-    try { return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json }
+    try { return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json -AsHashtable }
     catch { Add-Issue 'error' 'invalid_local_json' ('Cannot parse local file: ' + [IO.Path]::GetFileName($Path)); return $null }
 }
 $manifest = @(Read-Object (Join-Path $StateRoot 'processes.json') | Where-Object { $null -ne $_ })
@@ -37,7 +41,7 @@ $services = @()
 foreach ($role in $expected) {
     $instances = @($processes | Where-Object { $_.role -eq $role -and $_.owned_and_running })
     if ($instances.Count -eq 0) { Add-Issue 'error' 'service_not_running' ('No owned running instance: ' + $role) }
-    $configPath = Join-Path $StateRoot ('services/' + $role + '.json')
+    $configPath = Join-Path $configRoot ('services/' + $role + '.json')
     $config = Read-Object $configPath
     if ($null -eq $config) { Add-Issue 'error' 'configuration_missing' ('Missing valid configuration for ' + $role) }
     $health = $null; $ready = $null
@@ -48,12 +52,13 @@ foreach ($role in $expected) {
         try { $health = (Invoke-WebRequest ($base + '/healthz') -TimeoutSec 3 -NoProxy).StatusCode -eq 200 }
         catch { $health = $false }
         $listeners = @(Get-NetTCPConnection -State Listen -LocalPort $ports[$role] -ErrorAction SilentlyContinue)
-        $ownedListener = @($listeners | Where-Object { $_.OwningProcess -in @($instances.pid) }).Count -gt 0
+        $ownedIds=@($instances|ForEach-Object{$_.pid})
+        $ownedListener = @($listeners | Where-Object { $_.OwningProcess -in $ownedIds }).Count -gt 0
         if ($config -and $ownedListener) {
             $key = if($role -eq 'control'){'ADMIN_TOKEN'}elseif($role -eq 'futures'){'BUSINESS_TOKEN'}else{'SERVICE_TOKEN'}
-            $token = $config.$key
-            if ($role -eq 'futures' -and -not $token) { $token = $config.ADMIN_TOKEN }
-            if (-not $token) { $token = $config.SERVICE_TOKEN }
+            $token = $config[$key]
+            if ($role -eq 'futures' -and -not $token) { $token = $config['ADMIN_TOKEN'] }
+            if (-not $token) { $token = $config['SERVICE_TOKEN'] }
             if ($token) {
                 try { $ready = (Invoke-WebRequest ($base + '/readyz') -Headers @{Authorization=('Bearer ' + $token)} -TimeoutSec 3 -NoProxy).StatusCode -eq 200 }
                 catch { $ready = $false }
@@ -64,9 +69,9 @@ foreach ($role in $expected) {
     }
     $services += [pscustomobject]@{role=$role;instances=$instances.Count;config_present=($null -ne $config);health=$health;ready=$ready}
 }
-$sandbox = Read-Object (Join-Path $StateRoot 'services/sandbox.json')
+$sandbox = Read-Object (Join-Path $configRoot 'services/sandbox.json')
 $docker = [bool](Get-Command docker -ErrorAction SilentlyContinue)
-$sandboxConfigured = $null -ne $sandbox -and [bool]$sandbox.SANDBOX_IMAGE
+$sandboxConfigured = $null -ne $sandbox -and [bool]$sandbox['SANDBOX_IMAGE']
 if (-not $docker -or -not $sandboxConfigured) {
     Add-Issue 'warning' 'sandbox_execution_unavailable' 'Sandbox API may be alive, but isolated code execution is not configured on this Windows host.'
 }
@@ -79,7 +84,7 @@ $total = ($processes | Where-Object owned_and_running | Measure-Object working_s
 $databaseTotal = ($databaseProcesses | Measure-Object WorkingSet64 -Sum).Sum
 $report = [pscustomobject]@{
     schema_version=1; observed_at=[datetime]::UtcNow.ToString('o'); project_root=$ProjectRoot; state_root=$StateRoot
-    source_revision=$revision; source_has_changes=$dirty
+    source_revision=$revision; source_has_changes=$dirty;configuration_root=$configRoot;database_root=$layout.database_root;release_root=$layout.release_root
     host=[pscustomobject]@{os='Windows';logical_processors=$computer.NumberOfLogicalProcessors;physical_memory_gib=[math]::Round($computer.TotalPhysicalMemory/1GB,1)}
     services=$services;processes=$processes
     resource_snapshot=[pscustomobject]@{service_working_set_mib=[math]::Round($total,2);postgres_processes=$databaseProcesses.Count;postgres_working_set_mib=[math]::Round($databaseTotal/1MB,2);scope='Instantaneous working sets; shared pages may be counted more than once. Not a workload benchmark.'}
