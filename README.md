@@ -44,6 +44,7 @@ pnpm --dir web run build
 
 - [v0.5 服务与数据边界](docs/architecture/contracts-v0.5.md)
 - [独立服务发布、迁移与回滚](docs/independent-deployment.md)
+- [Web 设计](docs/ui-design.md)与[页面及异步交互验收](docs/ui-validation-v0.6.md)
 - [v0.5 架构图](docs/architecture/agent-os-v0.5.mmd)
 - [DSH 执行、恢复与 Agent 发布契约](docs/architecture/contracts-v0.4.md)
 - [DSH 适配层与固定依赖](harness/README.md)

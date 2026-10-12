@@ -1,19 +1,39 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { X, LoaderCircle, FileText, ArrowUpRight } from "lucide-react";
 export type Ref = { id: string; revision: number };
 export type Resource = {
-	summary?: boolean;
+  summary?: boolean;
   kind: string;
   id: string;
   revision: number;
   spec: Record<string, any>;
 };
-export type CatalogPage = {items: Resource[]; next_cursor: string; services: Record<string, boolean>};
+export type CatalogPage = {
+  items: Resource[];
+  next_cursor: string;
+  services: Record<string, boolean>;
+};
 export async function resourceDetail(r: Resource): Promise<Resource> {
   if (!r.summary) return r;
-  const prefix = r.kind === "skill" || r.kind === "connector" ? "/toolhub/assets/" : "/resources/";
-  const full = await api<Resource>(prefix + encodeURIComponent(r.kind) + "/" + encodeURIComponent(r.id) + "/" + r.revision);
-  if (full.summary || full.id !== r.id || full.kind !== r.kind || full.revision !== r.revision) throw new Error("资源详情版本不匹配，请刷新后重试。");
+  const prefix =
+    r.kind === "skill" || r.kind === "connector"
+      ? "/toolhub/assets/"
+      : "/resources/";
+  const full = await api<Resource>(
+    prefix +
+      encodeURIComponent(r.kind) +
+      "/" +
+      encodeURIComponent(r.id) +
+      "/" +
+      r.revision,
+  );
+  if (
+    full.summary ||
+    full.id !== r.id ||
+    full.kind !== r.kind ||
+    full.revision !== r.revision
+  )
+    throw new Error("资源详情版本不匹配，请刷新后重试。");
   return full;
 }
 export const labels: Record<string, string> = {
@@ -38,7 +58,8 @@ export async function api<T = any>(
   body?: unknown,
   key?: string,
 ): Promise<T> {
-  if (body && typeof body === "object" && "summary" in body && body.summary) throw new Error("目录摘要不能作为资源定义保存，请先读取完整版本。");
+  if (body && typeof body === "object" && "summary" in body && body.summary)
+    throw new Error("目录摘要不能作为资源定义保存，请先读取完整版本。");
   const token = sessionStorage.getItem("admin-token");
   const response = await fetch("/api" + path, {
     method: body === undefined ? "GET" : "POST",
@@ -54,7 +75,14 @@ export async function api<T = any>(
     const error = await response
       .json()
       .catch(() => ({ error: response.statusText }));
-    throw Object.assign(new Error(error.error || error.findings?.map((f: any) => f.Message || f.message).join("；") || response.statusText),{status:response.status});
+    throw Object.assign(
+      new Error(
+        error.error ||
+          error.findings?.map((f: any) => f.Message || f.message).join("；") ||
+          response.statusText,
+      ),
+      { status: response.status },
+    );
   }
   return response.json();
 }
@@ -66,14 +94,22 @@ export function Badge({ state }: { state: string }) {
     </span>
   );
 }
-export async function downloadArtifact(hash: string, name: string, knowledge = false) {
+export async function downloadArtifact(
+  hash: string,
+  name: string,
+  knowledge = false,
+) {
   const token = sessionStorage.getItem("admin-token");
-  const response = await fetch((knowledge ? "/api/knowledge/artifacts/" : "/api/artifacts/") + encodeURIComponent(hash), {
-    headers: {
-      "X-AgentOS-Client": "web",
-      ...(token ? { Authorization: "Bearer " + token } : {}),
+  const response = await fetch(
+    (knowledge ? "/api/knowledge/artifacts/" : "/api/artifacts/") +
+      encodeURIComponent(hash),
+    {
+      headers: {
+        "X-AgentOS-Client": "web",
+        ...(token ? { Authorization: "Bearer " + token } : {}),
+      },
     },
-  });
+  );
   if (!response.ok) throw new Error("下载失败：" + response.status);
   const url = URL.createObjectURL(await response.blob());
   const link = document.createElement("a");
@@ -93,6 +129,56 @@ export function Modal({
   close: () => void;
   wide?: boolean;
 }) {
+  const panel = useRef<HTMLElement>(null);
+  const closeRef = useRef(close);
+  closeRef.current = close;
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    panel.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeRef.current();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const items = Array.from(
+        panel.current?.querySelectorAll<HTMLElement>(
+          'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [tabindex="0"]',
+        ) || [],
+      ).filter((el) => el.getClientRects().length > 0);
+      const first = items[0],
+        last = items[items.length - 1];
+      if (!first) {
+        event.preventDefault();
+        panel.current?.focus();
+        return;
+      }
+      if (
+        event.shiftKey &&
+        (document.activeElement === first ||
+          document.activeElement === panel.current)
+      ) {
+        event.preventDefault();
+        last.focus();
+      } else if (
+        !event.shiftKey &&
+        (document.activeElement === last ||
+          document.activeElement === panel.current)
+      ) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = overflow;
+      if (previous?.isConnected) previous.focus();
+    };
+  }, []);
   return (
     <div
       className="overlay"
@@ -101,6 +187,8 @@ export function Modal({
       }}
     >
       <section
+        ref={panel}
+        tabIndex={-1}
         className={"modal " + (wide ? "wide" : "")}
         role="dialog"
         aria-modal="true"

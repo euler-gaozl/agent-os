@@ -125,16 +125,29 @@ func (s *Server) Routes(mux *http.ServeMux) {
 	}))
 	mux.HandleFunc("POST /v1/assets", func(w http.ResponseWriter, r *http.Request) {
 		var in struct {
-			Kind   string          `json:"kind"`
-			ID     string          `json:"id"`
-			Spec   json.RawMessage `json:"spec"`
-			Bundle []byte          `json:"bundle,omitempty"`
+			Kind         string          `json:"kind"`
+			ID           string          `json:"id"`
+			Spec         json.RawMessage `json:"spec"`
+			Bundle       []byte          `json:"bundle,omitempty"`
+			BaseRevision int             `json:"base_revision,omitempty"`
 		}
 		if e := servicehttp.Decode(w, r, &in); e != nil {
 			writeError(w, e)
 			return
 		}
 		var files []File
+		if in.BaseRevision < 0 || (in.BaseRevision > 0 && (in.Kind != "skill" || len(in.Bundle) > 0)) {
+			writeError(w, errors.New("skill baseline revision cannot be combined with a bundle or another kind"))
+			return
+		}
+		if in.BaseRevision > 0 {
+			var e error
+			files, e = s.Store.RevisionFiles(r.Context(), in.ID, in.BaseRevision, in.Spec)
+			if e != nil {
+				writeError(w, e)
+				return
+			}
+		}
 		if len(in.Bundle) > 0 {
 			if in.Kind != "skill" {
 				writeError(w, errors.New("bundles are only supported for skills"))
