@@ -7,9 +7,10 @@ $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 . (Join-Path $PSScriptRoot 'lib/platform-lock.ps1')
 . (Join-Path $PSScriptRoot 'lib/platform-paths.ps1')
 . (Join-Path $PSScriptRoot 'lib/platform-releases.ps1')
+. (Join-Path $PSScriptRoot 'lib/service-sources.ps1')
 $layout=Get-PlatformLayout $repoRoot $LayoutPath
 $maintenance=Enter-PlatformMaintenance $layout.state_root
-$saved=@{};foreach($key in @('PATH','GOPATH','GOCACHE')){$saved[$key]=[Environment]::GetEnvironmentVariable($key)}
+$saved=@{};foreach($key in @('PATH','GOPATH','GOCACHE','GOWORK','GOENV','GOFLAGS','GOTOOLCHAIN','GOROOT','GOOS','GOARCH','GOAMD64','GOEXPERIMENT','CGO_ENABLED')){$saved[$key]=[Environment]::GetEnvironmentVariable($key)}
 try{
     $allowed=@('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','sources','migrate-services')
     if(-not $Service.Count){throw 'Select at least one service to build.'}
@@ -25,18 +26,38 @@ try{
     }
     if($needsNode){$NodeBinary=[IO.Path]::GetFullPath($NodeBinary);$env:PATH=(Split-Path -Parent $NodeBinary)+';'+$env:PATH}
     $env:GOPATH='D:\workspace\.tools\gopath';$env:GOCACHE='D:\workspace\.tools\gocache'
+    $env:GOWORK='off'
+    $env:GOENV='off';$env:GOFLAGS='';$env:GOTOOLCHAIN='local';$env:GOROOT=$null
+    $env:GOOS='windows';$env:GOARCH='amd64';$env:GOAMD64='v1';$env:GOEXPERIMENT='';$env:CGO_ENABLED='0'
     $go=if(Test-Path -LiteralPath 'D:\workspace\.tools\go\bin\go.exe'){'D:\workspace\.tools\go\bin\go.exe'}else{(Get-Command go -ErrorAction Stop).Source}
     $buildId=[guid]::NewGuid().ToString('N');$references=@{}
     Push-Location $repoRoot
     try{
         foreach($role in $Service|Sort-Object -Unique){
+            $contract=Get-ServiceReleaseContract $repoRoot $role
+            $owner=Get-SelectedServiceSource $repoRoot $role $contract
+            if($owner){$contract=$owner.contract}
             $directory=Join-Path $layout.release_root ('bundles/'+$role+'-'+$buildId)
             Assert-ReleasePhysicalPath $layout.release_root $directory
             if(Test-Path -LiteralPath $directory){throw 'Build destination already exists.'}
             $null=New-Item -ItemType Directory -Path $directory -Force
             $binary=Join-Path $directory ($role+'.exe')
-            & $go build -trimpath -ldflags='-s -w' -o $binary ('./cmd/'+$role)
+            if($owner){& $go -C $owner.root build -mod=vendor -trimpath -ldflags='-s -w' -o $binary ('./cmd/'+$role)}
+            else{& $go build -trimpath -ldflags='-s -w' -o $binary ('./cmd/'+$role)}
             if($LASTEXITCODE){throw ('Build failed: '+$role)}
+            if($owner){
+                $info=(& $go version -m -json $binary)|ConvertFrom-Json -AsHashtable
+                if($LASTEXITCODE -or $info.Main.Path -cne ('github.com/euler-gaozl/'+$owner.repository)){throw 'Built module identity differs from its owner.'}
+                $sdk=@($info.Deps|Where-Object{$_.Path -ceq $owner.sdk.module})
+                if($sdk.Count -ne 1 -or $sdk[0].Version -cne $owner.sdk.version -or $sdk[0]['Replace']){throw 'Built SDK differs from the recorded fixed dependency.'}
+                $settings=@{};foreach($setting in $info.Settings){$settings[$setting.Key]=$setting.Value}
+                if($settings['vcs.revision'] -cne $owner.commit -or $settings['vcs.modified'] -cne 'false' -or $settings['GOOS'] -cne 'windows' -or $settings['GOARCH'] -cne 'amd64'){
+                    throw 'Built version or target does not match the selected clean service commit.'
+                }
+                # Fail if source changed during compilation; no descriptor is published.
+                $after=Get-SelectedServiceSource $repoRoot $role $contract
+                if($after.commit -cne $owner.commit){throw 'Service source changed during compilation.'}
+            }
             $assets=@{binary=(Get-ReleaseRelative $layout.release_root $binary)}
             if($role -eq 'worker'){
                 $nodeVersion=& $NodeBinary --version
@@ -69,7 +90,9 @@ try{
                 if($LASTEXITCODE){throw 'Selected Web build failed.'}
                 $assets.web=Get-ReleaseRelative $layout.release_root $output
             }
-            $references[$role]=New-ReleaseDescriptor $layout $role $assets (Get-ServiceReleaseContract $repoRoot $role) @{kind='source-build';commit=$revision;dirty=$dirty;built_at=[datetime]::UtcNow.ToString('o')}
+            $provenance=@{kind='source-build';commit=$revision;dirty=$dirty;built_at=[datetime]::UtcNow.ToString('o')}
+            if($owner){$provenance=@{kind='independent-source-build';repository=$owner.repository;commit=$owner.commit;integration_commit=$revision;dirty=$dirty;sdk=$owner.sdk;built_at=[datetime]::UtcNow.ToString('o')}}
+            $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance
         }
     }finally{Pop-Location}
     $staged=Join-Path $layout.release_root ('staged/'+$buildId+'.json')

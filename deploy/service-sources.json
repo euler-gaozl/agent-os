@@ -1,0 +1,17 @@
+{
+  "format": 1,
+  "services": {
+    "registry": {
+      "repository": "agent-os-registry",
+      "commit": "98c899074541ad04b6921ee734a410c0aee05d37"
+    },
+    "sandbox": {
+      "repository": "agent-os-sandbox",
+      "commit": "241abe525588f2c0e1f604d61580cd7ada3ba282"
+    },
+    "telemetry": {
+      "repository": "agent-os-telemetry",
+      "commit": "93f18c5f0891513a2bf3f6e38053a1f7bc4c9c20"
+    }
+  }
+}

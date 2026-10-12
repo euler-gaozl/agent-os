@@ -1,5 +1,11 @@
 # 端到端交付账本
 
+## 2026-10-12 P2 首批独立仓库与发布接线
+
+Registry、Sandbox、Telemetry 的独立私有仓库及 PR 已建立，规范固定 SDK/vendor 的单仓隔离检出测试与三仓 Linux/Windows CI 通过。集成按精确 Owner 提交构建，完整协议和二进制来源经核验；源码选择 10 项拒绝边界、污染 Go 环境及 StrictMode 构建通过。独立服务实际更新/回滚正在验收，其他九个服务和 P2.5–P5 尚未完成，完整 Goal 继续 active。详见 [P2 源码/发布证据](independent-sources-p2.md)。
+
+集成 Registry `bb9a693` 的凭证边界修复已部署，本机保留两个 Worker，非目标 11 个进程未替换；内部配置名请求被拒绝，未读取敏感响应正文。不能再将旧漏洞版本作为回滚目标。
+
 ## 2026-10-12 P2 起步与凭证边界修复
 
 正式 SDK、Registry、Sandbox、Telemetry 源码已在分组 `repos` 下建立；SDK 的跨域 SQL、角色权限表和 schema 探针已归回服务，服务具有自己的事务迁移和测试。SDK 首个私有仓库已发布，其他服务的独立仓库、最终依赖锁和实际发布验收仍在进行，不能将提取源码写成 P2 完成。

@@ -35,6 +35,10 @@ jobs:
         shell: pwsh
         working-directory: D:/workspace/agent-platform/repos/agent-os
         run: ./scripts/Test-WindowsReleases.ps1 -GoBinary (Get-Command go).Source
+      - name: Fixed owner source selection and refusal boundaries
+        shell: pwsh
+        working-directory: D:/workspace/agent-platform/repos/agent-os
+        run: ./scripts/Test-ServiceSources.ps1
       - name: Retain synthetic evidence including failed cases
         if: always()
         uses: actions/upload-artifact@v4
@@ -43,4 +47,5 @@ jobs:
           path: |
             D:/workspace/agent-platform/local/evidence/windows-processes-*
             D:/workspace/agent-platform/local/evidence/windows-releases-*
+            D:/workspace/agent-platform/local/evidence/service-sources-*
           if-no-files-found: error
