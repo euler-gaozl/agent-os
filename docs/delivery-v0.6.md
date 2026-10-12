@@ -1,6 +1,12 @@
 # 端到端交付账本
 
-## 持久化故障验收增量（待 Linux 执行）
+## 持久化故障验收增量
+
+[复测 CI 38192907000](https://github.com/euler-gaozl/agent-os/actions/runs/38192907000)（`bf81f7b`）已通过：192 MiB 卷真实 ENOSPC，笔记写入 SQLSTATE 53100，Storage 上传返回 503；释放填充文件并强停/重启同卷 PostgreSQL 后，先只读核对旧笔记全文/元数据/回执/事件和旧产物字节/引用，再接管与重试。旧 fence 被拒、重复新笔记只保留一份、两个产物及引用完整。测试执行 3.54 秒；这是受控磁盘容量故障与数据库进程恢复，不是物理断电、数据损坏或跨节点 HA。原始报告 `.state/disk-full-bf81f7b/test.txt`。
+
+同提交的 [Platform 38192907004](https://github.com/euler-gaozl/agent-os/actions/runs/38192907004)、[检索后端 38192907010](https://github.com/euler-gaozl/agent-os/actions/runs/38192907010) 与 [Langfuse 38192907009](https://github.com/euler-gaozl/agent-os/actions/runs/38192907009) 均通过。包含 Go race/Web、沙箱、数据库边界、Worker 强杀接管、12 个独立部署单位及混合负载。受控 12 任务全部完成，最长 79.306 秒；4 个读取客户端各至少 90 秒，共 3390 请求全部成功，P95 26.99 ms，采样内存峰值 345.42 MiB。平台 CPU 上限合计 2 核、内存上限 2944 MiB；外部模型/MCP/OTLP 为夹具，外部检索推理及沙箱代码工作负载不在预算内。这个小负载不代表目标资料量下的全平台容量。原始报告 `.state/platform-bf81f7b/linux-service-evidence/`；百万容量未在本次重复运行。
+
+本机全部 11 类服务、12 个进程逐个升级到本次构建；每个单位更新时核对其他进程身份未变，所有配置 hash 和原有 5 份笔记响应 hash 相同。升级前备份 `20261012-094229.dump` 恢复到隔离库：45 个资源版本、5 份笔记、103 个产物，无哈希错误/悬空引用。升级后受控 DSH 运行 `d3ba055d81006f826acfd26781b19796` 再次完成 note_save → document_read → artifact_read（4 次模型协议夹具请求、3 个工具回执），无付费请求。证据 `.state/ui-review/http-upgrade-proof.json` 与 `notes-boundary-local.json`。本次未改 DDL、工具 schema 或 DSH 协议。
 
 新增 `Persistent storage faults` 独立工作流：PostgreSQL 位于容器内 192 MiB tmpfs，运行库和产物库分开；写满只作用于这个一次性卷，不挂载宿主目录。先保存笔记/回执和旧产物，再观察实际 ENOSPC 与零剩余空间，验证新写入没有虚报成功。移除专门的填充文件后，用 pg_ctl 在原数据目录强制停止并重新启动 PostgreSQL；不重启容器，避免 tmpfs 被清空后冒充恢复。随后检查旧资料、旧 fence 拒绝、重复操作唯一效果、回执/事件一致和产物哈希/引用。
 
@@ -9,6 +15,8 @@
 独立只读评审发现并修正三个问题：旧资料必须在任何重放/补写前按原 ID/哈希核对全文、元数据、回执及引用；pgx 的 UnexpectedEOF/ErrConnClosed 也要按可解包错误分类；工作流触发范围要包括持久化实现与依赖。复核确认代码修正，未把评审当作运行证据。
 
 首次实际 [CI 38192770170](https://github.com/euler-gaozl/agent-os/actions/runs/38192770170) 已观察到 ENOSPC、零剩余空间及两种新写入失败，但恢复阶段失败：只等待 Runtime 连接池就绪，Storage 的旧连接在首次只读核验时报告 UnexpectedEOF。增加 Storage 独立连接池的有界重连检查；不重置连接池或改写资料，待重测。失败原文保存在 `.state/ui-review/disk-full-first.log`。
+
+后续独立交付审计（只读代码/日志）指出仍需解决的两个运行资料问题：DSH 每次桥接留存全量事件前缀，累计超过单产物 4 MiB 会失败且产生重复存储；摘要遗失哈希时缺少按运行重新发现证据的稳定入口。原有 Compact 样本和本次磁盘结果不覆盖这两项。下一增量采用版本化的分段事件与证据目录，保留旧任务重放路径；不自动清理正式资料。
 
 ## 2026-10-12 已完成的 Web 批次与后续存储边界
 

@@ -2,6 +2,8 @@
 
 本机正式目录 `D:\workspace\agent-os`，原始资料和配置保持在 D 盘。使用 Go / TypeScript；Worker 加载固定版本的官方 DSH 核心包。
 
+本文件的 v0.5 历史部署示例仍保留；当前服务所有权、单服务升级顺序见[独立部署契约](independent-deployment.md)，最新真实供应商、容量与故障结果见[交付账本](delivery-v0.6.md)。历史“未完成”描述以该账本中较新的明确复验为准。
+
 ## Windows
 
 首次环境初始化仍使用 `Initialize-Local.ps1`；它不覆盖已有密码。先安装 `harness`、`web` 的 lockfile 依赖，构建前端，然后：
@@ -77,3 +79,11 @@ go test -count=1 ./...
 备份覆盖 PostgreSQL 中的全部 schema 和原文件；不包含 Milvus/LightRAG 外部索引。恢复到隔离数据库验 hash 后再决定切换，不能清空原库。服务配置和 MASTER_KEY 单独保护，PostgreSQL 角色也需要在新集群重建；同盘备份不能抵御磁盘故障。
 
 CI 的 `scripts/smoke-services.mjs` 专用于一次性 Compose 测试项目，里面会终止进程、停止数据库；禁止对正式本机实例或生产数据运行。Linux CI artifact 提供原始检查结果和 Docker 资源采样。真实节点/数据库 HA 仍需服务器环境验收。
+
+## 磁盘容量故障处理（v0.6 增量）
+
+已识别的数据库容量/连接故障返回 503，查询超时返回 504；503 的 Retry-After 是服务恢复提示，不证明刚才的写入没有提交。Runtime 的笔记效果与回执仍以同库事务为权威；Storage 同内容/引用根重传幂等。外部工具 UNKNOWN 必须查证效果后核对，不能因恢复了磁盘就直接重复执行。
+
+处理顺序：暂停受影响域的新写入和批量导入 → 检查实际挂载卷、配额与数据库错误 → 扩容或清理明确归属的临时资料 → 等待每个独立数据库连接池重新就绪 → 在任何重试前只读核对故障前的资料、哈希、引用和回执 → 按原逻辑操作 ID 恢复。不要删除 PostgreSQL 数据文件、WAL、正式来源、仍被引用的产物或未决任务记录来腾空间。Runtime 与 Storage 两个连接池都要重新就绪；只验证其中一个不能代表另一个已经重新连接。
+
+`Persistent storage faults` 工作流使用一次性 192 MiB tmpfs 卷，检查实际 ENOSPC，并在同卷恢复 PostgreSQL 后检查旧资料和重试。这项测试不挂载宿主资料目录，只允许在 disposable GitHub CI 运行。不得在正式数据上复用填充磁盘步骤，也不能将其当作物理断电、数据库损坏、跨机 HA 或特定环境 RPO/RTO 的证据。
