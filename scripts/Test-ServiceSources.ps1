@@ -18,7 +18,7 @@ try{
     Expect-Rejection 'missing lock never falls back to integration source' {Get-SelectedServiceSource $integration registry $contract}
     Write-PlatformJson $lockPath @{format=1;services=@{sandbox=@{repository='agent-os-sandbox';commit=('a'*40)}}}
     Expect-Rejection 'missing role mapping never falls back' {Get-SelectedServiceSource $integration registry $contract}
-    foreach($role in @('toolhub','storage','sources','knowledge','indexer','runtime','worker')){
+    foreach($role in @('toolhub','storage','sources','knowledge','indexer','runtime','worker','control','futures')){
         Expect-Rejection ('missing extracted mapping never falls back: '+$role) {Get-SelectedServiceSource $integration $role $contract}
     }
     [IO.File]::WriteAllText((Join-Path $owner 'go.mod'),"module github.com/euler-gaozl/agent-os-registry`ngo 1.27.0`n")
@@ -46,8 +46,29 @@ try{
     Expect-Rejection 'engine-only contract drift refused' {Get-SelectedServiceSource $integration registry @{http=$contract.http;data=$contract.data;tools=$contract.tools;engines=@('unexpected-engine')}}
     $lock.services.registry.repository='../outside';Write-PlatformJson $lockPath $lock
     Expect-Rejection 'repository path escape refused' {Get-SelectedServiceSource $integration registry $contract}
-    if($null -ne (Get-SelectedServiceSource $integration control $contract)){throw 'Unsplit role unexpectedly mapped'}
-    $checks.Add('not-yet-extracted role explicitly stays integration-owned')
+    if($null -ne (Get-SelectedServiceSource $integration migrate-services $contract)){throw 'Compatibility migration unexpectedly mapped'}
+    $checks.Add('historical coordinated migration remains explicit integration-only')
+    foreach($role in @('control','futures')){
+        $repository=if($role -eq 'control'){'agent-os-console'}else{'agent-os-futures'}
+        $webOwner=Join-Path $root $repository
+        foreach($dir in @('deploy','vendor')){New-Item -ItemType Directory -Path (Join-Path $webOwner $dir) -Force|Out-Null}
+        [IO.File]::WriteAllText((Join-Path $webOwner 'go.mod'),("module github.com/euler-gaozl/"+$repository+"`ngo 1.27.0`n"))
+        [IO.File]::WriteAllText((Join-Path $webOwner 'vendor/modules.txt'),'# synthetic source boundary fixture')
+        Write-PlatformJson (Join-Path $webOwner 'deploy/release-contract.json') @{format=1;role=$role;migration_owner='none';contract=$contract;backward_compatible=$true}
+        Write-PlatformJson (Join-Path $webOwner 'source-provenance.json') @{sdk=@{commit=('a'*40);module_sum='h1:synthetic-fixture'}}
+        & git -C $webOwner init -q -b main
+        & git -C $webOwner add .
+        & git -C $webOwner -c user.name=Fixture -c user.email=fixture@example.invalid commit -q -m 'Synthetic Web owner fixture'
+        if($LASTEXITCODE){throw 'Web owner fixture initialization failed'}
+        $webCommit=(& git -C $webOwner rev-parse HEAD).Trim()
+        $lock.services[$role]=@{repository=$repository;commit=$webCommit};Write-PlatformJson $lockPath $lock
+        $webSelection=Get-SelectedServiceSource $integration $role $contract
+        if($webSelection.repository -cne $repository){throw 'Web role selected wrong repository'}
+        $checks.Add('fixed Web owner with no migration accepted: '+$role)
+        $lock.services[$role].repository='agent-os-wrong-web';Write-PlatformJson $lockPath $lock
+        Expect-Rejection ('unreviewed Web owner mapping refused: '+$role) {Get-SelectedServiceSource $integration $role $contract}
+        $lock.services[$role].repository=$repository;Write-PlatformJson $lockPath $lock
+    }
     $indexer=Join-Path $root 'agent-os-indexer'
     foreach($dir in @('deploy','vendor')){New-Item -ItemType Directory -Path (Join-Path $indexer $dir) -Force|Out-Null}
     $dependency=@{module='github.com/euler-gaozl/agent-os-knowledge';version='v0.1.0-rc.1';commit=('c'*40);module_sum='h1:synthetic-owner';go_mod_sum='h1:synthetic-gomod';package='indexing';protocol='knowledge-indexing-v1'}

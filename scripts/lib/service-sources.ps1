@@ -1,7 +1,7 @@
 # The integration repository coordinates fixed service versions. It never
 # supplies business source to independently owned service builds.
 function Get-SelectedServiceSource([string]$IntegrationRoot,[string]$Role,[System.Collections.IDictionary]$Contract){
-    $extracted=@('registry','sandbox','telemetry','toolhub','storage','sources','knowledge','indexer','runtime','worker')
+    $extracted=@('registry','sandbox','telemetry','toolhub','storage','sources','knowledge','indexer','runtime','worker','control','futures')
     if($Role -notin $extracted){return $null}
     $lockPath=Join-Path $IntegrationRoot 'deploy/service-sources.json'
     if(-not(Test-Path -LiteralPath $lockPath)){throw 'Independent service source lock is required.'}
@@ -9,7 +9,8 @@ function Get-SelectedServiceSource([string]$IntegrationRoot,[string]$Role,[Syste
     if($lock.format -ne 1 -or -not $lock.services){throw 'Invalid service source lock.'}
     if(-not $lock.services.Contains($Role)){throw ('Independent service source mapping is required: '+$Role)}
     $entry=$lock.services[$Role]
-    if($entry.repository -cne ('agent-os-'+$Role) -or $entry.commit -cnotmatch '^[a-f0-9]{40}$'){
+    $repository=if($Role -eq 'control'){'agent-os-console'}else{'agent-os-'+$Role}
+    if($entry.repository -cne $repository -or $entry.commit -cnotmatch '^[a-f0-9]{40}$'){
         throw 'Unreviewed independent service source mapping.'
     }
     $reposRoot=Split-Path -Parent $IntegrationRoot
@@ -21,7 +22,7 @@ function Get-SelectedServiceSource([string]$IntegrationRoot,[string]$Role,[Syste
     $status=@(& git -C $sourceRoot status --porcelain)
     if($LASTEXITCODE -or $status.Count){throw ('Independent service source must be clean: '+$Role)}
     $owner=Read-ReleaseJson (Join-Path $sourceRoot 'deploy/release-contract.json')
-    $migrationOwner=if($Role -eq 'indexer'){'knowledge'}elseif($Role -eq 'worker'){'runtime'}else{$Role}
+    $migrationOwner=if($Role -eq 'indexer'){'knowledge'}elseif($Role -eq 'worker'){'runtime'}elseif($Role -in @('control','futures')){'none'}else{$Role}
     if($owner.format -ne 1 -or $owner.role -cne $Role -or $owner.migration_owner -cne $migrationOwner -or
         -not $owner.contract -or $owner.backward_compatible -ne $true -or (Get-ContractIdentity $owner.contract) -cne (Get-ContractIdentity $Contract)){
         throw ('Owner release contract is not compatible with this integration: '+$Role)

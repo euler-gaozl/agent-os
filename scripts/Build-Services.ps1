@@ -93,13 +93,14 @@ try{
                 $assets.harness=Get-ReleaseRelative $layout.release_root $harness
             }
             if($role -in @('control','futures')){
-                & $Pnpm --dir (Join-Path $repoRoot 'web') install --frozen-lockfile --ignore-scripts --store-dir 'D:\workspace\.tools\pnpm-store'
+                $webSource=Join-Path $owner.root 'web'
+                & $Pnpm --dir $webSource install --frozen-lockfile --ignore-scripts --store-dir 'D:\workspace\.tools\pnpm-store'
                 if($LASTEXITCODE){throw 'Web dependency installation failed.'}
-                & $Pnpm --dir (Join-Path $repoRoot 'web') exec tsc --noEmit
+                & $Pnpm --dir $webSource exec tsc --noEmit
                 if($LASTEXITCODE){throw 'Web type checking failed.'}
                 $mode=if($role -eq 'control'){'console'}else{'futures'}
                 $output=Join-Path $directory 'web'
-                & $Pnpm --dir (Join-Path $repoRoot 'web') exec vite build --mode $mode --outDir $output
+                & $Pnpm --dir $webSource exec vite build --mode $mode --outDir $output
                 if($LASTEXITCODE){throw 'Selected Web build failed.'}
                 $assets.web=Get-ReleaseRelative $layout.release_root $output
             }

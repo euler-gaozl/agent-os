@@ -1,6 +1,6 @@
 # P2 独立源码与发布验收
 
-2026-10-13。P2 进行中；已有十个服务独立仓库，九个启用服务已切换到 Owner 版本（包含双 Worker，共十个进程），Telemetry 保持停用。Console/Futures 尚未拆仓，不代表 12 个服务或整个平台已完成。
+2026-10-13。P2 进行中；已有十二个服务独立仓库，九个启用服务已切换到 Owner 版本（包含双 Worker，共十个进程），Telemetry 保持停用。Console/Futures 已通过独立构建与搬迁夹具，CI/本机切换待验收；集成业务源码退役尚未完成。
 
 ## 所有权
 
@@ -136,3 +136,15 @@ Worker 新账号仅需执行权限，但旧 monorepo Worker readiness 会 SELECT
 随后对真实部署服务调用官方 DeepSeek：固定 DSH evidence-v1 完成 kb_search → document_read → note_save，并通过 HTTP 回读保存笔记；实际 4 次模型请求、6,069 tokens、0 次未知用量。报告 `local/evidence/p2-execution-live-dc31a23d-f065-4541-aedc-26a57b9c76ed/result.json`，run `7eea8469ca9ecd6aa88f093172759c09`。调用前后余额接口均显示 49.89；这只是该接口精度下的结果，不代表调用免费。使用明确标记的合成验收文档，不能当成真实期货数据、完整 UI 验收或 P5 研究。这条路径验证真实独立执行服务与现有 Registry/ToolHub/Knowledge/Storage 的联通；不覆盖所有 MCP/子任务/故障组合。
 
 发布检查还发现集成 Worker 包把 Node 许可证放在资产清单之外。构建脚本已调整为放在被 inventory 的 harness 目录；后续候选包需验证许可证进入导出/恢复清单。旧发布包保持不可变，不能修改其已登记哈希。
+
+## Console / Futures 独立源码与完整包（2026-10-13，激活前）
+
+两个独立私有仓库已建立：[Console PR1](https://github.com/euler-gaozl/agent-os-console/pull/1)、[Futures PR1](https://github.com/euler-gaozl/agent-os-futures/pull/1)。分别固定 `ea0a2553a876686a17f129c33d841df29a12dce4`、`777d9a6392eb4a2315679cfed5dcfe9ed92caf0c`。Console 的兼容服务角色仍为 control；两者数据与 migration_owner 均为 none。Futures 不再导入 Console 实现；少量基础样式/React helper 和有界代理复制为各自维护的源码，来源提交已记录。Web 入口、源码、锁与构建属于各 Owner，没有兄弟目录依赖。外观本批保持原样，完整页面设计与真实浏览器工作流仍属 P3。
+
+独立 clone、空 Go 模块缓存、GOPROXY=off、固定 vendor、Go tests/vet、Web tests/typecheck/build 均通过；完整 native 包搬到新 sibling、原路径消失后，启动实际 BFF 和 Web，验证用户/服务身份区别、当前 PID 心跳、操作接口鉴权、目录缺服务状态、原文字节与下载头，以及业务任务提交/查询/取消和禁止管理 API 转发。下游为合成 HTTP peers，没有数据库或模型调用。报告 `local/evidence/p2-web-isolated-a0418187b5ca4a07be8da1ec6d33dd53/result.json`；两个实际进程已停止。每包 11 个清单文件哈希匹配。DEV_LOCAL 的非本机访问、Host/Origin 和未标记写入在 owner handler 反例测试中拒绝；没有声称此 smoke 执行了完整浏览器页面。
+
+独立静态评审发现并关闭三项问题：旧 SDK 缺用户令牌时退回服务令牌，owner 启动前现拒绝这种回退（Futures 仍兼容独立 ADMIN_TOKEN）；发布包示例原路径与实际输出不符，现改为包内 web 且 smoke 从输出示例读取；测试终止失败时可能漏关上游，现独立 finally 清理。评审核对源码、日志和哈希，没有另跑测试。
+
+集成选择器现在覆盖全部 12 个服务，control 显式映射 agent-os-console；已拆角色缺映射一律拒绝，Web 构建来自同一 Owner 的 web 目录，不能回退集成源码。39 项选源/拒绝夹具通过：`service-sources-a12b76e4f18546ec890f681809fc8a48/result.json`。旧 migrate-services 仍暂留显式历史协调迁移；集成仓库业务源码和 Linux 全链路编排的最终退役尚未完成，不能以 12 个仓库数量宣称 P2 已关卡通过。
+
+前一集成 `57e477a` 的 Platform CI 已确认成功：[38273456738](https://github.com/euler-gaozl/agent-os/actions/runs/38273456738)，platform/services 通过，optional capacity 未运行。Worker Node notices 新候选 `6ef52dbe0e2548ee91c22bcfefa0e4b9` 验证已进入哈希资产清单，报告 `local/evidence/worker-notice-inventory.json`，当时尚未激活；旧已登记包未就地修改。两个 Web Owner 的 Linux/Windows CI 和本机更新回滚结果在通过后补记。

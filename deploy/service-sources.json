@@ -1,6 +1,14 @@
 {
   "format": 1,
   "services": {
+    "control": {
+      "repository": "agent-os-console",
+      "commit": "ea0a2553a876686a17f129c33d841df29a12dce4"
+    },
+    "futures": {
+      "repository": "agent-os-futures",
+      "commit": "777d9a6392eb4a2315679cfed5dcfe9ed92caf0c"
+    },
     "registry": {
       "repository": "agent-os-registry",
       "commit": "6deeab66b6035ad20ef0b0b595322c9973c0016d"
