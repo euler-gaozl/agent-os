@@ -1,5 +1,15 @@
 # 端到端交付账本
 
+## 2026-10-12 P2 起步与凭证边界修复
+
+正式 SDK、Registry、Sandbox、Telemetry 源码已在分组 `repos` 下建立；SDK 的跨域 SQL、角色权限表和 schema 探针已归回服务，服务具有自己的事务迁移和测试。SDK 首个私有仓库已发布，其他服务的独立仓库、最终依赖锁和实际发布验收仍在进行，不能将提取源码写成 P2 完成。
+
+独立评审发现旧 Registry 凭证接口会读取任意同名进程环境变量，合法服务身份可能据此获取内部配置。主仓和新 Registry 均已修正：拒绝内部配置保留名，仅保留三项明确的供应商凭证环境变量兼容，其他凭证从加密表解析。合成服务身份 HTTP 越权测试通过，未使用真实秘密值。运行版本部署核验随后单独记录；仅修改源码不代表正在运行的进程已修好。
+
+隔离 PostgreSQL 的 `local/evidence/p2-first-services-85be4f84e89f47ad935b6ed8882093c0/result-v2.json` 记录三域迁移、重复迁移、失败事务回滚、逐项 DML 授权/应用身份就绪/跨域拒绝，以及 Registry 旧版本和加密资料回读、Telemetry 丢确认重投。验证集群已停止，模型调用为 0。这批使用最初的 SDK 构建；最终规范模块/vendor 的单仓验收需要再次记录。
+
+拆分过程发现自制本地模块 ZIP 与 Go 规范校验不一致（Windows 换行及目录项）；已废弃该生成脚本和代理，保留失败缓存并标注 INVALID，改用 Go 官方模块下载器从固定 Git tag 获取，核对 commit/module checksum 后 vendor。没有将错误校验发布为依赖契约。旧集成提交 `400afaea` 的五项 CI 均已成功，新版本仍分别验收。
+
 ## 2026-10-12 P1 独立发布与完整恢复关卡完成
 
 统一 Windows 维护入口已包含 build/update/rollback/release-recover，候选完整包不修改当前版本；唯一 format2 catalog 记录 current/previous/pending，进程中断后可恢复。Knowledge、两个 Worker、Console、Futures 真实逐个更新和回滚，非目标实例不变，Web 返回所选资源。兼容标签来自经版本核验的构建，配置变化、依赖篡改和跨协议发布在替换前拒绝；不承诺任意历史版本可回滚。
