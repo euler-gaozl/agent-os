@@ -1,0 +1,61 @@
+name: Fresh deployment bootstrap
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: provision_fixture
+          POSTGRES_PASSWORD: disposable-provision-test-only
+          POSTGRES_DB: postgres
+          POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U provision_fixture -d postgres"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      TEST_PROVISION_DATABASE_URL: postgres://provision_fixture:disposable-provision-test-only@127.0.0.1:5432/postgres?sslmode=disable
+      TEST_PROVISION_ALLOW_CREATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Verify deployment coordinator has no application implementation dependencies
+        shell: bash
+        run: |
+          go list -deps ./cmd/provision > "$RUNNER_TEMP/provision-dependencies.txt"
+          if grep -E '^github.com/euler-gaozl/agent-os/(internal|services)/' "$RUNNER_TEMP/provision-dependencies.txt"; then
+            echo 'Deployment coordinator imports application code'; exit 1
+          fi
+          go vet ./cmd/provision
+      - name: Real PostgreSQL recovery, identity and permission checks under race detector
+        shell: bash
+        run: |
+          set -o pipefail
+          go test -race -count=1 -v ./cmd/provision | tee "$RUNNER_TEMP/provision-tests.log"
+      - name: Build actual Linux coordinator
+        run: |
+          CGO_ENABLED=0 go build -trimpath -o "$RUNNER_TEMP/provision" ./cmd/provision
+          "$RUNNER_TEMP/provision" --help
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fresh-provision-checks
+          path: |
+            ${{ runner.temp }}/provision-tests.log
+            ${{ runner.temp }}/provision-dependencies.txt
+          if-no-files-found: error

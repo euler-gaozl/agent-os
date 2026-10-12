@@ -35,10 +35,14 @@
 
 每项最终记录新文件、工作流、固定提交和运行结果。未找到等价覆盖就保持未完成。旧版本已通过的结果仍是历史证据，不随源码移动成为新版本证据。
 
-## 独立镜像关卡实现（实际镜像 CI 待执行）
+## 独立镜像关卡实现及 Linux 验证
 
 新增 `owner-images.yml` 按固定仓库白名单和完整 SHA 检出各 Owner。每个仓库配置单独只读 deploy key，私钥只保存于集成仓库的对应 Actions secret；本机初始化暂存私钥均已删除。检出后不保留 Git 认证，Docker context 只取 `git archive` 中的普通已提交文件。构建从 Owner 合约生成标签，记录实际 image ID、来源归档哈希、UID、健康检查和迁移入口；不再默认所有镜像均使用旧 /app 路径。
 
 独立评审指出“跳过 fork 作业仍可能成为绿灯”和“声明的依赖不等于实际编译依赖”，均已修正：固定名汇总任务 always 执行并要求十二份完全匹配的成功报告；提取镜像实际 service/healthcheck/migrate，读取 Go build info 校验模块/包、SDK/事务模块、目标与无 Replace。未把该检查名称配置为仓库强制合并规则，不能宣称已具备分支保护。
 
-本机 179 项合成镜像/二进制合约用例通过，十二个真实源码的 SDK 声明/go.sum/vendor 校验通过。实际 Linux 交叉编译 Runtime/Worker 二进制的 build info 检查通过：`local/evidence/owner-buildinfo-e962ae1188f844ed948408a7600dc3ee/result.json`。这些不等于 Linux 容器已运行；首次镜像 CI 另记。评审只做静态核对。现有本机发布和旧集成 CI 均未被这项新增构建关卡替换。
+本机 179 项合成镜像/二进制合约用例通过，十二个真实源码的 SDK 声明/go.sum/vendor 校验通过。实际 Linux 交叉编译 Runtime/Worker 二进制的 build info 检查通过：`local/evidence/owner-buildinfo-e962ae1188f844ed948408a7600dc3ee/result.json`。评审只做静态核对。
+
+首次真实 [Linux 独立镜像 CI 38280726971](https://github.com/euler-gaozl/agent-os/actions/runs/38280726971) 在集成提交 `fd89eee96559e0bca62b7f85e3608d28efa8345c` 全部通过：十二个 Owner 镜像在各自固定源码上下文构建，并提取实际二进制核对版本、运行真实入口帮助命令。十二份报告已下载至 `local/evidence/linux-owner-images-38280726971-a432cc2af8434c5380ee8e88062faf5f`。同提交的旧 Platform CI `38280726840` 也通过，但仍从旧主仓业务代码构建，不能把它写成新组合全链路验证。
+
+仅部署用途的 [provision 初始化器](fresh-deployment-provision.md) 已实现，并通过本机隔离 PostgreSQL 恢复和权限测试；Linux 专项 CI 新增待执行。八个 Owner migrator 编排、完整 Compose 切换及上表独有覆盖迁移继续待完成。现有 Windows 发布和旧集成 CI 均未被新初始化入口替换。
