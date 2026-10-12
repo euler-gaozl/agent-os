@@ -7,6 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = [IO.Path]::GetFullPath($ProjectRoot)
 . (Join-Path $PSScriptRoot 'lib/platform-paths.ps1')
+. (Join-Path $PSScriptRoot 'lib/platform-processes.ps1')
 $layout=Get-PlatformLayout $ProjectRoot $LayoutPath
 if (-not $StateRoot) { $StateRoot = $layout.state_root }
 $StateRoot = [IO.Path]::GetFullPath($StateRoot)
@@ -25,16 +26,17 @@ $expected = @('registry','runtime','worker','toolhub','knowledge','indexer','sto
 $ports = @{ control=8090;toolhub=8091;storage=8092;sandbox=8093;runtime=8094;knowledge=8095;registry=8096;indexer=8097;futures=8098;sources=8101 }
 $processes = @()
 foreach ($entry in $manifest) {
-    $running = Get-Process -Id $entry.pid -ErrorAction SilentlyContinue
+    $running = $null;$memberCount=0
     $owned = $false
-    if ($running) {
-        try { $owned = $running.Path -eq $entry.binary -and $running.StartTime.ToUniversalTime().Ticks -eq ([datetime]$entry.started_at).ToUniversalTime().Ticks }
-        catch { $owned = $false }
-    }
+    try {
+        $instance=Get-PlatformInstanceState $entry $layout
+        $running=$instance.process;$owned=[bool]$running;$memberCount=$instance.members.Count
+        if($instance.recovered){Add-Issue 'warning' 'launch_identity_recovered' ('Launch PID was not saved; recovered owned identity for '+$entry.role+'. stop can reconcile it.')}
+    }catch{Add-Issue 'error' 'process_identity_unverified' ('Cannot verify launch identity: '+$entry.role)}
     if (-not $owned) { Add-Issue 'error' 'instance_not_owned_or_stopped' ('Recorded instance is stopped or no longer matches: ' + $entry.role) }
     $processes += [pscustomobject]@{
         role=$entry.role; instance=$entry.id; pid=$entry.pid; owned_and_running=$owned
-        binary=$entry.binary; working_set_mib=if($owned){[math]::Round($running.WorkingSet64/1MB,2)}else{$null}
+        binary=$entry.binary;managed_job=[bool]$entry['job_created'];job_members=$memberCount;working_set_mib=if($owned){[math]::Round($running.WorkingSet64/1MB,2)}else{$null}
     }
 }
 $services = @()

@@ -1,5 +1,13 @@
 # 端到端交付账本
 
+## 2026-10-12 P1 Windows 进程恢复
+
+12 个实际进程已切换到原子 Job 启动方式，保留两个 Worker。启动前保存最终配置与 intent，根进程持有只读保活句柄，根退出后卡住的 Node 由 Windows 清理；启动器在 PID 落盘前退出时可重新识别并停止实例。没有增加常驻守护进程，没有改变模型配置、业务二进制或数据库。
+
+八组 Windows 进程夹具通过；真实 Control 启动器退出 197、另一进程恢复、非目标 11 个实例身份不变，以及完整停止/启动已验收。失败、评审与限制见[进程恢复记录](windows-process-recovery-20261012.md)。供应商调用为 0，Sandbox 执行仍不可用；单服务 update/rollback 与后续目标继续执行。
+
+上一提交 `6fe1dda` 四项 Linux CI 已全部通过：[Platform](https://github.com/euler-gaozl/agent-os/actions/runs/38236708663)、[Storage](https://github.com/euler-gaozl/agent-os/actions/runs/38236708586)、[Retrieval](https://github.com/euler-gaozl/agent-os/actions/runs/38236708589)、[Langfuse](https://github.com/euler-gaozl/agent-os/actions/runs/38236708602)。新 Windows CI 待运行，二者不混为同一测试版本。
+
 ## 2026-10-12 P1 源码与数据库物理迁移
 
 有效源码已切换为 `D:\workspace\agent-platform\repos\agent-os`，原 PostgreSQL 为 `local\data\postgres`，旧 `.state` 原样归档于 `local\legacy-state\20261012-102142`。最终停机搬迁前后 1,948 个数据库文件 SHA-256 一致；重启 Worker 前完整数据、结构和权限指纹一致；12 个所属进程及四个业务只读响应哈希验证通过。稳定维护入口 `ops\Platform.ps1` 已实际使用。没有重新初始化数据库或调用付费模型。

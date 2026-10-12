@@ -1,0 +1,32 @@
+name: Windows process recovery
+on:
+  push:
+    branches: [main]
+    paths: ['scripts/**', '.github/workflows/windows-processes.yml']
+  pull_request:
+    paths: ['scripts/**', '.github/workflows/windows-processes.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  process-recovery:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Real Windows launch, orphan cleanup and interrupted maintenance
+        shell: pwsh
+        run: ./scripts/Test-WindowsProcesses.ps1 -NodeBinary (Get-Command node).Source -GoBinary (Get-Command go).Source
+      - name: Retain synthetic evidence including failed cases
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-process-recovery
+          path: D:/workspace/agent-platform/local/evidence/windows-processes-*
+          if-no-files-found: error

@@ -12,6 +12,7 @@ $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 . (Join-Path $PSScriptRoot 'lib/platform-paths.ps1')
 . (Join-Path $PSScriptRoot 'lib/platform-lock.ps1')
+. (Join-Path $PSScriptRoot 'lib/platform-processes.ps1')
 $layout=Get-PlatformLayout $root $LayoutPath
 switch($Action){
     start {& (Join-Path $PSScriptRoot 'Start-Local.ps1') -LayoutPath $LayoutPath -Workers $Workers -Service $Service}
@@ -41,8 +42,8 @@ switch($Action){
         try{
             $manifest=Join-Path $layout.state_root 'processes.json'
             if(Test-Path -LiteralPath $manifest){
-                $entries=@(Get-Content -LiteralPath $manifest -Raw|ConvertFrom-Json)
-                $running=@($entries|Where-Object{$p=Get-Process -Id $_.pid -ErrorAction SilentlyContinue;$p -and $p.Path -eq $_.binary -and $p.StartTime.ToUniversalTime().Ticks -eq ([datetime]$_.started_at).ToUniversalTime().Ticks})
+                $entries=Read-PlatformProcesses $layout
+                $running=@($entries|Where-Object{$state=Get-PlatformInstanceState $_ $layout;[bool]$state.process})
                 $restart=@($running.role|Sort-Object -Unique);$workerCount=[Math]::Max(1,@($running|Where-Object role -eq 'worker').Count)
             }
             $stopAttempted=$true

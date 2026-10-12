@@ -3,6 +3,7 @@ $ErrorActionPreference='Stop'
 $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 . (Join-Path $PSScriptRoot 'lib/platform-lock.ps1')
 . (Join-Path $PSScriptRoot 'lib/platform-paths.ps1')
+. (Join-Path $PSScriptRoot 'lib/platform-processes.ps1')
 $layout=Get-PlatformLayout $repoRoot $LayoutPath
 $maintenance=Enter-PlatformMaintenance $layout.state_root $MaintenanceLock
 try {
@@ -19,21 +20,24 @@ $all=@('registry','runtime','storage','sandbox','toolhub','knowledge','indexer',
 $selected=if($Service.Count){$Service}else{$all}
 foreach($role in $selected){if($role -notin ($all+@('telemetry'))){throw ('Unknown service '+$role)}}
 $selected=@(($all+@('telemetry'))|Where-Object{$_ -in $selected})
-$previous=@();if(Test-Path -LiteralPath $manifestPath){$previous=@(Get-Content -LiteralPath $manifestPath -Raw|ConvertFrom-Json)}
+$previous=Read-PlatformProcesses $layout
 $knownRoots='D:\workspace\agent-platform\ops\managed-roots.json'
 if(Test-Path -LiteralPath $knownRoots){
  foreach($known in @(Get-Content -LiteralPath $knownRoots -Raw|ConvertFrom-Json)){
   if($known.state_root -eq $layout.state_root){continue}
   if(-not(Test-PathWithin $known.state_root 'D:\workspace')){throw 'Invalid registered process state root.'}
   $otherManifest=Join-Path $known.state_root 'processes.json';if(-not(Test-Path -LiteralPath $otherManifest)){continue}
-  foreach($entry in @(Get-Content -LiteralPath $otherManifest -Raw|ConvertFrom-Json)){
+  foreach($entry in @(Get-Content -LiteralPath $otherManifest -Raw|ConvertFrom-Json -AsHashtable)){
    if($entry.role -notin $selected){continue}
-   $p=Get-Process -Id $entry.pid -ErrorAction SilentlyContinue
-   if($p -and $p.Path -eq $entry.binary -and $p.StartTime.ToUniversalTime().Ticks -eq ([datetime]$entry.started_at).ToUniversalTime().Ticks){throw ('Service already running in another registered layout: '+$entry.role)}
+   $p=Get-PlatformProcess $entry
+   Initialize-PlatformJobs
+   $members=@(if($entry['job_name'] -and $entry['job_created']){[AgentOS.Maintenance.WindowsJob]::Members($entry.job_name)};foreach($child in @($entry['legacy_children']|Where-Object{$_})){$live=Get-PlatformProcess $child;if($live){$live.Id}})
+   if($p -or $members.Count -or $entry['legacy_stop_intent'] -or (-not $entry['job_name'] -and -not $p)){throw ('Service running or stop unresolved in another registered layout: '+$entry.role)}
   }
  }
 }
-foreach($entry in $previous){if($entry.role -notin $selected){continue};$p=Get-Process -Id $entry.pid -ErrorAction SilentlyContinue;if($p -and $p.Path -eq $entry.binary -and $p.StartTime.ToUniversalTime().Ticks -eq ([datetime]$entry.started_at).ToUniversalTime().Ticks){throw ('Service already running: '+$entry.role+'. Stop only that service before restarting.')}}
+foreach($entry in $previous){if($entry.role -notin $selected){continue};$state=Get-PlatformInstanceState $entry $layout;if($state.process -or $state.members.Count -or $state.requires_stop){throw ('Service, descendants or unfinished stop present: '+$entry.role+'. Complete stop for only that service before restarting.')}}
+$previous=@($previous|Where-Object{$_['role'] -notin $selected})
 $needConfig=-not(Test-Path -LiteralPath (Join-Path $layout.config_root 'services/toolhub.json'))
 if($Migrate -or $needConfig){
  . (Join-Path $PSScriptRoot 'lib/platform-recovery.ps1')
@@ -50,6 +54,11 @@ if('worker' -in $selected){
 foreach($ui in @('control','futures')){if($ui -in $selected){$dir=if($ui -eq 'control'){$layout.console_web_root}else{$layout.futures_web_root};if(-not(Test-Path -LiteralPath (Join-Path $dir 'index.html'))){throw ('Build frontend before starting '+$ui)}}}
 $ports=@{control=8090;toolhub=8091;storage=8092;sandbox=8093;runtime=8094;knowledge=8095;registry=8096;indexer=8097;futures=8098;sources=8101}
 $started=@();$null=New-Item -ItemType Directory -Force -Path $layout.log_root
+$launchRoot=Join-Path $layout.config_root 'launches'
+if(-not(Test-Path -LiteralPath $launchRoot)){
+ . (Join-Path $PSScriptRoot 'lib/platform-recovery.ps1')
+ New-ProtectedDirectory $launchRoot
+}
 try{
  foreach($role in $selected){
   $count=if($role -eq 'worker'){$Workers}else{1}
@@ -57,21 +66,31 @@ try{
   $binary=[IO.Path]::GetFullPath($index[$role]);if(-not(Test-PathWithin $binary $layout.release_root)){throw 'Executable outside managed release directory.'}
   $config=Join-Path $layout.config_root ('services/'+$role+'.json');if(-not(Test-Path -LiteralPath $config)){throw ('Missing service config '+$role)}
   for($i=0;$i -lt $count;$i++){
-   $instance=$role+'-'+[Guid]::NewGuid().ToString('N').Substring(0,8)
-   $environment=@{INSTANCE_ID=$instance;DSH_RUNNER=(Join-Path $layout.harness_root 'runner.mjs');WEB_DIR=$layout.console_web_root;FUTURES_WEB_DIR=$layout.futures_web_root}
-   if($role -eq 'worker' -and $layout.ContainsKey('node_binary')){$environment.AGENTOS_NODE=$layout.node_binary}
-   $p=Start-Process -FilePath $binary -ArgumentList @('--config',('"'+$config+'"')) -WorkingDirectory $repoRoot -WindowStyle Hidden -Environment $environment -PassThru -RedirectStandardOutput (Join-Path $layout.log_root ($instance+'.stdout.log')) -RedirectStandardError (Join-Path $layout.log_root ($instance+'.stderr.log'))
-   $started += [pscustomobject]@{pid=$p.Id;role=$role;id=$instance;started_at=$p.StartTime.ToUniversalTime().ToString('o');binary=$binary}
+   $identifier=[Guid]::NewGuid().ToString('N');$instance=$role+'-'+$identifier
+   $launchConfig=Join-Path $launchRoot ($instance+'.json')
+   $configBytes=[IO.File]::ReadAllBytes($config)
+   try{$effective=[Text.Encoding]::UTF8.GetString($configBytes)|ConvertFrom-Json -AsHashtable}catch{throw ('Invalid service configuration: '+$role)}
+   $effective.INSTANCE_ID=$instance
+   if($role -eq 'worker'){$effective.DSH_RUNNER=Join-Path $layout.harness_root 'runner.mjs';$effective.AGENTOS_NODE=(Get-Command $nodeCommand).Source}
+   if($role -eq 'control'){$effective.WEB_DIR=$layout.console_web_root}
+   if($role -eq 'futures'){$effective.FUTURES_WEB_DIR=$layout.futures_web_root}
+   Write-PlatformJson $launchConfig $effective
+   $entry=@{pid=0;role=$role;id=$instance;started_at=$null;binary=$binary;status='launching';intent_at=[datetime]::UtcNow.ToString('o');job_name=('Global\AgentOS-'+$identifier);launch_config=$launchConfig;launch_config_sha256=(Get-FileHash -LiteralPath $launchConfig -Algorithm SHA256).Hash.ToLower();source_config_sha256=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($configBytes)).ToLower()}
+   $effective=$null;[Array]::Clear($configBytes,0,$configBytes.Length)
+   $started+=@($entry)
+   Write-PlatformJson $manifestPath @($previous+$started)
+   Start-PlatformInstance $entry $layout {Write-PlatformJson $manifestPath @($previous+$started)}
    Write-PlatformJson $manifestPath @($previous+$started)
   }
  }
  Start-Sleep -Milliseconds 800
- foreach($entry in $started){if(-not(Get-Process -Id $entry.pid -ErrorAction SilentlyContinue)){throw ('Service exited: '+$entry.role+'; inspect its log')}}
+ foreach($entry in $started){if(-not(Get-PlatformProcess $entry)){throw ('Service exited: '+$entry.role+'; inspect its log')}}
  Write-Output ('Started '+$started.Count+' independent service processes. Console http://127.0.0.1:8090 | Futures http://127.0.0.1:8098')
 }catch{
- foreach($entry in $started){$p=Get-Process -Id $entry.pid -ErrorAction SilentlyContinue;if($p -and $p.Path -eq $entry.binary -and $p.StartTime.ToUniversalTime().Ticks -eq ([datetime]$entry.started_at).ToUniversalTime().Ticks){Stop-Process -Id $entry.pid}}
+ $failure=$_
+ foreach($entry in $started){Stop-PlatformInstance $entry $layout {Write-PlatformJson $manifestPath @($previous+$started)}}
  Write-PlatformJson $manifestPath @($previous)
- throw
+ throw $failure
 }
 
 } finally { if($maintenance){$maintenance.Dispose()} }
