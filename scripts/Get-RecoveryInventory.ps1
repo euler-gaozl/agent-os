@@ -40,6 +40,7 @@ if(Test-Path -LiteralPath $identityPath){$files += [pscustomobject]@{role='ident
 if(Test-Path -LiteralPath $adminPath){$files += [pscustomobject]@{role='bootstrap-admin';path=$adminPath;sha256=(Get-FileHash -LiteralPath $adminPath -Algorithm SHA256).Hash.ToLower();protected_copy_verified=$false}}
 $indexPath=Join-Path $layout.release_root 'current.json'
 $releases=@()
+$catalog=@{format=1;legacy=@{}}
 if(Test-Path -LiteralPath $indexPath){
     $catalog=Read-ReleaseCatalog $layout;Assert-NoPendingRelease $catalog
     $roles=if($catalog.format -eq 2){$catalog.services.Keys}else{$catalog.legacy.Keys}
@@ -52,15 +53,24 @@ if(Test-Path -LiteralPath $indexPath){
     }
 }
 $harness=@()
-$workerRelease=Get-PlatformRelease $layout worker
+$retained=@()
+if($catalog.format -eq 2){
+    foreach($reference in (Get-ReleaseReferences $catalog)){
+        $descriptor=Read-ReleaseDescriptor $layout $reference -Verify
+        $retained+=@{reference=$reference;role=$descriptor.role;files=$descriptor.files.Count;links=$descriptor.links.Count;complete_bundle_verified=$true}
+    }
+}
+$harnessRoot=$layout.harness_root
+$hasWorker=if($catalog.format -eq 2){$catalog.services.Contains('worker')}else{$catalog.legacy.Contains('worker')}
+if($hasWorker){$harnessRoot=(Get-PlatformRelease $layout worker).assets.harness}
 foreach($relative in @('harness/runner.mjs','harness/package.json','harness/pnpm-lock.yaml')){
-    $file=Join-Path $workerRelease.assets.harness ([IO.Path]::GetFileName($relative))
+    $file=Join-Path $harnessRoot ([IO.Path]::GetFileName($relative))
     if(Test-Path -LiteralPath $file){$harness += [pscustomobject]@{path=$relative;sha256=(Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLower()}}
 }
 $report=[pscustomobject]@{
     schema_version=1;observed_at=[datetime]::UtcNow.ToString('o');project_root=$ProjectRoot;state_root=$StateRoot
     databases=@($groups.Values|Sort-Object host,port,database);configuration_files=$files;missing_service_configurations=$missing
-    releases=$releases;harness_inputs=$harness
+    releases=$releases;retained_release_references=$retained;harness_inputs=$harness
     recovery_verified=$false
     remaining_checks=@('Protect and verify a recoverable copy of all configurations and MASTER_KEY.','Quiesce writers and back up every listed authoritative database.','Retain exact executable/Harness versions and dependency artifacts.','Restore every domain to isolated databases; check original data and references.','Keep workers and externally effectful tools disabled in the restoration environment.','Verify service identities, grants, cross-domain references and recovery ordering before cutover.')
     limitations=@('This is a read-only inventory, not a backup or a passing restoration test.','Database groups deliberately ignore role/search_path: a complete database dump must include every owned schema.','No passwords, tokens, master-key values or raw DSNs are recorded.','External RAG indexes need their own rebuild/backup policy when enabled.')

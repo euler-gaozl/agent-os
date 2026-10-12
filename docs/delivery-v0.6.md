@@ -1,5 +1,15 @@
 # 端到端交付账本
 
+## 2026-10-12 P1 独立发布与完整恢复关卡完成
+
+统一 Windows 维护入口已包含 build/update/rollback/release-recover，候选完整包不修改当前版本；唯一 format2 catalog 记录 current/previous/pending，进程中断后可恢复。Knowledge、两个 Worker、Console、Futures 真实逐个更新和回滚，非目标实例不变，Web 返回所选资源。兼容标签来自经版本核验的构建，配置变化、依赖篡改和跨协议发布在替换前拒绝；不承诺任意历史版本可回滚。
+
+16 项真 Windows 发布夹具和原 8 项进程夹具在 [CI 38246524804](https://github.com/euler-gaozl/agent-os/actions/runs/38246524804) 全部通过。首次 CI 的 D 盘目录错误、三次本地失败、独立评审七项修复均保留，见[发布恢复记录](windows-release-recovery-20261012.md)。评审仅静态复核，没有冒充独立运行验证。
+
+新备份 `local/backups/release-catalog-20261012-v1` 经全新 PostgreSQL 集群恢复：43 个表/序列及结构权限、10 个身份、2 个加密凭证和身份索引一致；17 个当前/上一版发布引用的 3,182 个文件及 470 个内部链接完成还原校验，两份 Worker 的 Harness 可从恢复目录加载。原 12 个服务冷启动后 Doctor 正常，验证库已停止。维护测试未发起付费模型调用。
+
+P0/P1 完成，完整 Goal 继续 active。下一步 P2 正式独立仓库和每域迁移责任；P2.5 源码 DSH/存储，P3 UI、P4 实际 Agent 故障、P5 真实研究样例尚未结项。服务器、跨机 HA 和最终容量仍为后续范围，不能将本批维护闭环写成全部交付。
+
 ## 2026-10-12 P1 Windows 进程恢复
 
 12 个实际进程已切换到原子 Job 启动方式，保留两个 Worker。启动前保存最终配置与 intent，根进程持有只读保活句柄，根退出后卡住的 Node 由 Windows 清理；启动器在 PID 落盘前退出时可重新识别并停止实例。没有增加常驻守护进程，没有改变模型配置、业务二进制或数据库。

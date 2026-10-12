@@ -38,6 +38,17 @@ $report=@{format=1;started_at=[datetime]::UtcNow.ToString('o');backup_manifest_s
 try {
     if($manifest.ContainsKey('complete_release_archive')){
         $report.complete_release_archive=Restore-ReleaseCatalog (Join-Path $BackupDirectory 'release-catalog') (Join-Path $verificationRoot 'releases')
+        $restoredLayout=@{release_root=(Join-Path $verificationRoot 'releases')}
+        $report.archived_worker_bundle_checks=@()
+        foreach($reference in (Get-ReleaseReferences (Read-ReleaseCatalog $restoredLayout))){
+            $descriptor=Read-ReleaseDescriptor $restoredLayout $reference
+            if($descriptor.role -ne 'worker'){continue}
+            $archivedNode=Resolve-ReleasePath $restoredLayout.release_root $descriptor.assets.node
+            $archivedHarness=Resolve-ReleasePath $restoredLayout.release_root $descriptor.assets.harness
+            & $archivedNode --test (Join-Path $archivedHarness 'session-seams.test.mjs')
+            if($LASTEXITCODE){throw 'A retained Worker dependency bundle failed after restoration.'}
+            $report.archived_worker_bundle_checks+=@{id=$reference.id;passed=$true}
+        }
     }
     $null=Invoke-PostgresTool -PostgresBin $PostgresBin -Tool initdb -Arguments @('-D',$data,'--username',$adminName,'--pwfile',$passwordFile,'--encoding=UTF8','--locale=C','--auth-host=scram-sha-256','--auth-local=scram-sha-256')
     Remove-Item -LiteralPath $passwordFile

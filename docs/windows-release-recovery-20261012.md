@@ -32,9 +32,13 @@
 
 13 个原安装单元已登记为 format2，登记本身未替换进程。随后从干净提交 `bd25195927263d963e11be6d8f9348361f84c7b1` 构建 Knowledge、Worker、Control、Futures 完整候选，各自实际更新后回滚，共八次切换通过；Worker 保持两个实例，各次非目标进程身份不变，两套 Web 响应入口摘要均等于所选包。报告：`local/evidence/real-releases-09729a36aaac4112be7f316e2fae68a0.json`。没有通过这些维护测试发起模型调用或 schema 迁移。
 
-新备份 `local/backups/release-catalog-20261012-v1` 已在停写窗口捕获，包含 current 和 previous 的完整发布集合。随后按 format2 冷启动原 12 个实例，Doctor 核心检查通过，无 pending，catalog generation=9；报告 `local/evidence/post-release-backup-bd25195.json`。隔离整库恢复正在另行执行，其结果未被本段提前标记为通过。
+新备份 `local/backups/release-catalog-20261012-v1` 在停写窗口捕获，共 4,450 个文件，包含 current 和 previous 的完整发布集合。随后按 format2 冷启动原 12 个实例，Doctor 核心检查通过，无 pending，catalog generation=9；报告 `local/evidence/post-release-backup-bd25195.json`。
 
-首次新增 Windows CI [38246029224](https://github.com/euler-gaozl/agent-os/actions/runs/38246029224) 在发布夹具启动前失败：Actions 默认检出路径为 `D:\a`，不符合已明确的 `D:\workspace` 布局约束。已让 CI 将固定检出克隆到受支持目录，并在夹具启动任何进程前校验 layout；后续 CI 结果另记。没有放松本机路径检查来掩盖差异。
+隔离整库恢复已实际通过：43 个表/序列指纹及结构权限、10 个服务身份登录、2 个加密凭证解密、14 份配置和身份索引一致，验证库已停止。17 个发布引用的 3,182 个文件、470 个内部链接全部重建并验证。报告 `local/restore-checks/1274873af22343c38e666fb950e92f31/result.json`。随后直接使用该恢复目录中的两个 Worker Node/Harness 各跑三项接口测试，全部通过；补充证据 `local/evidence/archived-harness-1274873.json` 绑定原恢复报告摘要，未改写原报告。后续恢复脚本已纳入这一步。恢复清单也列出全部 17 个引用，见 `local/evidence/inventory-format2-9525ebd.json`。
+
+首次新增 Windows CI [38246029224](https://github.com/euler-gaozl/agent-os/actions/runs/38246029224) 在发布夹具启动前失败：Actions 默认检出路径为 `D:\a`，不符合已明确的 `D:\workspace` 布局约束。已让 CI 将固定检出克隆到受支持目录，并在夹具启动任何进程前校验 layout；[38246524804](https://github.com/euler-gaozl/agent-os/actions/runs/38246524804) 已通过原 8 项进程测试与新 16 项发布测试。证据下载至 `local/evidence/windows-ci-9525ebd`。没有放松本机路径检查来掩盖差异。
+
+P1 本机维护关卡通过。独立服务源码仓库、跨协议协调迁移、源码 Harness、完整 UI 和实际 Agent 故障/业务验收属于后续阶段；本节不宣称它们已完成。
 
 ## 本机入口
 

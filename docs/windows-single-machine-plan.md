@@ -112,7 +112,7 @@ DSH 专项依据与修改边界见 [源码与存储系统决策](architecture/ds
 
 对于历史测试已覆盖的场景，先判断是否因改动失效；只有与当前提交及部署组合一致的证据可以沿用，迁移/源码边界变化后必须重新验证相关场景。日常冷启动先用实际停止再启动验收；未经用户参与的整机重启/断电不声称已测。
 
-## 6. 当前真实状态与第一步
+## 6. 制定计划时的状态与第一步（历史记录）
 
 - 已验证基线：功能提交 `5bfc84c9e7507156184c337354eef2674694763b`；当前集成仓库 HEAD `6cc1dc813a1e9b4b2a70ca05bf38ab32a9fce8e4`。已有真实模型、Windows 备份还原、多实例/故障与 Linux CI 证据详见 `delivery-v0.6.md`，不重复宣称从零开发。
 - 新拆仓草稿尚未验收、未替换运行版本、未创建新的远端服务仓库。首次构建没有通过：私有 SDK 依赖解析仍尝试访问公共代理；草稿仍含过宽共享存储/权限/就绪检查，Worker/Indexer 也尚未独立仓库。禁止把这些目录写成已完成交付。
@@ -131,9 +131,17 @@ DSH 专项依据与修改边界见 [源码与存储系统决策](architecture/ds
 
 ## 7. 工作节奏和变更规则
 
+### P1 关卡完成（2026-10-12）
+
+Knowledge、两个 Worker、Console、Futures 各自执行真实更新与回滚，共八次切换；非目标进程未替换，两个 Web 返回所选版本入口。新格式维护窗口备份后自动恢复 12 个实例，Doctor 通过。备份共 4,450 个文件；实际隔离恢复验证 43 个关系/序列及结构权限、10 个账号、2 个加密凭证、14 份配置、17 个发布引用的 3,182 个文件及 470 个包内链接，两个归档 Worker 的 Harness 均可加载。
+
+修正后的 [Windows CI 38246524804](https://github.com/euler-gaozl/agent-os/actions/runs/38246524804) 同时通过原 8 项进程恢复和新 16 项发布验证。原始恢复报告 `local/restore-checks/1274873af22343c38e666fb950e92f31/result.json`；当前可恢复备份为 `local/backups/release-catalog-20261012-v1`，此前 v3 仍保留。
+
+P1 完成，开始 P2：先拆 Registry/Sandbox/Telemetry 的源码与构建边界，再推进其他服务，最后处理执行域和索引域的共享事务包。源码 Harness、完整 UI、实际 Agent 故障和真实业务研究仍按 P2.5–P5 执行；完整 Goal 保持 active。P1 的兼容发布不包含跨协议/configuration/schema 的自动迁移或机器宕机 HA。
+
 ### P1 发布事务增量（2026-10-12 19:53 后）
 
-已实现完整服务发布包、唯一 current/previous/pending catalog、单服务 update/rollback/release-recover，支持 Worker 固定依赖和 Web 各自资源。16 项 Windows 真进程夹具通过，含发布和恢复流程中断、非目标独立退出、依赖篡改及完整包还原；正式原安装已登记为 format2，尚待真实候选升级/回滚和新格式备份恢复。详细边界、评审修复和失败记录见 [发布恢复记录](windows-release-recovery-20261012.md)。P1 尚不因合成夹具通过而结项。
+已实现完整服务发布包、唯一 current/previous/pending catalog、单服务 update/rollback/release-recover，支持 Worker 固定依赖和 Web 各自资源。16 项 Windows 真进程夹具通过，含发布和恢复流程中断、非目标独立退出、依赖篡改及完整包还原；正式原安装已登记为 format2。当时尚待的真实发布和备份恢复已经在上节完成，保留此实施次序。详细边界、评审修复和失败记录见 [发布恢复记录](windows-release-recovery-20261012.md)。
 
 ### P1 进程恢复增量（2026-10-12 19:10 后）
 
