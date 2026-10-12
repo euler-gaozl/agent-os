@@ -2,6 +2,8 @@
 
 ## 2026-10-12 P2 第二批服务源码
 
+后续实际更新暴露旧配置默认地址遗漏，已自动恢复旧版并修复六个 Owner。修正版五个启用服务各 update → rollback → update，旧资料/接口字节哈希不变，Runtime 当前 PID/实例 ID/10 秒内心跳验证通过；Telemetry 仍为零实例。失败与成功报告均保留于 [P2 记录](independent-sources-p2.md)。不能把首次仅 readiness 的成功称为服务状态全链路通过；本次已补这项缺口。六个剩余服务、源码 DSH、完整 UI 与真实 Agent/业务验收继续执行。
+
 ToolHub、Storage、Sources 的私有源码仓库与 draft PR 已建立，SDK 固定依赖随库保存；独立 clone 在空模块缓存且关闭网络依赖条件下，真实数据库测试、vet、构建通过。ToolHub 应用身份能够注册/检测/启用/写审计；Storage 不再携带文档/笔记 SQL；各域迁移及失败回滚通过。集成源码锁新增三仓，拒绝缺映射回退旧源码。原始证据与评审边界见 [P2 记录](independent-sources-p2.md)，新 CI 和实际更新回滚分别验收，目标保持 active。
 
 ## 2026-10-12 P2 首批独立仓库与发布接线
