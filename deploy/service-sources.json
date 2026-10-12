@@ -24,6 +24,25 @@
     "sources": {
       "commit": "82a90ce5b2ca620d15932b03aab9b4d3feb93bd0",
       "repository": "agent-os-sources"
+    },
+    "knowledge": {
+      "commit": "a8afac70934ffefc6dbcf20bf2b3e71678ed4ea0",
+      "repository": "agent-os-knowledge"
+    },
+    "indexer": {
+      "repository": "agent-os-indexer",
+      "owner_modules": [
+        {
+          "protocol": "knowledge-indexing-v1",
+          "version": "v0.1.0-rc.1",
+          "module": "github.com/euler-gaozl/agent-os-knowledge",
+          "module_sum": "h1:HZnGpJI81snXYP0mLiI+Wim+IGDrKXnONVhCsqsHG8M=",
+          "commit": "e26584df4f1df22da6f3ee9101933dae8f48d164",
+          "go_mod_sum": "h1:lviyaS6yKk3K9HbzBQp4QEzIbZDhgdWymiUEa12/pZc=",
+          "package": "indexing"
+        }
+      ],
+      "commit": "467fcb990fcb0416ef6cf76e99a4e15752296845"
     }
   }
 }

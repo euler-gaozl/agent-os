@@ -50,6 +50,10 @@ try{
                 if($LASTEXITCODE -or $info.Main.Path -cne ('github.com/euler-gaozl/'+$owner.repository)){throw 'Built module identity differs from its owner.'}
                 $sdk=@($info.Deps|Where-Object{$_.Path -ceq $owner.sdk.module})
                 if($sdk.Count -ne 1 -or $sdk[0].Version -cne $owner.sdk.version -or $sdk[0]['Replace']){throw 'Built SDK differs from the recorded fixed dependency.'}
+                foreach($dependency in $owner.owner_modules){
+                    $compiled=@($info.Deps|Where-Object{$_.Path -ceq $dependency.module})
+                    if($compiled.Count -ne 1 -or $compiled[0].Version -cne $dependency.version -or $compiled[0]['Replace']){throw 'Built transaction module differs from its fixed owner dependency.'}
+                }
                 $settings=@{};foreach($setting in $info.Settings){$settings[$setting.Key]=$setting.Value}
                 if($settings['vcs.revision'] -cne $owner.commit -or $settings['vcs.modified'] -cne 'false' -or $settings['GOOS'] -cne 'windows' -or $settings['GOARCH'] -cne 'amd64'){
                     throw 'Built version or target does not match the selected clean service commit.'
@@ -91,7 +95,7 @@ try{
                 $assets.web=Get-ReleaseRelative $layout.release_root $output
             }
             $provenance=@{kind='source-build';commit=$revision;dirty=$dirty;built_at=[datetime]::UtcNow.ToString('o')}
-            if($owner){$provenance=@{kind='independent-source-build';repository=$owner.repository;commit=$owner.commit;integration_commit=$revision;dirty=$dirty;sdk=$owner.sdk;built_at=[datetime]::UtcNow.ToString('o')}}
+            if($owner){$provenance=@{kind='independent-source-build';repository=$owner.repository;commit=$owner.commit;integration_commit=$revision;dirty=$dirty;sdk=$owner.sdk;owner_modules=$owner.owner_modules;built_at=[datetime]::UtcNow.ToString('o')}}
             $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance
         }
     }finally{Pop-Location}
