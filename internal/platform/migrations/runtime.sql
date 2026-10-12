@@ -1,3 +1,11 @@
+-- Agent-scoped persistent notes belong to the execution domain. Effects,
+-- call receipts and run fencing must commit in the same transaction.
+CREATE TABLE IF NOT EXISTS documents(
+ id text PRIMARY KEY, kind text NOT NULL, title text NOT NULL, content text NOT NULL,
+ source text NOT NULL, metadata jsonb NOT NULL, supersedes text REFERENCES documents(id),
+ created_at timestamptz NOT NULL DEFAULT now());
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS scope text NOT NULL DEFAULT '';
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS valid_until timestamptz;
 CREATE TABLE IF NOT EXISTS runs(
  id text PRIMARY KEY, submission_key text UNIQUE NOT NULL, input_hash text NOT NULL,
  parent_id text REFERENCES runs(id), snapshot jsonb NOT NULL, task text NOT NULL,

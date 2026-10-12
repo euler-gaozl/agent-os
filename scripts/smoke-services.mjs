@@ -73,6 +73,14 @@ try{
  assert.equal(sql("SELECT count(*) FROM documents WHERE title='CI durable receipt'"),'1');
  assert(Number(sql("SELECT fence FROM runs WHERE id='"+run.id+"'"))>=2);passed('real worker SIGKILL, fenced takeover, DSH replay and one committed note');
  assert.equal(sql("SELECT count(*) FROM calls WHERE run_id='"+run.id+"' AND kind='tool' AND status='completed'"),'4');passed('cross-service MCP call, KB search and bound original document read');
+ const retainedNote=(await request('/documents?q=CI%20durable%20receipt'))[0];assert(retainedNote?.id);
+ dc('stop','storage');
+ try{
+  assert.equal((await request('/documents/'+retainedNote.id)).id,retainedNote.id);
+  const created=await request('/documents',{kind:'memory',title:'CI Runtime-owned memory',content:'Storage can be unavailable while retained notes stay accessible.',source:'fixture://runtime-notes',scope:'ci-agent'});
+  assert.equal((await request('/documents/'+created.id)).scope,'ci-agent');
+ }finally{dc('start','storage')}
+ passed('Console routes persistent notes to Runtime while independent Storage is stopped');
  dc('stop','toolhub');const partial=await request('/resources');assert.equal(partial.services.toolhub,false);assert.equal(partial.services.registry,true);assert(partial.items.some(x=>x.id==='ci-agent'));assert((await request('/tasks',undefined,{business:true})).length===1);dc('start','toolhub');passed('ToolHub outage leaves registry catalog and business history usable');
  for(const role of ['registry','runtime','knowledge','indexer','storage','control','futures','sources']){const ids=dc('ps','-q',role).split('\n');const before=JSON.parse(docker('inspect',ids[0]))[0].RestartCount;crash(ids[0]);await until(()=>{const state=JSON.parse(docker('inspect',ids[0]))[0];return state.RestartCount>before&&state.State.Health?.Status==='healthy'},role+' automatic restart',60)}
  assert((await request('/knowledge/query',{knowledge:{id:'ci-kb',revision:1},query:'甲醇库存'})).hits.length===1);passed('independent service crash restart retains data');

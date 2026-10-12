@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 	"testing"
 
@@ -13,50 +12,15 @@ import (
 	"github.com/euler-gaozl/agent-os/internal/serviceclient"
 	"github.com/euler-gaozl/agent-os/internal/servicehttp"
 	storageapi "github.com/euler-gaozl/agent-os/services/storage"
-	"github.com/jackc/pgx/v5"
 )
 
-// No artifact tables in Runtime and no execution tables in Storage. Unlike a
+// Separate PostgreSQL databases, without artifacts in Runtime or notes/runs
+// in Storage. Unlike a
 // mocked HTTP response this exercises the actual independent service boundary.
 func artifactPair(t *testing.T) (*Store, *recordstore.Store) {
 	t.Helper()
-	runtime, dsn := testStore(t)
-	ctx := context.Background()
-	schema := "storage_test_" + ID()
-	if _, e := runtime.DB.Exec(ctx, "CREATE SCHEMA "+schema); e != nil {
-		t.Fatal(e)
-	}
-	u, e := url.Parse(dsn)
-	if e != nil {
-		t.Fatal(e)
-	}
-	q := u.Query()
-	q.Set("search_path", schema)
-	u.RawQuery = q.Encode()
-	retained, e := Open(ctx, u.String())
-	if e != nil {
-		t.Fatal(e)
-	}
-	t.Cleanup(func() {
-		retained.DB.Close()
-		if _, e := runtime.DB.Exec(context.Background(), "DROP SCHEMA "+schema+" CASCADE"); e != nil {
-			t.Error(e)
-		}
-	})
-	if e = MigrateService(ctx, retained.DB, "storage"); e != nil {
-		t.Fatal(e)
-	}
-	var exists bool
-	if e = retained.DB.QueryRow(ctx, "SELECT to_regclass('runs') IS NOT NULL").Scan(&exists); e != nil || exists {
-		t.Fatal("storage requires execution tables", e)
-	}
-	var runtimeSchema string
-	if e = runtime.DB.QueryRow(ctx, "SELECT current_schema()").Scan(&runtimeSchema); e != nil || !strings.HasPrefix(runtimeSchema, "test_") {
-		t.Fatal("isolated runtime fixture required", e)
-	}
-	if _, e = runtime.DB.Exec(ctx, "DROP TABLE "+pgx.Identifier{runtimeSchema, "artifact_refs"}.Sanitize()+", "+pgx.Identifier{runtimeSchema, "artifacts"}.Sanitize()+" CASCADE"); e != nil {
-		t.Fatal(e)
-	}
+	runtime := isolatedDomainDatabase(t, "runtime")
+	retained := isolatedDomainDatabase(t, "storage")
 	store := &recordstore.Store{DB: retained.DB}
 	server := httptest.NewServer((&storageapi.Server{Store: store, HTTP: servicehttp.Config{Role: "storage", Peers: map[string]string{"runtime": servicehttp.TokenHash(testToken), "worker": servicehttp.TokenHash(testToken + "worker"), "control": servicehttp.TokenHash(testToken + "control")}}}).Handler())
 	t.Cleanup(server.Close)

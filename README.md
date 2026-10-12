@@ -16,13 +16,13 @@
 | Registry | 不可变资源版本；Agent 绑定指定版本的提示词、Skill、MCP、知识库和子 Agent |
 | Runtime + Worker + DSH | Go 多实例领取与 fencing；每个执行任务启动 DSH 0.2.0-rc.2；持久化模型/工具响应重放、父子任务、约束修订、取消与 UNKNOWN 核对 |
 | ToolHub | MCP/Skill 不可变版本；包校验、验活、定义漂移检查、启停和审计；Runtime 保持执行效果与回执的事务边界 |
-| Storage | 原文、作用域记忆、不可变内容哈希产物、引用根、分页回读；Compact 保留完整原记录和必需约束 |
+| Storage | 独立管理不可变内容哈希产物、引用根和分页回读；Agent 持久化笔记归 Runtime，与执行回执原子提交 |
 | Knowledge | 原文件上传与正文提取；有界中文/英文词法索引检索；Milvus 向量检索和 LightRAG 图谱检索适配；后台索引与来源回查 |
 | Console | 资源导入、Agent 编辑/试运行/发布、知识库上传/检索测试、运行/服务状态、加密凭证写入 |
 | Futures | 独立构建、端口和 BFF；直接调用发布的 Agent 确定版本，返回业务所需的进度与结果 |
 | Sources | 独立公开资料 MCP；管理员指定 HTTPS 域名、原始响应哈希留存、文本分页与定位；不绕过授权来源 |
 
-Sandbox 的真实 Docker 隔离、主动干扰截止进程和执行服务强杀恢复已通过 Linux CI；本机没有 Docker，执行功能保持停用。Telemetry 已通过独立数据库接收和受控 OTLP 导出，真实 Langfuse 后端尚未联调。知识库不等于已校验事实库，图谱关系和检索结果必须回查原始来源。
+Sandbox 的真实 Docker 隔离、主动干扰截止进程和执行服务强杀恢复已通过 Linux CI；本机没有 Docker，执行功能保持停用。Telemetry 已通过独立数据库接收和受控 OTLP 导出，真实 Langfuse v4.56 后端已通过接收、回读和重投契约测试（至少一次投递可能产生重复观测）。知识库不等于已校验事实库，图谱关系和检索结果必须回查原始来源。
 
 ## 启动
 
@@ -54,6 +54,6 @@ pnpm --dir web run build
 - [后续工作](docs/architecture/next-steps.md)
 - [v0.1 独立架构评审原文](docs/architecture/agent-os-v0.1-independent-review.txt)（历史基线，不是本版代码审计）
 
-各服务具有独立二进制、镜像、配置、服务身份和发布入口，12 个部署单位已通过 Linux CI 的单独部署检查，共用中台 Web。ToolHub/Knowledge/Sources 拥有各自 schema；Sandbox/Telemetry 通过 HTTP 对接 Runtime；Console/Futures 无数据库权限。Runtime/Worker/Storage 仍共享部分执行事务表，尚未完全拆库。百万文档 / 千万分块已有受限检索实测，完整平台 2 核 / 4 GB 负载和物理节点 HA 仍待验收；参见[交付账本](docs/delivery-v0.6.md)，不能将一次容量测试写成全部生产能力。
+各服务具有独立二进制、镜像、配置、服务身份和发布入口，12 个部署单位已通过 Linux CI 的单独部署检查，共用中台 Web。ToolHub/Knowledge/Sources 拥有各自 schema；Sandbox/Telemetry 通过 HTTP 对接 Runtime；Console/Futures 无数据库权限。Runtime/Worker 属于同一执行数据域，包含持久化笔记；Storage 已移除笔记表依赖，产物通过 HTTP 读写，独立数据库测试通过，新边界 Linux 全链路待复验。百万文档 / 千万分块已有受限检索实测；平台 2 核 / 4 GB 下的受控 12 任务混合负载已通过，物理节点 HA 仍待验收；参见[交付账本](docs/delivery-v0.6.md)，不能将一次容量测试写成全部生产能力。
 
 期货应用只负责资料收集、校验、分类、留存和客观事实反馈。预测、交易方向与操作决定由用户负责。

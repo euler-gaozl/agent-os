@@ -24,8 +24,19 @@ import (
 func main() {
 	output := flag.String("output", ".state/services", "private per-service configuration directory")
 	service := flag.String("service", "", "upgrade only this service's schema; do not provision identities or import legacy data")
+	retireStorageNotes := flag.Bool("retire-storage-notes", false, "after Runtime/Console/Storage rollout, revoke Storage access to execution notes; use the execution database DDL config")
 	if e := servicehost.Load(); e != nil {
 		fail(e)
+	}
+	if *retireStorageNotes {
+		if *service != "" {
+			fail(errors.New("retirement is a separate final rollout step; omit --service"))
+		}
+		if e := retireStorageNoteAccess(context.Background(), os.Getenv("DATABASE_URL")); e != nil {
+			fail(e)
+		}
+		fmt.Println("Legacy Storage note privileges revoked; data and service configurations unchanged.")
+		return
 	}
 	if *service != "" {
 		if e := upgradeService(context.Background(), os.Getenv("DATABASE_URL"), *service); e != nil {
@@ -120,7 +131,7 @@ func run(output string) error {
 		return e
 	}
 	execution := []string{"runs", "events", "calls", "model_attempts", "harness_exchanges", "documents", "app_runs", "business_runs", "instances"}
-	grants := map[string][]string{"runtime": execution, "worker": execution, "registry": {"resources", "secrets"}, "storage": {"documents", "artifacts", "artifact_refs"}, "sandbox": {"sandbox_jobs"}, "telemetry": {"telemetry_inbox", "telemetry_exports"}, "toolhub": nil, "knowledge": nil, "indexer": nil, "control": nil, "futures": nil}
+	grants := map[string][]string{"runtime": execution, "worker": execution, "registry": {"resources", "secrets"}, "storage": {"artifacts", "artifact_refs"}, "sandbox": {"sandbox_jobs"}, "telemetry": {"telemetry_inbox", "telemetry_exports"}, "toolhub": nil, "knowledge": nil, "indexer": nil, "control": nil, "futures": nil}
 	identities := map[string]string{}
 	grants["sources"] = nil
 	identityFile := filepath.Join(output, "identities.json")

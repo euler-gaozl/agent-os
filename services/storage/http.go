@@ -1,9 +1,8 @@
-// Package storage owns retained execution documents and artifacts. It has no
+// Package storage owns immutable artifacts and retention references. It has no
 // execution-table dependency; Runtime supplies authorized artifact roots.
 package storage
 
 import (
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -64,39 +63,6 @@ func (s *Server) routes(m *http.ServeMux) {
 		w.Header().Set("X-Artifact-Media-Type", media)
 		_, e = w.Write(b)
 		return e
-	}))
-	m.HandleFunc("GET /documents/{id}", servicehttp.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		var d Document
-		var metadata []byte
-		e := s.Store.DB.QueryRow(r.Context(), "SELECT id,kind,title,content,source,metadata,supersedes,scope,valid_until FROM documents WHERE id=$1", r.PathValue("id")).Scan(&d.ID, &d.Kind, &d.Title, &d.Content, &d.Source, &metadata, &d.Supersedes, &d.Scope, &d.ValidUntil)
-		if e != nil {
-			return e
-		}
-		if e = json.Unmarshal(metadata, &d.Metadata); e != nil {
-			return e
-		}
-		servicehttp.JSONResponse(w, 200, d)
-		return nil
-	}))
-	m.HandleFunc("GET /documents", servicehttp.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		v, e := s.Store.Search(r.Context(), r.URL.Query().Get("q"), r.URL.Query().Get("kind"))
-		if e != nil {
-			return e
-		}
-		servicehttp.JSONResponse(w, 200, v)
-		return nil
-	}))
-	m.HandleFunc("POST /documents", servicehttp.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		var d Document
-		if e := servicehttp.Decode(w, r, &d); e != nil {
-			return e
-		}
-		v, e := s.Store.SaveDocument(r.Context(), d)
-		if e != nil {
-			return e
-		}
-		servicehttp.JSONResponse(w, 201, v)
-		return nil
 	}))
 	m.HandleFunc("POST /gc", servicehttp.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		n, e := s.Store.GC(r.Context())

@@ -1,5 +1,12 @@
 # 端到端交付账本
 
+## 2026-10-12 已完成的 Web 批次与后续存储边界
+
+- 提交 `be5be64` 的 [Platform 38188937114](https://github.com/euler-gaozl/agent-os/actions/runs/38188937114) 两作业通过：Go race、两套 Web 测试/构建、沙箱故障、独立服务部署和混合负载。受控模型/MCP/OTLP，不消耗用户 API。所有平台容器（含 PostgreSQL、双 Runtime/ToolHub/Worker、Sandbox broker、Telemetry）CPU 限额合计 2 核，内存限额 2944 MiB；4 个读取客户端各持续至少 90 秒，12 个任务全部完成，实际执行区间与读取重叠 81.366 秒。3311 次读取中 3310 成功、1 次 429、无异常响应，P95 52.20 ms；内存采样峰值 341.71 MiB，最长任务 80.988 秒。无 OOM/异常重启。外部模型/检索和沙箱工作负载不在平台预算内，这不是生产并发或目标资料量下的混合负载验收。
+- 同提交 [真实检索 38188937085](https://github.com/euler-gaozl/agent-os/actions/runs/38188937085) 和 [Langfuse 38188937089](https://github.com/euler-gaozl/agent-os/actions/runs/38188937089) 通过。Langfuse 实际接收、原始身份与名称回读、私密内容排除，以及确认丢失后的两次观察符合 v4 至少一次契约；没有承诺第三方观测去重。
+- 本机先发布 Storage，再发布 Runtime/两个 Worker，撤销后两者的产物 SQL 权限后，受控 DSH 运行 `b45209c6a5814e6e173c85325f511a79` 完成两次模型协议请求和 artifact_read。旧/新原始事件产物哈希均一致；其他 8 个经进程身份核实的服务及全部配置 hash 未变。进程清单中另有 7 条历史失效记录，未当作活进程通过项。备份 `20261012-084117.dump` 恢复到隔离库：43 个资源版本、4 份笔记、89 个产物，无产物哈希错误/悬空引用。
+- 当前后续修改把 Agent 持久化笔记归到 Runtime，移除生产 Storage 的 documents DDL/API/权限/readiness；Console 管理入口改走 Runtime。已有 note_save 事务、scope 和模型协议不变。真实独立数据库测试、提交前回滚/提交后重放、DSH 恢复、管理权限、旧角色授权退役和原资料保留通过；本机全量 Go 测试通过。独立只读评审发现旧入口漏路由和旧授权残留，两项已修正并单独测试。此项本机正式服务升级及 Linux 全链路仍待执行，不沿用 be5be64 的通过结果。
+
 ## 2026-10-12 Web 与接口增量
 
 - 中台六页、Agent 五个配置页、独立业务工作台完成整体视觉和交互调整。桌面/390px 窄屏、弹窗键盘操作、真实资料回读、受控 12 秒乱序响应检查见 [UI 验收](ui-validation-v0.6.md)。独立评估 agent 只读指出的七项问题均已修正并复核，评审没有冒充运行测试。

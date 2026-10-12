@@ -222,7 +222,7 @@ func TestDSHConstraintRevisionSkipsOldToolPlan(t *testing.T) {
 
 func TestDSHCommittedToolRecoveryBeforeBridgeReceipt(t *testing.T) {
 	setupDSH(t)
-	s, _ := testStore(t)
+	s, _ := artifactPair(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var models, hits atomic.Int32

@@ -27,9 +27,9 @@ func upgradeService(parent context.Context, dsn, service string) error {
 	case "registry":
 		roles, tables = []string{service}, []string{"resources", "secrets"}
 	case "runtime", "worker":
-		roles, tables = []string{"runtime", "worker"}, []string{"runs", "events", "calls", "model_attempts", "harness_exchanges", "app_runs", "business_runs", "instances"}
+		roles, tables = []string{"runtime", "worker"}, []string{"runs", "events", "calls", "model_attempts", "harness_exchanges", "documents", "app_runs", "business_runs", "instances"}
 	case "storage":
-		roles, tables = []string{"storage", "runtime", "worker"}, []string{"documents", "artifacts", "artifact_refs"}
+		roles, tables = []string{"storage"}, []string{"artifacts", "artifact_refs"}
 	case "sandbox":
 		roles, tables = []string{service}, []string{"sandbox_jobs"}
 	case "telemetry":
@@ -104,4 +104,46 @@ func upgradeService(parent context.Context, dsn, service string) error {
 		}
 	}
 	return nil
+}
+
+// Privilege contraction is deliberately separate from expand-only migrations:
+// an older Console/Storage pair must keep working until both are replaced.
+// Run against Runtime's database, even after Storage moved to another database.
+func retireStorageNoteAccess(parent context.Context, dsn string) error {
+	if dsn == "" {
+		return errors.New("execution database DDL configuration required")
+	}
+	ctx, cancel := context.WithTimeout(parent, 15*time.Second)
+	defer cancel()
+	db, e := pgxpool.New(ctx, dsn)
+	if e != nil {
+		return errors.New("invalid execution database configuration")
+	}
+	defer db.Close()
+	tx, e := db.Begin(ctx)
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback(ctx)
+	if _, e = tx.Exec(ctx, "SET LOCAL lock_timeout='3s'; SET LOCAL statement_timeout='10s'"); e != nil {
+		return e
+	}
+	var execution, role bool
+	if e = tx.QueryRow(ctx, "SELECT to_regclass('public.runs') IS NOT NULL AND to_regclass('public.documents') IS NOT NULL, EXISTS(SELECT 1 FROM pg_roles WHERE rolname='agentos_storage')").Scan(&execution, &role); e != nil {
+		return e
+	}
+	if !execution || !role {
+		return errors.New("expected execution tables and managed Storage role; no privileges changed")
+	}
+	if _, e = tx.Exec(ctx, "REVOKE ALL ON TABLE public.documents FROM agentos_storage"); e != nil {
+		return e
+	}
+	var retained bool
+	if e = tx.QueryRow(ctx, "SELECT has_table_privilege('agentos_storage','public.documents','SELECT,INSERT,UPDATE,DELETE')").Scan(&retained); e != nil {
+		return e
+	}
+	if retained {
+		return errors.New("Storage still inherits note privileges; inspect role memberships before retirement")
+	}
+	return tx.Commit(ctx)
 }

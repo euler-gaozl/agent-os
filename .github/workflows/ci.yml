@@ -91,6 +91,8 @@ jobs:
           # Container UID 10001 remains owner; no world-readable credentials.
           sudo chgrp "$(id -g)" .state/services/*.json
           sudo chmod g+r .state/services/*.json
+      - name: Isolate Storage database and remove cross-domain SQL dependencies
+        run: node scripts/ci-isolate-storage.mjs
       - name: Run bounded platform with replica pairs
         run: docker compose up -d --wait --wait-timeout 120
       - name: Real service contracts, authorization and crash recovery

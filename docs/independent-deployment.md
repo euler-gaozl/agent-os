@@ -11,9 +11,9 @@
 | Knowledge | 8095 / service | knowledge schema | 本域 PostgreSQL、Registry 配置/凭证；原文授权需要 Runtime |
 | Indexer | 8097 / service | 消费 Knowledge 的 schema，不能自定不兼容迁移 | Knowledge 数据、Registry；按选型调用外部 RAG |
 | Sources | 8101 / service | sources schema | 本域 PostgreSQL、管理员白名单中的公开网站 |
-| Runtime | 8094 / service | 运行、调用、事件、业务任务与实例 | 执行库、Registry、按工具绑定调用下游 |
+| Runtime | 8094 / service | 运行、调用、事件、业务任务、持久化 Agent 笔记与实例 | 执行库、Registry、按工具绑定调用下游 |
 | Worker | 8099 / worker | 消费 Runtime 运行状态；固定 DSH 和 Node | 执行库、Registry、ToolHub、所绑定的工具与模型 |
-| Storage | 8092 / service | documents、artifacts、artifact_refs | 执行库；这些表当前仍参与 Runtime 的本地事务 |
+| Storage | 8092 / service | artifacts、artifact_refs | 本域 PostgreSQL；不读取 Runtime 笔记或运行表 |
 | Sandbox | 8093 / sandbox | sandbox_jobs | Runtime 授权 HTTP API、专用隔离 Docker daemon |
 | Telemetry | 8100 / service | 本域 telemetry_inbox、telemetry_exports | Runtime 事件投递 API、Registry 中的凭证、Langfuse |
 | Console | 8090 / control | 无数据库 | 聚合服务 HTTP API |
@@ -21,7 +21,7 @@
 
 所有服务的实例心跳写入 Runtime；心跳失败不阻止其他服务提供本域功能。端口不代表必须映射到公网。独立部署允许不同主机和不同服务版本，但必须保留上表的依赖与兼容性。
 
-**尚未完成的数据解耦**：Runtime/Worker 直接读写执行库；Storage 资料效果与 Runtime 回执共用事务。当前拆分了部署和 DDL 所有权，不能因此宣称这些服务可分别迁到任意数据库。后续拆库必须先实现效果 outbox/inbox 和恢复核对协议。ToolHub、Knowledge、Sources 已有独立 schema 及 HTTP 边界，可以为它们配置独立 PostgreSQL，但迁移历史资料和跨库灾备还需专项验收。
+**执行域边界**：Runtime/Worker 是共享执行状态的 API/执行进程，可以分别部署和扩缩容；Agent 笔记属于此域，和调用回执在同一事务中提交。Storage 只管理产物，不参与笔记事务。本机独立数据库和 DSH 回放已验，新边界的 Linux 全链路结果另行记录。ToolHub、Knowledge、Sources 已有独立 schema 及 HTTP 边界，可以为它们配置独立 PostgreSQL，但迁移历史资料和跨库灾备还需专项验收。
 
 Telemetry 新版无跨域 SQL：Runtime 的事务事件行同时是 outbox，`POST /v1/telemetry/claim` 每次最多 32 条、租约 30 秒并递增 fence；接收端在自己的 inbox 提交后才调用 ack。逐行投递标记避免序号较小的晚提交事件被最大游标跳过。重复 inbox 必须具有相同事件身份；过期实例回执会被拒绝。事件接收与批量导出各有一个有界循环、超时和错误退避，Runtime 故障不阻止导出已接收事件。外部 OTLP 为至少一次投递，使用稳定 trace/span ID；不能承诺第三方端恰好一次。导出的内容仅为事件标识、类型和时间。
 
@@ -77,16 +77,32 @@ Windows 可在备份后直接执行新的迁移二进制 `--config .state/dev.js
 
 ## 验收范围
 
-新增 Linux CI 使用真实旧版本 Knowledge 二进制 `a0d6c81` 验证迁移后的数据读取、单服务升级、回滚、两副本、错误镜像发布失败后恢复。断言其他服务容器 ID 不变，所有身份配置字节不变。模型使用受控夹具，不消耗真实 API。共享执行库拆分、跨机故障转移、每个历史版本的兼容矩阵仍单列未完成；不能用 Knowledge 一项结果代替所有服务的版本兼容验收。
+新增 Linux CI 使用真实旧版本 Knowledge 二进制 `a0d6c81` 验证迁移后的数据读取、单服务升级、回滚、两副本、错误镜像发布失败后恢复。断言其他服务容器 ID 不变，所有身份配置字节不变。模型使用受控夹具，不消耗真实 API。物理跨机故障转移、每个历史版本的兼容矩阵仍单列未完成；不能用 Knowledge 一项结果代替所有服务的版本兼容验收。
 ## Storage 产物 HTTP 边界增量
 
 Runtime/Worker 的产物写入改为 Storage 的 `PUT /v1/artifacts/{sha256}`：二进制最多 4 MiB，同时提交运行引用根；相同内容和根重传幂等。Runtime 先从自己的运行树计算可见根，再调用 `POST /v1/artifacts/page` 分页回读。Storage 校验哈希、窗口和引用，原子增加保留引用，不查询运行表；只有 Runtime 能调用分页授权接口，Worker 只能上传，Console 仍使用管理下载接口。
 
 新初始化不再授予 Runtime/Worker 读取 artifacts/artifact_refs 的 SQL 权限。迁移现有部署时，先备份，先发布兼容新旧管理接口的 Storage，再更新 Runtime/Worker 并配置各自的 `STORAGE_URL`，验证后撤销旧产物 SQL 权限。回滚旧消费者前必须恢复原权限与数据连接；若已经迁移独立存储数据库，旧二进制无法凭原执行库直接回读，需先完成资料回迁，不能盲目回滚。
 
-这是产物边界的增量，**documents/note_save 的效果与回执仍保留执行域事务，未完全拆解**。本机真实 PostgreSQL 测试将 Runtime 的产物表移除，Storage schema 中没有运行表，验证 HTTP 写入、重试、子任务引用、跨运行拒绝、Unicode 分页、角色和大小限制；Linux CI 与现有部署升级结果单独记录。跨机时必须使用受信网络或 TLS/mTLS。没有启动自动删除资料的 GC。
+后续的笔记所有权调整见下节：documents/note_save 归 Runtime，效果与回执继续保留执行域事务。本机真实 PostgreSQL 测试将 Runtime 的产物表移除，Storage schema 中没有运行表，验证 HTTP 写入、重试、子任务引用、跨运行拒绝、Unicode 分页、角色和大小限制；Linux CI 与现有部署升级结果单独记录。跨机时必须使用受信网络或 TLS/mTLS。没有启动自动删除资料的 GC。
 
-## 有界资源目录升级
+## Runtime 持久化笔记所有权与旧权限退役
+
+`documents` 是执行域保留的 Agent 作用域笔记（含历史 memory/evidence/fact/knowledge 类型），由 Runtime 迁移及管理；scope 是 Agent ID，任务结束不能删除这些笔记。`fact` 标签本身不代表已经验证的业务事实。Knowledge 上传资料继续属于 Knowledge 数据域，历史副本不绕过绑定版本授权。
+
+`note_save`、`document_read`、`knowledge_search` 的模型协议和逻辑调用 ID 未变。笔记、完成回执和事件仍在持有运行锁的同一事务提交；旧 fence、取消和规则版本检查保留。Storage 只存产物字节及引用，故障不会阻断笔记管理，但完整 DSH 仍需要 Storage 留存原始事件。没有自动 GC 运行笔记。
+
+Console 的 `/api/documents` / `/api/documents/{id}` 保持原接口，内部改用 Runtime 的 `/v1/documents` / `/v1/documents/{id}`。仅 control 身份允许 GET 和新增 POST；Futures、Worker、Storage、ToolHub、Knowledge 均无此管理权限。Storage 旧 `/documents` 接口在此版本退役，不保留第二个 SQL 写入者。
+
+升级顺序：备份并核验恢复 → Runtime scoped migration / 发布新 Runtime → 发布 Console 并确认旧笔记可读 → 发布 Storage → 最后在**执行库 DDL 配置**下运行 `migrate-services --config <execution-ddl.json> --retire-storage-notes`。该最后一步可重复执行，只撤销 `agentos_storage` 对 public.documents 的旧权限；不移动/删除资料、不重写配置。它与 `--service` 分开，避免升级过程中旧 Console/Storage 提前失效；若角色继承仍授予权限会失败并回滚，需先清理对应角色授权。自定义角色由部署者等价撤权。
+
+同库升级不改 ID、内容、scope、metadata、supersedes、valid_until 或 created_at。物理迁移 Storage 独立库时，只搬完整 artifacts/artifact_refs；笔记和回执留在执行域。Runtime/Worker 的旧产物 SQL 权限仍需按上一节撤销。迁移完成前后验证原产物哈希与引用；存在未完成任务时不能遗失其原始事件。
+
+旧 Console 依赖 Storage `/documents`，所以跨本次接口边界回滚 Console 前，要恢复兼容旧 Storage 的数据连接与权限；若 Storage 已拆库，不允许只回滚镜像。普通无协议变化的单服务发布仍走前述 release-service 流程。没有承诺所有历史版本可任意混用。
+
+本机新增测试创建两个真实独立数据库：Runtime 仅执行本域 DDL、无 artifacts；Storage 仅本域 DDL、无 documents/runs/calls。覆盖产物 HTTP、笔记提交前回滚/丢失回复后接管、DSH 已提交工具恢复、作用域版本/管理鉴权、旧入口兼容以及旧账号权限退役。Linux CI 将整套服务启动在独立 Storage 数据库，并在执行库删除空的旧产物表，不能依靠隐藏 SQL 回退蒙混通过。跨物理主机验收仍待服务器。
+
+## 有界资源目录升级流程
 
 中台使用 `GET /api/catalog`，Registry 提供 `/v1/catalog`，ToolHub 提供 `/v1/assets/catalog`。支持 `kind`、名称/ID 子串 `q`、`after` 和 `limit`（1–100），返回 `items`、`next_cursor`；中台另返回各来源的 `services` 状态。摘要带 `summary:true`，不能提交为资源定义。完整版本继续通过既有按 kind/id/revision 的详情接口读取。
 

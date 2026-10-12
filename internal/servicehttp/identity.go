@@ -76,7 +76,9 @@ func permitted(service, caller, method, path string) bool {
 			return method == "POST" && path == "/v1/sandbox/authorize"
 		}
 		if caller == "control" {
-			return strings.HasPrefix(path, "/v1/runs") || path == "/v1/status"
+			return strings.HasPrefix(path, "/v1/runs") || path == "/v1/status" ||
+				((get || method == "POST") && path == "/v1/documents") ||
+				(get && strings.HasPrefix(path, "/v1/documents/"))
 		}
 		if caller == "futures" {
 			return path == "/v1/apps/futures/runs" || strings.HasPrefix(path, "/v1/apps/futures/runs/")
@@ -101,7 +103,7 @@ func permitted(service, caller, method, path string) bool {
 		if caller == "runtime" || caller == "worker" {
 			return method == "PUT" && strings.HasPrefix(path, "/v1/artifacts/") || caller == "runtime" && method == "POST" && path == "/v1/artifacts/page"
 		}
-		return caller == "control" && !strings.HasPrefix(path, "/v1/artifacts/")
+		return caller == "control" && ((get && strings.HasPrefix(path, "/artifacts/")) || (method == "POST" && path == "/gc"))
 	case "sandbox":
 		return caller == "runtime" && method == "POST" && path == "/execute"
 	}

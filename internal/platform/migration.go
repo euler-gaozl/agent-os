@@ -12,8 +12,8 @@ import (
 var migrationSQL embed.FS
 
 // MigrateService changes only one owner's objects. Worker consumes Runtime's
-// schema; neither service owns the documents written by execution transactions.
-// Splitting DDL ownership does not change that shared transaction boundary.
+// schema, including Agent-scoped notes committed with tool receipts. Storage
+// owns immutable artifact bytes and references, without execution tables.
 func MigrateService(ctx context.Context, db *pgxpool.Pool, service string) error {
 	if service == "worker" {
 		service = "runtime"

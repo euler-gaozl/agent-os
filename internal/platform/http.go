@@ -116,6 +116,7 @@ func (s *Server) Handler() http.Handler {
 		s.registryRoutes(mux)
 	case "runtime":
 		s.runtimeRoutes(mux)
+		s.documentRoutes(mux, "/v1")
 		s.toolRoutes(mux)
 	case "knowledge":
 		s.knowledgeRoutes(mux)
@@ -164,9 +165,9 @@ func (s *Server) controlRoutes(mux *http.ServeMux) {
 		jsonResponse(w, 200, map[string]any{"instances": out, "deepseek_configured": keyErr == nil, "local_mode": s.DevLocal, "version": "0.3.0"})
 		return nil
 	}))
-	mux.HandleFunc("/api/documents", func(w http.ResponseWriter, r *http.Request) { s.proxy(w, r, s.StorageURL+"/documents") })
+	mux.HandleFunc("/api/documents", func(w http.ResponseWriter, r *http.Request) { s.proxy(w, r, s.RuntimeURL+"/v1/documents") })
 	mux.HandleFunc("GET /api/documents/{id}", func(w http.ResponseWriter, r *http.Request) {
-		s.proxy(w, r, s.StorageURL+"/documents/"+url.PathEscape(r.PathValue("id")))
+		s.proxy(w, r, s.RuntimeURL+"/v1/documents/"+url.PathEscape(r.PathValue("id")))
 	})
 	mux.HandleFunc("/api/artifacts/{hash}", func(w http.ResponseWriter, r *http.Request) {
 		s.proxy(w, r, s.StorageURL+"/artifacts/"+url.PathEscape(r.PathValue("hash")))
@@ -268,8 +269,8 @@ func (s *Server) toolRoutes(mux *http.ServeMux) {
 		return e
 	}))
 }
-func (s *Server) storageRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /documents/{id}", wrap(func(w http.ResponseWriter, r *http.Request) error {
+func (s *Server) documentRoutes(mux *http.ServeMux, prefix string) {
+	mux.HandleFunc("GET "+prefix+"/documents/{id}", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var d Document
 		var metadata []byte
 		e := s.Store.DB.QueryRow(r.Context(), "SELECT id,kind,title,content,source,metadata,supersedes,scope,valid_until FROM documents WHERE id=$1", r.PathValue("id")).Scan(&d.ID, &d.Kind, &d.Title, &d.Content, &d.Source, &metadata, &d.Supersedes, &d.Scope, &d.ValidUntil)
@@ -282,7 +283,7 @@ func (s *Server) storageRoutes(mux *http.ServeMux) {
 		jsonResponse(w, 200, d)
 		return nil
 	}))
-	mux.HandleFunc("GET /documents", wrap(func(w http.ResponseWriter, r *http.Request) error {
+	mux.HandleFunc("GET "+prefix+"/documents", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		v, e := s.Store.Search(r.Context(), r.URL.Query().Get("q"), r.URL.Query().Get("kind"))
 		if e != nil {
 			return e
@@ -290,7 +291,7 @@ func (s *Server) storageRoutes(mux *http.ServeMux) {
 		jsonResponse(w, 200, v)
 		return nil
 	}))
-	mux.HandleFunc("POST /documents", wrap(func(w http.ResponseWriter, r *http.Request) error {
+	mux.HandleFunc("POST "+prefix+"/documents", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var d Document
 		if e := decode(w, r, &d); e != nil {
 			return e
@@ -302,6 +303,8 @@ func (s *Server) storageRoutes(mux *http.ServeMux) {
 		jsonResponse(w, 201, v)
 		return nil
 	}))
+}
+func (s *Server) storageRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /artifacts/{hash}", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		b, media, e := s.Store.Artifact(r.Context(), r.PathValue("hash"))
 		if e != nil {
