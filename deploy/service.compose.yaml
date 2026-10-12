@@ -25,7 +25,7 @@ services:
       HEALTH_URL: http://127.0.0.1:${SERVICE_PORT}/readyz
       HEALTH_TOKEN_KEY: ${SERVICE_HEALTH_KEY:-SERVICE_TOKEN}
     healthcheck:
-      test: [CMD, /app/healthcheck]
+      test: [CMD, '${SERVICE_HEALTHCHECK:-/app/healthcheck}']
       interval: 5s
       timeout: 4s
       retries: 6

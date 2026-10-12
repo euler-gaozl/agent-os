@@ -123,6 +123,8 @@ jobs:
         run: node scripts/ci-owner-stack.mjs migrate
       - name: Real owner contracts, DSH takeover and database recovery
         run: node scripts/smoke-owner-services.mjs
+      - name: Every Owner runs as its own independently managed deployment
+        run: node scripts/smoke-owner-release.mjs
       - name: Preserve sanitized container identity and status
         if: always()
         run: node scripts/ci-owner-stack.mjs diagnose

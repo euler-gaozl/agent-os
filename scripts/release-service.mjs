@@ -7,9 +7,10 @@ import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {parseArgs} from 'node:util';
 import {requireWorkerCompatibility, requireToolCompatibility} from './worker-engine-guard.mjs';
+import {ownerReceipt,validateOwnerImage,requireReleaseTransition} from './lib/owner-release.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const {values,positionals}=parseArgs({allowPositionals:true,options:{project:{type:'string'},service:{type:'string'},image:{type:'string'},config:{type:'string'},network:{type:'string'},replicas:{type:'string'},publish:{type:'string'}}});
+const {values,positionals}=parseArgs({allowPositionals:true,options:{project:{type:'string'},service:{type:'string'},image:{type:'string'},config:{type:'string'},network:{type:'string'},replicas:{type:'string'},publish:{type:'string'},'owner-report':{type:'string'}}});
 const action=positionals[0]??'status';
 const roles=['control','toolhub','storage','sandbox','runtime','knowledge','registry','indexer','futures','worker','telemetry','sources'];
 const project=values.project;
@@ -21,12 +22,18 @@ const readState=()=>fs.existsSync(statePath)?JSON.parse(fs.readFileSync(statePat
 let state=readState();
 function docker(args,env={},timeout=120000){return execFileSync('docker',args,{cwd:root,env:{...process.env,...env},encoding:'utf8',timeout,stdio:['pipe','pipe','pipe']}).trim()}
 function digest(file){return createHash('sha256').update(fs.readFileSync(file)).digest('hex')}
-function env(unit){return {SERVICE_IMAGE:unit.image,SERVICE_NAME:unit.service,SERVICE_CONFIG:unit.config,SERVICE_NETWORK:unit.network,SERVICE_PORT:String(unit.port),SERVICE_HOST_PORT:String(unit.publish),SERVICE_MEMORY:unit.service==='worker'?'384m':'128m',SERVICE_CPUS:unit.service==='worker'?'0.375':'0.10',SERVICE_HEALTH_KEY:unit.service==='control'?'ADMIN_TOKEN':unit.service==='futures'?'BUSINESS_TOKEN':'SERVICE_TOKEN'}}
+function env(unit){return {SERVICE_IMAGE:unit.image,SERVICE_NAME:unit.service,SERVICE_CONFIG:unit.config,SERVICE_NETWORK:unit.network,SERVICE_PORT:String(unit.port),SERVICE_HOST_PORT:String(unit.publish),SERVICE_MEMORY:unit.service==='worker'?'384m':'128m',SERVICE_CPUS:unit.service==='worker'?'0.375':'0.10',SERVICE_HEALTH_KEY:unit.service==='control'?'ADMIN_TOKEN':unit.service==='futures'?'BUSINESS_TOKEN':'SERVICE_TOKEN',SERVICE_HEALTHCHECK:unit.owner?.healthcheck??'/app/healthcheck'}}
 function compose(unit,...args){return docker(['compose','-p',project,'-f',path.join(root,'deploy/service.compose.yaml'),...(unit.publish?['-f',path.join(root,'deploy/service.publish.yaml')]:[]),...args],env(unit))}
 function validate(unit){
  if(!unit||!roles.includes(unit.service)||!/^sha256:[a-f0-9]{64}$/.test(unit.image))throw Error('invalid release record');
  if(digest(unit.config)!==unit.configHash)throw Error('configuration changed; restore its recorded version before deploying or rolling back');
- docker(['image','inspect',unit.image]);
+ const image=JSON.parse(docker(['image','inspect',unit.image]))[0];
+ if(unit.owner){
+  validateOwnerImage(unit.service,image,unit.owner);
+  if(process.platform!=='linux')throw Error('Owner container release requires Linux configuration permissions');
+  const stat=fs.statSync(unit.config);
+  if(stat.uid!==Number(unit.owner.uid)||(stat.mode&0o7777)!==0o640)throw Error('Owner configuration must be 0640 with the attested container UID and no world access');
+ }else if(image.Config.Labels?.['org.agentos.role'])throw Error('Owner image requires its build verification report');
  docker(['network','inspect',unit.network]);
 }
 function apply(unit){validate(unit);compose(unit,'up','-d','--no-build','--wait','--wait-timeout','90','--scale','app='+unit.replicas)}
@@ -64,7 +71,14 @@ if(action==='status'){
     if(state.current&&state.current.service!==service)throw Error('cannot replace a deployment unit with another service');
     const image=docker(['image','inspect','--format','{{.Id}}',values.image]);
     next={service,image,config,configHash:digest(config),network:values.network,port:8090+roles.indexOf(service),replicas,publish};
+    const actual=JSON.parse(docker(['image','inspect',image]))[0];
+    if(values['owner-report']){
+     const bytes=fs.readFileSync(values['owner-report']);
+     const definition=JSON.parse(fs.readFileSync(path.join(root,'deploy/windows-release-contracts.json'),'utf8'));
+     next.owner=ownerReceipt(service,actual,JSON.parse(bytes),definition,bytes);
+    }else if(actual.Config.Labels?.['org.agentos.role'])throw Error('Owner image requires --owner-report from its verified build');
    }
+   requireReleaseTransition(state.current,next);
    if(state.current)validate(state.current);
    if(state.current&&['worker','runtime','toolhub','registry'].includes(state.current.service)){
     const labels=image=>JSON.parse(docker(['image','inspect','--format','{{json .Config.Labels}}',image]));
