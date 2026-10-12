@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http/httptest"
 	"os"
@@ -158,6 +159,10 @@ func TestPostgresDiskFullPreservesReceiptsAndRecovers(t *testing.T) {
 	if artifactErr == nil {
 		t.Fatal("artifact upload falsely succeeded with no space")
 	}
+	var unavailable *servicehttp.StatusError
+	if !errors.As(artifactErr, &unavailable) || unavailable.Status != 503 {
+		t.Fatal("full Storage was not classified as unavailable", artifactErr)
+	}
 	t.Logf("Storage artifact rejected while full: %v", artifactErr)
 	// Release only the explicitly created fixture file. Restart the DB process
 	// against the same volume to exercise recovery, not an empty replacement.
@@ -179,6 +184,9 @@ func TestPostgresDiskFullPreservesReceiptsAndRecovers(t *testing.T) {
 	for end := time.Now().Add(45 * time.Second); time.Now().Before(end); {
 		probe, done := context.WithTimeout(ctx, 2*time.Second)
 		e = runtime.DB.Ping(probe)
+		if e == nil {
+			e = retained.DB.Ping(probe)
+		}
 		done()
 		if e == nil {
 			break

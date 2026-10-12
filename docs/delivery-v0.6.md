@@ -8,6 +8,8 @@
 
 独立只读评审发现并修正三个问题：旧资料必须在任何重放/补写前按原 ID/哈希核对全文、元数据、回执及引用；pgx 的 UnexpectedEOF/ErrConnClosed 也要按可解包错误分类；工作流触发范围要包括持久化实现与依赖。复核确认代码修正，未把评审当作运行证据。
 
+首次实际 [CI 38192770170](https://github.com/euler-gaozl/agent-os/actions/runs/38192770170) 已观察到 ENOSPC、零剩余空间及两种新写入失败，但恢复阶段失败：只等待 Runtime 连接池就绪，Storage 的旧连接在首次只读核验时报告 UnexpectedEOF。增加 Storage 独立连接池的有界重连检查；不重置连接池或改写资料，待重测。失败原文保存在 `.state/ui-review/disk-full-first.log`。
+
 ## 2026-10-12 已完成的 Web 批次与后续存储边界
 
 - 新 Storage 独立数据库的 [CI 38191397498](https://github.com/euler-gaozl/agent-os/actions/runs/38191397498)（`bcd568c`）通过。运行库实际移除了旧产物表；Storage 的独立库没有 documents/runs/calls；旧 SQL 越权被拒绝。完整 DSH 强杀接管、笔记在 Storage 停机期间由 Runtime 管理、单服务部署及混合负载通过。12 个任务全部完成，4 个读取客户端各至少 90 秒，真实执行重叠 80.755 秒，3311 次读取中 3310 成功/1 次 429、无异常响应，P95 52.08 ms，最长任务 79.604 秒，采样内存峰值 349.71 MiB。约束及不能外推的范围与下条相同；这是同一 PostgreSQL 服务器内的独立数据库，不是物理节点 HA。
