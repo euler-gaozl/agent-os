@@ -69,7 +69,11 @@ func (s *Server) sandbox(ctx context.Context, inv Invocation) ([]byte, error) {
 	if inv.Name != "sandbox_exec" {
 		return nil, errors.New("sandbox only accepts sandbox_exec")
 	}
-	if e := validateArgs(Builtins[4], inv.Arguments); e != nil {
+	definition, e := builtinTool("sandbox_exec")
+	if e != nil {
+		return nil, e
+	}
+	if e := validateArgs(definition, inv.Arguments); e != nil {
 		return nil, e
 	}
 	// Session advisory lock serializes service replicas for this deterministic job/container.

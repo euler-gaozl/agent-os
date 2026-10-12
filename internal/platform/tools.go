@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-var Builtins = toolcontract.Builtins
+var builtinTool = toolcontract.Builtin
 var ToolDefinitions = toolcontract.ToolDefinitions
 var compileSchema = toolcontract.CompileSchema
 var validateArgs = toolcontract.ValidateArgs
@@ -59,6 +59,8 @@ func (s *Store) LocalTool(ctx context.Context, inv Invocation) ([]byte, error) {
 	}
 	var result any
 	switch inv.Name {
+	case "run_recall":
+		result, e = recallRunEvidence(ctx, tx, r, inv.Arguments)
 	case "knowledge_search":
 		var args struct{ Query, Kind string }
 		if e = json.Unmarshal(inv.Arguments, &args); e == nil {

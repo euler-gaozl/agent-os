@@ -55,3 +55,17 @@ CREATE INDEX IF NOT EXISTS app_runs_listing ON app_runs(app,created_at DESC);
 INSERT INTO app_runs(run_id,app,metadata,created_at) SELECT run_id,'futures',jsonb_build_object('commodity',commodity),created_at FROM business_runs ON CONFLICT DO NOTHING;
 CREATE INDEX IF NOT EXISTS calls_run_kind ON calls(run_id,kind);
 CREATE INDEX IF NOT EXISTS model_attempts_call ON model_attempts(call_id);
+-- Pending batches are a durable outbox. Only after Storage acknowledges the
+-- immutable segments/manifest is the temporary batch released.
+CREATE TABLE IF NOT EXISTS harness_archives(
+ run_id text NOT NULL, seq integer NOT NULL, event_start integer NOT NULL,
+ event_end integer NOT NULL, batch bytea, manifest jsonb,
+ source_owner text NOT NULL, source_fence bigint NOT NULL,
+ source_start integer NOT NULL, source_end integer NOT NULL,
+ previous_hash text NOT NULL DEFAULT '',
+ manifest_hash text NOT NULL DEFAULT '',
+ PRIMARY KEY(run_id,seq),
+ FOREIGN KEY(run_id,seq) REFERENCES harness_exchanges(run_id,seq),
+ CHECK(event_start>=0 AND event_end>=event_start),
+ CHECK((batch IS NOT NULL AND manifest IS NULL AND manifest_hash='') OR
+       (batch IS NULL AND manifest IS NOT NULL AND length(manifest_hash)=64)));

@@ -195,8 +195,14 @@ func insertRun(ctx context.Context, tx pgx.Tx, key, task string, snap Snapshot, 
 	inputHash := Hash(JSON([]any{task, snap, parent, pinned}))
 	state := RunState{Pinned: pinned, Messages: []Message{{Role: "user", Content: task}}}
 	var actual, oldHash string
-	e := tx.QueryRow(ctx, `INSERT INTO runs(id,submission_key,input_hash,parent_id,snapshot,task,state,constraints) VALUES($1,$2,$3,$4,$5,$6,$7,$8)
- ON CONFLICT(submission_key) DO UPDATE SET submission_key=EXCLUDED.submission_key RETURNING id,input_hash`, id, key, inputHash, parent, JSON(snap), task, JSON(state), JSON(constraints)).Scan(&actual, &oldHash)
+	engine := EngineDSHEvidence
+	if parent != nil {
+		if e := tx.QueryRow(ctx, "SELECT engine FROM runs WHERE id=$1", *parent).Scan(&engine); e != nil {
+			return "", e
+		}
+	}
+	e := tx.QueryRow(ctx, `INSERT INTO runs(id,submission_key,input_hash,parent_id,snapshot,task,state,constraints,engine) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
+ ON CONFLICT(submission_key) DO UPDATE SET submission_key=EXCLUDED.submission_key RETURNING id,input_hash`, id, key, inputHash, parent, JSON(snap), task, JSON(state), JSON(constraints), engine).Scan(&actual, &oldHash)
 	if e != nil {
 		return "", e
 	}
@@ -267,7 +273,7 @@ func (s *Store) Claim(ctx context.Context, owner string, lease time.Duration) (R
 	}
 	defer tx.Rollback(ctx)
 	r, e := scanRun(tx.QueryRow(ctx, `UPDATE runs SET status='running',owner=$1,fence=fence+1,lease_until=clock_timestamp()+$2::interval,updated_at=now()
- WHERE id=(SELECT id FROM runs r WHERE status='queued' OR (status='running' AND lease_until<clock_timestamp()) OR (status='waiting_children' AND NOT EXISTS(SELECT 1 FROM runs c WHERE c.parent_id=r.id AND c.status NOT IN('completed','failed','cancelled'))) ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING `+runColumns, owner, fmt.Sprintf("%f seconds", lease.Seconds())))
+ WHERE id=(SELECT id FROM runs r WHERE engine=ANY($3) AND (status='queued' OR (status='running' AND lease_until<clock_timestamp()) OR (status='waiting_children' AND NOT EXISTS(SELECT 1 FROM runs c WHERE c.parent_id=r.id AND c.status NOT IN('completed','failed','cancelled')))) ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING `+runColumns, owner, fmt.Sprintf("%f seconds", lease.Seconds()), []string{"legacy-go", "dsh-0.2.0-rc.2", EngineDSHEvidence}))
 	if e != nil {
 		return r, e
 	}

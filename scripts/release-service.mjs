@@ -6,6 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {parseArgs} from 'node:util';
+import {requireWorkerCompatibility, requireToolCompatibility} from './worker-engine-guard.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const {values,positionals}=parseArgs({allowPositionals:true,options:{project:{type:'string'},service:{type:'string'},image:{type:'string'},config:{type:'string'},network:{type:'string'},replicas:{type:'string'},publish:{type:'string'}}});
@@ -65,6 +66,12 @@ if(action==='status'){
     next={service,image,config,configHash:digest(config),network:values.network,port:8090+roles.indexOf(service),replicas,publish};
    }
    if(state.current)validate(state.current);
+   if(state.current&&['worker','runtime','toolhub','registry'].includes(state.current.service)){
+    const labels=image=>JSON.parse(docker(['image','inspect','--format','{{json .Config.Labels}}',image]));
+    const previousLabels=labels(state.current.image),nextLabels=labels(next.image);
+    if(state.current.service==='worker')requireWorkerCompatibility(previousLabels,nextLabels);
+    requireToolCompatibility(previousLabels,nextLabels);
+   }
    // Refuse to take over another Compose application which happens to use
    // the same project name; initial deployment may contain no containers.
    const owned=docker(['ps','-aq','--filter','label=com.docker.compose.project='+project]);

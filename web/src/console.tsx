@@ -70,7 +70,7 @@ const blankAgent = () => ({
   connectors: [],
   knowledge: [],
   child_agents: [],
-  tools: ["knowledge_search", "note_save", "artifact_read", "document_read"],
+  tools: ["knowledge_search", "note_save", "artifact_read", "document_read", "run_recall"],
   model: {
     base_url: "https://api.deepseek.com",
     model: "deepseek-flash",
@@ -1100,6 +1100,7 @@ function AgentEditor({
                     ["knowledge_search", "检索工作资料"],
                     ["note_save", "保存有出处的记录"],
                     ["artifact_read", "回读原始执行记录"],
+                    ["run_recall", "找回本任务的历史证据"],
                     ["document_read", "阅读完整资料"],
                     ["spawn_agent", "委派子 Agent"],
                     ["sandbox_exec", "容器内运行代码"],

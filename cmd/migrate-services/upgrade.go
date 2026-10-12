@@ -27,7 +27,7 @@ func upgradeService(parent context.Context, dsn, service string) error {
 	case "registry":
 		roles, tables = []string{service}, []string{"resources", "secrets"}
 	case "runtime", "worker":
-		roles, tables = []string{"runtime", "worker"}, []string{"runs", "events", "calls", "model_attempts", "harness_exchanges", "documents", "app_runs", "business_runs", "instances"}
+		roles, tables = []string{"runtime", "worker"}, []string{"runs", "events", "calls", "model_attempts", "harness_exchanges", "harness_archives", "documents", "app_runs", "business_runs", "instances"}
 	case "storage":
 		roles, tables = []string{"storage"}, []string{"artifacts", "artifact_refs"}
 	case "sandbox":

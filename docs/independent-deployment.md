@@ -109,3 +109,18 @@ Console 的 `/api/documents` / `/api/documents/{id}` 保持原接口，内部改
 先分别执行 Registry、ToolHub 的 scoped migration，再更新这两个服务，最后更新 Console。索引迁移不改正文与资源版本，旧服务仍可读；回滚只回滚镜像，保留兼容的新增索引。目录短暂不可用会明确显示来源状态，部分结果不能推进游标，防止跳过离线服务的数据。
 
 兼容的 `/api/resources` 完整定义列表也已停止自动读取全部页，返回 `next_cursor`；旧调用方须逐页读取，最后可能需要一次空页请求。单次来源列表最多 100 项并按 2 MiB 总预算停止（至少允许一个完整资源）；它用于旧管理脚本，新 UI 必须使用摘要接口。资源目录翻页不是数据库快照：并发修改名称或新增资源时应刷新第一页；执行仍绑定明确版本。
+
+## evidence-v1 执行协议升级门槛
+
+新 Runtime 提交根任务时显式选择 `dsh-0.2.0-rc.2-evidence-v1`，数据库默认值保留旧 engine，子任务继承父任务 engine。新版 Worker 同时支持旧 Go、旧 DSH 和新 DSH，并且只领取已支持的 engine。**旧二进制没有该领取过滤，不能与新版提交入口混跑。**
+
+执行以下顺序，所有命令均针对已备份的部署；多机必须覆盖全部 Worker 实例：
+
+1. 停止接收新任务；记录所有 Worker 的镜像 ID/进程路径，停掉全部旧 Worker，确认容器退出或本机受管 PID 已消失。旧 Runtime 可短暂继续读历史，但不要打开新的 `run_recall` Agent。
+2. 使用新版迁移程序 `--config <execution-ddl.json> --service runtime` 增加本域归档表和 Runtime/Worker 权限。不改变数据库 engine 默认值，不搬资料，不改历史 engine。
+3. 发布新 Worker 全部副本和新 ToolHub；逐个确认镜像/二进制为本次构建且 ready。新版 Worker 可以恢复旧 DSH 任务。Windows 用 `Stop-Local.ps1 -Service worker`、`Start-Local.ps1 -Service worker -Workers 2`，并核对 `.state/processes.json` 的路径、PID、启动时间。
+4. 确认没有旧 Worker 后，再单独更新 Runtime。随后更新 Registry/Console 的新工具配置入口，恢复提交。用受控任务检查 engine、新目录、Storage hash 和回执，保留升级前资料核验。
+
+Worker 镜像以 `org.agentos.worker-engines` 声明兼容集合。`release-service.mjs` 在修改容器前拒绝移除当前 Worker 已支持的 engine，deploy 和 rollback 都受约束；历史无标签镜像按只支持旧 Go/DSH 处理。Runtime、ToolHub、Registry、Worker 另以 `org.agentos.builtin-tools` 校验工具支持集合，不能回滚到不认识已绑定 `run_recall` 的版本。工具调用仍经过 Runtime 校验，保留新 Worker 不能弥补旧 Runtime 的工具缺失。脚本不会自动证明集群其他部署单位也已更新，首次启用仍必须执行上述全实例盘点；标签也不代替具体参数 schema 的兼容测试。
+
+存在新任务、可恢复的新任务或新版提交入口时，禁止回滚旧 Worker。Runtime、ToolHub、Registry 跨新增工具降级也必须先停止提交，清点并完成/迁移依赖该工具的全部可恢复任务和 Agent 入口。若必须跨协议降级，先停提交和全部 Worker，逐任务完成/迁移留存及恢复计划，再人工维护；不能通过改 engine 字段或删除归档让检查通过。自动回滚只适用于兼容集合不减少的版本。详见[事件存储协议](architecture/storage-evidence-v1.md)。

@@ -42,10 +42,26 @@ try{
   if(role==='control'||role==='futures')args.push('--publish',role==='control'?'8090':'8098');
   try{
    const receipt=JSON.parse(exec(process.execPath,args));
+   if(['runtime','toolhub','registry'].includes(role)){
+    const ownBefore=docker('ps','-q','--filter','label=com.docker.compose.project='+project).split('\n').sort();
+    const unsupported=[...args];unsupported[unsupported.indexOf('--image')+1]='agent-os-knowledge:baseline';
+    let rejected=false;
+    try{exec(process.execPath,unsupported)}catch(e){rejected=String(e.stderr).includes('Service downgrade removes a supported builtin')}
+    assert(rejected,'image without run_recall support must be rejected before replacing '+role);
+    assert.deepEqual(docker('ps','-q','--filter','label=com.docker.compose.project='+project).split('\n').sort(),ownBefore);
+    report.checks.push({service:role,unsupported_builtin_downgrade_rejected:true,existing_service_unchanged:true});
+   }
    await until(async()=>{const catalog=await api('/catalog');return catalog.services.registry&&catalog.services.toolhub&&catalog.items.some(x=>x.id==='ci-agent'&&x.summary)},role+' catalog through shared Console');
    const history=await api('/tasks',undefined,true);assert(history.some(x=>x.status==='completed'));
    const search=await api('/knowledge/query',{knowledge:{id:'ci-kb',revision:1},query:'甲醇库存'});assert.equal(search.hits.length,1);
    if(role==='worker'){
+    const ownBefore=docker('ps','-q','--filter','label=com.docker.compose.project='+project).split('\n').sort();
+    const unsupported=[...args];unsupported[unsupported.indexOf('--image')+1]='agent-os-registry:0.5.0';
+    let downgradeRejected=false;
+    try{exec(process.execPath,unsupported)}catch(e){downgradeRejected=String(e.stderr).includes('Worker downgrade removes a supported execution engine')}
+    assert(downgradeRejected,'image without evidence-v1 support must be rejected before replacing Worker');
+    assert.deepEqual(docker('ps','-q','--filter','label=com.docker.compose.project='+project).split('\n').sort(),ownBefore);
+    report.checks.push({service:'worker',unsupported_engine_downgrade_rejected:true,existing_workers_unchanged:true});
     const run=await api('/tasks',{agent:{id:'ci-agent',revision:1},commodity:'CI fixture',period:'independent worker unit',question:'Verify separately deployed worker'},true);
     await until(async()=>{const r=await api('/tasks/'+run.id,undefined,true);return r.status==='completed'},'task executed by independent worker replicas');
     assert.match((await api('/tasks/'+run.id,undefined,true)).result,/Controlled/);
