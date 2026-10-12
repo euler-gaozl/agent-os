@@ -17,7 +17,9 @@
       "note_save",
       "artifact_read",
       "document_read",
-      "run_recall"
+      "run_recall",
+      "note_revise",
+      "note_retire"
     ],
     "model": {
       "base_url": "https://api.deepseek.com",
@@ -39,7 +41,8 @@
     "max_model_attempts": 40,
     "model_token_budget": 200000,
     "constraints": [
-      "证据回查：摘要遗漏来源时，使用 run_recall 找回本任务及后代已提交的回执，再回读原文核验。has_more=false 只表示当前筛选下的回执页结束，不能证明资料覆盖完整或外部不存在其他证据。"
+      "证据回查：摘要遗漏来源时，使用 run_recall 找回本任务及后代已提交的回执，再回读原文核验。has_more=false 只表示当前筛选下的回执页结束，不能证明资料覆盖完整或外部不存在其他证据。",
+      "笔记生命周期：有来源更正时使用 note_revise 并保留修改理由；只有用户要求或明确失效、撤回依据时使用 note_retire，不因压缩上下文或临时任务结束而撤回有用资料。模型只能修改本 Agent 的记录，全局共享记录只读。knowledge_search 的有效视图包含全局共享和本 Agent 的记录；空结果不代表外部资料不存在。"
     ]
   }
 }

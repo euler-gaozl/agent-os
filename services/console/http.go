@@ -51,7 +51,7 @@ func (s *Server) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/knowledge/", func(w http.ResponseWriter, r *http.Request) {
 		s.proxy(w, r, s.KnowledgeURL+strings.Replace(r.URL.Path, "/api/knowledge/", "/v1/", 1))
 	})
-	for _, prefix := range []string{"/api/documents", "/api/documents/"} {
+	for _, prefix := range []string{"/api/documents", "/api/documents/", "/api/notes", "/api/notes/"} {
 		mux.HandleFunc(prefix, func(w http.ResponseWriter, r *http.Request) {
 			s.proxy(w, r, s.Client.RuntimeURL+strings.Replace(r.URL.Path, "/api/", "/v1/", 1))
 		})

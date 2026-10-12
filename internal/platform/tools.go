@@ -6,7 +6,9 @@ import (
 	"errors"
 	"github.com/euler-gaozl/agent-os/internal/contracts"
 	"github.com/euler-gaozl/agent-os/internal/recordstore"
+	"github.com/euler-gaozl/agent-os/internal/servicehttp"
 	"github.com/euler-gaozl/agent-os/internal/toolcontract"
+	"github.com/jackc/pgx/v5/pgconn"
 	"time"
 )
 
@@ -58,6 +60,12 @@ func (s *Store) LocalTool(ctx context.Context, inv Invocation) ([]byte, error) {
 		return nil, ErrUnknown
 	}
 	var result any
+	noteMutation := inv.Name == "note_revise" || inv.Name == "note_retire"
+	if noteMutation {
+		if _, e = tx.Exec(ctx, "SAVEPOINT note_effect"); e != nil {
+			return nil, e
+		}
+	}
 	switch inv.Name {
 	case "run_recall":
 		result, e = recallRunEvidence(ctx, tx, r, inv.Arguments)
@@ -70,7 +78,20 @@ func (s *Store) LocalTool(ctx context.Context, inv Invocation) ([]byte, error) {
 		var d Document
 		if e = json.Unmarshal(inv.Arguments, &d); e == nil {
 			d.Scope = r.Snapshot.AgentRef.ID
+			if e = setNoteActor(ctx, tx, noteActor{Kind: "agent", ID: r.Snapshot.AgentRef.ID, Reason: "new sourced observation", RunID: &r.ID, OperationID: &inv.OperationID}); e != nil {
+				return nil, e
+			}
 			result, e = putDocument(ctx, tx, d)
+		}
+	case "note_revise":
+		var in NoteRevision
+		if e = json.Unmarshal(inv.Arguments, &in); e == nil {
+			result, e = reviseNote(ctx, tx, in, noteActor{Kind: "agent", ID: r.Snapshot.AgentRef.ID, RunID: &r.ID, OperationID: &inv.OperationID})
+		}
+	case "note_retire":
+		var in NoteRetirement
+		if e = json.Unmarshal(inv.Arguments, &in); e == nil {
+			result, e = retireNote(ctx, tx, in, noteActor{Kind: "agent", ID: r.Snapshot.AgentRef.ID, RunID: &r.ID, OperationID: &inv.OperationID})
 		}
 	case "document_read":
 		var args struct {
@@ -97,7 +118,9 @@ func (s *Store) LocalTool(ctx context.Context, inv Invocation) ([]byte, error) {
 			}
 			end := min(args.Offset+args.Limit, len(chars))
 			d.Content = string(chars[args.Offset:end])
-			result = map[string]any{"document": d, "next_offset": end, "has_more": end < len(chars), "total_characters": len(chars)}
+			var state NoteLifecycle
+			state, e = noteLifecycle(ctx, tx, d.ID)
+			result = map[string]any{"document": d, "next_offset": end, "has_more": end < len(chars), "total_characters": len(chars), "lifecycle": state}
 		}
 	case "artifact_read":
 		var args struct {
@@ -190,8 +213,27 @@ SELECT id FROM runs WHERE id=$1 UNION ALL SELECT child.id FROM runs child JOIN v
 	default:
 		return nil, errors.New("not a local transactional tool")
 	}
+	if e != nil && noteMutation {
+		var pg *pgconn.PgError
+		var status *servicehttp.StatusError
+		conflict := errors.As(e, &pg) && pg.Code == "P4090" || errors.As(e, &status) && status.Status == 409
+		if conflict {
+			// A CAS loser has a known, empty effect. Roll back the failed SQL
+			// subtransaction, then commit a replayable rejection as its receipt.
+			// HTTP 409 is reserved by the execution transport for UNKNOWN.
+			if _, e = tx.Exec(ctx, "ROLLBACK TO SAVEPOINT note_effect"); e != nil {
+				return nil, e
+			}
+			result = map[string]any{"outcome": "conflict", "changed": false, "message": "The requested note is no longer the active head, is retired, or has unresolved branches. Read its lifecycle before deciding whether a new logical operation is appropriate."}
+		}
+	}
 	if e != nil {
 		return nil, e
+	}
+	if noteMutation {
+		if _, e = tx.Exec(ctx, "RELEASE SAVEPOINT note_effect"); e != nil {
+			return nil, e
+		}
 	}
 	body := JSON(result)
 	if e = insertCall(ctx, tx, inv, "completed", body); e != nil {

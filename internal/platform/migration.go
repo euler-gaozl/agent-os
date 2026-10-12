@@ -39,5 +39,14 @@ func MigrateService(ctx context.Context, db *pgxpool.Pool, service string) error
 	if _, e = tx.Exec(ctx, string(body)); e != nil {
 		return e
 	}
+	if service == "runtime" {
+		notes, err := migrationSQL.ReadFile("migrations/notes.sql")
+		if err != nil {
+			return err
+		}
+		if _, err = tx.Exec(ctx, string(notes)); err != nil {
+			return err
+		}
+	}
 	return tx.Commit(ctx)
 }

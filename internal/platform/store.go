@@ -44,7 +44,7 @@ func (s *Store) Migrate(ctx context.Context) error {
 	if _, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(8843921)"); err != nil {
 		return err
 	}
-	for _, domain := range []string{"legacy_versions", "registry", "runtime", "storage", "sandbox", "telemetry", "legacy_knowledge"} {
+	for _, domain := range []string{"legacy_versions", "registry", "runtime", "notes", "storage", "sandbox", "telemetry", "legacy_knowledge"} {
 		body, err := migrationSQL.ReadFile("migrations/" + domain + ".sql")
 		if err != nil {
 			return err

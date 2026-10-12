@@ -130,7 +130,7 @@ func run(output string) error {
 	if e = sources.Migrate(ctx, sourcePool); e != nil {
 		return e
 	}
-	execution := []string{"runs", "events", "calls", "model_attempts", "harness_exchanges", "harness_archives", "documents", "app_runs", "business_runs", "instances"}
+	execution := []string{"runs", "events", "calls", "model_attempts", "harness_exchanges", "harness_archives", "note_roots", "note_versions", "note_audits", "note_admin_receipts", "documents", "app_runs", "business_runs", "instances"}
 	grants := map[string][]string{"runtime": execution, "worker": execution, "registry": {"resources", "secrets"}, "storage": {"artifacts", "artifact_refs"}, "sandbox": {"sandbox_jobs"}, "telemetry": {"telemetry_inbox", "telemetry_exports"}, "toolhub": nil, "knowledge": nil, "indexer": nil, "control": nil, "futures": nil}
 	identities := map[string]string{}
 	grants["sources"] = nil
@@ -270,7 +270,7 @@ func run(output string) error {
 				}
 			}
 			if role == "runtime" || role == "worker" {
-				if _, e = admin.DB.Exec(ctx, "GRANT USAGE,SELECT ON SEQUENCE public.events_seq_seq TO "+ident); e != nil {
+				if _, e = admin.DB.Exec(ctx, "GRANT USAGE,SELECT ON SEQUENCE public.events_seq_seq,public.note_audits_seq_seq TO "+ident); e != nil {
 					return e
 				}
 			}

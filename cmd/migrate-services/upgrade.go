@@ -27,7 +27,7 @@ func upgradeService(parent context.Context, dsn, service string) error {
 	case "registry":
 		roles, tables = []string{service}, []string{"resources", "secrets"}
 	case "runtime", "worker":
-		roles, tables = []string{"runtime", "worker"}, []string{"runs", "events", "calls", "model_attempts", "harness_exchanges", "harness_archives", "documents", "app_runs", "business_runs", "instances"}
+		roles, tables = []string{"runtime", "worker"}, []string{"runs", "events", "calls", "model_attempts", "harness_exchanges", "harness_archives", "note_roots", "note_versions", "note_audits", "note_admin_receipts", "documents", "app_runs", "business_runs", "instances"}
 	case "storage":
 		roles, tables = []string{"storage"}, []string{"artifacts", "artifact_refs"}
 	case "sandbox":
@@ -97,7 +97,7 @@ func upgradeService(parent context.Context, dsn, service string) error {
 				}
 			}
 			if service == "runtime" || service == "worker" {
-				if _, e = db.Exec(ctx, "GRANT USAGE,SELECT ON SEQUENCE public.events_seq_seq TO "+ident); e != nil {
+				if _, e = db.Exec(ctx, "GRANT USAGE,SELECT ON SEQUENCE public.events_seq_seq,public.note_audits_seq_seq TO "+ident); e != nil {
 					return e
 				}
 			}

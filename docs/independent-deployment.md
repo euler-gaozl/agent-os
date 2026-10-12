@@ -35,6 +35,17 @@ guard 为容器内可信 Go 程序，UID 0，仅有 SETUID/SETGID 用于启动 U
 
 ## 构建和发布单个服务
 
+### 启用笔记生命周期的升级屏障
+
+`note_revise`/`note_retire` 不改变旧工具 schema，但改变笔记的有效检索语义。旧 Runtime 不识别 retired，不能与新版本在启用撤回后混合提供读取。首次启用按以下顺序执行：
+
+1. 备份并恢复核验执行库，暂停新任务提交和笔记管理写入，停止所有旧 Runtime/Worker；多机环境须核对完整实例清单，不能只核对本机。
+2. 执行 `migrate-services --service runtime`。新增 note_roots、note_versions、note_audits、note_admin_receipts；Runtime/Worker 获得这些表及 note_audits_seq_seq 的权限。迁移保留原文、已提交回执和历史分叉。
+3. 发布支持新工具集合的 Worker、ToolHub、Registry、Runtime，核对全部消费者和读取实例；再发布 Console 管理页。其他服务可保持原版本与配置。新 readiness 仅证明本实例和 schema 就绪，不证明所有副本已更新。
+4. 新实例全部确认后才恢复提交、启用笔记修改页面/工具。个人部署可运行 `node scripts/enable-note-lifecycle.mjs` 预览，再加 `--apply` 为五个默认 Agent 创建不可变版本。脚本自身不会检查整个集群版本，不能替代上述屏障。
+
+本机只有一个 Runtime 和两个 Worker，此次按全量替换验收。工具集合镜像标签可阻止不兼容单服务回滚，但没有分布式发布协调器。启用后不直接回滚旧 Runtime；需要回滚应用时使用理解生命周期状态的兼容版本。恢复启用前快照会丢失此后合法修改，必须按恢复流程处理，不能作为自动回滚手段。完整语义见[笔记生命周期](architecture/notes-lifecycle.md)。
+
 以 Knowledge 为例；`release-service.mjs` 接收已经构建或拉取到本机的镜像，将标签解析为本机不可变 image ID 后部署。发布记录只保存路径、配置摘要和镜像 ID，不保存凭证。
 
 ```sh

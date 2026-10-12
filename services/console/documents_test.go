@@ -30,6 +30,9 @@ func TestConsoleRoutesNotesToRuntimeAndBytesToStorage(t *testing.T) {
 	for _, tc := range []struct{ method, path, body, want string }{
 		{"GET", "/api/documents?q=retained&kind=memory", "", "runtime GET /v1/documents?q=retained&kind=memory "},
 		{"GET", "/api/documents/old-id", "", "runtime GET /v1/documents/old-id "},
+		{"GET", "/api/notes?state=retired", "", "runtime GET /v1/notes?state=retired "},
+		{"GET", "/api/notes/old-id/history", "", "runtime GET /v1/notes/old-id/history "},
+		{"POST", "/api/notes/retire", `{"request_id":"retry-stable"}`, `runtime POST /v1/notes/retire {"request_id":"retry-stable"}`},
 		{"POST", "/api/documents", `{"content":"same body"}`, `runtime POST /v1/documents {"content":"same body"}`},
 		{"GET", "/api/artifacts/hash", "", "storage GET /artifacts/hash "},
 	} {

@@ -53,12 +53,14 @@ import {
 import "./console.css";
 import "./console-layout.css";
 import { ToolGovernance } from "./tool-governance";
+import { Notes } from "./notes";
 
-type Page = "agents" | "tools" | "knowledge" | "runs" | "services" | "settings";
+type Page = "agents" | "tools" | "knowledge" | "notes" | "runs" | "services" | "settings";
 const nav = [
   { id: "agents", name: "自定义 Agent", icon: Bot },
   { id: "tools", name: "ToolHub", icon: Box },
   { id: "knowledge", name: "知识库", icon: BookOpen },
+  { id: "notes", name: "工作记忆", icon: FileText },
   { id: "runs", name: "运行记录", icon: Activity },
   { id: "services", name: "服务与实例", icon: Network },
 ];
@@ -453,6 +455,7 @@ function Console() {
                       knowledge:
                         "保留原始资料与出处，为 Agent 提供可追溯的检索服务。",
                       runs: "查看执行结果、调用回执和恢复记录。",
+                      notes: "管理 Agent 留存的事实与工作记忆，查阅原文、有效状态和修订历史。",
                       services: "查看各服务实例的心跳，以及执行与索引 Worker。",
                       settings: "统一管理模型访问凭证，Agent 通过名称引用。",
                     }[page]
@@ -665,6 +668,7 @@ function Console() {
               />
             )}
             {page === "runs" && <Runs runs={runs} notify={notify} />}
+            {page === "notes" && <Notes notify={notify} />}
             {page === "services" && <Services status={status} />}
             {page === "settings" && (
               <Settings notify={notify} saved={load} status={status} />
@@ -1099,6 +1103,8 @@ function AgentEditor({
                   {[
                     ["knowledge_search", "检索工作资料"],
                     ["note_save", "保存有出处的记录"],
+                    ["note_revise", "修订本 Agent 的记录"],
+                    ["note_retire", "撤回本 Agent 的记录"],
                     ["artifact_read", "回读原始执行记录"],
                     ["run_recall", "找回本任务的历史证据"],
                     ["document_read", "阅读完整资料"],

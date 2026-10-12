@@ -166,6 +166,9 @@ func (s *Server) controlRoutes(mux *http.ServeMux) {
 		return nil
 	}))
 	mux.HandleFunc("/api/documents", func(w http.ResponseWriter, r *http.Request) { s.proxy(w, r, s.RuntimeURL+"/v1/documents") })
+	mux.HandleFunc("POST /api/notes/{kind}", func(w http.ResponseWriter, r *http.Request) {
+		s.proxy(w, r, s.RuntimeURL+"/v1/notes/"+url.PathEscape(r.PathValue("kind")))
+	})
 	mux.HandleFunc("GET /api/documents/{id}", func(w http.ResponseWriter, r *http.Request) {
 		s.proxy(w, r, s.RuntimeURL+"/v1/documents/"+url.PathEscape(r.PathValue("id")))
 	})
@@ -270,6 +273,50 @@ func (s *Server) toolRoutes(mux *http.ServeMux) {
 	}))
 }
 func (s *Server) documentRoutes(mux *http.ServeMux, prefix string) {
+	s.noteReadRoutes(mux, prefix)
+	for _, kind := range []string{"revise", "retire"} {
+		mux.HandleFunc("POST "+prefix+"/notes/"+kind, wrap(func(w http.ResponseWriter, r *http.Request) error {
+			// Decode the concrete shape to reject unrecognized actor/scope fields.
+			var requestID string
+			var input []byte
+			if kind == "revise" {
+				var v struct {
+					RequestID string `json:"request_id"`
+					NoteRevision
+				}
+				if e := decode(w, r, &v); e != nil {
+					return e
+				}
+				requestID = v.RequestID
+				input = JSON(v.NoteRevision)
+			} else {
+				var v struct {
+					RequestID string `json:"request_id"`
+					NoteRetirement
+				}
+				if e := decode(w, r, &v); e != nil {
+					return e
+				}
+				requestID = v.RequestID
+				input = JSON(v.NoteRetirement)
+			}
+			actor := servicehttp.Caller(r.Context())
+			if actor == "" {
+				actor = "authenticated-admin"
+			}
+			result, e := s.Store.AdminNoteMutation(r.Context(), requestID, kind, actor, input)
+			if e != nil {
+				var rejected *noteRejection
+				if errors.As(e, &rejected) {
+					jsonResponse(w, rejected.status, map[string]string{"error": rejected.Error(), "note_rejected_request_id": requestID})
+					return nil
+				}
+				return e
+			}
+			jsonResponse(w, 200, json.RawMessage(result))
+			return nil
+		}))
+	}
 	mux.HandleFunc("GET "+prefix+"/documents/{id}", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var d Document
 		var metadata []byte
@@ -280,7 +327,14 @@ func (s *Server) documentRoutes(mux *http.ServeMux, prefix string) {
 		if e = json.Unmarshal(metadata, &d.Metadata); e != nil {
 			return e
 		}
-		jsonResponse(w, 200, d)
+		state, e := noteLifecycle(r.Context(), s.Store.DB, d.ID)
+		if e != nil {
+			return e
+		}
+		jsonResponse(w, 200, struct {
+			Document
+			Lifecycle NoteLifecycle `json:"lifecycle"`
+		}{d, state})
 		return nil
 	}))
 	mux.HandleFunc("GET "+prefix+"/documents", wrap(func(w http.ResponseWriter, r *http.Request) error {
@@ -296,7 +350,11 @@ func (s *Server) documentRoutes(mux *http.ServeMux, prefix string) {
 		if e := decode(w, r, &d); e != nil {
 			return e
 		}
-		v, e := s.Store.PutDocument(r.Context(), d)
+		actor := servicehttp.Caller(r.Context())
+		if actor == "" {
+			actor = "authenticated-admin"
+		}
+		v, e := s.Store.putAdminDocument(r.Context(), d, actor)
 		if e != nil {
 			return e
 		}

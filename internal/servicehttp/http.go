@@ -74,6 +74,8 @@ func Wrap(h func(http.ResponseWriter, *http.Request) error) http.HandlerFunc {
 					status, message = 503, "database temporarily unavailable"
 				} else if pg.Code == "57014" {
 					status, message = 504, "database operation timed out"
+				} else if pg.Code == "P4090" {
+					status, message = 409, "note is no longer the active head, is retired, or has unresolved branches"
 				}
 			} else if errors.Is(e, io.ErrUnexpectedEOF) || errors.Is(e, pgconn.ErrConnClosed) || errors.As(e, &connect) || errors.As(e, &network) {
 				status, message = 503, "upstream temporarily unavailable"

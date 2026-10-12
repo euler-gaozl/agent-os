@@ -81,7 +81,10 @@ export async function api<T = any>(
           error.findings?.map((f: any) => f.Message || f.message).join("；") ||
           response.statusText,
       ),
-      { status: response.status },
+      {
+        status: response.status,
+        noteRejectedRequestId: error.note_rejected_request_id,
+      },
     );
   }
   return response.json();

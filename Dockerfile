@@ -22,7 +22,7 @@ COPY services/ services/
 RUN CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /service ./cmd/${SERVICE} && CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /healthcheck ./cmd/healthcheck
 
 FROM alpine:3.23 AS service
-LABEL org.agentos.builtin-tools='["knowledge_search","note_save","artifact_read","spawn_agent","sandbox_exec","document_read","run_recall"]'
+LABEL org.agentos.builtin-tools='["knowledge_search","note_save","artifact_read","spawn_agent","sandbox_exec","document_read","run_recall","note_revise","note_retire"]'
 RUN apk add --no-cache ca-certificates && adduser -D -u 10001 agentos
 WORKDIR /app
 COPY --from=backend /service /app/service
@@ -37,7 +37,7 @@ COPY --from=web /src/web/dist-futures /app/web/dist-futures
 
 FROM node:24-alpine AS worker
 LABEL org.agentos.worker-engines='["legacy-go","dsh-0.2.0-rc.2","dsh-0.2.0-rc.2-evidence-v1"]'
-LABEL org.agentos.builtin-tools='["knowledge_search","note_save","artifact_read","spawn_agent","sandbox_exec","document_read","run_recall"]'
+LABEL org.agentos.builtin-tools='["knowledge_search","note_save","artifact_read","spawn_agent","sandbox_exec","document_read","run_recall","note_revise","note_retire"]'
 RUN apk add --no-cache ca-certificates && adduser -D -u 10001 agentos
 WORKDIR /app
 COPY --from=backend /service /app/service

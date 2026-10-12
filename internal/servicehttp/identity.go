@@ -77,6 +77,8 @@ func permitted(service, caller, method, path string) bool {
 		}
 		if caller == "control" {
 			return strings.HasPrefix(path, "/v1/runs") || path == "/v1/status" ||
+				(get && (path == "/v1/notes" || strings.HasPrefix(path, "/v1/notes/"))) ||
+				(method == "POST" && (path == "/v1/notes/revise" || path == "/v1/notes/retire")) ||
 				((get || method == "POST") && path == "/v1/documents") ||
 				(get && strings.HasPrefix(path, "/v1/documents/"))
 		}

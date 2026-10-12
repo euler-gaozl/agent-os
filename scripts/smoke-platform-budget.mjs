@@ -60,7 +60,13 @@ try{
  const pending=new Set(evidence.tasks.map(x=>x.id));while(pending.size){
   for(const id of [...pending]){
    const response=await api('/tasks/'+id,undefined,true);assert.equal(response.status,200);
-   assert(!['failed','cancelled','waiting_unknown','needs_review'].includes(response.value.status),'Agent failed under declared workload');
+   if(['failed','cancelled','waiting_unknown','needs_review'].includes(response.value.status)){
+    // Record the cause before aborting the measurement. A terminal-state
+    // assertion without the run/ledger made the f03111b failure untriageable.
+    const diagnostic=await Promise.allSettled([api('/runs/'+id),api('/runs/'+id+'/calls'),api('/runs/'+id+'/events'),dc('logs','--no-color','--tail','150','worker','runtime','toolhub','storage')]);
+    evidence.failure={task:id,business:response.value,diagnostic:diagnostic.map(x=>x.status==='fulfilled'?x.value:{error:String(x.reason)})};
+    assert.fail('Agent failed under declared workload: '+response.value.status+'; cause retained in platform-budget.json');
+   }
    if(response.value.status==='completed'){
     assert.match(response.value.result,/Controlled service contract test completed/);
     const calls=await api('/runs/'+id+'/calls');assert.equal(calls.status,200);

@@ -9,10 +9,10 @@ import (
 
 var putDocument = recordstore.PutDocument
 var putArtifact = recordstore.PutArtifact
-var searchDocuments = recordstore.SearchDocuments
+var searchDocuments = searchNotes
 
 func (s *Store) PutDocument(ctx context.Context, d Document) (Document, error) {
-	return (&recordstore.Store{DB: s.DB}).SaveDocument(ctx, d)
+	return s.putAdminDocument(ctx, d, "runtime-internal")
 }
 func (s *Store) PutArtifact(ctx context.Context, b []byte, media, root string) (string, error) {
 	if s.StorageURL != "" {
@@ -27,7 +27,7 @@ func (s *Store) Artifact(ctx context.Context, hash string) ([]byte, string, erro
 	return (&recordstore.Store{DB: s.DB}).Artifact(ctx, hash)
 }
 func (s *Store) Search(ctx context.Context, q, kind string) ([]Document, error) {
-	return (&recordstore.Store{DB: s.DB}).Search(ctx, q, kind)
+	return searchNotes(ctx, s.DB, q, kind)
 }
 func (s *Store) GC(ctx context.Context) (int64, error) { return (&recordstore.Store{DB: s.DB}).GC(ctx) }
 

@@ -1,0 +1,255 @@
+.note-toolbar {
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+.note-toolbar .search-input {
+  flex: 1 1 220px;
+  width: auto;
+  min-width: 220px;
+}
+.note-toolbar select {
+  width: auto;
+  flex: 0 0 144px;
+  min-width: 132px;
+}
+.note-toolbar > button {
+  flex: 0 0 auto;
+}
+.note-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 16px;
+}
+.note-card {
+  text-align: left;
+  border: 1px solid var(--border, #e5e7eb);
+  background: white;
+  border-radius: 14px;
+  padding: 22px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.note-card:hover {
+  border-color: #97a8cd;
+  box-shadow: 0 4px 18px #163d7810;
+}
+.note-card-top,
+.note-card-foot,
+.note-pagination,
+.note-detail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.note-type,
+.note-card-foot span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.note-type {
+  font-size: 12px;
+  color: #64748b;
+}
+.note-card h3 {
+  margin: 18px 0 8px;
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.note-card > p {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.8;
+  margin: 0 0 20px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.note-card-foot {
+  margin-top: auto;
+  padding-top: 15px;
+  border-top: 1px solid #eef0f5;
+  font-size: 11px;
+  color: #748297;
+}
+.note-card-foot > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60%;
+}
+.note-state {
+  display: inline-flex;
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.note-state.active {
+  background: #eaf6ef;
+  color: #28704b;
+}
+.note-state.expired {
+  background: #fff3db;
+  color: #946218;
+}
+.note-state.retired,
+.note-state.superseded {
+  background: #f0f2f6;
+  color: #667085;
+}
+.note-state.conflict {
+  background: #fceceb;
+  color: #b24c42;
+}
+.note-pagination {
+  margin-top: 22px;
+  color: #748297;
+}
+.note-detail {
+  padding: 28px;
+}
+.note-detail-heading {
+  font-size: 12px;
+  color: #748297;
+  flex-wrap: wrap;
+}
+.note-detail h2 {
+  font-size: 23px;
+  line-height: 1.5;
+  margin: 18px 0 10px;
+  overflow-wrap: anywhere;
+}
+.note-source {
+  font-size: 12px;
+  color: #64748b;
+  overflow-wrap: anywhere;
+}
+.note-original {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.9;
+  font-size: 14px;
+  margin: 22px 0;
+  max-height: 440px;
+  overflow-y: auto;
+}
+.note-meta {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: 12px;
+  font-size: 12px;
+  padding: 18px;
+  background: #f7f8fb;
+  border-radius: 10px;
+}
+.note-meta dt {
+  color: #748297;
+}
+.note-meta dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.note-help {
+  color: #748297;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.note-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+.note-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.note-fields .field {
+  margin-top: 18px;
+}
+.note-detail pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  background: #f7f8fb;
+  padding: 14px;
+  border-radius: 8px;
+}
+.note-detail summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: #64748b;
+  margin: 15px 0;
+}
+.note-history {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0;
+}
+.note-version {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  gap: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  background: white;
+  padding: 14px;
+  overflow-wrap: anywhere;
+}
+.note-version span,
+.note-version small {
+  font-size: 12px;
+  color: #748297;
+}
+.note-audit {
+  border-left: 2px solid #d4ddeb;
+  padding: 0 0 18px 16px;
+  margin: 18px 0;
+  font-size: 13px;
+}
+.note-audit p {
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.note-audit small {
+  display: block;
+  margin-top: 5px;
+  color: #748297;
+  overflow-wrap: anywhere;
+}
+.note-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  color: #748297;
+  font-size: 12px;
+}
+@media (max-width: 600px) {
+  .note-list {
+    grid-template-columns: 1fr;
+  }
+  .note-detail {
+    padding: 20px;
+  }
+  .note-toolbar .search-input {
+    min-width: 100%;
+  }
+  .note-meta {
+    grid-template-columns: 70px minmax(0, 1fr);
+  }
+}
