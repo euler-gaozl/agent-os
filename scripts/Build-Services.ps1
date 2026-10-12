@@ -70,9 +70,11 @@ try{
                 if($owner){
                     $notice=Join-Path $owner.root ('licenses/node-'+$nodeVersion.Trim()+'.txt')
                     if(-not(Test-Path -LiteralPath $notice)){throw 'Selected Worker source does not include notices for this Node version.'}
-                    Copy-Item -LiteralPath $notice -Destination (Join-Path $directory 'NODE-LICENSE.txt')
                 }
                 $harness=Join-Path $directory 'harness';$null=New-Item -ItemType Directory -Path $harness
+                # Keep redistributed Node notices inside an inventoried asset tree,
+                # so export/backup/restore carries the license with the binary.
+                if($owner){Copy-Item -LiteralPath $notice -Destination (Join-Path $harness 'NODE-LICENSE.txt')}
                 $harnessSource=if($owner){$owner.root}else{$repoRoot}
                 $tracked=(& git -C $harnessSource ls-files -- harness) -split '\r?\n'
                 foreach($relative in $tracked|Where-Object{$_}){

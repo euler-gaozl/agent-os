@@ -1,6 +1,6 @@
 # P2 独立源码与发布验收
 
-2026-10-12。P2 进行中；已有十个服务独立仓库，七个启用服务已切换到 Owner 版本，Telemetry 保持停用，Runtime/Worker 正在进入本机发布关卡。Console/Futures 尚未拆仓，不代表 12 个服务或整个平台已完成。
+2026-10-13。P2 进行中；已有十个服务独立仓库，九个启用服务已切换到 Owner 版本（包含双 Worker，共十个进程），Telemetry 保持停用。Console/Futures 尚未拆仓，不代表 12 个服务或整个平台已完成。
 
 ## 所有权
 
@@ -16,8 +16,8 @@
 | [agent-os-sources](https://github.com/euler-gaozl/agent-os-sources/pull/1) | sources 的 blobs/captures | 受限 HTTPS 公开来源 | 同上；正文格式限制如 README，不代表全品种覆盖 |
 | [agent-os-knowledge](https://github.com/euler-gaozl/agent-os-knowledge/pull/1) | knowledge schema；唯一迁移者 | HTTP Registry、Runtime；可选外部检索后端 | 独立源码、角色权限、CI、本机更新回滚通过 |
 | [agent-os-indexer](https://github.com/euler-gaozl/agent-os-indexer/pull/1) | 通过固定 Knowledge indexing 模块消费同域队列 | 固定 indexing 协议；外部索引 HTTP | 同上；旧/新二进制丢回复/轮询恢复通过 |
-| [agent-os-runtime](https://github.com/euler-gaozl/agent-os-runtime/pull/1) | 执行域 14 表；唯一迁移者 | HTTP Registry、ToolHub、Storage、Knowledge、Sandbox | 固定 execution 模块、受限角色、CI/旧新 Worker 接管通过；本机切换待验收 |
-| [agent-os-worker](https://github.com/euler-gaozl/agent-os-worker/pull/1) | 固定 Runtime execution 模块，自己不写迁移/SQL | DSH/Node、模型 HTTP、ToolHub、Storage、Registry | 独立构建/可搬迁发布包、Linux/Windows CI、六组接管通过；本机切换待验收 |
+| [agent-os-runtime](https://github.com/euler-gaozl/agent-os-runtime/pull/1) | 执行域 14 表；唯一迁移者 | HTTP Registry、ToolHub、Storage、Knowledge、Sandbox | 固定 execution 模块、受限角色、CI/旧新 Worker 接管、本机更新回滚通过 |
+| [agent-os-worker](https://github.com/euler-gaozl/agent-os-worker/pull/1) | 固定 Runtime execution 模块，自己不写迁移/SQL | DSH/Node、模型 HTTP、ToolHub、Storage、Registry | 独立构建/可搬迁包、Linux/Windows CI、六组接管、本机更新回滚通过 |
 
 每个仓库有独立 Go module、命令、镜像和配置例子。拥有数据域的服务负责事务迁移和 PostgreSQL 测试；Worker/Indexer 只消费固定的窄事务模块，没有迁移入口。正常进程不做 DDL；迁移只改变本域表，在一个事务内提交结构及授权，锁/语句超时有界。Runtime/Worker 和 Knowledge/Indexer 保留必要事务域，不以强拆事务伪造独立性。
 
@@ -126,3 +126,13 @@ Runtime 固定事务模块 `v0.1.0-rc.1` 对应 `03bee5165d30708b9e68c76a51a0c4f
 Worker 新账号仅需执行权限，但旧 monorepo Worker readiness 会 SELECT 全部 Runtime 表。因此本机保留旧 SELECT 授权，不能把新角色最小权限测试当作旧版本回滚证明。没有执行 REVOKE 或拆开笔记/效果/回执的原子事务。
 
 集成的 33 项选源/拒绝测试通过：`service-sources-d2a595f2b39c4406a4942e9b17fc522d/result.json`；十个真实 Owner 合约及 checksum 选择核对通过：`p2-ten-real-owner-contracts.json`。Runtime/Worker 缺锁不再回退主仓；Worker 的 runner/lockfile 必须来自同一个 Owner 提交，Windows 发布包用 hoisted 安装且拒绝目录链接。以上条目还没有执行正式 Runtime/Worker update/rollback；当前七个启用 Owner 与原 Worker/Runtime 继续运行。
+
+### Runtime / Worker 本机切换与真实模型复验（2026-10-13）
+
+干净集成 `57e477a` 构建候选 `local/releases/staged/63eecfdc63664e14aaff9714deab9d32.json`，实际选择 Runtime `971949d`、Worker `b07b739`。两角色各完成 update → rollback → update，共六次发布事务；Worker 每次包含两个实例，所有事务 readiness 通过，非目标进程不变。13 个执行/笔记表的内容哈希以及原运行/笔记 HTTP 响应哈希保持一致；instances 表因真实心跳变化明确不纳入不可变内容断言。报告 `local/evidence/execution-owner-releases-4d6da83314944914857f026bd1dfed0f/result.json`。最终九个启用 Owner 的十个进程逐一核对 PID、实例和新鲜心跳：`owner-heartbeats-e1045fe693434e67b889e338358601b6.json`；Doctor 核心通过。两仓 CI 均成功：[Runtime 38273111646](https://github.com/euler-gaozl/agent-os-runtime/actions/runs/38273111646)、[Worker 38272420124](https://github.com/euler-gaozl/agent-os-worker/actions/runs/38272420124)。
+
+切换前执行维护窗口完整备份 `local/backups/p2-before-execution-owners-20261012`，停止并恢复全部 12 个平台进程；实际独立集群恢复通过，验证 43 个关系/序列及结构权限、受保护凭证解密、当前/上一发布集合和离线 Harness 重建，验证集群已停止。报告 `local/restore-checks/2d5d3b201a46429095b2adf74fee3ec5/result.json`。该恢复点涵盖当时八仓状态，不包含随后新 Runtime/Worker 选择与新增模型验收笔记，不宣称它是十仓最终备份。
+
+随后对真实部署服务调用官方 DeepSeek：固定 DSH evidence-v1 完成 kb_search → document_read → note_save，并通过 HTTP 回读保存笔记；实际 4 次模型请求、6,069 tokens、0 次未知用量。报告 `local/evidence/p2-execution-live-dc31a23d-f065-4541-aedc-26a57b9c76ed/result.json`，run `7eea8469ca9ecd6aa88f093172759c09`。调用前后余额接口均显示 49.89；这只是该接口精度下的结果，不代表调用免费。使用明确标记的合成验收文档，不能当成真实期货数据、完整 UI 验收或 P5 研究。这条路径验证真实独立执行服务与现有 Registry/ToolHub/Knowledge/Storage 的联通；不覆盖所有 MCP/子任务/故障组合。
+
+发布检查还发现集成 Worker 包把 Node 许可证放在资产清单之外。构建脚本已调整为放在被 inventory 的 harness 目录；后续候选包需验证许可证进入导出/恢复清单。旧发布包保持不可变，不能修改其已登记哈希。
