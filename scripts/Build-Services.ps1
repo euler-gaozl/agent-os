@@ -1,6 +1,9 @@
 param([string[]]$Service = @('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','sources','migrate-services'))
 $ErrorActionPreference='Stop'
 $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+. (Join-Path $PSScriptRoot 'lib/platform-lock.ps1')
+$maintenance=Enter-PlatformMaintenance (Join-Path $repoRoot '.state')
+try {
 $allowed=@('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','sources','migrate-services')
 foreach($name in $Service){if($name -notin $allowed){throw ('Unknown service: '+$name)}}
 $go=if(Test-Path 'D:\workspace\.tools\go\bin\go.exe'){'D:\workspace\.tools\go\bin\go.exe'}else{'go'}
@@ -14,3 +17,5 @@ try {
  $index|ConvertTo-Json|Set-Content -LiteralPath $indexPath -Encoding utf8
  Write-Output ('Built independent services: '+($Service -join ', '))
 } finally {Pop-Location}
+
+} finally { $maintenance.Dispose() }

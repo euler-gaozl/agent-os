@@ -27,3 +27,11 @@ SessionPersistence、session/flush、session-checkpoint-policy 是正式扩展�
 Harness 是 Worker 的版本化运行依赖，不增加一个后端服务。来源纳管要记录上游 commit、发布包 integrity、补丁、锁和 engine，保留许可证，不得未经核实就把 master 当成 rc.2。
 
 主 agent 另外实际运行了三项固定包特征测试：flush 等待、flush 失败传播、投影替换保留原事件。三项通过，没有付费请求，没有替代原生持久化、内存压力或故障恢复验收。
+
+## P0 备份恢复实现复审
+
+同一独立评审者只读检查新 PowerShell 脚本，确认三项问题：手动 createdb 加普通 pg_restore 遗漏数据库级 owner/ACL/settings；逐库前后指纹不足以证明共同停写基线；隔离集群停止失败仍可能返回 passed。修订后再复核，确认改用 `--create` 并核对数据库/DDL 权限；加入共同管理锁和所有库最终复核；清理失败改为 `cleanup_failed` 和非零退出，未发现新的阻断。
+
+评审者先前关于双反斜杠路径判断的意见源于误读工具 JSON 转义，检查原始字符后主动撤回。它不是实际缺陷，不能计为修复。评审者没有访问真实配置、执行数据库操作或代跑验证。
+
+主 agent 随后独立完成真实停写备份、全新集群恢复、43 个关系的内容及权限核对、10 个角色登录、2 个加密凭证解密、离线 Harness 重建及原服务重新启动。实际记录和边界见 `../windows-single-machine-plan.md` 的 P0 验收。管理锁不覆盖手工直连，DPAPI 依赖同一用户配置文件；离线接口测试不替代 Worker 恢复链路。

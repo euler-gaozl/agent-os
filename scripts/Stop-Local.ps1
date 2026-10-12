@@ -1,6 +1,9 @@
 param([string[]]$Service=@())
 $ErrorActionPreference = 'Stop'
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+. (Join-Path $PSScriptRoot 'lib/platform-lock.ps1')
+$maintenance=Enter-PlatformMaintenance (Join-Path $repoRoot '.state')
+try {
 $manifestPath = Join-Path $repoRoot '.state\processes.json'
 if (-not (Test-Path -LiteralPath $manifestPath)) { Write-Output 'No process manifest.'; exit 0 }
 $entries = @(Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json)
@@ -18,3 +21,5 @@ foreach ($entry in $entries) {
 }
 ConvertTo-Json -InputObject @($keep)|Set-Content -LiteralPath $manifestPath -Encoding utf8
 Write-Output 'PostgreSQL remains running. Interrupted runs remain durable and can be taken over after lease expiry.'
+
+} finally { $maintenance.Dispose() }

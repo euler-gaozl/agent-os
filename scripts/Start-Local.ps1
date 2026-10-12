@@ -1,6 +1,9 @@
 param([ValidateRange(1,16)][int]$Workers=2,[string[]]$Service=@(),[switch]$Migrate)
 $ErrorActionPreference='Stop'
 $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+. (Join-Path $PSScriptRoot 'lib/platform-lock.ps1')
+$maintenance=Enter-PlatformMaintenance (Join-Path $repoRoot '.state')
+try {
 $manifestPath=Join-Path $repoRoot '.state\processes.json'
 $indexPath=Join-Path $repoRoot 'bin\current.json'
 if(-not(Test-Path -LiteralPath $indexPath)){throw 'Run scripts/Build-Services.ps1 first.'}
@@ -47,3 +50,5 @@ try{
  ConvertTo-Json -InputObject @($previous)|Set-Content -LiteralPath $manifestPath -Encoding utf8
  throw
 }finally{$env:INSTANCE_ID=$savedInstance}
+
+} finally { $maintenance.Dispose() }

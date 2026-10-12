@@ -1,5 +1,13 @@
 # 端到端交付账本
 
+## 2026-10-12 P0 完整恢复基线
+
+正式维护窗口停止并重启 12 个本平台进程；新的协调备份保存全部实际权威数据、配置密钥、固定二进制/Node/Web/Harness 和离线依赖。独立新建 PostgreSQL 集群真实恢复：43 个表/序列内容、数据库与对象权限/结构一致，10 个原服务账号登录、2 个加密凭证解密通过；42 个 Harness 包离线重建，3 项接口特征测试通过。验证集群确认停止，原平台重新检查正常。未启动恢复库 Worker、未请求供应商，未更改原库。
+
+实现与独立评审边界、原始报告路径见 [单机计划 P0 记录](windows-single-machine-plan.md)。P0 关卡通过，P1 开始；这不是全部目标完成。维护锁只覆盖管理入口，DPAPI 恢复依赖同一 Windows 用户配置文件。
+
+提交 `990f739` 的四项 CI 均通过：[Platform checks](https://github.com/euler-gaozl/agent-os/actions/runs/38225832597)、[Persistent storage faults](https://github.com/euler-gaozl/agent-os/actions/runs/38225832553)、[Real retrieval](https://github.com/euler-gaozl/agent-os/actions/runs/38225832564)、[Real Langfuse](https://github.com/euler-gaozl/agent-os/actions/runs/38225832551)。这些检查不包含本批尚未提交的 Windows 恢复脚本；本批以上述本机真实恢复为运行证据。
+
 ## 2026-10-12 单机交付重新规划与 DSH 评估
 
 用户确定先交付 Windows 单机版，再考虑服务器。实施权威改为 [完整单机计划](windows-single-machine-plan.md)，涵盖 12 个服务独立仓库、分组工作区、本机维护、UI、真实业务与恢复验收。DSH 的 [源码与存储决策](architecture/dsh-source-and-storage-decision.md) 纳入同一个新 Goal：源码纳管确定实施，持久化/上下文优先通过插件，必要的 Session/Loop 修改以压力和恢复证据决定，不另写决策循环。用户删除旧 Goal 后，新 Goal 已真实创建并处于 active。

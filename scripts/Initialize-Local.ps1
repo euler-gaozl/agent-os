@@ -1,6 +1,9 @@
 param([string]$PostgresBin = 'D:\workspace\.tools\postgresql\pgsql\bin')
 $ErrorActionPreference = 'Stop'
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+. (Join-Path $PSScriptRoot 'lib/platform-lock.ps1')
+$maintenance=Enter-PlatformMaintenance (Join-Path $repoRoot '.state')
+try {
 if ($repoRoot.StartsWith('C:\',[StringComparison]::OrdinalIgnoreCase)) { throw 'Keep this project under D:\workspace.' }
 $stateDirectory = Join-Path $repoRoot '.state'
 $configPath = Join-Path $stateDirectory 'dev.json'
@@ -40,3 +43,5 @@ try {
     }
 } finally { $env:PGPASSWORD = $previousPassword }
 Write-Output 'Local database and ignored configuration are ready. No model API key has been configured.'
+
+} finally { $maintenance.Dispose() }
