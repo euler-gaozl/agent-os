@@ -3,11 +3,13 @@
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
+import path from 'node:path';
+import {getLocalLayout,readLocalConfig} from './lib/local-layout.mjs';
 if(!process.argv.includes('--allow-paid'))throw Error('Explicit --allow-paid required; official DeepSeek calls incur charges.');
-const root=process.cwd();
-const control=JSON.parse(await fs.readFile(root+'/.state/services/control.json','utf8'));
-const worker=JSON.parse(await fs.readFile(root+'/.state/services/worker.json','utf8'));
-const out=root+'/.state/live-e2e';await fs.mkdir(out,{recursive:true});
+const layout=await getLocalLayout();
+const control=await readLocalConfig('control');
+const worker=await readLocalConfig('worker');
+const out=path.join(layout.evidence_root,'live-e2e');await fs.mkdir(out,{recursive:true});
 async function api(path,body,key){const r=await fetch('http://127.0.0.1:8090/api'+path,{method:body===undefined?'GET':'POST',headers:{Authorization:'Bearer '+control.ADMIN_TOKEN,'Content-Type':'application/json',...(key?{'Idempotency-Key':key}:{})},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error(`Platform HTTP ${r.status} at ${path}`);return r.json()}
 async function balance(){
  const r=await fetch('http://127.0.0.1:8096/v1/credentials/resolve',{method:'POST',headers:{Authorization:'Bearer '+worker.SERVICE_TOKEN,'Content-Type':'application/json'},body:JSON.stringify({name:'DEEPSEEK_API_KEY'}),signal:AbortSignal.timeout(10000)});
@@ -15,7 +17,12 @@ async function balance(){
  let credential=await r.json();const b=await fetch('https://api.deepseek.com/user/balance',{redirect:'error',headers:{Authorization:'Bearer '+credential.value},signal:AbortSignal.timeout(15000)});credential=null;
  if(!b.ok)throw Error('Official balance request failed');const v=await b.json();const c=v.balance_infos?.find(x=>x.currency==='CNY');if(!c||!v.is_available)throw Error('Usable CNY balance required');return Number(c.total_balance);
 }
-const initial=await balance();const baseline=JSON.parse(await fs.readFile(out+'/baseline.json','utf8'));
+let baselineText;
+try{baselineText=await fs.readFile(path.join(out,'baseline.json'),'utf8');}
+catch(error){if(error.code!=='ENOENT')throw Error('Cannot read retained paid-test budget.');baselineText=await fs.readFile(path.join(layout.legacy_state_root,'live-e2e/baseline.json'),'utf8');}
+const baseline=JSON.parse(baselineText);
+if(!Number.isFinite(baseline.balance_cny)||!Number.isFinite(baseline.phase_budget_cny)||baseline.phase_budget_cny<=0||baseline.phase_budget_cny>5)throw Error('Valid retained budget of at most CNY 5 required.');
+const initial=await balance();
 const minimum=baseline.balance_cny-baseline.phase_budget_cny;
 const report={started_at:new Date().toISOString(),provider:'https://api.deepseek.com',model:'deepseek-flash',balance_before:initial,checks:[]};
 const base={name:'真实模型验收',prompt:'只根据工具回执回答。测试材料不是真实市场事实。不输出交易建议。不要重复已完成的工具调用。',model:{base_url:'https://api.deepseek.com',model:'deepseek-flash',key_env:'DEEPSEEK_API_KEY',thinking:'disabled',max_tokens:2048},tools:['document_read','note_save','artifact_read'],max_steps:8,max_model_attempts:16,model_token_budget:150000,context_tokens:32000,max_children:0};

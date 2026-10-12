@@ -129,7 +129,19 @@ function Assert-RecoveryQuiescent([string]$ProjectRoot,[string]$StateRoot,[strin
     # Manifest absence is not proof of a stopped service: reject orphan binaries.
     if(-not $ReleaseRoot){$ReleaseRoot=Join-Path $ProjectRoot 'bin'}
     $prefix=[IO.Path]::GetFullPath($ReleaseRoot)+[IO.Path]::DirectorySeparatorChar
-    $orphans=@(Get-Process|Where-Object{$_.Path -and $_.Path.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)})
+    $matches=@(Get-Process|Where-Object{$_.Path -and $_.Path.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)})
+    $orphans=@();$exited=@()
+    foreach($candidate in $matches){
+        # Enumeration can retain process objects whose termination has already
+        # completed. Only an observed terminated object may be ignored; an
+        # unreadable/ambiguous process identity remains a refusal.
+        try{$hasExited=$candidate.HasExited}catch{throw 'Cannot verify a platform process termination state.'}
+        if($hasExited){$exited+=@{pid=$candidate.Id;name=$candidate.ProcessName;has_exited=$true}}
+        else{$orphans+=$candidate}
+    }
+    if($exited.Count){
+        Write-PlatformJson ('D:\workspace\agent-platform\local\evidence\terminated-process-enumeration-'+[guid]::NewGuid().ToString('N')+'.json') @{at=[datetime]::UtcNow.ToString('o');observations=$exited}
+    }
     if($orphans.Count){throw ('Platform executable still running; coordinated backup refused: '+(($orphans|ForEach-Object{$_.ProcessName+' PID '+$_.Id}) -join ', '))}
 }
 function Assert-AllDeploymentsQuiescent([hashtable]$Layout){

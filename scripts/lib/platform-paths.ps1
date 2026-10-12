@@ -20,6 +20,10 @@ function Get-PlatformLayout([string]$ProjectRoot,[string]$LayoutPath='') {
             $layout.node_binary=[IO.Path]::GetFullPath([string]$inputLayout.node_binary)
             if(-not(Test-PathWithin $layout.node_binary 'D:\workspace')){throw 'Node release must remain under D:\workspace.'}
         }
+        if($inputLayout.ContainsKey('legacy_state_root')){
+            $layout.legacy_state_root=[IO.Path]::GetFullPath([string]$inputLayout.legacy_state_root)
+            if(-not(Test-PathWithin $layout.legacy_state_root 'D:\workspace\agent-platform\local\legacy-state')){throw 'Legacy state must remain in the protected workspace archive.'}
+        }
     }
     $layout.layout_path=$LayoutPath
     return $layout
@@ -39,7 +43,11 @@ function Write-PlatformJson([string]$Path,$Value){Write-PlatformText $Path (Conv
 function Register-PlatformRoots([hashtable[]]$Layouts){
     $path='D:\workspace\agent-platform\ops\managed-roots.json'
     $entries=@();if(Test-Path -LiteralPath $path){$entries=@(Get-Content -LiteralPath $path -Raw|ConvertFrom-Json -AsHashtable)}
-    foreach($layout in $Layouts){if(-not @($entries|Where-Object{$_.state_root -eq $layout.state_root -and $_.release_root -eq $layout.release_root}).Count){$entries+=@{project_root=$layout.project_root;state_root=$layout.state_root;release_root=$layout.release_root}}}
+    foreach($layout in $Layouts){
+        $matching=@($entries|Where-Object{$_.state_root -eq $layout.state_root -and $_.release_root -eq $layout.release_root})
+        if($matching.Count){foreach($entry in $matching){$entry.project_root=$layout.project_root}}
+        else{$entries+=@{project_root=$layout.project_root;state_root=$layout.state_root;release_root=$layout.release_root}}
+    }
     Write-PlatformJson $path $entries
 }
 function Get-OwnedDatabase([hashtable]$Layout,[int]$Port=55432){

@@ -1,6 +1,6 @@
 # v0.5 构建、部署和恢复
 
-本机正式目录 `D:\workspace\agent-os`，原始资料和配置保持在 D 盘。使用 Go / TypeScript；Worker 加载固定版本的官方 DSH 核心包。
+本机正式源码目录 `D:\workspace\agent-platform\repos\agent-os`，原始资料和配置保持在 D 盘的 `agent-platform\local`。使用 Go / TypeScript；Worker 加载固定版本的官方 DSH 核心包。
 
 本文件的 v0.5 历史部署示例仍保留；当前服务所有权、单服务升级顺序见[独立部署契约](independent-deployment.md)，最新真实供应商、容量与故障结果见[交付账本](delivery-v0.6.md)。历史“未完成”描述以该账本中较新的明确复验为准。
 
@@ -8,7 +8,7 @@
 
 ### 当前本机维护入口（2026-10-12 更新）
 
-运行配置、发布文件、进程记录、日志已归入 `D:\workspace\agent-platform\local`。本机源码目前仍在 `D:\workspace\agent-os`，数据库仍在该源码目录的 `.state\postgres`；物理搬迁尚未执行。不要因为新 local 目录存在就手工移动运行中的数据库。
+源码、数据库和运行文件已完成物理迁移：源码在 `repos\agent-os`，原 PostgreSQL 集群在 `local\data\postgres`。稳定入口为 `D:\workspace\agent-platform\ops\Platform.ps1`，可在任意工作目录调用；下方相对入口需先进入新的源码目录。迁移与失败证据见[本机迁移验收](windows-workspace-migration-20261012.md)。旧 `.state` 报告位于 `local\legacy-state\20261012-102142`。
 
 ```powershell
 ./scripts/Platform.ps1 status

@@ -39,6 +39,11 @@ foreach($name in $serviceNames){
     }
 }
 $configFiles['dev.json']=[Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $configRoot 'dev.json')))
+$identitiesPath=Join-Path $configRoot 'services/identities.json'
+$identities=Read-RecoveryJson $identitiesPath
+foreach($name in $serviceNames){if(-not $identities.ContainsKey($name) -or $identities[$name] -cne $configs[$name].SERVICE_TOKEN){throw 'Service identity index differs from its active service configuration.'}}
+$configFiles['services/identities.json']=[Convert]::ToBase64String([IO.File]::ReadAllBytes($identitiesPath))
+$identities=$null
 New-ProtectedDirectory $Destination
 $manifest=@{format=1;status='incomplete';created_at=[datetime]::UtcNow.ToString('o');source_root=$ProjectRoot;source_layout=$layout;vault_protection='Windows DPAPI CurrentUser; same user profile required';databases=@();files=@();quiescence='all owned service processes stopped';external_writes_during_restore='forbidden'}
 $manifestPath=Join-Path $Destination 'manifest.json'

@@ -1,11 +1,11 @@
 // Run only after the evidence-v1 rollout documented in independent-deployment.md.
 // Updates the shipped personal Agents by creating immutable revisions. Model,
 // credentials, bindings and publication settings are preserved. No model calls.
-import fs from 'node:fs/promises';
+import {readLocalConfig} from './lib/local-layout.mjs';
 import assert from 'node:assert/strict';
 import {isDeepStrictEqual} from 'node:util';
 const apply=process.argv.includes('--apply');
-const config=JSON.parse(await fs.readFile('.state/services/control.json','utf8'));
+const config=await readLocalConfig('control');
 async function api(route,body){const response=await fetch('http://127.0.0.1:8090/api'+route,{method:body===undefined?'GET':'POST',headers:{Authorization:'Bearer '+config.ADMIN_TOKEN,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error('Platform request failed: '+response.status);return response.json()}
 const ids=new Set(['futures-research','general-assistant','published-supply-inventory','published-source-crosscheck','published-evidence-timeline']);
 const rule='证据回查：摘要遗漏来源时，使用 run_recall 找回本任务及后代已提交的回执，再回读原文核验。has_more=false 只表示当前筛选下的回执页结束，不能证明资料覆盖完整或外部不存在其他证据。';

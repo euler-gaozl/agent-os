@@ -1,11 +1,11 @@
 // Run only after the note lifecycle rollout documented in independent-deployment.md.
 // Updates the shipped personal Agents by creating immutable revisions. Model,
 // credentials, bindings and publication settings are preserved. No model calls.
-import fs from 'node:fs/promises';
+import {readLocalConfig} from './lib/local-layout.mjs';
 import assert from 'node:assert/strict';
 import {isDeepStrictEqual} from 'node:util';
 const apply=process.argv.includes('--apply');
-const config=JSON.parse(await fs.readFile('.state/services/control.json','utf8'));
+const config=await readLocalConfig('control');
 async function api(route,body){const response=await fetch('http://127.0.0.1:8090/api'+route,{method:body===undefined?'GET':'POST',headers:{Authorization:'Bearer '+config.ADMIN_TOKEN,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error('Platform request failed: '+response.status);return response.json()}
 const ids=new Set(['futures-research','general-assistant','published-supply-inventory','published-source-crosscheck','published-evidence-timeline']);
 const rule='笔记生命周期：有来源更正时使用 note_revise 并保留修改理由；只有用户要求或明确失效、撤回依据时使用 note_retire，不因压缩上下文或临时任务结束而撤回有用资料。模型只能修改本 Agent 的记录，全局共享记录只读。knowledge_search 的有效视图包含全局共享和本 Agent 的记录；空结果不代表外部资料不存在。';

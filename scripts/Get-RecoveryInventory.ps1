@@ -34,6 +34,8 @@ foreach ($role in $roles) {
     $groups[$identity].roles += $role
 }
 $adminPath=Join-Path $configRoot 'dev.json'
+$identityPath=Join-Path $configRoot 'services/identities.json'
+if(Test-Path -LiteralPath $identityPath){$files += [pscustomobject]@{role='identity-index';path=$identityPath;sha256=(Get-FileHash -LiteralPath $identityPath -Algorithm SHA256).Hash.ToLower();protected_copy_verified=$false}}else{$missing+='identity-index'}
 if(Test-Path -LiteralPath $adminPath){$files += [pscustomobject]@{role='bootstrap-admin';path=$adminPath;sha256=(Get-FileHash -LiteralPath $adminPath -Algorithm SHA256).Hash.ToLower();protected_copy_verified=$false}}
 $indexPath=Join-Path $layout.release_root 'current.json'
 $releases=@()

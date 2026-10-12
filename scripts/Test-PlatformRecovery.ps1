@@ -73,6 +73,14 @@ try {
         if($actual -cne $original.user){throw 'A restored service identity cannot authenticate.'}
         $report.role_logins+=@{role=[IO.Path]::GetFileNameWithoutExtension($relative);authenticated=$true}
     }
+    $report.identity_index_verified=$false
+    if($configs.ContainsKey('services/identities.json')){
+        $identities=$configs['services/identities.json']
+        foreach($role in @('registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','telemetry','sources','control','futures')){
+            if(-not $identities.ContainsKey($role) -or $identities[$role] -cne $configs['services/'+$role+'.json'].SERVICE_TOKEN){throw 'Recovered identity index differs from the service configurations.'}
+        }
+        $report.identity_index_verified=$true
+    }
     $registry=$configs['services/registry.json']
     $registryDb=Get-DatabaseConnection $registry.DATABASE_URL
     $registryDb.host='127.0.0.1';$registryDb.port=$port

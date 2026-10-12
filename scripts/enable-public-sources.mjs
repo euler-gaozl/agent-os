@@ -1,8 +1,8 @@
 // Configure the reviewed first-party read-only MCP adapter through platform APIs.
 // Credentials are references only; the source token remains encrypted in Registry.
-import fs from 'node:fs/promises';
+import {readLocalConfig} from './lib/local-layout.mjs';
 import {isDeepStrictEqual} from 'node:util';
-const config=JSON.parse(await fs.readFile('.state/services/control.json','utf8'));
+const config=await readLocalConfig('control');
 async function api(path,body){const r=await fetch('http://127.0.0.1:8090/api'+path,{method:body===undefined?'GET':'POST',headers:{Authorization:'Bearer '+config.ADMIN_TOKEN,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error(`Platform HTTP ${r.status} at ${path}`);return r.json()}
 const endpoint='http://127.0.0.1:8101/mcp';
 const tools=await api('/connectors/discover',{endpoint,protocol:'2025-11-25',key_env:'SOURCES_MCP_TOKEN'});

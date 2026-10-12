@@ -1,5 +1,15 @@
 # 端到端交付账本
 
+## 2026-10-12 P1 源码与数据库物理迁移
+
+有效源码已切换为 `D:\workspace\agent-platform\repos\agent-os`，原 PostgreSQL 为 `local\data\postgres`，旧 `.state` 原样归档于 `local\legacy-state\20261012-102142`。最终停机搬迁前后 1,948 个数据库文件 SHA-256 一致；重启 Worker 前完整数据、结构和权限指纹一致；12 个所属进程及四个业务只读响应哈希验证通过。稳定维护入口 `ops\Platform.ps1` 已实际使用。没有重新初始化数据库或调用付费模型。
+
+迁移预检发现此前恢复集合遗漏服务身份索引，已补入加密备份并新建 v3 备份；隔离集群实际还原和服务 Token 交叉检查通过。记录过的停止进程误判在本次真实复现为已退出对象残留于 Windows 枚举，守卫仅忽略明确 `HasExited=true` 的对象；活进程拒绝测试通过。更早缺失 PID 的那次拒绝仍不倒填根因。
+
+实际覆盖数据库移动后中断、源码移动后中断、逆向恢复再次中断。也真实遇到重复 ACL 修改失败、`Move-Item` 对 pnpm 联接点递归移动导致部分源码迁移失败；失败未掩盖，后者经精确人工回退保留依赖缓存，改用同盘目录重命名并重新验收。独立评审承认漏检原移动假设，最终审查与实际运行证据分列于[迁移验收](windows-workspace-migration-20261012.md)。P1 单服务更新/回滚、P2 拆仓、P2.5 源码 Harness 等剩余目标继续执行。
+
+上批 `24a7514` 四项 Linux CI 全部通过：[Platform](https://github.com/euler-gaozl/agent-os/actions/runs/38232606486)、[Storage faults](https://github.com/euler-gaozl/agent-os/actions/runs/38232607032)、[Retrieval](https://github.com/euler-gaozl/agent-os/actions/runs/38232606495)、[Langfuse](https://github.com/euler-gaozl/agent-os/actions/runs/38232606596)。它们不替代本批 Windows 原生故障测试。
+
 ## 2026-10-12 P1 运行路径切换
 
 配置、日志、进程记录和固定发布依赖已真实切换到 `D:\workspace\agent-platform\local`；源码及 PostgreSQL 数据目录尚未移动。增加唯一布局快照、共同维护锁、所有登记部署的停写检查、PostgreSQL 身份核对及统一 start/stop/status/doctor/build/backup/restore-check 入口。

@@ -28,16 +28,12 @@ Sandbox 的真实 Docker 隔离、主动干扰截止进程和执行服务强杀�
 
 ## 启动
 
-正式目录：`D:\workspace\agent-os`。Windows 使用 PowerShell 7、Go 1.27.2、Node 24、pnpm 11.25.0、PostgreSQL 18。现有本机工具位于 `D:\workspace\.tools`；不要另建 C 盘副本。
+正式源码目录：`D:\workspace\agent-platform\repos\agent-os`。运行配置、数据库、日志和固定发布文件位于 `D:\workspace\agent-platform\local`，与源码分开。Windows 使用 PowerShell 7、Go 1.27.2、Node 24、pnpm 11.25.0、PostgreSQL 18。共享工具位于 `D:\workspace\.tools`；不要另建 C 盘副本。
 
 ```powershell
-Set-Location D:\workspace\agent-os
-./scripts/Initialize-Local.ps1
-./scripts/Build-Services.ps1
-pnpm --dir harness install --frozen-lockfile
-pnpm --dir web install --frozen-lockfile
-pnpm --dir web run build
-./scripts/Start-Local.ps1 -Workers 2
+& D:\workspace\agent-platform\ops\Platform.ps1 status
+# 已停止时启动现有数据库及固定发布版本
+& D:\workspace\agent-platform\ops\Platform.ps1 start -Workers 2
 ```
 
 启动脚本首次生成独立服务配置；12 个进程包括两个 Worker。升级使用 `Start-Local.ps1 -Migrate`，需先备份并停止旧进程。已有 Agent 不会被初始化脚本覆盖。模型密钥在中台“设置”中保存，Agent 中的凭证名称需与其一致。公开资料适配器可用 `node scripts/enable-public-sources.mjs` 登记到本机 ToolHub 并绑定期货 Agent（可重复执行，不重复生成相同版本）。详细工具路径、配置、停止与恢复见[v0.5 操作手册](docs/operations-v0.5.md)。
