@@ -131,7 +131,7 @@ DSH 专项依据与修改边界见 [源码与存储系统决策](architecture/ds
 
 ## 7. 工作节奏和变更规则
 
-P2 首批三个 Owner 仓库已完成独立检出/构建/数据库测试和 Linux/Windows CI，集成发布按精确提交选源；真实更新和回滚尚在执行。当前证据与边界见 [P2 源码和发布验收](independent-sources-p2.md)，不得将三仓通过写成 12 个服务全部完成。
+P2 首批 Registry/Sandbox 已完成真实更新回滚，Telemetry 为零实例 catalog 切换；第二批 ToolHub/Storage/Sources 已完成独立检出/构建和数据库测试，CI/切换继续验收。集成按精确提交选源。当前证据与边界见 [P2 源码和发布验收](independent-sources-p2.md)，不得将六仓进展写成 12 个服务全部完成。
 
 ### P1 关卡完成（2026-10-12）
 

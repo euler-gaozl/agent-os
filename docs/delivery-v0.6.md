@@ -1,10 +1,14 @@
 # 端到端交付账本
 
+## 2026-10-12 P2 第二批服务源码
+
+ToolHub、Storage、Sources 的私有源码仓库与 draft PR 已建立，SDK 固定依赖随库保存；独立 clone 在空模块缓存且关闭网络依赖条件下，真实数据库测试、vet、构建通过。ToolHub 应用身份能够注册/检测/启用/写审计；Storage 不再携带文档/笔记 SQL；各域迁移及失败回滚通过。集成源码锁新增三仓，拒绝缺映射回退旧源码。原始证据与评审边界见 [P2 记录](independent-sources-p2.md)，新 CI 和实际更新回滚分别验收，目标保持 active。
+
 ## 2026-10-12 P2 首批独立仓库与发布接线
 
 Registry、Sandbox、Telemetry 的独立私有仓库及 PR 已建立，规范固定 SDK/vendor 的单仓隔离检出测试与三仓 Linux/Windows CI 通过。集成按精确 Owner 提交构建，完整协议和二进制来源经核验；源码选择 10 项拒绝边界、污染 Go 环境及 StrictMode 构建通过。独立服务实际更新/回滚正在验收，其他九个服务和 P2.5–P5 尚未完成，完整 Goal 继续 active。详见 [P2 源码/发布证据](independent-sources-p2.md)。
 
-集成 Registry `bb9a693` 的凭证边界修复已部署，本机保留两个 Worker，非目标 11 个进程未替换；内部配置名请求被拒绝，未读取敏感响应正文。不能再将旧漏洞版本作为回滚目标。
+集成 Registry `bb9a693` 的凭证边界修复已部署，本机保留两个 Worker，非目标 11 个进程未替换；内部配置名请求被拒绝，未读取敏感响应正文。不能再将旧漏洞版本作为回滚目标。随后固定三个 Owner 的实际版本切换完成：Registry/Sandbox 各 update → rollback → update 就绪且其他进程不变；Telemetry 为零实例 catalog 切换，不算真实导出联调。四个 Registry 只读接口哈希一致，最终 Doctor 通过，见上述 P2 证据。
 
 ## 2026-10-12 P2 起步与凭证边界修复
 

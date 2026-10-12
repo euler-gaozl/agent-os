@@ -1,6 +1,6 @@
 # P2 独立源码与发布验收
 
-2026-10-12。P2 进行中；本记录只覆盖首批三个服务，不代表 12 个服务或整个平台已完成。
+2026-10-12。P2 进行中；本记录覆盖正在分批交付的六个服务，不代表 12 个服务或整个平台已完成。
 
 ## 所有权
 
@@ -8,9 +8,12 @@
 
 | 仓库 | 自有数据 | 跨服务依赖 | 当前状态 |
 | --- | --- | --- | --- |
-| [agent-os-registry](https://github.com/euler-gaozl/agent-os-registry/pull/1) | resources、secrets | HTTP ToolHub；可选 Runtime 心跳 | 独立源码、构建、迁移和 CI 通过；本机切换待验收 |
-| [agent-os-sandbox](https://github.com/euler-gaozl/agent-os-sandbox/pull/1) | sandbox_jobs | HTTP Runtime；执行另需 Linux Docker | 同上；本机无隔离执行环境，明确不可用 |
-| [agent-os-telemetry](https://github.com/euler-gaozl/agent-os-telemetry/pull/1) | telemetry_inbox、telemetry_exports | HTTP Runtime claim/ack、Registry 命名凭证、Langfuse | 同上；本机 exporter 尚未配置，不自动启用 |
+| [agent-os-registry](https://github.com/euler-gaozl/agent-os-registry/pull/1) | resources、secrets | HTTP ToolHub；可选 Runtime 心跳 | 独立源码/构建/迁移/CI、本机更新回滚通过 |
+| [agent-os-sandbox](https://github.com/euler-gaozl/agent-os-sandbox/pull/1) | sandbox_jobs | HTTP Runtime；执行另需 Linux Docker | broker 更新回滚通过；本机隔离执行不可用 |
+| [agent-os-telemetry](https://github.com/euler-gaozl/agent-os-telemetry/pull/1) | telemetry_inbox、telemetry_exports | HTTP Runtime claim/ack、Registry 命名凭证、Langfuse | 构建/CI 和零实例 catalog 切换通过；exporter 未配置 |
+| [agent-os-toolhub](https://github.com/euler-gaozl/agent-os-toolhub/pull/1) | toolhub 的 assets/state/files/audit | HTTP Registry 命名凭证、Runtime 回执 | 独立检出及真实数据库通过；CI/本机切换进行中 |
+| [agent-os-storage](https://github.com/euler-gaozl/agent-os-storage/pull/1) | artifacts、artifact_refs | Runtime 提交授权根；不读执行库 | 同上；源码移除所有文档/笔记 SQL |
+| [agent-os-sources](https://github.com/euler-gaozl/agent-os-sources/pull/1) | sources 的 blobs/captures | 受限 HTTPS 公开来源 | 同上；正文格式限制如 README，不代表全品种覆盖 |
 
 每个仓库有独立 Go module、命令、镜像、服务配置例子、事务迁移和 PostgreSQL 测试。正常进程不做 DDL；迁移只改变本域表，在一个事务内提交表结构及授权，锁/语句超时有界。不重写其他服务配置或访问其数据库。Runtime/Worker 和 Knowledge/Indexer 后续保留必要的事务域，不以强拆事务伪造独立性。
 
@@ -35,4 +38,18 @@ SDK 固定 `v0.1.0-rc.2` / `f45ca168dee81f864533a8f77f8c203960caad1a`，规范 G
 
 旧集成 Registry 的凭证解析会接受任意同名进程环境变量；新旧源码均已限制保留名，只允许明确的三个旧供应商环境变量兼容，其余使用加密凭证表。集成 `bb9a693` 已单独部署，非目标 11 个进程不变，Doctor 正常；真实内部配置名请求返回 400，未读取响应正文。证据 `local/evidence/credential-rpc-live-bb9a693.json`。本次 Owner 发布回滚基线必须是这个安全版本，不能退回此前版本。
 
-独立 Owner 实际更新/回滚证据随后追加。服务端 HA、真实跨节点故障和未配置扩展不在本批证明范围内。
+## 本机切换实绩
+
+从干净集成提交 `f6ebe47` 构建，固定 Owner 为 Registry `98c8990`、Sandbox `241abe5`、Telemetry `93f18c5`。候选包 `511577a97c1245e8bf254ec4ab776047` 经实际 update → rollback → update：Registry 和 Sandbox 各三次进程替换全部就绪，非目标实例/配置不变；Registry 四个资源/目录/业务发布/凭证配置状态只读响应哈希一致。Registry 回滚的确是修复后的 `bb9a693`。最终 Doctor 核心通过，模型调用 0。
+
+Telemetry 三次为 **零实例的 catalog 切换**，报告明确 `readiness=not_started`；没有启动未配置 exporter，不能算作真实导出恢复。Sandbox 仅验证 broker，仍没有本机隔离执行能力。完整原始报告 `local/evidence/first-owner-releases-e4ac4db7ea6e4ef8b6c4cca98542a15d/result.json` 和同目录 Doctor；每个事务还有独立 release 报告。
+
+首批更新/回滚关卡已通过上述边界，服务端 HA、真实跨节点故障和未配置扩展不在本批证明范围内。P2 其余服务继续实施。
+
+## 第二批源码与数据库关卡
+
+ToolHub `3186161`、Storage `772a972`、Sources `6ac8500` 已在各自私有仓库的 draft PR。独立 clone、关闭 go.work/网络依赖、空模块缓存、真实 PostgreSQL 测试、vet 和服务/migrate/healthcheck 构建全部通过：`local/evidence/p2-second-isolated-dad92f76a0fb493cb01ac03aa3fdded1/result.json`，集群已停止，模型调用 0。首次未提交版本测试也保留于 `p2-second-services-fdba9f4c3431490fb45218f2f3341d1c`。
+
+ToolHub 保留注册/检查/启停/版本漂移/监视租约原行为，用受限应用账号实测注册→检查→启用→审计，验证序列权限。Storage 只提取产物方法，验证受限账号 HTTP 保存与重试、Unicode 分页、引用采用、不可见根拒绝、引用保护和内容损坏拒绝。Sources 保留真实响应字节、分页与 UTF-8；响应是合成夹具，不声称真实供应商可用。三域都验证重复迁移、DDL 失败事务回滚和外域拒绝。Sources 默认并发从原通用值 16 收窄为 4，减少解码时同时驻留的数据，配置仍可显式调整。
+
+独立评审静态比较确认 ToolHub 业务/租约逻辑未被拆分改变，Storage 无执行 SQL，授权未放宽；没有执行测试。集成选源测试已扩至 13 项，明确拒绝这三个已拆角色缺映射时回退主仓，报告 `service-sources-a99ec03ed69548808e0270f41c1e7359/result.json`。实际切换随后验收。

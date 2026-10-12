@@ -12,6 +12,18 @@
     "telemetry": {
       "repository": "agent-os-telemetry",
       "commit": "93f18c5f0891513a2bf3f6e38053a1f7bc4c9c20"
+    },
+    "toolhub": {
+      "commit": "3186161f42a55e0e5ab7a02707c167b033022036",
+      "repository": "agent-os-toolhub"
+    },
+    "storage": {
+      "commit": "772a9723cf82079092e6ced7f1f7b38dc3a36d77",
+      "repository": "agent-os-storage"
+    },
+    "sources": {
+      "commit": "6ac8500e0dacae8c586653c6a91aee09d85edf2c",
+      "repository": "agent-os-sources"
     }
   }
 }

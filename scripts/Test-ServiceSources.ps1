@@ -18,6 +18,9 @@ try{
     Expect-Rejection 'missing lock never falls back to integration source' {Get-SelectedServiceSource $integration registry $contract}
     Write-PlatformJson $lockPath @{format=1;services=@{sandbox=@{repository='agent-os-sandbox';commit=('a'*40)}}}
     Expect-Rejection 'missing role mapping never falls back' {Get-SelectedServiceSource $integration registry $contract}
+    foreach($role in @('toolhub','storage','sources')){
+        Expect-Rejection ('missing extracted mapping never falls back: '+$role) {Get-SelectedServiceSource $integration $role $contract}
+    }
     [IO.File]::WriteAllText((Join-Path $owner 'go.mod'),"module github.com/euler-gaozl/agent-os-registry`ngo 1.27.0`n")
     [IO.File]::WriteAllText((Join-Path $owner 'vendor/modules.txt'),'# synthetic boundary fixture, not a buildable service')
     Write-PlatformJson (Join-Path $owner 'deploy/release-contract.json') @{format=1;role='registry';migration_owner='registry';contract=$contract;backward_compatible=$true}

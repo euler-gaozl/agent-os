@@ -1,14 +1,15 @@
 # The integration repository coordinates fixed service versions. It never
 # supplies business source to independently owned service builds.
 function Get-SelectedServiceSource([string]$IntegrationRoot,[string]$Role,[System.Collections.IDictionary]$Contract){
-    if($Role -notin @('registry','sandbox','telemetry')){return $null}
+    $extracted=@('registry','sandbox','telemetry','toolhub','storage','sources')
+    if($Role -notin $extracted){return $null}
     $lockPath=Join-Path $IntegrationRoot 'deploy/service-sources.json'
     if(-not(Test-Path -LiteralPath $lockPath)){throw 'Independent service source lock is required.'}
     $lock=Read-ReleaseJson $lockPath
     if($lock.format -ne 1 -or -not $lock.services){throw 'Invalid service source lock.'}
     if(-not $lock.services.Contains($Role)){throw ('Independent service source mapping is required: '+$Role)}
     $entry=$lock.services[$Role]
-    if($Role -notin @('registry','sandbox','telemetry') -or $entry.repository -cne ('agent-os-'+$Role) -or $entry.commit -cnotmatch '^[a-f0-9]{40}$'){
+    if($entry.repository -cne ('agent-os-'+$Role) -or $entry.commit -cnotmatch '^[a-f0-9]{40}$'){
         throw 'Unreviewed independent service source mapping.'
     }
     $reposRoot=Split-Path -Parent $IntegrationRoot
