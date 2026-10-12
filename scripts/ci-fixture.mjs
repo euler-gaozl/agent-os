@@ -5,7 +5,7 @@ const telemetry=new Set();
 http.createServer(async(req,res)=>{
  let text='';for await(const part of req){text+=part;if(text.length>2**20){res.writeHead(413).end();return}}
  const body=JSON.parse(text||'{}');res.setHeader('Content-Type','application/json');
- if(req.url==='/telemetry-receipts'){res.end(JSON.stringify({accepted_unique_spans:telemetry.size}));return}
+ if(req.url==='/telemetry-receipts'){res.end(JSON.stringify({accepted_unique_spans:telemetry.size,accepted_trace_ids:[...new Set([...telemetry].map(x=>x.split(':')[0]))]}));return}
  if(req.url==='/api/public/otel/v1/traces'){
   if(req.headers.authorization!=='Basic '+Buffer.from('ci-public:ci-secret').toString('base64')){res.writeHead(401).end('{}');return}
   const spans=body.resourceSpans?.flatMap(x=>x.scopeSpans?.flatMap(y=>y.spans??[])??[])??[];

@@ -31,4 +31,4 @@ go build -trimpath -o provision ./cmd/provision
 
 2026-10-13，Windows 上启动全新隔离 PostgreSQL 18（55592），执行内部数据库恢复套件通过。最新报告 `local/evidence/provision-fixture-5b7fbee6ff654623bff5b9f9f43f4dbf/result.json`；数据库测试 13.70 秒，隔离集群已停止，供应商调用 0 次。覆盖阶段回调退出、真实终止 PostgreSQL 维护会话、同目录/同前缀并发、80 项数据域 CONNECT 对比、十个身份认证、密码/角色/数据库替换、额外授权及管理员暂停的拒绝行为。八个数据库均无业务表。
 
-独立评审静态复核并关闭了数据库权限漂移和 Windows 私有文件权限两项阻断；评审者没有代跑上述测试。新增 `deployment-bootstrap.yml` 将在 Linux PostgreSQL 服务上执行 race 检查、Linux 文件权限及实际 CLI 构建；首次结果另记。现有故障证据是阶段退出及数据库会话终止，不是应用 SIGKILL 或断电恢复，亦不是八个 Owner 迁移后的完整服务链路。
+独立评审静态复核并关闭了数据库权限漂移和 Windows 私有文件权限两项阻断；评审者没有代跑上述测试。[Linux 初始化 CI 38283706152](https://github.com/euler-gaozl/agent-os/actions/runs/38283706152) 在提交 `12666112f7941039f7c2a64b7d16ab64e5149fe4` 已通过：真实 PostgreSQL、race、Linux 文件权限及实际 CLI 构建。现有故障证据是阶段退出及数据库会话终止，不是应用 SIGKILL 或断电恢复，亦不是八个 Owner 迁移后的完整服务链路。

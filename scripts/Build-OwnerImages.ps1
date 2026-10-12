@@ -1,6 +1,7 @@
 param(
     [Parameter(Mandatory)][string[]]$Service,
-    [Parameter(Mandatory)][string]$OutputDirectory
+    [Parameter(Mandatory)][string]$OutputDirectory,
+    [switch]$ExportImage
 )
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
@@ -82,6 +83,12 @@ try{
         $record.source_archive_sha256=(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLower()
         $record.executables_checked=$true
         $record.binary_checks=$binaryChecks
+        if($ExportImage){
+            $imageArchive=Join-Path $destination ($role+'-image.tar')
+            & docker image save --output $imageArchive $record.image
+            if($LASTEXITCODE){throw 'Cannot export verified owner image.'}
+            $record.image_archive_sha256=(Get-FileHash -LiteralPath $imageArchive -Algorithm SHA256).Hash.ToLower()
+        }
         $reports+=@($record)
     }
     $success=$true

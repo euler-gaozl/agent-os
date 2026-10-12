@@ -58,7 +58,14 @@ jobs:
           cache: false
       - name: Build and verify actual image binaries
         shell: pwsh
-        run: ./repos/agent-os/scripts/Build-OwnerImages.ps1 -Service '${{ matrix.role }}' -OutputDirectory '${{ runner.temp }}/owner-images-${{ matrix.role }}'
+        run: ./repos/agent-os/scripts/Build-OwnerImages.ps1 -Service '${{ matrix.role }}' -OutputDirectory '${{ runner.temp }}/owner-images-${{ matrix.role }}' -ExportImage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: owner-bundle-${{ matrix.role }}
+          path: ${{ runner.temp }}/owner-images-${{ matrix.role }}/${{ matrix.role }}-image.tar
+          if-no-files-found: error
+          retention-days: 2
+          compression-level: 1
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -84,3 +91,47 @@ jobs:
           pattern: owner-image-*
           path: .state/owner-reports
       - run: node scripts/verify-owner-image-reports.mjs .state/owner-reports
+  composition:
+    name: Independent owners with fresh databases and recovery
+    needs: [verified]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: owner-image-*
+          path: .state/owner-reports
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: owner-bundle-*
+          path: ${{ runner.temp }}/owner-bundles
+      - run: node --test scripts/owner-stack.test.mjs
+      - name: Build deployment coordinator only
+        run: CGO_ENABLED=0 go build -trimpath -o "$RUNNER_TEMP/provision" ./cmd/provision
+      - name: Load exact images and provision fresh identities
+        run: node scripts/ci-owner-stack.mjs prepare "$RUNNER_TEMP/owner-bundles"
+      - name: Execute each owner's migration and start independent services
+        run: node scripts/ci-owner-stack.mjs migrate
+      - name: Real owner contracts, DSH takeover and database recovery
+        run: node scripts/smoke-owner-services.mjs
+      - name: Preserve sanitized container identity and status
+        if: always()
+        run: node scripts/ci-owner-stack.mjs diagnose
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: independent-owner-composition
+          path: .state/ci-owner-evidence/
+          if-no-files-found: error
+      - name: Dispose only this fresh CI composition
+        if: always()
+        run: node scripts/ci-owner-stack.mjs dispose

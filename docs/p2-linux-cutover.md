@@ -45,4 +45,8 @@
 
 首次真实 [Linux 独立镜像 CI 38280726971](https://github.com/euler-gaozl/agent-os/actions/runs/38280726971) 在集成提交 `fd89eee96559e0bca62b7f85e3608d28efa8345c` 全部通过：十二个 Owner 镜像在各自固定源码上下文构建，并提取实际二进制核对版本、运行真实入口帮助命令。十二份报告已下载至 `local/evidence/linux-owner-images-38280726971-a432cc2af8434c5380ee8e88062faf5f`。同提交的旧 Platform CI `38280726840` 也通过，但仍从旧主仓业务代码构建，不能把它写成新组合全链路验证。
 
-仅部署用途的 [provision 初始化器](fresh-deployment-provision.md) 已实现，并通过本机隔离 PostgreSQL 恢复和权限测试；Linux 专项 CI 新增待执行。八个 Owner migrator 编排、完整 Compose 切换及上表独有覆盖迁移继续待完成。现有 Windows 发布和旧集成 CI 均未被新初始化入口替换。
+仅部署用途的 [provision 初始化器](fresh-deployment-provision.md) 已实现，并通过本机隔离 PostgreSQL 恢复和权限测试；Linux PostgreSQL/race 专项 CI `38283706152` 已通过。
+
+独立镜像工作流新增 composition：通过镜像 ID 和归档哈希装载同次构建的十二个镜像，在全新八库执行各 Owner migrator 两次，再通过 Registry HTTP 比较/写入夹具凭证。使用不同 UID 的 0640 部署副本，原始配置和 checkpoint 保持 0600。新的服务测试逐角色、逐副本核对心跳，并检查真实跨库连接拒绝、Worker 提交后强杀接管、其他服务强杀、依赖停机降级和数据库断连恢复；模型和 MCP 均为受控样本。完整组合首次结果待执行，不能预先写成通过。
+
+旧 Compose、独立升级回滚和上表独有覆盖仍保留，尚未完成退役；新组合不会自动替换 Windows 运行版本。
