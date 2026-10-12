@@ -1,6 +1,16 @@
 # 端到端交付账本
 
+## 持久化故障验收增量（待 Linux 执行）
+
+新增 `Persistent storage faults` 独立工作流：PostgreSQL 位于容器内 192 MiB tmpfs，运行库和产物库分开；写满只作用于这个一次性卷，不挂载宿主目录。先保存笔记/回执和旧产物，再观察实际 ENOSPC 与零剩余空间，验证新写入没有虚报成功。移除专门的填充文件后，用 pg_ctl 在原数据目录强制停止并重新启动 PostgreSQL；不重启容器，避免 tmpfs 被清空后冒充恢复。随后检查旧资料、旧 fence 拒绝、重复操作唯一效果、回执/事件一致和产物哈希/引用。
+
+本机只完成编译、全量 Go 回归和 vet；因无 Docker，此新磁盘场景明确跳过，不能计为运行通过。代码检查同时修复容量/连接类 PostgreSQL 错误被当成 HTTP 400 的问题：已识别的数据库不可用返回 503 与 Retry-After，查询超时返回 504，消息不暴露内部路径和连接配置。约束/输入错误仍为客户端错误，不能自动重试未知外部效果。错误分类回归已通过，实际磁盘场景与新提交 Linux 全链路仍须验收。
+
+独立只读评审发现并修正三个问题：旧资料必须在任何重放/补写前按原 ID/哈希核对全文、元数据、回执及引用；pgx 的 UnexpectedEOF/ErrConnClosed 也要按可解包错误分类；工作流触发范围要包括持久化实现与依赖。复核确认代码修正，未把评审当作运行证据。
+
 ## 2026-10-12 已完成的 Web 批次与后续存储边界
+
+- 新 Storage 独立数据库的 [CI 38191397498](https://github.com/euler-gaozl/agent-os/actions/runs/38191397498)（`bcd568c`）通过。运行库实际移除了旧产物表；Storage 的独立库没有 documents/runs/calls；旧 SQL 越权被拒绝。完整 DSH 强杀接管、笔记在 Storage 停机期间由 Runtime 管理、单服务部署及混合负载通过。12 个任务全部完成，4 个读取客户端各至少 90 秒，真实执行重叠 80.755 秒，3311 次读取中 3310 成功/1 次 429、无异常响应，P95 52.08 ms，最长任务 79.604 秒，采样内存峰值 349.71 MiB。约束及不能外推的范围与下条相同；这是同一 PostgreSQL 服务器内的独立数据库，不是物理节点 HA。
 
 - 提交 `be5be64` 的 [Platform 38188937114](https://github.com/euler-gaozl/agent-os/actions/runs/38188937114) 两作业通过：Go race、两套 Web 测试/构建、沙箱故障、独立服务部署和混合负载。受控模型/MCP/OTLP，不消耗用户 API。所有平台容器（含 PostgreSQL、双 Runtime/ToolHub/Worker、Sandbox broker、Telemetry）CPU 限额合计 2 核，内存限额 2944 MiB；4 个读取客户端各持续至少 90 秒，12 个任务全部完成，实际执行区间与读取重叠 81.366 秒。3311 次读取中 3310 成功、1 次 429、无异常响应，P95 52.20 ms；内存采样峰值 341.71 MiB，最长任务 80.988 秒。无 OOM/异常重启。外部模型/检索和沙箱工作负载不在平台预算内，这不是生产并发或目标资料量下的混合负载验收。
 - 同提交 [真实检索 38188937085](https://github.com/euler-gaozl/agent-os/actions/runs/38188937085) 和 [Langfuse 38188937089](https://github.com/euler-gaozl/agent-os/actions/runs/38188937089) 通过。Langfuse 实际接收、原始身份与名称回读、私密内容排除，以及确认丢失后的两次观察符合 v4 至少一次契约；没有承诺第三方观测去重。

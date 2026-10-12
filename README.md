@@ -54,6 +54,6 @@ pnpm --dir web run build
 - [后续工作](docs/architecture/next-steps.md)
 - [v0.1 独立架构评审原文](docs/architecture/agent-os-v0.1-independent-review.txt)（历史基线，不是本版代码审计）
 
-各服务具有独立二进制、镜像、配置、服务身份和发布入口，12 个部署单位已通过 Linux CI 的单独部署检查，共用中台 Web。ToolHub/Knowledge/Sources 拥有各自 schema；Sandbox/Telemetry 通过 HTTP 对接 Runtime；Console/Futures 无数据库权限。Runtime/Worker 属于同一执行数据域，包含持久化笔记；Storage 已移除笔记表依赖，产物通过 HTTP 读写，独立数据库测试通过，新边界 Linux 全链路待复验。百万文档 / 千万分块已有受限检索实测；平台 2 核 / 4 GB 下的受控 12 任务混合负载已通过，物理节点 HA 仍待验收；参见[交付账本](docs/delivery-v0.6.md)，不能将一次容量测试写成全部生产能力。
+各服务具有独立二进制、镜像、配置、服务身份和发布入口，12 个部署单位已通过 Linux CI 的单独部署检查，共用中台 Web。ToolHub/Knowledge/Sources 拥有各自 schema；Sandbox/Telemetry 通过 HTTP 对接 Runtime；Console/Futures 无数据库权限。Runtime/Worker 属于同一执行数据域，包含持久化笔记；Storage 已移除笔记表依赖，产物通过 HTTP 读写，独立数据库及 Linux 容器全链路测试通过。百万文档 / 千万分块已有受限检索实测；平台 2 核 / 4 GB 下的受控 12 任务混合负载已通过，物理节点 HA 仍待验收；参见[交付账本](docs/delivery-v0.6.md)，不能将一次容量测试写成全部生产能力。
 
 期货应用只负责资料收集、校验、分类、留存和客观事实反馈。预测、交易方向与操作决定由用户负责。

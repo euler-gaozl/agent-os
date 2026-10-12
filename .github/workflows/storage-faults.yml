@@ -1,0 +1,39 @@
+name: Persistent storage faults
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'internal/platform/**'
+      - 'internal/recordstore/**'
+      - 'internal/servicehttp/**'
+      - 'internal/serviceclient/**'
+      - 'internal/contracts/**'
+      - 'internal/toolcontract/**'
+      - 'services/storage/**'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/storage-faults.yml'
+permissions: {contents: read}
+jobs:
+  disk-full:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: {go-version-file: go.mod}
+      - name: Pull disposable PostgreSQL fixture
+        run: docker pull postgres:18
+      - name: Real ENOSPC, retained receipts and recovery on the same volume
+        env: {TEST_POSTGRES_DISK_FULL: '1'}
+        run: |
+          mkdir -p .state/storage-fault-evidence
+          set -o pipefail
+          go test -v -count=1 -timeout 4m ./internal/platform -run '^TestPostgresDiskFullPreservesReceiptsAndRecovers$' | tee .state/storage-fault-evidence/test.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: storage-fault-evidence, path: '.state/storage-fault-evidence/'}
+      - name: Dispose only fault-test containers
+        if: always()
+        run: |
+          docker ps -aq --filter label=agentos.test=disk-full | xargs -r docker rm -f

@@ -3,12 +3,52 @@ package servicehttp
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
+
+func TestClosedDatabaseConnectionIsUnavailable(t *testing.T) {
+	for _, cause := range []error{io.ErrUnexpectedEOF, pgconn.ErrConnClosed} {
+		w := httptest.NewRecorder()
+		Wrap(func(http.ResponseWriter, *http.Request) error {
+			return fmt.Errorf("private database context: %w", cause)
+		})(w, httptest.NewRequest("POST", "/fixture", nil))
+		if w.Code != 503 || strings.Contains(w.Body.String(), "private") || w.Header().Get("Retry-After") != "1" {
+			t.Fatal("closed connection misclassified or leaked details", w.Code, w.Body.String())
+		}
+	}
+}
+
+func TestDatabaseCapacityFailuresAreUnavailableNotBadInput(t *testing.T) {
+	for _, code := range []string{"53100", "53200", "53300", "08006", "57P01", "57P02", "57P03", "57014"} {
+		w := httptest.NewRecorder()
+		h := Wrap(func(http.ResponseWriter, *http.Request) error {
+			return fmt.Errorf("retaining data: %w", &pgconn.PgError{Code: code, Message: "private database path and query must not be returned"})
+		})
+		h(w, httptest.NewRequest("POST", "/fixture", nil))
+		want := 503
+		if code == "57014" {
+			want = 504
+		}
+		if w.Code != want || strings.Contains(w.Body.String(), "private") || (want == 503 && w.Header().Get("Retry-After") != "1") {
+			t.Fatal("operational failure classified as client input or leaked internal detail", code, w.Code, w.Body.String())
+		}
+	}
+	w := httptest.NewRecorder()
+	Wrap(func(http.ResponseWriter, *http.Request) error {
+		return &pgconn.PgError{Code: "23505", Message: "resource already exists"}
+	})(w, httptest.NewRequest("POST", "/fixture", nil))
+	if w.Code != 400 {
+		t.Fatal("validation conflict was declared retryable", w.Code)
+	}
+}
 
 func TestServiceIdentityCannotCrossAdministrativeBoundary(t *testing.T) {
 	tokens := map[string]string{"control": strings.Repeat("c", 40), "futures": strings.Repeat("f", 40), "worker": strings.Repeat("w", 40)}
