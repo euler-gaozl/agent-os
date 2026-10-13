@@ -7,7 +7,7 @@
     },
     "futures": {
       "repository": "agent-os-futures",
-      "commit": "b1bd07f82bc66f93c65eb103f90466746b6fd572"
+      "commit": "12a11f317107e4f69183d1f9813289b668433dec"
     },
     "registry": {
       "repository": "agent-os-registry",
@@ -54,7 +54,7 @@
     },
     "runtime": {
       "repository": "agent-os-runtime",
-      "commit": "8bbcc6ddb975475ce384a91be502f19654c44f70"
+      "commit": "64e86867bbbbcb93deecaabe08da7587ff09db17"
     },
     "worker": {
       "owner_modules": [
