@@ -77,6 +77,7 @@ function Restore-PendingRelease([hashtable]$Layout,[string]$Role,[string]$Script
     # stays pending for repair; silently picking a third version is forbidden.
     $null=Read-ReleaseDescriptor $Layout $pending.prior -Verify
     $null=Assert-ReleaseConfiguration $Layout $Role $pending.prior
+    if($Role -in @('runtime','worker')){$priorDescriptor=Read-ReleaseDescriptor $Layout $pending.prior -Verify;Assert-SourceExecutionDeployment $Layout @{$Role=$priorDescriptor}}
     $pending=Save-ReleasePhase $Layout $Role $pending.id 'reverting'
     & $Checkpoint 'reverting'
     & (Join-Path $Scripts 'Stop-Local.ps1') -LayoutPath $Layout.layout_path -Service @($Role) -MaintenanceLock $Lock
@@ -111,6 +112,7 @@ function Invoke-ReleaseChange([hashtable]$Layout,[string]$Role,[string]$Action,[
     if($before.role -cne $Role -or $after.role -cne $Role){throw 'Descriptor does not match selected service.'}
     if($after.provenance['dirty']){throw 'Development builds cannot be activated as managed releases. Commit and rebuild first.'}
     Assert-CompatibleRelease $before $after
+    if($Role -in @('runtime','worker')){Assert-SourceExecutionDeployment $Layout @{$Role=$after}}
     $configHash=Assert-ReleaseConfiguration $Layout $Role $prior
     $targetBound=@{};foreach($key in $Target.Keys){$targetBound[$key]=$Target[$key]}
     if($targetBound['config_sha256'] -and $targetBound.config_sha256 -cne $configHash){throw 'Rollback configuration differs from the currently deployed configuration.'}

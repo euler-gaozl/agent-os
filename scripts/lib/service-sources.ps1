@@ -58,5 +58,5 @@ function Get-SelectedServiceSource([string]$IntegrationRoot,[string]$Role,[Syste
         $manifest=Get-Content -LiteralPath (Join-Path $sourceRoot 'vendor/modules.txt') -Raw
         if($manifest -notmatch ('(?m)^# '+[regex]::Escape($dependency.module)+' '+[regex]::Escape($dependency.version)+'\s*$')){throw 'Vendored transaction module version differs.'}
     }elseif($dependencies.Count -or $lockedDependencies.Count){throw 'Unreviewed cross-owner module dependency.'}
-    return @{root=$sourceRoot;repository=$entry.repository;commit=$revision;sdk=$proof.sdk;owner_modules=$dependencies;contract=$owner.contract}
+    return @{root=$sourceRoot;repository=$entry.repository;commit=$revision;sdk=$proof.sdk;owner_modules=$dependencies;contract=$owner.contract;release=$owner}
 }

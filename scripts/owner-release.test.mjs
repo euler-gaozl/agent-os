@@ -9,6 +9,14 @@ function fixture(role){
  const image={Id:service.image,Os:'linux',Architecture:'amd64',Config:{User:service.user,Entrypoint:[service.entrypoint],Cmd:['--config','/run/service.json'],Healthcheck:{Test:['CMD',service.healthcheck]},Labels:{'org.agentos.role':role,'org.opencontainers.image.source':'https://github.com/euler-gaozl/'+service.repository,'org.opencontainers.image.revision':service.commit,'org.agentos.contract':JSON.stringify(contract),'org.agentos.builtin-tools':JSON.stringify(contract.tools),'org.agentos.worker-engines':JSON.stringify(contract.engines)}}};
  return {image,report:{passed:true,integration_commit:'c'.repeat(40),services:[service]}};
 }
+test('service contract overrides stay specific and require complete contracts',()=>{
+ const changed=structuredClone(definition);
+ changed.service_contracts={runtime:{...contractFor(definition,'runtime'),http:'runtime-source-v1',data:'working-state-v1'}};
+ assert.equal(contractFor(changed,'runtime').data,'working-state-v1');
+ assert.deepEqual(contractFor(changed,'worker'),contractFor(definition,'worker'));
+ delete changed.service_contracts.runtime.tools;
+ assert.throws(()=>contractFor(changed,'runtime'));
+});
 test('all Owner releases require attested identity, exact complete contracts and owner-specific executables',()=>{
  for(const role of Object.keys(definition.data_contracts).filter(x=>x!=='migrate-services')){
   const {image,report}=fixture(role);const receipt=ownerReceipt(role,image,report,definition,JSON.stringify(report));validateOwnerImage(role,image,receipt);

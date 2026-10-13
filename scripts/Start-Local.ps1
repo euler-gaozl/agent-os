@@ -28,6 +28,10 @@ $settings=Get-Content -LiteralPath $adminConfig -Raw|ConvertFrom-Json
 $uri=[uri]$settings.DATABASE_URL
 if($uri.Host -eq '127.0.0.1' -and $uri.Port -eq 55432){$held=if($MaintenanceLock){$MaintenanceLock}else{$maintenance};& (Join-Path $PSScriptRoot 'Start-Database.ps1') -LayoutPath $LayoutPath -MaintenanceLock $held}
 $releases=@{};foreach($role in $selected){$releases[$role]=Get-PlatformRelease $layout $role $PendingOperation -Verify}
+if($catalog.format -eq 2 -and @($selected|Where-Object{$_ -in @('runtime','worker')}).Count){
+ $executionOverrides=@{};foreach($role in @('runtime','worker')){if($releases.ContainsKey($role)){$executionOverrides[$role]=$releases[$role].descriptor}}
+ Assert-SourceExecutionDeployment $layout $executionOverrides
+}
 $previous=Read-PlatformProcesses $layout
 $knownRoots='D:\workspace\agent-platform\ops\managed-roots.json'
 if(Test-Path -LiteralPath $knownRoots){
@@ -80,7 +84,11 @@ try{
    if($release.format -eq 2 -and $release.reference['config_sha256'] -cne $configHash){throw ('Configuration differs from the registered deployment for '+$role+'. Reconcile the planned configuration change before startup.')}
    try{$effective=[Text.Encoding]::UTF8.GetString($configBytes)|ConvertFrom-Json -AsHashtable}catch{throw ('Invalid service configuration: '+$role)}
    $effective.INSTANCE_ID=$instance
-   if($role -eq 'worker'){$effective.DSH_RUNNER=Join-Path $release.assets.harness 'runner.mjs';$effective.AGENTOS_NODE=$release.assets.node}
+   if($role -eq 'worker'){
+    $effective.DSH_RUNNER=Join-Path $release.assets.harness 'runner.mjs';$effective.AGENTOS_NODE=$release.assets.node
+    if($effective['DSH_SOURCE_RUNNER']){throw 'Managed Worker source runner comes from the verified release asset, not service configuration.'}
+    if($release.assets['source_harness']){$effective.DSH_SOURCE_RUNNER=Join-Path $release.assets.source_harness 'source-runner.mjs'}
+   }
    if($role -eq 'control'){$effective.WEB_DIR=$release.assets.web}
    if($role -eq 'futures'){$effective.FUTURES_WEB_DIR=$release.assets.web}
    Write-PlatformJson $launchConfig $effective

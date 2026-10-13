@@ -1,0 +1,156 @@
+# Source-engine release policy. No configuration or database writes occur here.
+function Get-SourceEngineName { return 'dsh-source-639ed015-state-v1' }
+function Assert-SourceExecutionDescriptor([System.Collections.IDictionary]$Descriptor){
+    $source=$Descriptor['source_execution'];$asset=$Descriptor.assets['source_harness']
+    if(-not $source){if($asset){throw 'Source Harness asset has no execution provenance.'};return}
+    if($source.format -ne 1 -or $source.engine -cne (Get-SourceEngineName) -or $source.execution_protocol -cne 'runtime-execution-v1'){throw 'Unsupported source execution metadata.'}
+    switch($Descriptor.role){
+        runtime {
+            if($asset -or $source.state_protocol -cne 'source-state-recovery-v1' -or $source.submission_protocol -cne 'source-root-default-v1' -or $source.preview_protocol -cne 'source-recovery-preview-v1' -or $Descriptor.contract.http -cne 'agentos-http-v0.7-source-state-v1' -or $Descriptor.contract.data -cne 'execution-v0.7-working-state'){throw 'Runtime source protocols are incomplete.'}
+        }
+        worker {
+            if(-not $asset -or $source.state_protocol -cne 'source-state-recovery-v1' -or $source.manifest_sha256 -cnotmatch '^[a-f0-9]{64}$' -or $source.harness_commit -cnotmatch '^[a-f0-9]{40}$'){throw 'Worker source artifact provenance is incomplete.'}
+        }
+        default {throw 'Source execution capability belongs only to Runtime or Worker.'}
+    }
+}
+function Test-SourceRuntimeTransition([System.Collections.IDictionary]$Previous,[System.Collections.IDictionary]$Next){
+    if($Previous.role -cne 'runtime' -or $Next.role -cne 'runtime'){return $false}
+    $old=$Previous;$new=$Next
+    if($Previous.contract.data -ceq 'execution-v0.7-working-state'){$old=$Next;$new=$Previous}
+    if($old.contract.http -cne 'agentos-http-v0.6-notes-lifecycle' -or $old.contract.data -cne 'execution-v0.6-notes-lifecycle' -or $new.contract.http -cne 'agentos-http-v0.7-source-state-v1' -or $new.contract.data -cne 'execution-v0.7-working-state' -or -not $new['source_execution']){return $false}
+    Assert-SourceExecutionDescriptor $new
+    $normalized=@{http=$old.contract.http;data=$old.contract.data;engines=$new.contract.engines;tools=$new.contract.tools}
+    return (Get-ContractIdentity $old.contract) -ceq (Get-ContractIdentity $normalized)
+}
+function Assert-SourceExecutionPolicy([System.Collections.IDictionary]$Runtime,[System.Collections.IDictionary]$Worker,[string]$DefaultEngine,[System.Collections.IDictionary]$Facts){
+    Assert-SourceExecutionDescriptor $Runtime;Assert-SourceExecutionDescriptor $Worker
+    $source=Get-SourceEngineName
+    if(-not $DefaultEngine){$DefaultEngine='dsh-0.2.0-rc.2-evidence-v1'}
+    if($DefaultEngine -cnotin @('dsh-0.2.0-rc.2-evidence-v1',$source)){throw 'Unknown configured submission engine.'}
+    foreach($key in @('source_runs','resumable_source_runs','working_state_ready')){if(-not $Facts.Contains($key)){throw 'Execution compatibility facts are incomplete.'}}
+    if($Facts.source_runs -isnot [long] -and $Facts.source_runs -isnot [int]){throw 'Invalid source-run count.'}
+    if($Facts.resumable_source_runs -isnot [long] -and $Facts.resumable_source_runs -isnot [int]){throw 'Invalid resumable-source count.'}
+    if($Facts.source_runs -lt 0 -or $Facts.resumable_source_runs -lt 0 -or $Facts.resumable_source_runs -gt $Facts.source_runs -or $Facts.working_state_ready -isnot [bool]){throw 'Invalid execution compatibility facts.'}
+    $runtimeSource=[bool]$Runtime['source_execution'];$workerSource=[bool]$Worker['source_execution']
+    if($Runtime.contract.data -ceq 'execution-v0.7-working-state' -and -not $runtimeSource){throw 'New Runtime data contract lacks source protocol provenance.'}
+    if($runtimeSource -and -not $Facts.working_state_ready){throw 'Run the additive Runtime working-state migration before selecting this release.'}
+    if(($workerSource -or $DefaultEngine -ceq $source -or $Facts.source_runs -gt 0) -and -not $runtimeSource){throw 'Source execution or retained state requires the compatible Runtime; downgrade refused.'}
+    if(($DefaultEngine -ceq $source -or $Facts.resumable_source_runs -gt 0) -and -not $workerSource){throw 'Default or resumable source tasks require a pinned source-enabled Worker; rollback refused.'}
+}
+function Get-SourceExecutionFacts([hashtable]$Layout,[System.Collections.IDictionary]$Configuration=$null){
+    . (Join-Path $PSScriptRoot 'platform-recovery.ps1')
+    $config=if($Configuration){$Configuration}else{Read-ReleaseJson (Join-Path $Layout.config_root 'services/runtime.json')}
+    $connection=Get-DatabaseConnection $config.DATABASE_URL
+    $sql=@'
+BEGIN READ ONLY;
+SET LOCAL statement_timeout='10000';
+WITH state_table AS (SELECT to_regclass('public.run_working_states') AS oid),
+required_columns(name,type) AS (VALUES
+ ('run_id','text'),('revision','bigint'),('operation_id','text'),('request_hash','text'),
+ ('source_rule_revision','bigint'),('source_owner','text'),('source_fence','bigint'),
+ ('actor_agent','text'),('reason','text'),('body','jsonb'),('evidence','jsonb'),
+ ('receipt','jsonb'),('created_at','timestamp with time zone')),
+required_keys(names) AS (VALUES (ARRAY['run_id','revision']::text[]),(ARRAY['run_id','operation_id']::text[]))
+SELECT jsonb_build_object(
+ 'source_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-state-v1'),
+ 'resumable_source_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-state-v1' AND status NOT IN('completed','cancelled')),
+ 'working_state_ready',(SELECT CASE WHEN t.oid IS NULL THEN false ELSE
+ has_table_privilege(current_user,t.oid,'SELECT') AND has_table_privilege(current_user,t.oid,'INSERT')
+ AND NOT EXISTS(SELECT 1 FROM required_columns c WHERE NOT EXISTS(
+  SELECT 1 FROM pg_attribute a WHERE a.attrelid=t.oid AND a.attname=c.name AND NOT a.attisdropped
+  AND a.attnotnull AND format_type(a.atttypid,a.atttypmod)=c.type))
+ AND NOT EXISTS(SELECT 1 FROM required_keys k WHERE NOT EXISTS(
+  SELECT 1 FROM pg_index i WHERE i.indrelid=t.oid AND i.indisunique AND i.indisvalid AND i.indisready
+  AND i.indimmediate AND i.indpred IS NULL AND i.indexprs IS NULL AND i.indnkeyatts=2
+  AND (SELECT array_agg(a.attname::text ORDER BY p.ordinality)
+   FROM unnest(i.indkey) WITH ORDINALITY p(attnum,ordinality)
+   JOIN pg_attribute a ON a.attrelid=t.oid AND a.attnum=p.attnum WHERE p.ordinality<=i.indnkeyatts)=k.names))
+ END FROM state_table t)
+)::text FROM public.runs;
+COMMIT;
+'@
+    try{
+        $json=Invoke-PostgresTool -PostgresBin $Layout.postgres_bin -Tool psql -Connection $connection -Arguments @('-X','-w','-A','-t','-q','-v','ON_ERROR_STOP=1','-d',$connection.database,'-f','-') -InputText $sql -TimeoutMs 15000
+        return $json.Trim()|ConvertFrom-Json -AsHashtable
+    }finally{$config=$null;$connection=$null}
+}
+function Get-BoundRuntimeConfiguration([hashtable]$Layout,[System.Collections.IDictionary]$Catalog){
+    . (Join-Path $PSScriptRoot 'platform-processes.ps1')
+    $deployment=$Catalog.services.runtime
+    $path=Join-Path $Layout.config_root 'services/runtime.json'
+    # Read/hash the same bytes. A file edited without a committed configuration
+    # migration must never authorize removing the live Runtime's required Worker.
+    $bytes=[IO.File]::ReadAllBytes($path)
+    try{
+        $hash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
+        if($deployment.current['config_sha256'] -cne $hash){throw 'Runtime configuration differs from its registered deployment; reconcile it before execution maintenance.'}
+        $config=[Text.Encoding]::UTF8.GetString($bytes)|ConvertFrom-Json -AsHashtable
+    }finally{[Array]::Clear($bytes,0,$bytes.Length)}
+    $allowed=@($deployment.current)
+    if($deployment['pending']){$allowed+=@($deployment.pending.prior,$deployment.pending.target)}
+    foreach($entry in @((Read-PlatformProcesses $Layout)|Where-Object role -eq 'runtime')){
+        $state=Get-PlatformInstanceState $entry $Layout
+        if($state.requires_stop -or (-not $state.process -and $state.members.Count)){throw 'Runtime process ownership is unresolved; reconcile it before execution maintenance.'}
+        if(-not $state.process){continue}
+        if(-not $entry['job_name'] -or -not $entry['launch_config'] -or $entry['source_config_sha256'] -cne $hash){throw 'Live Runtime configuration is not bound to the registered deployment.'}
+        $reference=@($allowed|Where-Object{$entry['release_reference'] -and $_.id -ceq $entry.release_reference.id})
+        if($reference.Count -eq 0){throw 'Live Runtime does not belong to the current or pending deployment.'}
+        $descriptor=Read-ReleaseDescriptor $Layout $reference[0] -Verify
+        if($entry.binary -ne (Resolve-ReleasePath $Layout.release_root $descriptor.assets.binary)){throw 'Live Runtime binary differs from its deployment.'}
+        # Get-PlatformInstanceState validated the protected launch snapshot hash.
+        # Check the values as well as the declared source hash, including the DB
+        # whose tasks will be queried. No credentials are returned or logged.
+        $launch=Read-ReleaseJson $entry.launch_config
+        try{
+            foreach($key in @('DEFAULT_RUN_ENGINE','DATABASE_URL')){
+                if([string]$launch[$key] -cne [string]$config[$key]){throw 'Live Runtime execution configuration differs from the registered configuration.'}
+            }
+        }finally{$launch=$null}
+    }
+    return $config
+}
+function Assert-SourceExecutionDeployment([hashtable]$Layout,[System.Collections.IDictionary]$Overrides=@{}){
+    $catalog=Read-ReleaseCatalog $Layout
+    if($catalog.format -ne 2){return}
+    $descriptors=@{}
+    foreach($role in @('runtime','worker')){
+        if($Overrides.Contains($role)){$descriptors[$role]=$Overrides[$role]}
+        else{
+            if(-not $catalog.services.Contains($role)){throw 'Execution release pair is missing from the catalog.'}
+            $descriptors[$role]=Read-ReleaseDescriptor $Layout $catalog.services[$role].current -Verify
+        }
+    }
+    $config=Get-BoundRuntimeConfiguration $Layout $catalog
+    try{
+        $facts=Get-SourceExecutionFacts $Layout $config
+        Assert-SourceExecutionPolicy $descriptors.runtime $descriptors.worker ([string]$config['DEFAULT_RUN_ENGINE']) $facts
+    }finally{$config=$null}
+}
+function Copy-PinnedSourceHarness([string]$Artifact,[string]$Destination,[string]$PinFile){
+    $artifactRoot=[IO.Path]::GetFullPath($Artifact)
+    Assert-ReleasePhysicalPath (Split-Path -Parent ([IO.Path]::GetFullPath($PinFile))) $PinFile
+    Assert-ReleasePhysicalPath (Split-Path -Parent ([IO.Path]::GetFullPath($Destination))) $Destination
+    $pin=Read-ReleaseJson $PinFile
+    if($pin.format -ne 1 -or $pin.engine -cne (Get-SourceEngineName) -or $pin.manifest_sha256 -cnotmatch '^[a-f0-9]{64}$' -or $pin.commit -cnotmatch '^[a-f0-9]{40}$'){throw 'Invalid compiled source Harness pin.'}
+    $manifestPath=Join-Path $artifactRoot 'dist/manifest.json'
+    Assert-ReleasePhysicalPath $artifactRoot $manifestPath
+    if((Get-FileHash -LiteralPath $manifestPath).Hash.ToLowerInvariant() -cne $pin.manifest_sha256){throw 'Harness manifest differs from the selected Worker compiled pin.'}
+    $manifest=Read-ReleaseJson $manifestPath
+    if($manifest.source_engine -cne $pin.engine -or $manifest.upstream_commit -cne $pin.upstream_commit){throw 'Harness source provenance mismatch.'}
+    if(Test-Path -LiteralPath $Destination){throw 'Source Harness destination must be new.'}
+    $files=@{'source-runner.mjs'=$manifest.source_runner_sha256;'dist/kernel.mjs'=$manifest.kernel_sha256;'dist/THIRD_PARTY_NOTICES.txt'=$manifest.notices_sha256;'dist/manifest.json'=$pin.manifest_sha256}
+    foreach($relative in $files.Keys){
+        $inputPath=Resolve-ReleasePath $artifactRoot $relative
+        Assert-ReleasePhysicalPath $artifactRoot $inputPath
+        if($files[$relative] -cnotmatch '^[a-f0-9]{64}$' -or (Get-Item -LiteralPath $inputPath).PSIsContainer -or (Get-FileHash -LiteralPath $inputPath).Hash.ToLowerInvariant() -cne $files[$relative]){throw 'Source Harness file does not match its manifest.'}
+    }
+    $null=New-Item -ItemType Directory -Path (Join-Path $Destination 'dist') -Force
+    foreach($relative in $files.Keys){
+        $target=Resolve-ReleasePath $Destination $relative
+        Copy-Item -LiteralPath (Resolve-ReleasePath $artifactRoot $relative) -Destination $target
+        if((Get-FileHash -LiteralPath $target).Hash.ToLowerInvariant() -cne $files[$relative]){throw 'Copied source Harness content differs.'}
+    }
+    Copy-Item -LiteralPath $PinFile -Destination (Join-Path $Destination 'source-lock.json')
+    return @{format=1;engine=$pin.engine;execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';manifest_sha256=$pin.manifest_sha256;harness_commit=$pin.commit}
+}

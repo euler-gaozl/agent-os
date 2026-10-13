@@ -1,5 +1,6 @@
 # One atomic catalog owns committed and pending Windows releases. Paths inside
 # descriptors are relative so a verified backup can reconstruct the same bundle.
+. (Join-Path $PSScriptRoot 'platform-source-execution.ps1')
 function Read-ReleaseJson([string]$Path){
     try{return Get-Content -LiteralPath $Path -Raw|ConvertFrom-Json -AsHashtable -DateKind String}catch{throw ('Invalid release metadata: '+[IO.Path]::GetFileName($Path))}
 }
@@ -54,11 +55,13 @@ function Get-ReleaseInventory([string]$Root,[System.Collections.IDictionary]$Ass
     }
     return @{files=@($files.Keys|Sort-Object|ForEach-Object{$files[$_]});links=@($links.Keys|Sort-Object|ForEach-Object{$links[$_]})}
 }
-function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Assets,[System.Collections.IDictionary]$Contract,[System.Collections.IDictionary]$Provenance){
+function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Assets,[System.Collections.IDictionary]$Contract,[System.Collections.IDictionary]$Provenance,[System.Collections.IDictionary]$SourceExecution=$null){
     Assert-ReleaseAssets $Role $Assets
     $identifier=$Role+'-'+[guid]::NewGuid().ToString('N')
     $inventory=Get-ReleaseInventory $Layout.release_root $Assets
     $descriptor=@{format=1;id=$identifier;role=$Role;created_at=[datetime]::UtcNow.ToString('o');assets=$Assets;contract=$Contract;provenance=$Provenance;files=$inventory.files;links=$inventory.links}
+    if($SourceExecution){$descriptor.source_execution=$SourceExecution}
+    Assert-SourceExecutionDescriptor $descriptor
     $relative='descriptors/'+$identifier+'.json';$path=Resolve-ReleasePath $Layout.release_root $relative
     Assert-ReleasePhysicalPath $Layout.release_root $path
     if(Test-Path -LiteralPath $path){throw 'Release descriptor already exists.'}
@@ -73,6 +76,7 @@ function Read-ReleaseDescriptor([hashtable]$Layout,[System.Collections.IDictiona
     $descriptor=Read-ReleaseJson $path
     if($descriptor.format -ne 1 -or $descriptor.id -cne $Reference.id -or -not $descriptor.assets['binary']){throw 'Invalid release descriptor identity.'}
     Assert-ReleaseAssets $descriptor.role $descriptor.assets
+    Assert-SourceExecutionDescriptor $descriptor
     foreach($relative in $descriptor.assets.Values){$null=Resolve-ReleasePath $Layout.release_root $relative}
     if($Verify){
         $actual=Get-ReleaseInventory $Layout.release_root $descriptor.assets
@@ -154,6 +158,7 @@ function Get-ServiceReleaseContract([string]$ProjectRoot,[string]$Role){
 }
 function Get-ContractForService([System.Collections.IDictionary]$Contracts,[string]$Role){
     if($contracts.format -ne 1 -or -not $contracts.data_contracts.Contains($Role)){throw 'No reviewed Windows contract for this service.'}
+    if($Contracts['service_contracts'] -and $Contracts.service_contracts.Contains($Role)){$override=$Contracts.service_contracts[$Role];$null=Get-ContractIdentity $override;return $override}
     $engines=@();$tools=@()
     if($Role -eq 'worker'){$engines=@($contracts.worker_engines)}
     if($Role -in @('worker','runtime','registry','toolhub','control','futures')){$tools=@($contracts.builtin_tools)}
@@ -162,13 +167,17 @@ function Get-ContractForService([System.Collections.IDictionary]$Contracts,[stri
 function Assert-ReleaseAssets([string]$Role,[System.Collections.IDictionary]$Assets){
     if($Role -notin @('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','sources','migrate-services')){throw 'Unknown release role.'}
     $expected=@('binary');if($Role -eq 'worker'){$expected+=@('node','harness')};if($Role -in @('control','futures')){$expected+='web'}
+    if($Role -eq 'worker' -and $Assets.Contains('source_harness')){$expected+='source_harness'}
     if(@(Compare-Object @($Assets.Keys|Sort-Object) @($expected|Sort-Object)).Count){throw 'Release does not contain the complete role-specific asset set.'}
 }
 function Assert-CompatibleRelease([System.Collections.IDictionary]$Previous,[System.Collections.IDictionary]$Next){
     if($Previous.role -cne $Next.role){throw 'Cannot replace a release with another service role.'}
     # Both candidates can write BEFORE readiness. Equality is deliberate: the
     # previous release must understand candidate writes even when startup fails.
-    if((Get-ContractIdentity $Previous.contract) -cne (Get-ContractIdentity $Next.contract)){throw 'Bidirectional release compatibility is not established. A coordinated migration is required; automatic rollback cannot undo database writes.'}
+    if((Get-ContractIdentity $Previous.contract) -cne (Get-ContractIdentity $Next.contract) -and -not(Test-SourceRuntimeTransition $Previous $Next)){throw 'Bidirectional release compatibility is not established. A coordinated migration is required; automatic rollback cannot undo database writes.'}
+    # The one reviewed additive Runtime transition above is conditional on the
+    # live schema, selected Worker and retained tasks. Operations check those
+    # before stopping anything, including recovery of an interrupted release.
 }
 function Export-ReleaseCatalog([hashtable]$Layout,[string]$Destination){
     $catalog=Read-ReleaseCatalog $Layout;Assert-NoPendingRelease $catalog

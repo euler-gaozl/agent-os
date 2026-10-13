@@ -3,6 +3,7 @@ import {createHash} from 'node:crypto';
 
 export function contractFor(definition,role){
  assert.equal(definition.format,1);assert(definition.data_contracts?.[role]);
+ if(definition.service_contracts?.[role])return normalize(definition.service_contracts[role]);
  return normalize({http:definition.http_contract,data:definition.data_contracts[role],engines:role==='worker'?definition.worker_engines:[],tools:['worker','runtime','registry','toolhub','control','futures'].includes(role)?definition.builtin_tools:[]});
 }
 function normalize(c){

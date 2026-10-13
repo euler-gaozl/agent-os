@@ -1,6 +1,6 @@
 param(
     [string[]]$Service=@('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','sources','migrate-services'),
-    [string]$LayoutPath='', [string]$Pnpm='pnpm', [string]$NodeBinary='', [switch]$AllowDirty
+    [string]$LayoutPath='', [string]$Pnpm='pnpm', [string]$NodeBinary='', [string]$SourceArtifact='', [switch]$AllowDirty
 )
 $ErrorActionPreference='Stop'
 $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -14,6 +14,7 @@ $saved=@{};foreach($key in @('PATH','GOPATH','GOCACHE','GOWORK','GOENV','GOFLAGS
 try{
     $allowed=@('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','sources','migrate-services')
     if(-not $Service.Count){throw 'Select at least one service to build.'}
+    if($SourceArtifact -and 'worker' -notin $Service){throw 'SourceArtifact requires a selected Worker build.'}
     foreach($role in $Service){if($role -notin $allowed){throw ('Unknown service: '+$role)}}
     if(Test-Path -LiteralPath (Join-Path $layout.release_root 'current.json')){Assert-NoPendingRelease (Read-ReleaseCatalog $layout)}
     $revision=(& git -C $repoRoot rev-parse HEAD).Trim();if($LASTEXITCODE){throw 'Cannot identify build source.'}
@@ -37,6 +38,10 @@ try{
             $contract=Get-ServiceReleaseContract $repoRoot $role
             $owner=Get-SelectedServiceSource $repoRoot $role $contract
             if($owner){$contract=$owner.contract}
+            $sourceExecution=$null
+            if($role -eq 'runtime' -and $owner -and $owner.release['source_submission_protocol']){
+                $sourceExecution=@{format=1;engine=$owner.release.source_engine_candidate;execution_protocol=$owner.release.execution_protocol;state_protocol=$owner.release.source_management_protocol;submission_protocol=$owner.release.source_submission_protocol;preview_protocol=$owner.release.source_management_preview_protocol}
+            }
             $directory=Join-Path $layout.release_root ('bundles/'+$role+'-'+$buildId)
             Assert-ReleasePhysicalPath $layout.release_root $directory
             if(Test-Path -LiteralPath $directory){throw 'Build destination already exists.'}
@@ -91,6 +96,12 @@ try{
                 if(@(Get-ChildItem -LiteralPath $harness -Recurse -Force|Where-Object{$_.Attributes -band [IO.FileAttributes]::ReparsePoint}).Count){throw 'Windows Harness bundle must not contain directory or file links.'}
                 $assets.node=Get-ReleaseRelative $layout.release_root (Join-Path $directory 'node.exe')
                 $assets.harness=Get-ReleaseRelative $layout.release_root $harness
+                if($SourceArtifact){
+                    if(-not $owner){throw 'Source Harness requires an independently pinned Worker source.'}
+                    $sourcePath=Join-Path $directory 'source-harness'
+                    $sourceExecution=Copy-PinnedSourceHarness $SourceArtifact $sourcePath (Join-Path $owner.root 'worker/source-harness-lock.json')
+                    $assets.source_harness=Get-ReleaseRelative $layout.release_root $sourcePath
+                }
             }
             if($role -in @('control','futures')){
                 $webSource=Join-Path $owner.root 'web'
@@ -107,7 +118,7 @@ try{
             $provenance=@{kind='source-build';commit=$revision;dirty=$dirty;built_at=[datetime]::UtcNow.ToString('o')}
             if($owner){$after=Get-SelectedServiceSource $repoRoot $role $contract;if($after.commit -cne $owner.commit){throw 'Service source changed while packaging runtime assets.'}}
             if($owner){$provenance=@{kind='independent-source-build';repository=$owner.repository;commit=$owner.commit;integration_commit=$revision;dirty=$dirty;sdk=$owner.sdk;owner_modules=$owner.owner_modules;built_at=[datetime]::UtcNow.ToString('o')}}
-            $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance
+            $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance $sourceExecution
         }
     }finally{Pop-Location}
     $staged=Join-Path $layout.release_root ('staged/'+$buildId+'.json')

@@ -7,6 +7,7 @@ param(
     [string]$BackupDirectory='',
     [string]$Pnpm='pnpm',
     [string]$ReleaseSet='',
+    [string]$SourceArtifact='',
     [switch]$WithDatabase
 )
 $ErrorActionPreference='Stop'
@@ -34,8 +35,8 @@ switch($Action){
     }
     doctor {& (Join-Path $PSScriptRoot 'Doctor-Local.ps1') -LayoutPath $LayoutPath}
     build {
-        if($Service.Count){& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Service $Service -Pnpm $Pnpm}
-        else{& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Pnpm $Pnpm}
+        if($Service.Count){& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Service $Service -Pnpm $Pnpm -SourceArtifact $SourceArtifact}
+        else{& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Pnpm $Pnpm -SourceArtifact $SourceArtifact}
     }
     'restore-check' {
         if(-not $BackupDirectory){throw 'restore-check requires -BackupDirectory.'}
