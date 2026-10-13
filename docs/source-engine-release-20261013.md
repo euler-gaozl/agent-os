@@ -1,5 +1,7 @@
 # 源码执行器的 Windows 发布保护
 
+后续实际部署已完成：13 次升级/回退、真实 DeepSeek 工作状态任务及追加状态的完整隔离恢复见[激活验收](source-engine-activation-20261013.md)。下文记录发布保护实现时的先后顺序，其中“尚未激活”描述当时状态。
+
 2026-10-13。本增量接在 [提交与工作状态管理](source-engine-submission-20261013.md) 之后。集成源码锁选择 Runtime `a916ab1`、Worker `70d45cd`、Console `1de4118`；Worker 仍通过固定的 Runtime `v0.1.0-rc.2` 窄执行包保持事务归属。源码锁只是下一次构建输入，不会改动已安装 catalog、数据库或默认执行器。
 
 ## 发布行为
