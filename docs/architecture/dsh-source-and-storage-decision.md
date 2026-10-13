@@ -63,6 +63,20 @@ Worker 专用 HTTP 要求有效租约/fence、新引擎、同运行数字操作�
 
 最终注释/公开类型别名调整后定向复验 `local/evidence/p25-working-state-1375e48e8b0b435db9f8a9c857d4b2b1`：15 项状态/桥接/迁移测试零跳过，vet/build 通过，15 份记录的源码哈希全部匹配，临时数据库已停止。独立代理完成静态复核，未发现新增阻断问题；代理没有运行测试。丢回复测试是在实际 HTTP 成功后主动丢弃返回结果，不是实际断网或新引擎进程强杀；这两类实测仍留给后续 Node/Worker 联合验收。Runtime 本地候选提交为 `870a4dddc8174443b557b9e5fdb62a8e3af0bb3a`，尚未推送、发布模块或修改集成 source lock。
 
+### 源码 Harness 存储/上下文插件增量（协议夹具已验，真实 Worker 待接）
+
+本地 Harness 候选提交 `ec21432a91ad1b5b8081aed6aea854363080a6b7` 新增 `source-runner.mjs` 与 `src/source-platform.ts`。源码 DSH 继续负责完整循环；插件只接 `session/event`、`session/flush`、Prompt assembly 和受支持的 Compact 扩展点。旧 runner 文件及正式 npm 引擎不改，新 runner 要求明确的新 engine/evidence 协议。
+
+插件只在创建时获取一次事件前缀，之后增量序列化；传输队列最多 16 MiB，确认后释放，等待确认期间新增事件留到下一批。每次 flush 都发 checkpoint，即使无新事件也不省略，防止重建时事件数量改变桥接帧顺序。观察者错误被上游吞掉也会进入持续失败状态；自动 Compact 替换完整结束后 flush，模型/工具/状态/结束调用前再次检查并等待屏障。这里不建立第二套 JSONL 或数据库权威，也没有解决 Session 自身全历史内存增长。
+
+每次组装读取 Runtime 冻结回包，固定 format=1/字段顺序/read operation ID，投影完整 task、读取时约束、版本/失效标志和 WorkingSet。WorkingSet 保留来源 operation ID；完整响应哈希清单仍留在 Runtime，不在模型里重复。操作号变化使同内容也重新进入已记录、可计量的上下文，避免自动 Compact 恰好删除上一份状态。模板替换只做一次，`{{...}}` 原文保持字面值。可信系统提示明确派生 state/引用原文没有指令权，并区分读取时约束与 Runtime 后续冻结进请求的新规则。
+
+独立评审发现初版固定 64 KiB 保护会拒绝合法大回包，已改为去除重复哈希列表、按最终编码字节匹配 Worker 4 MiB 传输上限及少量封装空间，不截断任务/事实。实际 Node 夹具以含转义 tab 的 39,600 字节任务、14,400 字节约束、32 条观察/256 个来源引用、32 KiB 内工作集请求运行；在足够大的上下文下正常结束，新进程从冻结回复重放得到相同请求。低上下文窗口的另一个测试确认溢出会在模型调用前停止。Node 只检查自身实际消息及输出预留的启发式 token 预算；Runtime 最后追加的权威约束及真实模型请求仍需在 Worker 接入时核算，不能称总预算已闭合。
+
+最终证据 `local/evidence/dsh-source-baseline-446401e918bb4385ac340ab24a127fdf/result.json`：独立 Git 克隆离线安装、193 输入源码构建、16 项 Node 检查零跳过，两处 kernel/manifest/许可证字节一致，篡改上游拒绝构建。kernel SHA-256 为 `6f37d28cd08268fe29304b472a736efd0fe83fd5266d5b5902077395231fd121`。运行产物测试完全位于仓库外，无祖先 node_modules/package.json，实际执行自动 Compact；压缩摘要故意漏关键事实，但下一请求工作集完整，持久化失败后没有新的模型/工具调用。第一轮 `p25-source-runner-d13772ef594643f896a6ad17e7e5a998` 发现退出事件把失败码覆盖成 0，已修，失败记录保留。独立静态评审核对候选/克隆提交、7 份源码和3份构建哈希及 TAP，原两个评审问题关闭；评审代理没有执行测试。
+
+上述父进程仍为明确协议夹具，模型/状态/产物确认都是合成响应，不是 Runtime 数据库持久化或真实 Worker 强杀接管。下一项是发布固定 Runtime 模块及 Harness 包，Worker 校验 manifest 后才启用新引擎，接 Runtime 专用状态 HTTP，并在 Windows 真实进程/数据库中验证丢回复、取消、Compact 后接管和完整供应商请求预算。当前无付费模型、无 Actions、无部署切换；Session 长历史有界化、缓存清理和完整 P2.5 验收仍未完成。
+
 ## 数据分层与责任
 
 | 信息 | 模型当前上下文 | 必须持久化的地方与时机 | 失效/清理规则 |
