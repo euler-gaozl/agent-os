@@ -29,11 +29,23 @@ npm 对该 Session 版本的元数据没有 `gitHead`，相应版本标签查询
 
 独立评审发现上游 attribution 用 `createRequire(import.meta.url)('../package.json')` 读取版本，初版组合产物借用了平台 manifest，脱离源码目录实际失败。已用 `patches/inline-package-version.mjs` 精确内联锁定的原 LLM 包版本，构建清单记录转换代码、原文件、元数据与转换后哈希；不改写上游基线。失败复现保留于 `local/evidence/dsh-source-baseline-733f4828a9db469f91c2ff80c2764d97/missing-package-repro.tap`。
 
-最终源码基线报告 `local/evidence/dsh-source-baseline-53985dbcc54240a297df266faba7d74e/result.json`：独立克隆离线安装、两个绝对目录编译产物和清单/许可证字节一致；5 项真实 Node 检查零跳过，包括只带 runner/dist、无源码/package.json/node_modules 的模型→工具→结束回执，以及 flush 失败和实际 surface 替换后原事件保留；修改上游字节会拒绝构建。没有运行上游全量单测或完整类型检查，不将接口烟测描述成全框架行为等价。
+初次源码基线报告 `local/evidence/dsh-source-baseline-53985dbcc54240a297df266faba7d74e/result.json` 的 5 项检查通过，但评审发现产物夹具仍在 checkout 内，祖先依赖与工作目录可能掩盖文件查找。随后提交 `6f018a2` 将夹具移至仓库外，逐祖先拒绝 node_modules/package.json，子进程以产物目录工作、关闭全局模块查找并不继承 NODE_PATH。复验 `local/evidence/dsh-source-baseline-bb2d255e83dd4fd0830e67e51354a337/result.json`：独立克隆离线安装、两个绝对目录编译产物和清单/许可证字节一致，5 项真实 Node 检查零跳过；实际覆盖模型→工具→结束回执、flush 失败、surface 替换后原事件保留和修改上游字节拒绝构建。独立静态复核确认该隔离缺口关闭。独立性结论只覆盖此受控桥接路径，不是沙箱或全框架证明；没有运行上游全量单测或完整类型检查。
 
 另以现有真实 Worker `b07b739` 加载该隔离源码候选，长历史中断测试 `local/evidence/p2-worker-evidence-a2e180f890724de1ac1620c60335fea8/result.json` 通过：18,874,181 事件字节、40 批、16 次 Compact；回查回执提交后杀死进程，fence=2 接管、找回摘要遗漏的来源、重新读原文，已提交模型/回查无重复。实际 PostgreSQL、Worker 和 DSH；模型、ToolHub 路由与 Storage HTTP 为夹具，零付费调用，测试集群已停止。两个进程都使用源码候选，不是旧 npm 与源码间的跨版本重放验证。
 
 本增量没有正式部署、注册新引擎、完成持久化插件、结构化工作状态或有界内存。旧 npm 引擎和运行版本仍固定；P2 尚有覆盖退役条件，P2.5 的后续实现与验收继续按下文推进。
+
+### 结构化工作状态后端增量（尚未接 Agent）
+
+Runtime 新增独占 `run_working_states` 追加表。不能把它嵌入 `runs.state`：旧 Worker 的 Save 会用旧结构整体覆盖该字段。新表只给 Runtime SELECT/INSERT，Worker 没有直接权限。用户 task/constraints 从现有运行表投影；工作集只保存派生问题、观察/计划/第三方预测、冲突和待办。提交限定 32 KiB、条目和文本上限、严格字段/枚举并拒绝重复 JSON 键；没有“模型写入即已验证”的状态。
+
+写原语复用运行行锁，校验 owner/fence、取消、当前 rule_revision，再做 expected_revision CAS；原版本、稳定回执及不含正文的审计事件同事务。按 run+operation_id 幂等，哈希针对已验证结构且不包含可变 owner/fence。接管/取消后可单独找回回执，不因此取得写权限。观察引用在同一事务核对 calls 的本 run、tool、completed 与非空结果，并保存结果的规范化 SHA；完成回执不等于工具成功或内容真实。按版本保留历史，约束变更时旧工作集明确 stale；仍不声称总磁盘历史或 Node 内存有界。
+
+HTTP 只向 control 提供当前/历史版本及指定操作回执读取，显式阻断 ToolHub/Knowledge 原来的通配 run-read 权限。当前没有管理端写接口，也没有向旧 builtin 或 DSH 引擎开放该写方法。下一阶段必须连同新版工具授权、工作集上下文注入、人工修改计划失效、持久化/Compact 屏障和恢复一起验收，不能把后端原语写成端到端能力。
+
+本机首轮真实 PostgreSQL 受限 SET ROLE + HTTP、40 项/vet/build 通过，两项 opt-in Worker 二进制测试未执行。独立评审发现重复 JSON 键在结构体与 map 解析中不同，可能让同操作不同内容得到相同哈希；保留真实失败复现后，已改为局部拒绝重复键并对已校验结构哈希，没有修改旧 invocationHash 协议。修后证据 `local/evidence/p25-working-state-1f39c61b846f454697d7b6b2e98c0ffe`：7 项新工作状态 + 3 项迁移测试零跳过，vet/build 通过，临时数据库确认停止。未运行付费模型、未部署候选，Runtime 候选发布元数据已显式标记需协调迁移的新 HTTP/data 版本。
+
+最终将来源验证改为单个有界批量 SQL，避免最多 256 次往返；核对数量完整匹配，再按排序引用记录哈希。新增多有效来源的顺序/哈希与混合有效/跨任务来源拒绝断言，最终源码证据 `local/evidence/p25-working-state-2a0e4c65288e4b0897fac9830d551760` 同样 10 项零跳过、vet/build 通过，临时数据库确认停止。没有用减少查询次数冒充实际生产延迟测量。
 
 ## 数据分层与责任
 
