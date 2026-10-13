@@ -40,7 +40,7 @@
 | Runtime + Worker + DSH | Go 多实例领取与 fencing；固定源码 DSH 执行新任务，保留历史引擎；持久化工作状态、模型/工具回执重放、父子任务、约束修订、取消与 UNKNOWN 核对 |
 | ToolHub | MCP/Skill 不可变版本；包校验、验活、定义漂移检查、启停和审计；Runtime 保持执行效果与回执的事务边界 |
 | Storage | 独立管理不可变内容哈希产物、引用根和分页回读；Agent 持久化笔记归 Runtime，与执行回执原子提交 |
-| Knowledge | 原文件上传与正文提取；有界中文/英文词法索引检索；Milvus 向量检索和 LightRAG 图谱检索适配；后台索引与来源回查 |
+| Knowledge | 原文件上传与正文提取；有界词法检索及 Milvus/LightRAG 适配；后台索引、来源回查；[历史原网页/全文附件与备份恢复](docs/knowledge-source-archives-20261013.md) |
 | Console | 资源导入、Agent 编辑/试运行/发布、知识库上传/检索测试、运行/服务状态、加密凭证写入 |
 | Futures | 独立构建、端口和 BFF；直接调用发布的 Agent 确定版本，返回业务所需的进度与结果 |
 | Sources | 独立公开资料 MCP；管理员指定 HTTPS 域名、原始响应哈希留存、文本分页与定位；不绕过授权来源 |
