@@ -21,6 +21,20 @@
 
 npm 对该 Session 版本的元数据没有 `gitHead`，相应版本标签查询未返回结果，因此尚未证明哪一个上游 commit 与已安装包字节对应。保留当前锁定包作为旧任务执行器；新源码版本必须记录真实基线并单独验收，不能把当前 master 冒称原 rc.2 源码、直接替换未完成任务。分发保留上游 MIT 许可与必要第三方声明；不是把公开 fork 当私有仓库。
 
+### 2026-10-13 源码基线增量
+
+重新核对官方 tag API，现可定位 `dsh-v0.2.0-rc.2` 到 `639ed015397290b3745d163aafe02ffee4aa3f84`。这里补充新的查询证据，不把同版本文本当作 npm 包字节等价证明。官方固定提交 ZIP SHA-256 为 `add3d2079092810d682bdda5a18fa3b4c76cb595137067b8928b34b07d46375f`，本机缓存保留。
+
+`repos/agent-os-harness` 已建立本地独立 Git 仓库，源码候选提交 `d39fc3b`。导入实际内核依赖路径涉及的 21 个完整包目录及根许可证/说明，共 342 个上游文件；`upstream-lock.json` 逐文件记录哈希。固定 esbuild 0.28.2 和 Zod 4.6.5，从 TypeScript 编译，没有把 DSH npm 产物换个目录冒充源码。没有导入上游 Web、CLI、Desktop 或 Python SDK；原上游字节保留，本平台代码与打包转换分开。
+
+独立评审发现上游 attribution 用 `createRequire(import.meta.url)('../package.json')` 读取版本，初版组合产物借用了平台 manifest，脱离源码目录实际失败。已用 `patches/inline-package-version.mjs` 精确内联锁定的原 LLM 包版本，构建清单记录转换代码、原文件、元数据与转换后哈希；不改写上游基线。失败复现保留于 `local/evidence/dsh-source-baseline-733f4828a9db469f91c2ff80c2764d97/missing-package-repro.tap`。
+
+最终源码基线报告 `local/evidence/dsh-source-baseline-53985dbcc54240a297df266faba7d74e/result.json`：独立克隆离线安装、两个绝对目录编译产物和清单/许可证字节一致；5 项真实 Node 检查零跳过，包括只带 runner/dist、无源码/package.json/node_modules 的模型→工具→结束回执，以及 flush 失败和实际 surface 替换后原事件保留；修改上游字节会拒绝构建。没有运行上游全量单测或完整类型检查，不将接口烟测描述成全框架行为等价。
+
+另以现有真实 Worker `b07b739` 加载该隔离源码候选，长历史中断测试 `local/evidence/p2-worker-evidence-a2e180f890724de1ac1620c60335fea8/result.json` 通过：18,874,181 事件字节、40 批、16 次 Compact；回查回执提交后杀死进程，fence=2 接管、找回摘要遗漏的来源、重新读原文，已提交模型/回查无重复。实际 PostgreSQL、Worker 和 DSH；模型、ToolHub 路由与 Storage HTTP 为夹具，零付费调用，测试集群已停止。两个进程都使用源码候选，不是旧 npm 与源码间的跨版本重放验证。
+
+本增量没有正式部署、注册新引擎、完成持久化插件、结构化工作状态或有界内存。旧 npm 引擎和运行版本仍固定；P2 尚有覆盖退役条件，P2.5 的后续实现与验收继续按下文推进。
+
 ## 数据分层与责任
 
 | 信息 | 模型当前上下文 | 必须持久化的地方与时机 | 失效/清理规则 |
