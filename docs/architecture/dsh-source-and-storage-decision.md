@@ -2,6 +2,8 @@
 
 2026-10-12；服务于 Windows 单机交付。此文区分已核实事实、当前决定和待实现内容。
 
+2026-10-13 后续状态：resident-v2 已接到 Runtime/Worker 的独立版本选择和双编译 pin；旧接口保持 v1-only，Exchange 在写意图前及行锁内拒绝 engine 错配。实际进程中断、丢回复及旧 Worker 的 v1 接管通过，完整包搬迁后同七项复验通过。正式安装仍 v1；发布控制器 v2 兼容/回滚、原生快速恢复和缓存生命周期尚未完成，见[接入验收](../resident-engine-integration-20261013.md)。下文内核候选段保留其阶段边界，不能读成正式激活。
+
 ## 2026-10-13 驻留历史候选的实现与边界
 
 Harness `439b9086155383a4b4cb19c261ac6690ab02a352` 已实现 `dsh-source-639ed015-resident-v2`，单独构建到 `.work/resident-candidate`；生产默认仍为 state-v1。七处受哈希约束的转换修改 Session、Surface、tool history、Compact 边界读取、TokenMeter、Projection registry 和 RuntimeContext；不重写 AgentLoop、不编辑上游基线。ResidentEventLog 用 Map 保存绝对序号，最多 16 MiB 编码事件 / 8,192 项；归档确认水位取发出批次的尾部，等待回包时新产生的事件不被提前释放。

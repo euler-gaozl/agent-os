@@ -1,5 +1,9 @@
 # 端到端交付账本
 
+## 2026-10-13 Resident DSH 双版本接入及搬迁包
+
+Runtime 新增明确版本领取，旧接口仍 v1-only；Worker 固定两套编译 pin，按任务 engine 启动，无缺失回退。Runtime 79 条与 Worker 53 条检查通过；真实 PostgreSQL/Runtime HTTP/Worker/Node 的七种丢回复、强杀、受控恢复和旧 Worker 升级接管检查通过，离线完整包搬迁后同七项再验通过。模型、ToolHub 路由和 Storage 为夹具。没有正式部署、默认切换、付费模型或 Actions；版本、原始证据及后续发布守卫见[接入验收记录](resident-engine-integration-20261013.md)。原生快速恢复、缓存生命周期及完整 P2–P5 仍未完成。
+
 ## 2026-10-13 DSH 驻留历史候选实现（未部署）
 
 Harness 分支提交 `439b9086155383a4b4cb19c261ac6690ab02a352` 新增 resident-v2 独立构建，七处显式核心补丁把 Session 绝对序号与驻留存储分开；归档确认、固定消费者同步及失败检查完成后才释放历史。保留当前 surface、引用的工具定义、开放控制状态和未确认尾部；未知回执、消费者变化和超限均阻止后续效果。官方 AgentLoop、上游 342 份原文件及生产 v1 产物不改。
