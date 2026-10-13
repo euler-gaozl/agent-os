@@ -30,7 +30,7 @@
 | [Harness](https://github.com/euler-gaozl/agent-os-harness) | 固定 DSH 源码、持久化适配和上下文管理 |
 | [SDK](https://github.com/euler-gaozl/agent-os-sdk) | 固定公共协议与传输设施 |
 
-当前未关闭项见 [Windows 单机交付计划](docs/windows-single-machine-plan.md)：完整页面流程、真实研究成稿质量与引用回查、剩余迁移/旧权限退役及故障验收。各仓库 Actions 日常保持禁用，本机交付验收完成后集中运行一次最终 CI；代码同步不等于 CI 或生产验收通过。集成候选源码固定在 [service-sources.json](deploy/service-sources.json)，实际安装版本以本机 `ops/Platform.ps1 status` 和发布 catalog 为准。
+当前未关闭项见 [Windows 单机交付计划](docs/windows-single-machine-plan.md)：完整页面流程、真实研究成稿质量与采集证据闭环、剩余迁移/旧权限退役及故障验收。各仓库 Actions 日常保持禁用，本机交付验收完成后集中运行一次最终 CI；代码同步不等于 CI 或生产验收通过。集成候选源码固定在 [service-sources.json](deploy/service-sources.json)，实际安装版本以本机 `ops/Platform.ps1 status` 和发布 catalog 为准。
 
 ## 已实现
 
