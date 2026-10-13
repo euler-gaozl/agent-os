@@ -17,7 +17,7 @@
     "toolhub": "toolhub-v0.6-notes-lifecycle",
     "runtime": "execution-v0.6-notes-lifecycle",
     "worker": "execution-v0.6-notes-lifecycle",
-    "knowledge": "knowledge-v0.6",
+    "knowledge": "knowledge-v0.7-source-archives",
     "indexer": "knowledge-v0.6",
     "storage": "storage-v0.6-independent",
     "sandbox": "sandbox-v0.6-independent",
