@@ -24,6 +24,7 @@ if(-not $Destination.StartsWith('D:\workspace\agent-platform\local\backups\',[St
 $maintenance=Enter-PlatformMaintenance $StateRoot $MaintenanceLock
 try {
 Assert-NoPendingRelease (Read-ReleaseCatalog $layout)
+Assert-NoPendingOwnerMigration $layout
 Assert-AllDeploymentsQuiescent $layout
 $admin=Read-RecoveryJson (Join-Path $configRoot 'dev.json')
 $adminConnection=Get-DatabaseConnection $admin.DATABASE_URL

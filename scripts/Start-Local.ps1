@@ -8,20 +8,19 @@ $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $layout=Get-PlatformLayout $repoRoot $LayoutPath
 $maintenance=Enter-PlatformMaintenance $layout.state_root $MaintenanceLock
 try {
+Assert-NoPendingOwnerMigration $layout
 $manifestPath=Join-Path $layout.state_root 'processes.json'
 $indexPath=Join-Path $layout.release_root 'current.json'
 if(-not(Test-Path -LiteralPath $indexPath)){throw 'Run scripts/Build-Services.ps1 first.'}
 $catalog=Read-ReleaseCatalog $layout
-if($Migrate -and $catalog.format -eq 2){throw 'Versioned deployments require a coordinated schema/configuration migration; ordinary startup cannot change the registered configuration.'}
+if($Migrate){throw 'Startup requires a separately coordinated owner schema/configuration migration; it cannot execute the retired shared migrator.'}
 if($PendingOperation){if(-not $MaintenanceLock -or $Service.Count -ne 1 -or $Migrate){throw 'Pending startup is only allowed for the locked single-service release operation.'}}
 else{Assert-NoPendingRelease $catalog}
 $all=@('registry','runtime','storage','sandbox','toolhub','knowledge','indexer','sources','control','futures','worker')
 $selected=if($Service.Count){$Service}else{$all}
 foreach($role in $selected){if($role -notin ($all+@('telemetry'))){throw ('Unknown service '+$role)}}
 $selected=@(($all+@('telemetry'))|Where-Object{$_ -in $selected})
-if($catalog.format -eq 2){
- foreach($role in $selected){if(-not(Test-Path -LiteralPath (Join-Path $layout.config_root ('services/'+$role+'.json')))){throw ('Missing registered service configuration: '+$role+'. Restore it from the verified backup; ordinary startup will not run a migration.')}}
-}
+foreach($role in $selected){if(-not(Test-Path -LiteralPath (Join-Path $layout.config_root ('services/'+$role+'.json')))){throw ('Missing registered service configuration: '+$role+'. Restore it from the verified backup; ordinary startup will not run a migration.')}}
 $adminConfig=Join-Path $layout.config_root 'dev.json'
 if(-not(Test-Path -LiteralPath $adminConfig)){throw 'Initialize local PostgreSQL first.'}
 $settings=Get-Content -LiteralPath $adminConfig -Raw|ConvertFrom-Json
@@ -58,16 +57,9 @@ if(Test-Path -LiteralPath $knownRoots){
 }
 foreach($entry in $previous){if($entry.role -notin $selected){continue};$state=Get-PlatformInstanceState $entry $layout;if($state.process -or $state.members.Count -or $state.requires_stop){throw ('Service, descendants or unfinished stop present: '+$entry.role+'. Complete stop for only that service before restarting.')}}
 $previous=@($previous|Where-Object{$_['role'] -notin $selected})
-$needConfig=$catalog.format -eq 1 -and -not(Test-Path -LiteralPath (Join-Path $layout.config_root 'services/toolhub.json'))
-if($Migrate -or $needConfig){
- . (Join-Path $PSScriptRoot 'lib/platform-recovery.ps1')
- Assert-AllDeploymentsQuiescent $layout
- Push-Location $repoRoot
- try{$migrator=Get-PlatformRelease $layout 'migrate-services' -Verify;& $migrator.assets.binary --config $adminConfig --output (Join-Path $layout.config_root 'services');if($LASTEXITCODE -ne 0){throw 'Service migration failed; old data retained.'}}finally{Pop-Location}
-}
 if('worker' -in $selected){
  $nodeCommand=$releases.worker.assets.node
- if(-not(Get-Command $nodeCommand -ErrorAction SilentlyContinue)){throw 'Worker requires Node 24; configure AGENTOS_NODE in .state/dev.json and migrate.'}
+ if(-not(Get-Command $nodeCommand -ErrorAction SilentlyContinue)){throw 'Worker requires the Node 24 executable captured in its verified release bundle.'}
  if(-not(Test-Path -LiteralPath (Join-Path $releases.worker.assets.harness 'node_modules'))){throw 'The Worker release is missing its installed dependencies. Build a complete bundle before starting.'}
 }
 foreach($ui in @('control','futures')){if($ui -in $selected){if(-not(Test-Path -LiteralPath (Join-Path $releases[$ui].assets.web 'index.html'))){throw ('Build frontend before starting '+$ui)}}}

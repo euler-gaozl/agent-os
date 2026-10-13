@@ -3,6 +3,7 @@
 . (Join-Path $PSScriptRoot 'platform-source-execution.ps1')
 . (Join-Path $PSScriptRoot 'platform-receipts.ps1')
 . (Join-Path $PSScriptRoot 'platform-execution-access.ps1')
+. (Join-Path $PSScriptRoot 'platform-migration-journal.ps1')
 function Read-ReleaseJson([string]$Path){
     try{return Get-Content -LiteralPath $Path -Raw|ConvertFrom-Json -AsHashtable -DateKind String}catch{throw ('Invalid release metadata: '+[IO.Path]::GetFileName($Path))}
 }

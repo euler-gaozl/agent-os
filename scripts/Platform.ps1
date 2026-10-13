@@ -54,6 +54,7 @@ switch($Action){
         $restart=@();$workerCount=1
         $operationFailure=$null;$restartFailure=$null;$stopAttempted=$false
         try{
+            Assert-NoPendingOwnerMigration $layout
             Assert-NoPendingRelease (Read-ReleaseCatalog $layout)
             $manifest=Join-Path $layout.state_root 'processes.json'
             if(Test-Path -LiteralPath $manifest){

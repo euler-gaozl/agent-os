@@ -1,5 +1,5 @@
 param(
-    [string[]]$Service=@('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','sources','migrate-services'),
+    [string[]]$Service=@('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','sources'),
     [string]$LayoutPath='', [string]$Pnpm='pnpm', [string]$NodeBinary='', [string]$SourceArtifact='', [string]$ResidentArtifact='', [switch]$AllowDirty
 )
 $ErrorActionPreference='Stop'
@@ -12,7 +12,8 @@ $layout=Get-PlatformLayout $repoRoot $LayoutPath
 $maintenance=Enter-PlatformMaintenance $layout.state_root
 $saved=@{};foreach($key in @('PATH','GOPATH','GOCACHE','GOWORK','GOENV','GOFLAGS','GOTOOLCHAIN','GOROOT','GOOS','GOARCH','GOAMD64','GOEXPERIMENT','CGO_ENABLED')){$saved[$key]=[Environment]::GetEnvironmentVariable($key)}
 try{
-    $allowed=@('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','sources','migrate-services')
+    Assert-NoPendingOwnerMigration $layout
+    $allowed=@('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','sources')
     if(-not $Service.Count){throw 'Select at least one service to build.'}
     if($SourceArtifact -and 'worker' -notin $Service){throw 'SourceArtifact requires a selected Worker build.'}
     if($ResidentArtifact -and 'worker' -notin $Service){throw 'ResidentArtifact requires a selected Worker build.'}

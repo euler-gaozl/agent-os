@@ -2,6 +2,8 @@
 
 更新：2026-10-13。用户最新优先级：先完整规划，在现有 Windows 电脑上完成可以日常使用的单机版，再推进服务器阶段。本文件是执行顺序和验收范围的权威；历史测试证据继续保留，不因修改规划而变成新版本的通过结果。
 
+最新增量：[Owner 迁移中断门禁](owner-migration-gate-20261013.md)通过73项实际进程退出/入口拒绝检查和17+12+41项相关回归。评审发现的跨 state_root 绕过已修为固定平台门禁。Runtime/Worker/Telemetry 完整候选包已构建，Worker 保留 v1/v2；新备份 `pre-execution-access-20261013-172058` 实际隔离还原通过（44关系、25发布引用、3018文件）。正式版本/ACL/Telemetry缺表未变，尚未接入执行SQL的协调器；下一步具体Owner迁移与恢复、旧独立CLI退役，之后正式消费者升级和权限收缩。标准Start和Build不再调用共享migrator；完整Goal仍active，以下“当前下一步”为该历史阶段记录。
+
 当前下一步：[执行权限发布保护](execution-access-release-20261013.md)已经通过44项实际数据库/发布检查、17项真实进程故障回归及配置/回执回归。正式只读预检新发现零实例 Telemetry 缺少 `telemetry_inbox`；先完成干净完整发布包、正式撤权协调器及旧迁移入口封口，再在备份保护下补 Telemetry 本域迁移、升级消费者并收缩 Runtime 旧权限。正式 ACL 和安装版本尚未变化；完整目标仍 active，后文“待实现守卫”为该历史阶段状态，不覆盖本段。
 
 P2 当前续做：[执行域权限审计与退役候选](runtime-access-retirement-20261013.md)已完成，真实隔离 PostgreSQL 23 项零跳过、独立四程序构建和边界检查通过。正式审计确认 Worker 历史宽权限与 Telemetry 的 events 直授尚在，Storage/Sandbox 已无对应直授；正式权限和安装版本未改。下一步完成启动、发布、回退和 pending 恢复的实际数据库/二进制权限兼容守卫，再做备份保护下的正式收缩；其余页面、故障、业务与最终统一 CI 仍未完成，完整 Goal 保持 active。

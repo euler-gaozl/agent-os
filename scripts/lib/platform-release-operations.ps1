@@ -71,6 +71,7 @@ function Save-ReleasePhase([hashtable]$Layout,[string]$Role,[string]$Operation,[
     return $catalog.services[$Role].pending
 }
 function Restore-PendingRelease([hashtable]$Layout,[string]$Role,[string]$Scripts,[IO.FileStream]$Lock,[int]$TimeoutSeconds=30,[scriptblock]$Checkpoint={param($point)}){
+    Assert-NoPendingOwnerMigration $Layout
     $catalog=Read-ReleaseCatalog $Layout;$pending=$catalog.services[$Role]['pending']
     if(-not $pending){throw 'No pending release to recover.'}
     if($pending['configuration']){
@@ -104,6 +105,7 @@ function Restore-PendingRelease([hashtable]$Layout,[string]$Role,[string]$Script
     return @{operation=$pending.id;outcome='restored_prior';role=$Role;replicas=$pending.replicas;current=$pending.prior.id;non_target_unchanged=$othersUnchanged;non_target_unchanged_during_recovery=$recoveryDidNotChangeOthers;non_target_status=$othersAfter}
 }
 function Invoke-ReleaseChange([hashtable]$Layout,[string]$Role,[string]$Action,[System.Collections.IDictionary]$Target,[string]$Scripts,[IO.FileStream]$Lock,[int]$TimeoutSeconds=30,[scriptblock]$Checkpoint={param($point)}){
+    Assert-NoPendingOwnerMigration $Layout
     if($Role -notin @('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','sources')){throw 'Select one deployable service; schema migration is a separate operation.'}
     $catalog=Read-ReleaseCatalog $Layout
     if($catalog.format -ne 2){throw 'Register and verify the release baseline first.'}

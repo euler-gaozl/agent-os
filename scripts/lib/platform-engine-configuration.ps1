@@ -94,6 +94,7 @@ function Assert-SourceWorkersReady([hashtable]$Layout,[System.Collections.IDicti
     $runtimeConfig=$null;$runtimeConnection=$null;$peers=$null
 }
 function Restore-PendingEngineConfiguration([hashtable]$Layout,[string]$Scripts,[IO.FileStream]$Lock,[int]$TimeoutSeconds=30,[scriptblock]$Checkpoint={param($point)}){
+    Assert-NoPendingOwnerMigration $Layout
     $catalog=Read-ReleaseCatalog $Layout;$pending=$catalog.services.runtime['pending']
     if(-not $pending -or -not $pending['configuration']){throw 'No pending Runtime configuration change.'}
     $saved=Read-EngineChange $Layout $pending
@@ -119,6 +120,7 @@ function Restore-PendingEngineConfiguration([hashtable]$Layout,[string]$Scripts,
     return @{operation=$pending.id;outcome='restored_prior';role='runtime';kind='configuration';current=$pending.prior.id;default_run_engine=(Get-SubmissionEngine $saved.prior.config);non_target_unchanged=(Test-ReleaseSnapshotsEqual $pending.non_target $after);non_target_unchanged_during_recovery=(Test-ReleaseSnapshotsEqual $before $after);readiness='verified'}
 }
 function Set-DefaultEngine([hashtable]$Layout,[string]$Engine,[string]$Scripts,[IO.FileStream]$Lock,[int]$TimeoutSeconds=30,[scriptblock]$Checkpoint={param($point)}){
+    Assert-NoPendingOwnerMigration $Layout
     $nextEngine=switch -CaseSensitive ($Engine){source {Get-SourceEngineName};resident {Get-ResidentEngineName};historical {'dsh-0.2.0-rc.2-evidence-v1'};default {throw 'Choose source, resident or historical.'}}
     $catalog=Read-ReleaseCatalog $Layout
     if($catalog.format -ne 2){throw 'Default changes require a versioned deployment.'}

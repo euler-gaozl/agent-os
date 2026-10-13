@@ -3,11 +3,13 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 . (Join-Path $PSScriptRoot 'lib/platform-lock.ps1')
 . (Join-Path $PSScriptRoot 'lib/platform-paths.ps1')
+. (Join-Path $PSScriptRoot 'lib/platform-releases.ps1')
 $layout=Get-PlatformLayout $repoRoot $LayoutPath
 if(-not $PostgresBin){$PostgresBin=$layout.postgres_bin}
 $maintenance=Enter-PlatformMaintenance $layout.state_root
 $passwordFile=$null
 try {
+Assert-NoPendingOwnerMigration $layout
 if ($repoRoot.StartsWith('C:\',[StringComparison]::OrdinalIgnoreCase)) { throw 'Keep this project under D:\workspace.' }
 $stateDirectory = $layout.config_root
 $configPath = Join-Path $stateDirectory 'dev.json'

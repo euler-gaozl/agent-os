@@ -22,6 +22,7 @@ function Read-Object([string]$Path) {
     try { return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json -AsHashtable }
     catch { Add-Issue 'error' 'invalid_local_json' ('Cannot parse local file: ' + [IO.Path]::GetFileName($Path)); return $null }
 }
+try{Assert-NoPendingOwnerMigration $layout}catch{Add-Issue 'error' 'owner_migration_pending' $_.Exception.Message}
 $releaseStatus=@{format=$null;generation=$null;services=@()}
 try{
     $releaseCatalog=Read-ReleaseCatalog $layout;$releaseStatus.format=$releaseCatalog.format

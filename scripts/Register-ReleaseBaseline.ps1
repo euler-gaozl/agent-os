@@ -9,6 +9,7 @@ $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $layout=Get-PlatformLayout $repoRoot $LayoutPath
 $maintenance=Enter-PlatformMaintenance $layout.state_root
 try{
+    Assert-NoPendingOwnerMigration $layout
     $old=Read-ReleaseCatalog $layout
     if($old.format -ne 1){throw 'Baseline is already registered; this operation never overwrites versioned release history.'}
     $backup=[IO.Path]::GetFullPath($VerifiedBackup)
