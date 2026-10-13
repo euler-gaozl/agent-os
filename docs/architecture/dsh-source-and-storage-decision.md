@@ -2,7 +2,17 @@
 
 2026-10-12；服务于 Windows 单机交付。此文区分已核实事实、当前决定和待实现内容。
 
-## 2026-10-13 长历史测量后的核心修改决定
+## 2026-10-13 驻留历史候选的实现与边界
+
+Harness `439b9086155383a4b4cb19c261ac6690ab02a352` 已实现 `dsh-source-639ed015-resident-v2`，单独构建到 `.work/resident-candidate`；生产默认仍为 state-v1。七处受哈希约束的转换修改 Session、Surface、tool history、Compact 边界读取、TokenMeter、Projection registry 和 RuntimeContext；不重写 AgentLoop、不编辑上游基线。ResidentEventLog 用 Map 保存绝对序号，最多 16 MiB 编码事件 / 8,192 项；归档确认水位取发出批次的尾部，等待回包时新产生的事件不被提前释放。
+
+释放前同步实际五个内置投影、TokenMeter、header/context/tool folds，拒绝未知投影（按定义对象身份判断）、迟注册、自定义 message projection 或消费者替换/卸载。投影和 TokenMeter 分别有 8 MiB 编码状态保护，工具声明系列有 8,192 更新 / 8 MiB 保护；不能把这些局部保护推成总 RSS 上界。原始事件只退出 Node 驻留内存，Runtime 归档仍是权威；完整历史读取不能伪装成部分结果，也不删除归档。
+
+最终证据 `local/evidence/dsh-resident-candidate-a3dbb9f031714241a2b3e0dc8d734b3b` 绑定 12 份源码/脚本/测试哈希及内核 `be1b87c92a7b9b1dae332a10115ef04ddd676a2aa82e90d02c2943e296c9932c`。候选 19 项、旧版 16 项检查全部通过，无跳过；128 / 512 / 2,048 / 4,096 步记录及重放全通过。2,048 步记录回收后堆 11,425,952 字节，旧版同夹具为 50,417,120；4,096 步约 12.8 MB，完整重放仍为 22.6 秒。三档旧新夹具请求/事件类型/非 checkpoint 回复一致，不构成旧任务可以换引擎的许可。强制 GC、固定工作集、合成回复和单次样本的限制保留。
+
+独立评审先发现未知预注册投影可能绕过有效状态大小检查，修为实际定义白名单后再次复核无阻断；评审核对源码/哈希/现有报告，没有自行执行测试。初版 Cordis wrapper 身份误判的失败证据保留，实际实例 Symbol 修复后再验证。详见 Harness `docs/resident-history-design.md`。下一步真实 Worker/Runtime 接入必须同时保留 v1/v2 的固定产物选择；候选尚未部署，原生 Session 快速恢复、缓存回收及实际进程故障验收继续，不以本增量宣布 P2.5 完成。
+
+## 2026-10-13 长历史测量后的核心修改决定（实现前基线）
 
 固定源码 v1 的真实 DSH 循环，在固定工作集、8,192 token 窗口和 4 KiB 合成工具内容下，执行 128 / 512 / 2,048 步；各自另起 Node 从逐帧落盘的冻结回包重放。六次正常结束，实际发生 127 / 511 / 2,047 次 Compact，最大模型 JSON 一直是 9,795 字节，但回收后的堆分别为 13,718,896 / 20,609,896 / 50,417,120 字节。重放耗时 805 / 2,590 / 10,132 毫秒。证据为 `local/evidence/dsh-memory-baseline-0e3b3a7a0b56427b94e138b75dae77f4`，脚本在独立 Harness 仓库 `benchmarks/`。这是带 GC 仪器的单次合成 supervisor 测量，没有 Runtime/Worker/正式数据库/付费模型；不是生产延迟分位数或完整恢复验收。事件 hash 链、请求语义哈希、数量和类型已核对，未声称重建事件的时间戳/ID 与原始字节相同。
 
