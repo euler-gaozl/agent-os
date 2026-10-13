@@ -1,6 +1,6 @@
-# 运行回执分页与原文分段候选
+# 运行回执分页与原文分段交付
 
-本增量完成源码和本地验收，正式发布集仍是 `b037b1e03b794e99abb879408b640b94`，默认 v1。本轮未执行正式数据库迁移、服务切换、付费模型或 GitHub Actions。完整 Goal 保持 active。
+本增量已部署到本机正式 Runtime 和 Console：源码分别为 `90e7e9c4721fe238d46da74711105ea1763ef65c` / `937aa6617744b50d0b860a9196911a8fa6110605`，集成构建为 `36fcd4a`，发布集为 `1e41f6f5f9d34caf82b52a97eb122f71`。默认仍 v1，双 Worker/Harness 未升级。本轮完成索引迁移、真实独立升级/回退和已有真实供应商任务的只读 Web/BFF/Runtime/PostgreSQL 验收；没有新增付费模型请求或 GitHub Actions。完整 Goal 保持 active。
 
 ## 改动及依据
 
@@ -29,6 +29,28 @@
 
 Owner 声明 `receipt_management`：Runtime `provides`，Console `requires`，固定协议 `call-receipts-v1`。Windows 完整发布包携带该声明；目标 URL 必须是不含末尾斜杠的有效本机 base URL，避免拼接路径触发被客户端拒绝的重定向。启动、更新、回退、未完成发布恢复在停服务前校验目标组合；对新 Console 还核对配置哈希、当前或待发布版本、受保护 launch 与有效 Runtime URL。本地 catalog 只证明其对应本机 Runtime，不为任意远程地址背书。旧 descriptor 与没有 Console 的独立 Runtime 仍允许。
 
-发布顺序为 Runtime 先、Console 后；回退顺序相反。下一步：完成候选独立评审，固定提交与源码锁；备份包含正式 v2 历史的当前数据并验证恢复；执行添加索引的 Runtime owner 迁移；独立升级两个服务并验证反向回退/错误顺序拒绝，最后用已有真实任务只读验收新页面。Linux 发布能力传播和远程目标证明仍需后续验收，不能从这些 Windows 策略测试推导。
+发布顺序为 Runtime 先、Console 后；回退顺序相反。源码、固定锁、正式迁移与实际升级已完成，证据如下。Linux 发布能力传播和远程目标证明仍需后续验收，不能从这些 Windows 策略测试推导。
+
+## 正式单机验收
+
+更新前备份 `local/backups/pre-bounded-receipts-20261013` 在独立集群还原：44 个关系的内容、schema、ACL/元数据和角色登录核对通过，两个保留的 Worker 包通过恢复检查，临时集群已停止。报告为 `local/restore-checks/11bd86a03b5e4d60b3c9b8714dcf9c50/result.json`。备份包括先前完成的 resident-v2 真供应商验收任务。
+
+本次维护脚本归 `ops/Migrate-BoundedReceipts.ps1`、`receipt-migration-validation.ps1` 与 `Verify-ReceiptMigration.ps1`。写入前绑定受保护备份摘要、配置字节、catalog、实际本机 PostgreSQL 进程/数据库身份、执行域的备份指纹，保存迁移前全库指纹和索引、源版本、二进制哈希与执行阶段。仅允许固定本机连接与明确的 `public` schema，拒绝覆盖目标的 query；迁移 DSN 按检查过的字段重建并排除 PG 环境变量干扰。结果未知或后验不符时保持写服务停机；已有只读复核入口。该中断复核入口完成静态评审，**本轮没有注入迁移提交中断故障**。
+
+首次备份被尚存的测试 Node 阻止，清理经身份核对的两个夹具进程后完成。首次迁移入口误拒绝 Runtime 合法的 `search_path=public`；第二次把 ToolHub 在另一个 schema 内的验活审计变化当作执行域变化。两次均在 DDL 前失败并恢复 12 进程的认证就绪，分别保留 `receipt-migration-ece274abe46c45f288d6c3d5289a995f` / `receipt-migration-5a6048876d934fffbed83d25eb45fff6`。最终备份绑定比较 `public` 执行域（排除心跳表），停机后的即时迁移前后仍比较**所有 schema 的全部 44 个关系**，没有放宽迁移后数据不变条件。
+
+| 正式证据（`local/evidence` 下） | 结果 |
+| --- | --- |
+| `receipt-migration-32344230d6c945e38269739f52a246a4` | 固定 Runtime owner 迁移只增加 `calls_run_page`、`calls_unresolved_page`；44 关系内容不变、既有索引不变、任务计数不变，原 12 进程恢复并逐角色认证 ready |
+| `receipt-live-release-d9f36d6590b548e5ad9390dd607c68ce` | 6 次单服务发布实际通过：Runtime→Console 升级、Console→Runtime 回退、再升级；每次验证目标 ready 与非目标 PID/启动身份不变。错误顺序的 Console 升级、Runtime 回退在停机和写 pending 前拒绝，原 catalog 字节不变 |
+| `receipt-live-read-bb58e0b5493942a8bf162cc5c806a9d3` | 正式 Console BFF→Runtime→原数据库，12 个只读 HTTP 请求；按每页 2 条遍历 8 个历史调用，4 页分别 709/684/713/511 字节；17,106 字符输入分 5 段重组、984 字符输出和空错误字段与数据库文本哈希一致；执行域持久数据不变，未调用旧全量 API |
+
+发布报告的 `prior_tasks_unchanged` 仅指任务计数和工作状态结构可用性；不能单凭它宣称全部任务内容逐字节未变。表内容指纹由迁移前后及只读回读阶段分别核验，证据范围不混用。
+
+浏览器对同一 resident-v2 任务实际验证工作状态、按来源编号回读 507 字符原文、17,106 字符输入的 8,192/8,192/722 三段与末段禁用；再打开旧 source-v1 任务，其工作状态仍可见。截图与浏览器检查保存在最后一个目录。这里的模型任务曾调用真实 DeepSeek，但原文明确是**合成验收资料，非市场事实**，本轮没有再次运行 Agent，也不是 P5 真实研究验收。
+
+正式安装引用为 Runtime `runtime-38308cf4e81a4f318eeaa8a266c950e7`、Console `control-10aa08d6fc074483bf96dcba2afcc5c8`。全平台 doctor 核心探测通过，Sandbox 隔离代码执行仍未配置，不能把 API 存活表述为沙箱执行可用。独立代理静态审查并核对证据，修复事项留痕，没有代跑测试。
+
+更新后的完整备份为 `local/backups/bounded-receipts-live-20261013`；隔离恢复报告 `local/restore-checks/717863cfd2dc41cead4c8c2ff8d82b73/result.json` 已通过并停止临时集群，覆盖本次正式版本的发布包、配置和 44 个关系。最终 doctor 核心检查通过；此备份包含新版能力声明，不能用更新前恢复结果代替它。
 
 之后继续取消/失败时资源与保留文件生命周期测量、旧实现与权限退役、其余页面和故障场景、真实期货采集—核验—入库—报告引用回读。当前增量不是 P2.5/P3/P4/P5 全部完成。
