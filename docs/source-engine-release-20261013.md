@@ -27,11 +27,14 @@ Runtime/Worker 的启动、更新、回滚、未完成发布恢复在停任何�
 | `source-runtime-configuration-5f721fc4e02d4c259fb59de5eed91f82` | 11 项真实 Windows 合成 Runtime/Worker 进程检查。调用正式启动/回滚/恢复入口，配置错位均在查库或停进程前拒绝，catalog 与进程清单不变；合法 pending.target 进程可读，篡改启动快照被拒绝。最终 0 残留进程 |
 | `windows-releases-2ccb25e84a7d4b4eb6e00f0c4caa827b` | 原 16 项真实 Windows 合成服务发布回归，包括 8 个发布/恢复中断点、非目标独立退出、失败回退、完整依赖与 Web 还原 |
 | `windows-processes-b7bd4a03b15345bba0afbf2d3d69158c` | 原 8 项进程所有权/Windows Job 回归，包含 PID 尚未保存时启动器退出和忙碌 Node 子进程清理 |
+| `source-managed-build-27e7720ed35f4c62a8246597e6f7c28f` | 从干净集成提交 `d191a28` 构建实际 Runtime/Worker/Console 发布包，校验 Owner Go 二进制提交、固定依赖、Web 类型/构建及旧 Harness 接口 3 项测试。选定三包实际归档还原，1,484 文件全部哈希一致、0 链接；Worker 二进制及 4 项源码资产与此前故障验收包完全一致。当前 catalog 未改变；未启动候选服务 |
 
-`node --test scripts/owner-release.test.mjs` 的 3 项合同/独立镜像来源检查通过。三项所选 Owner 的干净提交、SDK/vendor、固定事务包与完整契约也已核对。实际已安装旧部署的只读兼容预检通过：源码任务 0、工作状态表尚未迁移；原先数据库停止，检查时短暂启动后恢复停止，未改 schema/config/catalog。
+`owner-release.test.mjs`、`owner-build-matrix.test.mjs`、`owner-stack.test.mjs` 合计 6 项契约/独立来源/编排检查通过。三项所选 Owner 的干净提交、SDK/vendor、固定事务包与完整契约也已核对。实际已安装旧部署的只读兼容预检通过：源码任务 0、工作状态表尚未迁移；原先数据库停止，检查时短暂启动后恢复停止，未改 schema/config/catalog。
+
+待激活发布集为 `local/releases/staged/8ff9cc8011e0400ca565a4c472839613.json`，Runtime `runtime-b83cd7488cda457181e9113b81e10828`、Worker `worker-58d52abf2c8d49a29a79825cfe20cd5d`、Console `control-69522f6425694600816927734108e5b4`。Worker 二进制 SHA-256 为 `ec279257d68f2fba13f3a357edcc819cf2eca0183f4f10f62b06550f2d1c00eb`。机器上的 `ops/Platform.ps1` 已同步 `SourceArtifact` 参数。
 
 只读评审首次发现两个缺陷：检查只看磁盘默认值、迁移探针只看表存在/权限。上述活实例校验及列/唯一键检查针对这两项修复；同一独立评审 Agent 复读代码和两份报告后确认修复成立，本轮未发现新增必须修复项。评审没有运行测试、读取正式配置或执行 CI，不作为独立动态复测。首次补测有两处夹具错误，失败报告保留：将 body 从 text 改回 jsonb 时 PostgreSQL 的旧 CHECK 表达式重建失败；启动拒绝测试的布局字段不全，在抵达目标检查前失败。现分别重新应用 Owner 建表 SQL、补齐完整隔离布局。不能把这些首次失败算成通过。
 
 ## 尚未完成
 
-本批尚未正式激活新 Runtime/Worker/Console，也未切换默认提交执行器。真正配置迁移的断点恢复、新包正式更新/回滚、追加迁移后的全量备份还原和真实 DeepSeek 仍须执行。有界历史内存、恢复耗时/内存测量、缓存回收、运行详情有界分页、完整逐页 UI 与真实供给/库存研究继续属于完整单机目标。
+本批尚未正式激活新 Runtime/Worker/Console，也未切换默认提交执行器。真正配置迁移的断点恢复、新包正式更新/回滚、追加迁移后的全量备份还原和真实 DeepSeek 仍须执行。发布兼容检查证明所选 Worker 包有处理能力；打开新默认值前还需确认实际 Worker 实例已就绪。有界历史内存、恢复耗时/内存测量、缓存回收、运行详情有界分页、完整逐页 UI 与真实供给/库存研究继续属于完整单机目标。
