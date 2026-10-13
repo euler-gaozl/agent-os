@@ -28,7 +28,7 @@ function Read-OwnerMigrationJournal([hashtable]$Layout){
     try{$journal=Get-Content -LiteralPath (Get-OwnerMigrationJournalPath $Layout) -Raw|ConvertFrom-Json -AsHashtable -NoEnumerate -DateKind String}catch{throw 'Invalid owner migration journal; manual inspection is required.'}
     if($journal -isnot [System.Collections.IDictionary] -or ($journal['format'] -isnot [int] -and $journal['format'] -isnot [long]) -or $journal['format'] -ne 1){throw 'Invalid owner migration journal; manual inspection is required.'}
     foreach($key in @('id','operation','phase','state_root','baseline_sha256','created_at')){if($journal[$key] -isnot [string]){throw 'Invalid owner migration journal; manual inspection is required.'}}
-    if($journal.id -cnotmatch '^[a-f0-9]{32}$' -or $journal.operation -cnotin @('telemetry-inbox-v1','runtime-access-v1') -or $journal.phase -cnotin @('prepared','mutation_requested','validating','validated')){throw 'Invalid owner migration journal; manual inspection is required.'}
+    if($journal.id -cnotmatch '^[a-f0-9]{32}$' -or $journal.operation -cnotin @('telemetry-inbox-v1','runtime-access-v1','sources-capture-v1') -or $journal.phase -cnotin @('prepared','mutation_requested','validating','validated')){throw 'Invalid owner migration journal; manual inspection is required.'}
     if($journal.state_root -cne $Layout.state_root){throw 'Owner migration belongs to a different layout; use its recorded state root for recovery.'}
     $baseline=Join-Path $Layout.state_root ('migrations/'+$journal.id+'/baseline.json')
     Assert-ReleasePhysicalPath $Layout.state_root $baseline
@@ -39,7 +39,7 @@ function New-OwnerMigrationJournal([hashtable]$Layout,[string]$Operation,[System
     if(-not $Lock){throw 'Owner migration requires the held maintenance lock.'}
     $null=Enter-PlatformMaintenance $Layout.state_root $Lock
     Assert-NoPendingOwnerMigration $Layout
-    if($Operation -cnotin @('telemetry-inbox-v1','runtime-access-v1')){throw 'Unknown owner migration operation.'}
+    if($Operation -cnotin @('telemetry-inbox-v1','runtime-access-v1','sources-capture-v1')){throw 'Unknown owner migration operation.'}
     $id=[guid]::NewGuid().ToString('N')
     $directory=Join-Path $Layout.state_root ('migrations/'+$id)
     Assert-ReleasePhysicalPath $Layout.state_root $directory

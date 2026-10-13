@@ -41,7 +41,13 @@ function Invoke-PostgresTool {
     $info.FileName=Join-Path $PostgresBin ($Tool+'.exe')
     $info.UseShellExecute=$false;$info.CreateNoWindow=$true
     $info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true;$info.RedirectStandardInput=$true
-    $null=$info.Environment.Remove('PGSERVICE');$null=$info.Environment.Remove('PGSERVICEFILE')
+    $info.StandardInputEncoding=[Text.UTF8Encoding]::new($false)
+    $info.StandardOutputEncoding=[Text.UTF8Encoding]::new($false)
+    $info.StandardErrorEncoding=[Text.UTF8Encoding]::new($false)
+    # Explicit recovery connections must not inherit PGHOSTADDR, PGDATABASE,
+    # PGSERVICE, TLS or other libpq defaults from the invoking shell.
+    foreach($key in @($info.Environment.Keys|Where-Object{$_ -like 'PG*'})){$null=$info.Environment.Remove($key)}
+    $info.Environment['PGCLIENTENCODING']='UTF8'
     if($Connection){
         $info.Environment['PGPASSWORD']=$Connection.password
         $info.Environment['PGCONNECT_TIMEOUT']='5';$info.Environment['PGAPPNAME']='agent-os-recovery'

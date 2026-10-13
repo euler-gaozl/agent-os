@@ -30,7 +30,7 @@
       "repository": "agent-os-storage"
     },
     "sources": {
-      "commit": "82a90ce5b2ca620d15932b03aab9b4d3feb93bd0",
+      "commit": "29fe0860d424a6f263ed9b274673590d0d8694c2",
       "repository": "agent-os-sources"
     },
     "knowledge": {
