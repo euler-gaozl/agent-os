@@ -41,8 +41,10 @@ INSERT INTO knowledge.artifact_refs VALUES('${root}:payloads','$rawHash'),('${ro
     $v2.format=2;$v2.extraction_method='Sources extraction: agentos-text-html-v1'
     $v2.provenance='sources_service_capture: bytes and metadata were read from an authenticated retained Sources capture; raw is the HTTP client response body after transport/content decoding; hashes and matching spans verify retention consistency, not website authenticity, extraction completeness or factual accuracy; fetched_at is collection time, not publication or statistical period'
     $v2.capture=@{capture_id=('c'*32);requested_url=$v2.url;final_url=$v2.url;extraction_version='agentos-text-html-v1';import_format='source-capture-document-v1'}
-    function Save-Manifest([hashtable]$Value){
-        $bytes=[Text.Encoding]::UTF8.GetBytes(($Value|ConvertTo-Json -Depth 12 -Compress));$hash=Get-BytesHash $bytes;$hex=Hex $bytes
+    function Save-Manifest([hashtable]$Value,[switch]$ExponentialFormat){
+        $json=$Value|ConvertTo-Json -Depth 12 -Compress
+        if($ExponentialFormat){$json=$json -replace '"format":2(?=[,}])','"format":2e0'}
+        $bytes=[Text.Encoding]::UTF8.GetBytes($json);$hash=Get-BytesHash $bytes;$hex=Hex $bytes
         $null=Invoke-RecoverySQL $PostgresBin $connection "INSERT INTO knowledge.artifacts VALUES('$hash',decode('$hex','hex')) ON CONFLICT DO NOTHING; INSERT INTO knowledge.artifact_refs VALUES('${root}:manifests','$hash') ON CONFLICT DO NOTHING;"
         return $hash
     }
@@ -50,17 +52,20 @@ INSERT INTO knowledge.artifact_refs VALUES('${root}:payloads','$rawHash'),('${ro
     $good=Test-RecoveredKnowledgeArchives $PostgresBin $connection
     if($good.manifests -ne 2 -or -not $good.versioned_provenance){throw 'Both source archive formats must verify.'}
     $checks.Add('format1_and_format2_verified_with_unicode_spans')
-    foreach($case in @('unknown_format','wrong_provenance','wrong_final_url','wrong_extraction_version','wrong_capture_id','wrong_span')){
+    foreach($case in @('unknown_format','string_format','exponential_format','numeric_capture_id','string_byte_length','wrong_provenance','wrong_final_url','wrong_extraction_version','wrong_capture_id','wrong_span')){
         $bad=$v2|ConvertTo-Json -Depth 12|ConvertFrom-Json -AsHashtable
         switch($case){
             unknown_format {$bad.format=99}
+            string_format {$bad.format='2'}
+            numeric_capture_id {$bad.capture.capture_id=[Numerics.BigInteger]::Parse(('1'*32))}
+            string_byte_length {$bad.raw_bytes=[string]$bad.raw_bytes}
             wrong_provenance {$bad.provenance=$v1.provenance}
             wrong_final_url {$bad.capture.final_url='https://other.invalid/'}
             wrong_extraction_version {$bad.capture.extraction_version='future-v99'}
             wrong_capture_id {$bad.capture.capture_id='invalid'}
             wrong_span {$bad.spans[0].document_end=6}
         }
-        $hash=Save-Manifest $bad;$rejected=$false
+        $hash=Save-Manifest $bad -ExponentialFormat:($case -eq 'exponential_format');$rejected=$false
         try{$null=Test-RecoveredKnowledgeArchives $PostgresBin $connection}catch{$rejected=$true}
         if(-not $rejected){throw ('Invalid archive accepted: '+$case)}
         $null=Invoke-RecoverySQL $PostgresBin $connection "DELETE FROM knowledge.artifact_refs WHERE root='${root}:manifests' AND hash='$hash'; DELETE FROM knowledge.artifacts WHERE hash='$hash';"

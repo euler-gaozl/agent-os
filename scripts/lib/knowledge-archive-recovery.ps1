@@ -23,10 +23,10 @@ WHERE r.root LIKE 'knowledge-source:%' AND
         $identityDigest.AppendData([Text.Encoding]::UTF8.GetBytes($after+"`n"))
         $sql=@'
 WITH manifest AS (
- SELECT a.body,convert_from(a.body,'UTF8')::jsonb m FROM knowledge.artifacts a
+ SELECT a.body,convert_from(a.body,'UTF8')::jsonb m,convert_from(a.body,'UTF8')::json j FROM knowledge.artifacts a
  WHERE a.hash='{HASH}' AND octet_length(a.body)<=16384 AND encode(sha256(a.body),'hex')=a.hash
 ), association AS (
- SELECT m,raw.body raw,text.body text,d.content document
+ SELECT m,j,raw.body raw,text.body text,d.content document
  FROM manifest
  JOIN knowledge.knowledge_files f ON f.id=m->>'file_id'
  JOIN knowledge.documents d ON d.id=f.document_id
@@ -48,6 +48,20 @@ WITH manifest AS (
    AND m->'capture'->>'extraction_version' IN ('agentos-text-html-v1','unrecorded')
    AND m->>'extraction_method'='Sources extraction: '||(m->'capture'->>'extraction_version')
    AND m->>'raw_encoding'='identity'))
+ AND NOT EXISTS (
+  SELECT 1 FROM unnest(ARRAY['file_id','document_id','file_sha256','url','captured_at','media_type','extraction_method','raw_sha256','raw_encoding','stored_raw_sha256','text_sha256','provenance']) k
+  WHERE jsonb_typeof(m->k) IS DISTINCT FROM 'string')
+ AND NOT EXISTS (
+  SELECT 1 FROM unnest(ARRAY['format','stored_raw_bytes','raw_bytes','text_bytes']) k
+  WHERE jsonb_typeof(m->k) IS DISTINCT FROM 'number' OR (j->k)::text !~ '^(0|[1-9][0-9]*)$')
+ AND jsonb_typeof(m->'knowledge')='object' AND jsonb_typeof(m->'knowledge'->'id')='string'
+ AND jsonb_typeof(m->'knowledge'->'revision')='number' AND (j->'knowledge'->'revision')::text ~ '^[1-9][0-9]*$'
+ AND (m->>'format'='1' OR NOT EXISTS (
+  SELECT 1 FROM unnest(ARRAY['capture_id','requested_url','final_url','extraction_version','import_format']) k
+  WHERE jsonb_typeof(m->'capture'->k) IS DISTINCT FROM 'string'))
+ AND jsonb_typeof(m->'spans')='array' AND NOT EXISTS (
+  SELECT 1 FROM json_array_elements(j->'spans') span,unnest(ARRAY['start','end','document_start','document_end']) k
+  WHERE json_typeof(span) IS DISTINCT FROM 'object' OR json_typeof(span->k) IS DISTINCT FROM 'number' OR (span->k)::text !~ '^(0|[1-9][0-9]*)$')
  AND m->>'file_sha256'=f.artifact_hash AND m->>'document_id'=f.document_id
  AND m->'knowledge'->>'id'=f.kb_id AND (m->'knowledge'->>'revision')::int=f.kb_revision
  AND octet_length(raw.body) BETWEEN 1 AND 1048576 AND octet_length(raw.body)=(m->>'stored_raw_bytes')::int
