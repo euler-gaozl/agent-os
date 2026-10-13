@@ -1,6 +1,22 @@
 # 新采集入库：服务候选与发布门槛
 
-2026-10-14。本轮解决 Sources 已保留的资料如何完整进入 Knowledge；正式服务、配置和数据库没有替换，Console 表单尚未实现。不能把本轮候选测试记作真实来源端到端交付。
+2026-10-14。本文件按增量记录 Sources 资料进入 Knowledge 的实现和验收。最新 Knowledge writer 已正式部署；Sources 迁移和 Console 表单仍未完成，不能称真实新来源端到端交付。下面旧候选段落保留其当时状态。
+
+## 最新：真实 writer 发布故障已验证，Knowledge 已安装
+
+先安装 `794780c` reader bridge，再安装 `09e3b29` writer；两次正式更新均认证就绪，非目标进程身份保持。当前发布为 `knowledge-8c5d74a885f942929b9eaf5d07bba3a5`，恢复目标为 reader bridge `knowledge-497ae91186f0483aa4a15cd47891e7f8`。生产路径已编译开放并报告 `configured:true`，数据契约为 `knowledge-v0.7-source-archives`。Indexer 的既有索引协议和表结构未改变。
+
+升级前协调备份 `local/backups/pre-capture-reader-20261014` 实际隔离恢复通过：44 关系、10 角色、2 凭证、25 发布引用/3018 文件；恢复报告 `local/restore-checks/1a710b6314424e0b8e01d75d18dcbf84/result.json`，隔离集群已停止。新写入版安装后复核原五份来源附件，完整成员、关联和清单集合哈希仍为 `f0d47f87c51c54852e132e7d53e579417eb9436ceda43dea790cc9e423dfd3ff`；没有创建正式格式 2 数据，读取下限仍为 1。
+
+证据 `local/evidence/capture-writer-release-1791910342804`：
+
+- Knowledge 30 顶层、24 子测试通过，5 项外部后端/Indexer opt-in 跳过；vet 与独立构建通过。HTTP 去重/权限测试改走实际生产路由。
+- `Test-CaptureWriterRelease.ps1` 使用真正的 legacy、reader、writer 程序、真实 Windows 发布管理入口及隔离 PostgreSQL，7 项通过：写入前实际升级回退；writer 成功导入后故意令发布失败；自动恢复 reader 后三成员 HTTP 哈希及完整数据库关联一致；再次退旧版拒绝且进程/catalog 不变；重装 writer 后相同请求不重复建文件；回退 reader 保持可读；不兼容 pending 恢复保留进程和 journal。
+- HTTP Sources/Registry 是明确的受控夹具，没有抓取真实站点，也没有模型调用。发布失败是导入返回后在 `started` checkpoint 抛错，不声称 writer SIGKILL、网络分区或真实资料采集验收。
+- 独立源码评审确认实际 writer/reader 回读证据，指出 pending 进程身份断言缺失和清理前误设成功，两处已修复并重跑。最终 `process-release-reviewed/result.json` 同时 `checks_passed:true`、`cleanup_passed:true`、`passed:true`；评审代理未代跑测试。
+- 初次被跨布局同角色守卫拒绝，第二次夹具缺自身身份配置导致退出，失败记录保留。最终回归没有绕过守卫，而是在维护锁内临时停止正式 Knowledge/Sources；每次 finally 后恢复这两个服务。完整备份也曾协调停启全部实例，不能把本轮描述为正式进程零变动。
+
+结束时正式 12 个实例核心就绪、pending 为零。新 Sources 功能仍未部署，control 查询正式 `/capture-capabilities` 返回 403；仅 Knowledge 已具备导入能力，真实采集到保存的完整功能尚不可用。后续先完成 Sources 的可恢复 Owner 迁移和独立升级，再补 Console 流程及实际新来源验收。七份迁移草稿保留，完整 P2–P5 未关闭；本增量零付费模型调用、零 Actions。
 
 ## 本轮实现
 
@@ -52,7 +68,7 @@ Sources 新列 `source_captures.extraction_version` 需要 Owner 迁移，旧记
 
 ## 接续顺序
 
-1. 构建并部署已完成的读取下限过渡版，再以实际 writer 进程实测写入后发布失败、回退过渡版及再次回退旧版；通过后才开放正式写入。
+1. 读取下限过渡版与 writer 已按顺序正式安装，实际进程发布故障门槛已通过；保留 reader bridge 作为恢复目标，不能回退 legacy。
 2. Sources 正式备份/Owner 迁移/独立发布，核对 Knowledge 对 Sources 的固定地址及最小身份授权。
 3. Console 资料页完成“采集、预览、保存、原文回读”；请求前保留采集 ID 与固定知识库 revision，关闭后可找回，切换库后迟到回复不串写界面。
 4. 用实际新采集来源执行完整流程、重复提交、来源回读与标准隔离恢复；之后继续纠正真实研究成稿中的时间分类和过强表述。原 P2–P5 剩余项不因本功能而取消。

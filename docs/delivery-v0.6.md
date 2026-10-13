@@ -1,4 +1,8 @@
 # 端到端交付账本
+## 2026-10-14 Knowledge writer 已安装，真实服务回退保留采集证据
+
+Knowledge `09e3b29` 按 reader bridge→writer 顺序正式独立更新，认证就绪、非目标实例保持；原五份附件完整校验及集合哈希不变。升级前协调备份实际隔离恢复通过44关系、10角色、2凭证、25发布引用/3018文件。真正三版本 Knowledge 程序在隔离PG完成7项发布/恢复检查，包含导入后发布失败自动恢复bridge、原文全回读、跨次退旧版拒绝、进程/catalog保持和重试去重。30顶层/24子测试、vet/build通过，5外部opt-in跳过。复审提出的两处验收断言已修正重跑；最终清理通过，正式12实例恢复就绪。Sources/Registry为受控HTTP夹具，正式Sources仍旧版（capture能力403）、Console表单及实际新来源尚未验收。完整证据和维护停机范围见[采集入库记录](capture-import-bridge-20261014.md)。本轮零付费模型调用、零Actions。
+
 ## 2026-10-14 来源读取下限与跨次回滚保护候选
 
 Knowledge 永久协议标记与格式 2 入库同事务，二进制报告固定 reader/writer；Windows 构建、启动、更新、回退及 pending 恢复增加实际数据库兼容探针。独立复审指出“进程已停、数据库尚在提交”的窗口，已增加同 LOGIN backend 退出屏障并真实复现强杀 psql、延迟 COMMIT 后读取新快照。Knowledge 30 顶层/24 子测试通过、5 opt-in 跳过，vet/build 通过；部署25项、恢复17项隔离检查通过。尚未安装候选，也未开放 writer；Sources 正式迁移、完整 UI、真实新来源及服务进程故障仍待完成。详见[实现与测试边界](capture-import-bridge-20261014.md)。零模型调用、零 Actions。
