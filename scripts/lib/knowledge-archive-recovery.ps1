@@ -3,6 +3,22 @@
 function Test-RecoveredKnowledgeArchives([string]$PostgresBin,[hashtable]$Connection) {
     $exists=(Invoke-RecoverySQL $PostgresBin $Connection "SELECT to_regclass('knowledge.artifact_refs') IS NOT NULL;").Trim()
     if($exists -ne 't'){return @{present=$false;manifests=0}}
+    $markerJSON=(Invoke-RecoverySQL $PostgresBin $Connection @'
+SELECT coalesce(json_agg(m),'[]'::json)::text FROM (
+ SELECT r.hash,encode(substring(a.body FROM 1 FOR 257),'hex') body,octet_length(a.body) bytes
+ FROM knowledge.artifact_refs r LEFT JOIN knowledge.artifacts a ON a.hash=r.hash
+ WHERE r.root='knowledge-protocol:source-archives' ORDER BY r.hash LIMIT 2
+) m;
+'@).Trim()
+    $markers=ConvertFrom-Json -InputObject $markerJSON -AsHashtable -NoEnumerate
+    $minimumReader=1
+    if($markers -isnot [array] -or $markers.Count -gt 1){throw 'Recovered archive protocol root is invalid.'}
+    if($markers.Count -eq 1){
+        $bytes=[Text.Encoding]::UTF8.GetBytes('{"format":1,"minimum_reader":2}')
+        $marker=$markers[0]
+        if($marker.hash -cne (Get-BytesHash $bytes) -or $marker.body -cne [Convert]::ToHexStringLower($bytes) -or $marker.bytes -ne $bytes.Length){throw 'Recovered archive reader requirement is invalid.'}
+        $minimumReader=2
+    }
     $invalid=(Invoke-RecoverySQL $PostgresBin $Connection @'
 SELECT count(*) FROM knowledge.artifact_refs r
 LEFT JOIN knowledge.knowledge_files f ON f.id=split_part(r.root,':',2)
@@ -71,7 +87,7 @@ WITH manifest AS (
  AND (m->>'raw_bytes')::int BETWEEN 1 AND 1048576 AND m->>'raw_encoding' IN ('gzip','identity')
  AND m->>'raw_sha256' ~ '^[a-f0-9]{64}$' AND jsonb_array_length(m->'spans') BETWEEN 1 AND 64
 )
-SELECT json_build_object('raw',encode(raw,'base64'),'encoding',m->>'raw_encoding','raw_sha256',m->>'raw_sha256','raw_bytes',(m->>'raw_bytes')::int)::text
+SELECT json_build_object('format',(m->>'format')::int,'raw',encode(raw,'base64'),'encoding',m->>'raw_encoding','raw_sha256',m->>'raw_sha256','raw_bytes',(m->>'raw_bytes')::int)::text
 FROM association WHERE NOT EXISTS (
  SELECT 1 FROM jsonb_array_elements(m->'spans') s WHERE NOT coalesce(
  (s->>'start')::int>=0 AND (s->>'end')::int>(s->>'start')::int AND (s->>'end')::int<=char_length(convert_from(text,'UTF8'))
@@ -83,6 +99,7 @@ FROM association WHERE NOT EXISTS (
         $raw=(Invoke-RecoverySQL $PostgresBin $Connection $sql).Trim()
         if(-not $raw){throw 'Recovered source archive bytes or document association differ.'}
         $archive=$raw|ConvertFrom-Json;$bytes=[Convert]::FromBase64String($archive.raw)
+        if($archive.format -gt $minimumReader){throw 'Recovered source archives lack their persistent reader requirement.'}
         if($archive.encoding -eq 'gzip'){
             $input=[IO.MemoryStream]::new($bytes,$false);$gzip=[IO.Compression.GZipStream]::new($input,[IO.Compression.CompressionMode]::Decompress);$output=[IO.MemoryStream]::new()
             try{
@@ -95,6 +112,6 @@ FROM association WHERE NOT EXISTS (
         $count++
     }
     $identityHash=[Convert]::ToHexStringLower($identityDigest.GetHashAndReset())
-    return @{present=$true;manifests=$count;identity_sha256=$identityHash;member_hashes_and_lengths=$true;gzip_expansion=$true;file_document_revision_and_spans=$true;versioned_provenance=$true;provider_calls=0}
+    return @{present=$true;manifests=$count;identity_sha256=$identityHash;member_hashes_and_lengths=$true;gzip_expansion=$true;file_document_revision_and_spans=$true;versioned_provenance=$true;minimum_reader=$minimumReader;provider_calls=0}
     } finally {$identityDigest.Dispose()}
 }

@@ -83,12 +83,18 @@ function Restore-PendingRelease([hashtable]$Layout,[string]$Role,[string]$Script
     # stays pending for repair; silently picking a third version is forbidden.
     $null=Read-ReleaseDescriptor $Layout $pending.prior -Verify
     $null=Assert-ReleaseConfiguration $Layout $Role $pending.prior
+    if($Role -eq 'knowledge'){
+        $priorDescriptor=Read-ReleaseDescriptor $Layout $pending.prior -Verify
+        Assert-CompatibleRelease (Read-ReleaseDescriptor $Layout $pending.target -Verify) $priorDescriptor
+        Assert-KnowledgeArchiveDeployment $Layout $priorDescriptor
+    }
     if($Role -in @('worker','telemetry')){$priorDescriptor=Read-ReleaseDescriptor $Layout $pending.prior -Verify;Assert-ExecutionAccessDeployment $Layout @($Role) @{$Role=$priorDescriptor}}
     if($Role -in @('runtime','worker')){$priorDescriptor=Read-ReleaseDescriptor $Layout $pending.prior -Verify;Assert-SourceExecutionDeployment $Layout @{$Role=$priorDescriptor}}
     if($Role -in @('runtime','control')){$priorDescriptor=Read-ReleaseDescriptor $Layout $pending.prior -Verify;Assert-ReceiptManagementDeployment $Layout @{$Role=$priorDescriptor}}
     $pending=Save-ReleasePhase $Layout $Role $pending.id 'reverting'
     & $Checkpoint 'reverting'
     & (Join-Path $Scripts 'Stop-Local.ps1') -LayoutPath $Layout.layout_path -Service @($Role) -MaintenanceLock $Lock
+    if($Role -eq 'knowledge'){Assert-KnowledgeArchiveDeployment $Layout $priorDescriptor -Stopped}
     if($pending.replicas -gt 0){
         & (Join-Path $Scripts 'Start-Local.ps1') -LayoutPath $Layout.layout_path -Service @($Role) -Workers ([Math]::Max(1,$pending.replicas)) -PendingOperation $pending.id -MaintenanceLock $Lock
     }
@@ -121,6 +127,7 @@ function Invoke-ReleaseChange([hashtable]$Layout,[string]$Role,[string]$Action,[
     if($before.role -cne $Role -or $after.role -cne $Role){throw 'Descriptor does not match selected service.'}
     if($after.provenance['dirty']){throw 'Development builds cannot be activated as managed releases. Commit and rebuild first.'}
     Assert-CompatibleRelease $before $after
+    if($Role -eq 'knowledge'){Assert-KnowledgeArchiveDeployment $Layout $after}
     if($Role -in @('worker','telemetry')){Assert-ExecutionAccessDeployment $Layout @($Role) @{$Role=$after}}
     if($Role -in @('runtime','control')){Assert-ReceiptManagementDeployment $Layout @{$Role=$after}}
     if($Role -in @('runtime','worker')){Assert-SourceExecutionDeployment $Layout @{$Role=$after}}
@@ -144,6 +151,7 @@ function Invoke-ReleaseChange([hashtable]$Layout,[string]$Role,[string]$Action,[
         & (Join-Path $Scripts 'Stop-Local.ps1') -LayoutPath $Layout.layout_path -Service @($Role) -MaintenanceLock $Lock
         $null=Save-ReleasePhase $Layout $Role $pending.id 'stopped'
         & $Checkpoint 'stopped'
+        if($Role -eq 'knowledge'){Assert-KnowledgeArchiveDeployment $Layout $after -Stopped}
         if($pending.replicas -gt 0){
             & (Join-Path $Scripts 'Start-Local.ps1') -LayoutPath $Layout.layout_path -Service @($Role) -Workers ([Math]::Max(1,$pending.replicas)) -PendingOperation $pending.id -MaintenanceLock $Lock
         }

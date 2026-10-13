@@ -137,7 +137,9 @@ try{
             $receiptManagement=if($owner){$owner.release['receipt_management']}else{$null}
             $executionAccess=$null;if($owner){$executionAccess=Get-DeclaredExecutionAccess $owner.release}
             if($null -ne $executionAccess){Assert-ExecutionAccessBinary $binary @{role=$role;execution_access=$executionAccess}}
-            $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance $sourceExecution $residentExecution $receiptManagement $executionAccess
+            $knowledgeArchives=$null;if($owner){$knowledgeArchives=Get-DeclaredKnowledgeArchives $owner.release}
+            if($null -ne $knowledgeArchives){Assert-KnowledgeArchiveBinary $binary @{role=$role;contract=$contract;source_archives=$knowledgeArchives}}
+            $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance $sourceExecution $residentExecution $receiptManagement $executionAccess $knowledgeArchives
         }
     }finally{Pop-Location}
     $staged=Join-Path $layout.release_root ('staged/'+$buildId+'.json')

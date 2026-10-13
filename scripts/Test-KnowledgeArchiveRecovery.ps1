@@ -48,10 +48,30 @@ INSERT INTO knowledge.artifact_refs VALUES('${root}:payloads','$rawHash'),('${ro
         $null=Invoke-RecoverySQL $PostgresBin $connection "INSERT INTO knowledge.artifacts VALUES('$hash',decode('$hex','hex')) ON CONFLICT DO NOTHING; INSERT INTO knowledge.artifact_refs VALUES('${root}:manifests','$hash') ON CONFLICT DO NOTHING;"
         return $hash
     }
-    $h1=Save-Manifest $v1;$h2=Save-Manifest $v2
+    $h1=Save-Manifest $v1
+    $legacy=Test-RecoveredKnowledgeArchives $PostgresBin $connection
+    if($legacy.manifests -ne 1 -or $legacy.minimum_reader -ne 1){throw 'Legacy archives must verify without the new marker.'}
+    $checks.Add('legacy_format1_without_marker')
+    $markerBytes=[Text.Encoding]::UTF8.GetBytes('{"format":1,"minimum_reader":2}')
+    $markerHash=Get-BytesHash $markerBytes;$markerHex=Hex $markerBytes;$markerRoot='knowledge-protocol:source-archives'
+    $null=Invoke-RecoverySQL $PostgresBin $connection "INSERT INTO knowledge.artifacts VALUES('$markerHash',decode('$markerHex','hex')); INSERT INTO knowledge.artifact_refs VALUES('$markerRoot','$markerHash');"
+    $h2=Save-Manifest $v2
     $good=Test-RecoveredKnowledgeArchives $PostgresBin $connection
     if($good.manifests -ne 2 -or -not $good.versioned_provenance){throw 'Both source archive formats must verify.'}
     $checks.Add('format1_and_format2_verified_with_unicode_spans')
+    foreach($case in @('missing_marker','corrupt_marker','extra_marker','detached_marker_payload')){
+        switch($case){
+            missing_marker {$sql="DELETE FROM knowledge.artifact_refs WHERE root='$markerRoot';"}
+            corrupt_marker {$sql="UPDATE knowledge.artifacts SET body=decode('00','hex') WHERE hash='$markerHash';"}
+            extra_marker {$sql="INSERT INTO knowledge.artifact_refs VALUES('$markerRoot','$textHash');"}
+            detached_marker_payload {$sql="DELETE FROM knowledge.artifacts WHERE hash='$markerHash';"}
+        }
+        $null=Invoke-RecoverySQL $PostgresBin $connection $sql
+        $rejected=$false;try{$null=Test-RecoveredKnowledgeArchives $PostgresBin $connection}catch{$rejected=$true}
+        if(-not $rejected){throw ('Invalid reader requirement accepted: '+$case)}
+        $null=Invoke-RecoverySQL $PostgresBin $connection "DELETE FROM knowledge.artifact_refs WHERE root='$markerRoot'; INSERT INTO knowledge.artifacts VALUES('$markerHash',decode('$markerHex','hex')) ON CONFLICT(hash) DO UPDATE SET body=excluded.body; INSERT INTO knowledge.artifact_refs VALUES('$markerRoot','$markerHash');"
+        $checks.Add($case+'_rejected')
+    }
     foreach($case in @('unknown_format','string_format','exponential_format','numeric_capture_id','string_byte_length','wrong_provenance','wrong_final_url','wrong_extraction_version','wrong_capture_id','wrong_span')){
         $bad=$v2|ConvertTo-Json -Depth 12|ConvertFrom-Json -AsHashtable
         switch($case){

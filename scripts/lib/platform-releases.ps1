@@ -3,6 +3,7 @@
 . (Join-Path $PSScriptRoot 'platform-source-execution.ps1')
 . (Join-Path $PSScriptRoot 'platform-receipts.ps1')
 . (Join-Path $PSScriptRoot 'platform-execution-access.ps1')
+. (Join-Path $PSScriptRoot 'platform-knowledge-archives.ps1')
 . (Join-Path $PSScriptRoot 'platform-migration-journal.ps1')
 function Read-ReleaseJson([string]$Path){
     try{return Get-Content -LiteralPath $Path -Raw|ConvertFrom-Json -AsHashtable -DateKind String}catch{throw ('Invalid release metadata: '+[IO.Path]::GetFileName($Path))}
@@ -58,7 +59,7 @@ function Get-ReleaseInventory([string]$Root,[System.Collections.IDictionary]$Ass
     }
     return @{files=@($files.Keys|Sort-Object|ForEach-Object{$files[$_]});links=@($links.Keys|Sort-Object|ForEach-Object{$links[$_]})}
 }
-function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Assets,[System.Collections.IDictionary]$Contract,[System.Collections.IDictionary]$Provenance,[System.Collections.IDictionary]$SourceExecution=$null,[System.Collections.IDictionary]$ResidentExecution=$null,[System.Collections.IDictionary]$ReceiptManagement=$null,[System.Collections.IDictionary]$ExecutionAccess=$null){
+function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Assets,[System.Collections.IDictionary]$Contract,[System.Collections.IDictionary]$Provenance,[System.Collections.IDictionary]$SourceExecution=$null,[System.Collections.IDictionary]$ResidentExecution=$null,[System.Collections.IDictionary]$ReceiptManagement=$null,[System.Collections.IDictionary]$ExecutionAccess=$null,[System.Collections.IDictionary]$KnowledgeArchives=$null){
     Assert-ReleaseAssets $Role $Assets
     $identifier=$Role+'-'+[guid]::NewGuid().ToString('N')
     $inventory=Get-ReleaseInventory $Layout.release_root $Assets
@@ -67,9 +68,11 @@ function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collecti
     if($ResidentExecution){$descriptor.resident_execution=$ResidentExecution}
     if($null -ne $ReceiptManagement){$descriptor.receipt_management=$ReceiptManagement}
     if($null -ne $ExecutionAccess){$descriptor.execution_access=$ExecutionAccess}
+    if($null -ne $KnowledgeArchives){$descriptor.source_archives=$KnowledgeArchives}
     Assert-SourceExecutionDescriptor $descriptor
     Assert-ReceiptManagementDescriptor $descriptor
     Assert-ExecutionAccessDescriptor $descriptor
+    Assert-KnowledgeArchiveDescriptor $descriptor
     $relative='descriptors/'+$identifier+'.json';$path=Resolve-ReleasePath $Layout.release_root $relative
     Assert-ReleasePhysicalPath $Layout.release_root $path
     if(Test-Path -LiteralPath $path){throw 'Release descriptor already exists.'}
@@ -87,6 +90,7 @@ function Read-ReleaseDescriptor([hashtable]$Layout,[System.Collections.IDictiona
     Assert-SourceExecutionDescriptor $descriptor
     Assert-ReceiptManagementDescriptor $descriptor
     Assert-ExecutionAccessDescriptor $descriptor
+    Assert-KnowledgeArchiveDescriptor $descriptor
     foreach($relative in $descriptor.assets.Values){$null=Resolve-ReleasePath $Layout.release_root $relative}
     if($Verify){
         $actual=Get-ReleaseInventory $Layout.release_root $descriptor.assets
@@ -183,12 +187,13 @@ function Assert-ReleaseAssets([string]$Role,[System.Collections.IDictionary]$Ass
 }
 function Assert-CompatibleRelease([System.Collections.IDictionary]$Previous,[System.Collections.IDictionary]$Next){
     if($Previous.role -cne $Next.role){throw 'Cannot replace a release with another service role.'}
+    Assert-KnowledgeArchivePair $Previous $Next
     # Both candidates can write BEFORE readiness. Equality is deliberate: the
     # previous release must understand candidate writes even when startup fails.
-    if((Get-ContractIdentity $Previous.contract) -cne (Get-ContractIdentity $Next.contract) -and -not(Test-SourceRuntimeTransition $Previous $Next)){throw 'Bidirectional release compatibility is not established. A coordinated migration is required; automatic rollback cannot undo database writes.'}
-    # The one reviewed additive Runtime transition above is conditional on the
-    # live schema, selected Worker and retained tasks. Operations check those
-    # before stopping anything, including recovery of an interrupted release.
+    if((Get-ContractIdentity $Previous.contract) -cne (Get-ContractIdentity $Next.contract) -and -not(Test-SourceRuntimeTransition $Previous $Next) -and -not(Test-KnowledgeArchiveTransition $Previous $Next)){throw 'Bidirectional release compatibility is not established. A coordinated migration is required; automatic rollback cannot undo database writes.'}
+    # Reviewed Runtime and Knowledge transitions additionally require live
+    # domain probes. Operations recheck the applicable state during startup,
+    # release and recovery; metadata alone cannot permit a data downgrade.
 }
 function Export-ReleaseCatalog([hashtable]$Layout,[string]$Destination){
     $catalog=Read-ReleaseCatalog $Layout;Assert-NoPendingRelease $catalog
