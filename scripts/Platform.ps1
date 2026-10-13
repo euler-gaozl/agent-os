@@ -1,5 +1,5 @@
 param(
-    [Parameter(Position=0)][ValidateSet('start','stop','status','doctor','backup','restore-check','build','update','rollback','release-recover')][string]$Action='status',
+    [Parameter(Position=0)][ValidateSet('start','stop','status','doctor','backup','restore-check','build','update','rollback','release-recover','set-engine')][string]$Action='status',
     [string]$LayoutPath='',
     [ValidateRange(1,16)][int]$Workers=2,
     [string[]]$Service=@(),
@@ -8,6 +8,7 @@ param(
     [string]$Pnpm='pnpm',
     [string]$ReleaseSet='',
     [string]$SourceArtifact='',
+    [ValidateSet('source','historical')][string]$Engine='',
     [switch]$WithDatabase
 )
 $ErrorActionPreference='Stop'
@@ -18,6 +19,10 @@ $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 . (Join-Path $PSScriptRoot 'lib/platform-releases.ps1')
 $layout=Get-PlatformLayout $root $LayoutPath
 switch($Action){
+    'set-engine' {
+        if(-not $Engine){throw 'set-engine requires -Engine source or historical.'}
+        & (Join-Path $PSScriptRoot 'Set-DefaultEngine.ps1') -LayoutPath $LayoutPath -Engine $Engine
+    }
     {$_ -in @('update','rollback','release-recover')} {
         if($Service.Count -ne 1){throw 'Select exactly one service for release maintenance.'}
         $releaseAction=if($Action -eq 'release-recover'){'recover'}else{$Action}

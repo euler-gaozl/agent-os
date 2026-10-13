@@ -1,5 +1,6 @@
 # Requires paths, releases and processes. The catalog is the transaction journal;
 # evidence files are observations and never decide which version is committed.
+. (Join-Path $PSScriptRoot 'platform-engine-configuration.ps1')
 function Get-ReleaseProcessSnapshot([hashtable]$Layout,[string]$ExcludeRole='',[switch]$AllowStopped){
     $result=@()
     foreach($entry in (Read-PlatformProcesses $Layout)){
@@ -72,6 +73,10 @@ function Save-ReleasePhase([hashtable]$Layout,[string]$Role,[string]$Operation,[
 function Restore-PendingRelease([hashtable]$Layout,[string]$Role,[string]$Scripts,[IO.FileStream]$Lock,[int]$TimeoutSeconds=30,[scriptblock]$Checkpoint={param($point)}){
     $catalog=Read-ReleaseCatalog $Layout;$pending=$catalog.services[$Role]['pending']
     if(-not $pending){throw 'No pending release to recover.'}
+    if($pending['configuration']){
+        if($Role -cne 'runtime'){throw 'Unknown configuration migration role.'}
+        return Restore-PendingEngineConfiguration $Layout $Scripts $Lock $TimeoutSeconds $Checkpoint
+    }
     $othersBefore=Get-ReleaseProcessSnapshot $Layout $Role -AllowStopped
     # Validation happens before stopping anything. A missing/tampered old bundle
     # stays pending for repair; silently picking a third version is forbidden.

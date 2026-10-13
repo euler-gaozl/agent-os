@@ -84,7 +84,13 @@ function Get-BoundRuntimeConfiguration([hashtable]$Layout,[System.Collections.ID
     $bytes=[IO.File]::ReadAllBytes($path)
     try{
         $hash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
-        if($deployment.current['config_sha256'] -cne $hash){throw 'Runtime configuration differs from its registered deployment; reconcile it before execution maintenance.'}
+        $bound=$deployment.current
+        if($deployment['pending'] -and $deployment.pending['configuration']){
+            if($deployment.pending.configuration.format -ne 1 -or $deployment.pending.configuration.scope -cne 'runtime-default'){throw 'Unknown pending Runtime configuration operation.'}
+            if($deployment.pending.phase -in @('configuration_written','started','ready')){$bound=$deployment.pending.target}
+            elseif($deployment.pending.phase -notin @('prepared','stopped','reverting','recovery_ready')){throw 'Unknown Runtime configuration phase.'}
+        }
+        if($bound['config_sha256'] -cne $hash){throw 'Runtime configuration differs from its registered deployment; reconcile it before execution maintenance.'}
         $config=[Text.Encoding]::UTF8.GetString($bytes)|ConvertFrom-Json -AsHashtable
     }finally{[Array]::Clear($bytes,0,$bytes.Length)}
     $allowed=@($deployment.current)

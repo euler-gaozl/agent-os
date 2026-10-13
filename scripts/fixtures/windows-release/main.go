@@ -37,9 +37,26 @@ func main() {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			return
 		}
+		if config["DEFAULT_RUN_ENGINE"] == "dsh-source-639ed015-state-v1" && config["unready_source_marker"] != "" {
+			if _, err := os.Stat(config["unready_source_marker"]); err == nil {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				return
+			}
+		}
 		w.WriteHeader(http.StatusOK)
 	})
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	mux.HandleFunc("/fixture/engine", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+config["SERVICE_TOKEN"] {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]string{"engine": config["DEFAULT_RUN_ENGINE"]})
+	})
+	address := config["LISTEN"]
+	if address == "" {
+		address = "127.0.0.1:0"
+	}
+	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		panic("fixture listen failed")
 	}
