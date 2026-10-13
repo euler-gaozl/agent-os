@@ -1,5 +1,9 @@
 # 端到端交付账本
 
+## 2026-10-13 DSH 历史内存测量
+
+Harness 新增长历史/新进程回放基准，正式源码引擎和部署未改。128 / 512 / 2,048 步固定工作集、真实 DSH 自动 Compact 仍出现保留堆增长（13.1 / 19.7 / 48.1 MiB）；新进程重放为 0.8 / 2.6 / 10.1 秒。六次运行完成，逐帧语义请求、事件数量/类型与冻结回包 hash 链核对通过。原始事件资料仍完整保留；不把此结果写成内存有界通过。模型/工具/Runtime 状态都是测试夹具，未用正式数据库或供应商。原始证据 `local/evidence/dsh-memory-baseline-0e3b3a7a0b56427b94e138b75dae77f4`，设计边界见 Harness `docs/resident-history-design.md` 及[存储决策](architecture/dsh-source-and-storage-decision.md)。P2.5 继续实现 Session 核心驻留结构、消费者水位和控制状态；不能直接删除日志数组。Actions 未运行。
+
 ## 2026-10-13 源码执行器发布增量
 
 最新：已正式激活源码 DSH、新 Runtime/双 Worker/Console，13 次实际升级回退与默认配置往返通过；官方 DeepSeek 合成资料任务完成工作状态落盘、真实来源回执和笔记回读。新基线备份实际隔离恢复通过 44 个关系及全部 3,008 个发布文件，正式 12 实例重启后状态仍可读。首次失败、预算触顶和剩余限制见[实际激活记录](source-engine-activation-20261013.md)。完整 Goal 仍未完成，GitHub Actions 保持禁用。

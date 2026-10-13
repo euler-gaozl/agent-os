@@ -2,6 +2,16 @@
 
 2026-10-12；服务于 Windows 单机交付。此文区分已核实事实、当前决定和待实现内容。
 
+## 2026-10-13 长历史测量后的核心修改决定
+
+固定源码 v1 的真实 DSH 循环，在固定工作集、8,192 token 窗口和 4 KiB 合成工具内容下，执行 128 / 512 / 2,048 步；各自另起 Node 从逐帧落盘的冻结回包重放。六次正常结束，实际发生 127 / 511 / 2,047 次 Compact，最大模型 JSON 一直是 9,795 字节，但回收后的堆分别为 13,718,896 / 20,609,896 / 50,417,120 字节。重放耗时 805 / 2,590 / 10,132 毫秒。证据为 `local/evidence/dsh-memory-baseline-0e3b3a7a0b56427b94e138b75dae77f4`，脚本在独立 Harness 仓库 `benchmarks/`。这是带 GC 仪器的单次合成 supervisor 测量，没有 Runtime/Worker/正式数据库/付费模型；不是生产延迟分位数或完整恢复验收。事件 hash 链、请求语义哈希、数量和类型已核对，未声称重建事件的时间戳/ID 与原始字节相同。
+
+此结果和源码读取共同支持：已有 flush/Compact 扩展点不足以释放 Session 全部历史，**需要最小核心补丁**。改动对象是 Session 的驻留事件索引与绝对序号分离、SurfaceManager、header/tool-history、TokenMeter、Projection 注册和 Compact 控制状态读取；继续沿用原 AgentLoop。尤其 `compaction-basic/region.ts` 当前每次倒扫历史查找 seed/turn/compaction 边界，无 seed 时会到起点；Projection 的首次/迟注册和 TokenMeter 首次访问也需要先确定消费水位。不能将旧日志槽清空后让 `snapshotEvents()` 返回不完整的“全历史”。
+
+释放前必须同时满足 Runtime 归档已确认、所有已挂载消费者推进到释放水位、无 surface/工具定义/开放控制状态引用、无正在提交的 append。失败确认保留待存事件并阻止后续效果。新引擎候选先保持原 Exchange 重放权威并测量其历史成本；可跳过前缀的原生 Session 快照另行定义版本/归档绑定，不能创建第二个效果状态机。具体候选契约在 Harness 的 `docs/resident-history-design.md`。正式 v1 与现有任务没有改变；目前只完成问题测量和修改边界，尚未实现或部署驻留历史释放。
+
+独立评审只读核对脚本、六次报告和产物哈希，未执行测试，认可本夹具趋势结论。补充边界已写入 Harness：RuntimeContextProjection 的“从未存在/已压缩”状态、晚注册或重注册拒绝、被遮蔽消息的投影引用，以及仅释放捕获批次 `start + count`（不能用回包时最新 seq）。测量与设计代码已保存到私有 Harness 分支 `feat/source-owned-harness` 的 `f4c005e`，未修改固定生产 tag 或集成发布锁；两个仓库 Actions 均保持禁用。
+
 ## 决定
 
 建立独立的私有 `agent-os-harness` 源码维护仓库，记录上游来源、精确提交、许可证、依赖锁及本平台补丁，提供 Worker 消费的固定版本构建。维护的是可复现的 DSH 内核组合和本平台插件，不另造一个模型/工具决策循环，也不导入 DSH 整套 Web/CLI 作为本平台前端。
