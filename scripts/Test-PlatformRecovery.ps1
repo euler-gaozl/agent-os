@@ -7,6 +7,7 @@ $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'lib/platform-recovery.ps1')
 . (Join-Path $PSScriptRoot 'lib/platform-paths.ps1')
 . (Join-Path $PSScriptRoot 'lib/platform-releases.ps1')
+. (Join-Path $PSScriptRoot 'lib/knowledge-archive-recovery.ps1')
 $BackupDirectory=[IO.Path]::GetFullPath($BackupDirectory)
 $manifestPath=Join-Path $BackupDirectory 'manifest.json'
 $expected=[Text.Encoding]::UTF8.GetString((Unprotect-RecoveryBytes ([IO.File]::ReadAllBytes((Join-Path $BackupDirectory 'manifest-digest.dpapi')))))
@@ -77,7 +78,8 @@ try {
         for($i=0;$i -lt $expectedTables.Count;$i++){
             foreach($key in @('schema','table','kind','rows','sha256')){if([string]$fingerprints[$i].$key -cne [string]$expectedTables[$i][$key]){throw ('Restored content differs: '+$expectedTables[$i].schema+'.'+$expectedTables[$i].table)}}
         }
-        $report.databases+=@{name=$database.name;relations=$fingerprints.Count;all_fingerprints_match=$true;metadata_match=$true;schema_and_acl_match=$true}
+        $archives=Test-RecoveredKnowledgeArchives $PostgresBin $target
+        $report.databases+=@{name=$database.name;relations=$fingerprints.Count;all_fingerprints_match=$true;metadata_match=$true;schema_and_acl_match=$true;source_archives=$archives}
         Write-Output ('Restored database with '+$fingerprints.Count+' matching table/sequence fingerprints.')
     }
     foreach($relative in $configs.Keys){
