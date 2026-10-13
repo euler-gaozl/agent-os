@@ -1,6 +1,6 @@
 # Windows resident-v2 发布控制
 
-2026-10-13。本增量为发布控制器增加独立的 resident-v2 能力声明、产物、启动配置和回退检查。正式平台仍运行原 state-v1 发布与默认值；源码版本选择不等于已经升级安装。整体单机交付目标仍在推进。
+2026-10-13。本增量为发布控制器增加独立的 resident-v2 能力声明、产物、启动配置和回退检查。双版本 Runtime/Worker 发布已实际安装并验证独立升级/回退、默认配置往返；最终默认仍为 state-v1，没有创建正式 v2 任务。整体单机交付目标仍在推进。
 
 ## 版本策略
 
@@ -32,4 +32,12 @@
 
 独立评审确认的 `Set-DefaultEngine.ps1` 参数入口遗漏已修复，并通过外层 `Platform.ps1` 调用验收。静态审查不能替代动态测试或正式激活验收。
 
-源码选择固定为 Runtime `8404f3e0ad3d62c3742a5eba4b996b1f88a6e8b0`、Worker `346c0032921b1f45e3b300c4716ed9551da9c133`，其事务模块为 Runtime `v0.1.0-rc.3`；清洁仓库、发布协议、窄模块和规范校验和检查通过。完整集成构建、实际新版本部署、独立升级/回滚、启用 resident 默认值、付费 Agent 与业务端验收仍是后续步骤。没有触发 GitHub Actions。
+## 完整构建与正式安装
+
+源码选择固定为 Runtime `8404f3e0ad3d62c3742a5eba4b996b1f88a6e8b0`、Worker `346c0032921b1f45e3b300c4716ed9551da9c133`，其事务模块为 Runtime `v0.1.0-rc.3`。集成代码 `5a013a270f33e502d974d4f15c665b38eaf4f610` 从干净仓库构建发布集 `local/releases/staged/b037b1e03b794e99abb879408b640b94.json`；Runtime 描述符 `runtime-8e70549e1bab45c98c9c9091ff8b8ab9`，Worker 描述符 `worker-83924222c9dd44268d1c4e3e7adea82d`。实际发布清单包含 Runtime 1 个文件、Worker 1,479 个文件、零链接；三项历史 Harness 接口测试通过。清洁提交、发布协议、窄模块、规范校验和及完整文件清单均通过检查。
+
+- `local/evidence/execution-owner-releases-df1a6aac567c4d3c870f9547670352ca`：真实正式 Runtime、Worker 分别 update→rollback→update，共六次操作。每次独立替换并就绪，14 张执行/工作状态/笔记表指纹不变，`/v1/runs` 与 `/v1/notes` 回读哈希不变，非目标实例不变。没有数据库迁移或新模型任务；不声称覆盖所有历史 HTTP 接口。
+- `local/evidence/resident-live-maintenance-127a0df7aee8468cab87f44a5137c659`：已安装服务的真实默认配置 resident→source 往返，通过实际两 Worker 的产物路径、数据库、Runtime 身份和 readiness 检查。v1 默认及 v2 默认下均拒绝不支持 v2 的 Runtime 回退；v2 默认下拒绝移除 v2 Worker。三次拒绝均核对所有进程和 catalog 未改变。最终默认恢复 v1，正式 v1 任务仍为两个且均已结束，v2 为零。
+- 完整备份 `local/backups/resident-release-live-20261013` 已在 `local/restore-checks/6af62a28a8c347d68f137e9bac0319e8/result.json` 实际隔离还原通过：44 个关系指纹、schema/ACL、10 个角色登录和两项凭证解密；完整发布档案 25 个引用、3,018 文件、零链接。隔离数据库已停止，没有启动还原后的业务服务、Worker 或供应商调用。正式平台另行重启 12 个实例，核心健康检查通过。
+
+独立代理只读核对维护脚本、两份正式升级/配置证据、完整发布文件哈希和二进制构建元数据，支持上述有限安装结论；没有代跑维护、查询正式数据库或把配置就绪说成 v2 Agent 已执行。实际 v2 供应商任务、长历史联合资源/恢复测量、缓存生命周期与完整 UI/业务验收继续推进。Windows Sandbox 隔离执行仍未配置。没有触发 GitHub Actions 或付费模型调用。
