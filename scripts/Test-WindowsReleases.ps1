@@ -3,6 +3,7 @@ $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 foreach($library in @('platform-paths','platform-lock','platform-processes','platform-recovery','platform-releases','platform-release-operations','platform-release-baseline')){. (Join-Path $PSScriptRoot ('lib/'+$library+'.ps1'))}
+. (Join-Path $PSScriptRoot 'fixtures/windows-release/access.ps1')
 function Assert([bool]$Condition,[string]$Message){if(-not $Condition){throw $Message}}
 function Expect-Rejection([scriptblock]$Action,[string]$Message){$refused=$false;try{& $Action|Out-Null}catch{$refused=$true};Assert $refused $Message}
 if($CrashRoot){
@@ -37,10 +38,16 @@ foreach($version in @('old','new','unready')){
 }
 Write-PlatformJson (Join-Path $layout.release_root 'current.json') @{format=2;generation=1;services=@{telemetry=@{current=$refs.old;previous=$null;pending=$null}}}
 Write-PlatformJson (Join-Path $testRoot 'candidate.json') $refs.new
-$checks=[Collections.Generic.List[string]]::new();$result=@{status='incomplete';scope='synthetic Windows service release, real processes and process crashes';provider_calls=0;database_connections=0;checks=@()}
+$checks=[Collections.Generic.List[string]]::new();$result=@{status='incomplete';scope='synthetic Windows service release, real processes/crashes and real restricted SQL permission preflight; no business/model effects';provider_calls=0;database_connections='disposable PostgreSQL ACL probes';checks=@()}
+$accessFixture=$null
 $lock=$null
 try{
     $lock=Enter-PlatformMaintenance $layout.state_root
+    $accessFixture=New-ReleaseAccessFixture $layout $sourceBinary
+    $originalConfig=[IO.File]::ReadAllBytes($configPath)
+    foreach($reference in $refs.Values){$reference.config_sha256=(Get-FileHash -LiteralPath $configPath).Hash.ToLowerInvariant()}
+    Write-PlatformJson (Join-Path $layout.release_root 'current.json') @{format=2;generation=1;services=@{telemetry=@{current=$refs.old;previous=$null;pending=$null};runtime=@{current=$accessFixture.runtime_reference;previous=$null;pending=$null}}}
+    Write-PlatformJson (Join-Path $testRoot 'candidate.json') $refs.new
     $observerId='observer-'+[guid]::NewGuid().ToString('N')
     $observerConfig=Join-Path $layout.config_root ('launches/'+$observerId+'.json')
     Write-PlatformJson $observerConfig @{SERVICE_TOKEN='synthetic-observer-token'}
@@ -49,6 +56,21 @@ try{
     Write-PlatformJson (Join-Path $layout.state_root 'processes.json') @($observer)
     & (Join-Path $PSScriptRoot 'Start-Local.ps1') -LayoutPath $layout.layout_path -Service telemetry -MaintenanceLock $lock
     Wait-ReleaseReady $layout telemetry 1 $refs.old 5
+    # The process is genuinely alive. Even a rehashed launch snapshot cannot
+    # change the SQL target attested by the committed service configuration.
+    $processPath=Join-Path $layout.state_root 'processes.json'
+    $originalProcesses=[IO.File]::ReadAllBytes($processPath)
+    $entries=Read-PlatformProcesses $layout;$live=@($entries|Where-Object role -eq 'telemetry')[0]
+    $originalLaunch=[IO.File]::ReadAllBytes($live.launch_config)
+    $originalCatalog=(Get-FileHash -LiteralPath (Join-Path $layout.release_root 'current.json')).Hash
+    try{
+        $changed=Read-ReleaseJson $live.launch_config;$redirect=[UriBuilder]::new($changed.DATABASE_URL);$redirect.Path='/postgres';$changed.DATABASE_URL=$redirect.Uri.AbsoluteUri
+        Write-PlatformJson $live.launch_config $changed;$live.launch_config_sha256=(Get-FileHash -LiteralPath $live.launch_config).Hash.ToLowerInvariant();Write-PlatformJson $processPath $entries
+        $message='';try{Invoke-ReleaseChange $layout telemetry update $refs.new $PSScriptRoot $lock 5|Out-Null}catch{$message=$_.Exception.Message}
+        Assert ($message -match 'Live execution consumer database differs') 'Live launch database drift did not reach the intended refusal.'
+        Assert ([bool](Get-PlatformProcess $live) -and (Get-FileHash -LiteralPath (Join-Path $layout.release_root 'current.json')).Hash -ceq $originalCatalog) 'Rejected launch drift changed the live process or catalog.'
+    }finally{[IO.File]::WriteAllBytes($live.launch_config,$originalLaunch);[IO.File]::WriteAllBytes($processPath,$originalProcesses)}
+    $checks.Add('live_launch_database_drift_refused_before_stop')
     $null=Invoke-ReleaseChange $layout telemetry update $refs.new $PSScriptRoot $lock 5
     Assert ((Read-ReleaseCatalog $layout).services.telemetry.current.id -ceq $refs.new.id) 'Update did not commit.'
     $null=Invoke-ReleaseChange $layout telemetry rollback $null $PSScriptRoot $lock 5
@@ -65,7 +87,7 @@ try{
     Assert ((Get-FileHash -LiteralPath (Join-Path $layout.release_root 'current.json')).Hash -ceq $priorDigest) 'Refusal changed catalog.'
     [IO.File]::AppendAllText($configPath,' ')
     Expect-Rejection {Invoke-ReleaseChange $layout telemetry update $refs.new $PSScriptRoot $lock 2} 'Changed config accepted.'
-    Write-PlatformJson $configPath @{SERVICE_TOKEN='synthetic-fixture-token'}
+    [IO.File]::WriteAllBytes($configPath,$originalConfig)
     $checks.Add('incompatible_contract_and_changed_configuration_refused_before_stop')
     $configSaved=Join-Path $layout.config_root 'telemetry-config.saved'
     [IO.File]::Move($configPath,$configSaved)
@@ -128,7 +150,7 @@ try{
     $catalog=Read-ReleaseCatalog $layout;$catalog.services.worker=@{current=$workerRef;previous=$null;pending=$null};$catalog.services.control=@{current=$webRef;previous=$null;pending=$null};Write-PlatformJson (Join-Path $layout.release_root 'current.json') $catalog
     $export=Export-ReleaseCatalog $layout (Join-Path $testRoot 'archive')
     $restored=Restore-ReleaseCatalog (Join-Path $testRoot 'archive') (Join-Path $testRoot 'restored')
-    Assert ($export.references -eq 4 -and $restored.references -eq 4 -and $restored.links -eq 1) 'Current/previous and dependency archive incomplete.'
+    Assert ($export.references -eq 5 -and $restored.references -eq 5 -and $restored.links -eq 1) 'Current/previous and dependency archive incomplete.'
     $checks.Add('complete_current_previous_worker_links_and_web_restored')
     $null=Assert-HarnessEquivalent (Join-Path $layout.release_root 'bundles/worker/harness') (Join-Path $testRoot 'restored/bundles/worker/harness')
     Write-PlatformText (Join-Path $layout.release_root 'bundles/worker/harness/node_modules/.pnpm/pkg/index.js') 'tampered'
@@ -151,6 +173,7 @@ finally{
     try{
         if(-not $lock){$lock=Enter-PlatformMaintenance $layout.state_root}
         & (Join-Path $PSScriptRoot 'Stop-Local.ps1') -LayoutPath $layout.layout_path -MaintenanceLock $lock
+        if($accessFixture){Remove-ReleaseAccessFixture $layout $accessFixture;$result.access_fixture_removed=$true}
     }catch{$result.status='cleanup_failed';Write-Warning 'Synthetic release process cleanup needs inspection.'}
     finally{if($lock){$lock.Dispose()}}
     $result.checks=@($checks.ToArray());$result.finished_at=[datetime]::UtcNow.ToString('o');Write-PlatformJson (Join-Path $testRoot 'result.json') $result

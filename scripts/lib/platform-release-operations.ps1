@@ -82,6 +82,7 @@ function Restore-PendingRelease([hashtable]$Layout,[string]$Role,[string]$Script
     # stays pending for repair; silently picking a third version is forbidden.
     $null=Read-ReleaseDescriptor $Layout $pending.prior -Verify
     $null=Assert-ReleaseConfiguration $Layout $Role $pending.prior
+    if($Role -in @('worker','telemetry')){$priorDescriptor=Read-ReleaseDescriptor $Layout $pending.prior -Verify;Assert-ExecutionAccessDeployment $Layout @($Role) @{$Role=$priorDescriptor}}
     if($Role -in @('runtime','worker')){$priorDescriptor=Read-ReleaseDescriptor $Layout $pending.prior -Verify;Assert-SourceExecutionDeployment $Layout @{$Role=$priorDescriptor}}
     if($Role -in @('runtime','control')){$priorDescriptor=Read-ReleaseDescriptor $Layout $pending.prior -Verify;Assert-ReceiptManagementDeployment $Layout @{$Role=$priorDescriptor}}
     $pending=Save-ReleasePhase $Layout $Role $pending.id 'reverting'
@@ -118,6 +119,7 @@ function Invoke-ReleaseChange([hashtable]$Layout,[string]$Role,[string]$Action,[
     if($before.role -cne $Role -or $after.role -cne $Role){throw 'Descriptor does not match selected service.'}
     if($after.provenance['dirty']){throw 'Development builds cannot be activated as managed releases. Commit and rebuild first.'}
     Assert-CompatibleRelease $before $after
+    if($Role -in @('worker','telemetry')){Assert-ExecutionAccessDeployment $Layout @($Role) @{$Role=$after}}
     if($Role -in @('runtime','control')){Assert-ReceiptManagementDeployment $Layout @{$Role=$after}}
     if($Role -in @('runtime','worker')){Assert-SourceExecutionDeployment $Layout @{$Role=$after}}
     $configHash=Assert-ReleaseConfiguration $Layout $Role $prior

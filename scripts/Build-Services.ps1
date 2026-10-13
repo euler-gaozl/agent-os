@@ -134,7 +134,9 @@ try{
             if($owner){$after=Get-SelectedServiceSource $repoRoot $role $contract;if($after.commit -cne $owner.commit){throw 'Service source changed while packaging runtime assets.'}}
             if($owner){$provenance=@{kind='independent-source-build';repository=$owner.repository;commit=$owner.commit;integration_commit=$revision;dirty=$dirty;sdk=$owner.sdk;owner_modules=$owner.owner_modules;built_at=[datetime]::UtcNow.ToString('o')}}
             $receiptManagement=if($owner){$owner.release['receipt_management']}else{$null}
-            $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance $sourceExecution $residentExecution $receiptManagement
+            $executionAccess=$null;if($owner){$executionAccess=Get-DeclaredExecutionAccess $owner.release}
+            if($null -ne $executionAccess){Assert-ExecutionAccessBinary $binary @{role=$role;execution_access=$executionAccess}}
+            $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance $sourceExecution $residentExecution $receiptManagement $executionAccess
         }
     }finally{Pop-Location}
     $staged=Join-Path $layout.release_root ('staged/'+$buildId+'.json')

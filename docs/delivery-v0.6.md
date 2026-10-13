@@ -1,4 +1,8 @@
 # 端到端交付账本
+## 2026-10-13 执行权限发布保护候选
+
+Worker/Telemetry 新增配置无关的编译能力报告；Windows 构建、启动、更新、回退和 pending 恢复核对实际程序、受绑定配置及真实账号有效权限。44 项数据库/发布拒绝检查、17 项真实进程发布故障回归、12 项配置漂移及41项回执发布回归通过；原八处 launcher 中断覆盖保留。正式只读预检发现零实例 Telemetry 缺 `telemetry_inbox`，须先做本域迁移，不能将此前零实例切换称为可启动验收。正式 ACL 和安装版本未变，无 Actions/模型费用；下一步是干净完整发布包、旧 migrator 封口及备份保护下的正式操作。见[实现、证据与余项](execution-access-release-20261013.md)。
+
 ## 2026-10-13 执行域权限审计与显式退役候选
 
 只读正式数据库审计确认 Worker 仍有历史宽授权，Telemetry 仍直读写 events；Storage/Sandbox 已无执行域直授。Runtime 新增独立 `retire-access`，只处理本域表/序列，保留外域授权与数据，普通迁移不触发撤权。隔离 PostgreSQL 23 条测试/子测试零跳过、vet、四程序构建和 execution 边界通过；真实 LOGIN 验证受限任务执行、笔记/回执重放、越权拒绝和十五类事务拒绝。独立评审发现的 URL 数据库覆盖与 REPLICATION 身份遗漏已修复并重测。正式 ACL、安装版本和源码锁未变；启动/更新/回退/pending 守卫完成后才安排正式收缩。没有模型费用或 Actions。见[证据、失败和剩余工作](runtime-access-retirement-20261013.md)，完整 Goal 继续 active。

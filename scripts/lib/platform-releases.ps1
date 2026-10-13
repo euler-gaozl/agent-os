@@ -2,6 +2,7 @@
 # descriptors are relative so a verified backup can reconstruct the same bundle.
 . (Join-Path $PSScriptRoot 'platform-source-execution.ps1')
 . (Join-Path $PSScriptRoot 'platform-receipts.ps1')
+. (Join-Path $PSScriptRoot 'platform-execution-access.ps1')
 function Read-ReleaseJson([string]$Path){
     try{return Get-Content -LiteralPath $Path -Raw|ConvertFrom-Json -AsHashtable -DateKind String}catch{throw ('Invalid release metadata: '+[IO.Path]::GetFileName($Path))}
 }
@@ -56,7 +57,7 @@ function Get-ReleaseInventory([string]$Root,[System.Collections.IDictionary]$Ass
     }
     return @{files=@($files.Keys|Sort-Object|ForEach-Object{$files[$_]});links=@($links.Keys|Sort-Object|ForEach-Object{$links[$_]})}
 }
-function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Assets,[System.Collections.IDictionary]$Contract,[System.Collections.IDictionary]$Provenance,[System.Collections.IDictionary]$SourceExecution=$null,[System.Collections.IDictionary]$ResidentExecution=$null,[System.Collections.IDictionary]$ReceiptManagement=$null){
+function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Assets,[System.Collections.IDictionary]$Contract,[System.Collections.IDictionary]$Provenance,[System.Collections.IDictionary]$SourceExecution=$null,[System.Collections.IDictionary]$ResidentExecution=$null,[System.Collections.IDictionary]$ReceiptManagement=$null,[System.Collections.IDictionary]$ExecutionAccess=$null){
     Assert-ReleaseAssets $Role $Assets
     $identifier=$Role+'-'+[guid]::NewGuid().ToString('N')
     $inventory=Get-ReleaseInventory $Layout.release_root $Assets
@@ -64,8 +65,10 @@ function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collecti
     if($SourceExecution){$descriptor.source_execution=$SourceExecution}
     if($ResidentExecution){$descriptor.resident_execution=$ResidentExecution}
     if($null -ne $ReceiptManagement){$descriptor.receipt_management=$ReceiptManagement}
+    if($null -ne $ExecutionAccess){$descriptor.execution_access=$ExecutionAccess}
     Assert-SourceExecutionDescriptor $descriptor
     Assert-ReceiptManagementDescriptor $descriptor
+    Assert-ExecutionAccessDescriptor $descriptor
     $relative='descriptors/'+$identifier+'.json';$path=Resolve-ReleasePath $Layout.release_root $relative
     Assert-ReleasePhysicalPath $Layout.release_root $path
     if(Test-Path -LiteralPath $path){throw 'Release descriptor already exists.'}
@@ -82,6 +85,7 @@ function Read-ReleaseDescriptor([hashtable]$Layout,[System.Collections.IDictiona
     Assert-ReleaseAssets $descriptor.role $descriptor.assets
     Assert-SourceExecutionDescriptor $descriptor
     Assert-ReceiptManagementDescriptor $descriptor
+    Assert-ExecutionAccessDescriptor $descriptor
     foreach($relative in $descriptor.assets.Values){$null=Resolve-ReleasePath $Layout.release_root $relative}
     if($Verify){
         $actual=Get-ReleaseInventory $Layout.release_root $descriptor.assets

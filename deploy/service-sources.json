@@ -19,7 +19,7 @@
     },
     "telemetry": {
       "repository": "agent-os-telemetry",
-      "commit": "fcaca2e96927c4fd2139b681a471dd83a7612932"
+      "commit": "c2a02e27fcc0ef517347dcaaaabe11fbcc671e81"
     },
     "toolhub": {
       "commit": "98f8fecc5a139b3f1b0e4d76f4a11c9d8e0c0d07",
@@ -54,7 +54,7 @@
     },
     "runtime": {
       "repository": "agent-os-runtime",
-      "commit": "90e7e9c4721fe238d46da74711105ea1763ef65c"
+      "commit": "8bbcc6ddb975475ce384a91be502f19654c44f70"
     },
     "worker": {
       "owner_modules": [
@@ -68,7 +68,7 @@
           "package": "execution"
         }
       ],
-      "commit": "346c0032921b1f45e3b300c4716ed9551da9c133",
+      "commit": "80c64ff05d8f239a20920c0c7fab35e197e8f0dc",
       "repository": "agent-os-worker"
     }
   }

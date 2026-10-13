@@ -2,6 +2,8 @@
 
 2026-10-13，Windows 本机。Runtime 独立仓库已有显式权限收缩入口和真实 PostgreSQL 测试；**正式数据库尚未执行撤权，完整 P2 未完成**。启动、发布、回退和 pending 恢复守卫是下一项前置工作。本轮没有更新正式服务、修改源码锁、调用付费模型或运行 Actions。
 
+后续增量：[Windows 权限发布保护](execution-access-release-20261013.md)已实现并完成本机验收，正式预检发现 Telemetry 缺 inbox；以下保留退役候选阶段的原始事实，正式收缩仍待迁移与协调器。
+
 ## 实际审计结果
 
 入口为本机 `ops/Inspect-ExecutionPrivileges.ps1`，维护锁内验证正式 PostgreSQL 的本机地址、端口和数据目录，使用只读事务查询目录。配置和凭证仅在进程内读取；公开证据不包含连接串。报告目录为 `local/evidence/execution-access-audit-df7e8ce500494654980bdff4b02e3886`，catalog 前后哈希相同，报告写入数为零。
