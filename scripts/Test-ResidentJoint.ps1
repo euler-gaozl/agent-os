@@ -1,7 +1,8 @@
 # Opt-in Windows released-process measurement. Formal services and databases are
 # untouched. Requires the already provisioned, stopped disposable PostgreSQL.
-param([string]$FixtureRoot='D:\workspace\agent-platform\local\evidence\p2-first-services-85be4f84e89f47ad935b6ed8882093c0\postgres',[switch]$TimeoutFault)
+param([string]$FixtureRoot='D:\workspace\agent-platform\local\evidence\p2-first-services-85be4f84e89f47ad935b6ed8882093c0\postgres',[switch]$TimeoutFault,[switch]$Lifecycle)
 $ErrorActionPreference='Stop'
+if($TimeoutFault -and $Lifecycle){throw 'TimeoutFault and Lifecycle are separate acceptance modes'}
 $project=Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'lib/platform-paths.ps1')
 . (Join-Path $PSScriptRoot 'lib/platform-lock.ps1')
@@ -11,9 +12,9 @@ $lock=Enter-PlatformMaintenance $layout.state_root
 try {
 $evidenceRoot=Join-Path (Split-Path -Parent $layout.state_root) 'evidence'
 $proof=Join-Path $evidenceRoot ('resident-joint-'+[guid]::NewGuid().ToString('N'))
-$null=New-Item -ItemType Directory -Path $proof,(Join-Path $proof 'bin'),(Join-Path $proof 'tmp')
-$report=@{passed=$false;paid_model_calls=0;ci_runs=0;forced_gc=$false;timeout_fault=[bool]$TimeoutFault}
-$report.source_hashes=@{};foreach($file in @('scripts/Test-ResidentJoint.ps1','scripts/Measure-ResidentProcesses.ps1','scripts/Summarize-ResidentProcesses.ps1','scripts/Stop-ResidentFixture.ps1','scripts/acceptance/resident/joint_test.go','scripts/fixtures/resident-controller/main.go','scripts/lib/windows-job.cs')){$report.source_hashes[$file]=(Get-FileHash -LiteralPath (Join-Path $project $file)).Hash.ToLowerInvariant()}
+$null=New-Item -ItemType Directory -Path $proof,(Join-Path $proof 'bin'),(Join-Path $proof 'tmp'),(Join-Path $proof 'service-tmp')
+$report=@{passed=$false;paid_model_calls=0;ci_runs=0;forced_gc=$false;timeout_fault=[bool]$TimeoutFault;lifecycle=[bool]$Lifecycle}
+$report.source_hashes=@{};foreach($file in @('scripts/Test-ResidentJoint.ps1','scripts/Measure-ResidentProcesses.ps1','scripts/Summarize-ResidentProcesses.ps1','scripts/Stop-ResidentFixture.ps1','scripts/acceptance/resident/joint_test.go','scripts/acceptance/resident/lifecycle_test.go','scripts/fixtures/resident-controller/main.go','scripts/lib/windows-job.cs')){$report.source_hashes[$file]=(Get-FileHash -LiteralPath (Join-Path $project $file)).Hash.ToLowerInvariant()}
 $go='D:\workspace\.tools\go\bin\go.exe';$pgctl=Join-Path $layout.postgres_bin 'pg_ctl.exe'
 $started=$false;$sampler=$null
 try {
@@ -50,6 +51,8 @@ try {
  if($pg.ExitCode -ne 0){throw 'Fixture PostgreSQL startup failed'}
  $env:JOINT_DATABASE_URL='postgres://p2_fixture@127.0.0.1:55591/postgres?sslmode=disable';$env:JOINT_EVIDENCE=$proof
  $env:JOINT_TIMEOUT_FAULT=if($TimeoutFault){'1'}else{'0'}
+ $env:JOINT_LIFECYCLE=if($Lifecycle){'1'}else{'0'}
+ $env:JOINT_PROCESS_TEMP=Join-Path $proof 'service-tmp'
  $sampler=Start-Process -FilePath (Join-Path $PSHOME 'pwsh.exe') -ArgumentList @('-NoProfile','-File',(Join-Path $PSScriptRoot 'Measure-ResidentProcesses.ps1'),'-Evidence',$proof) -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $proof 'sampler.out.log') -RedirectStandardError (Join-Path $proof 'sampler.err.log')
  if(-not ('AgentOS.Maintenance.WindowsJob' -as [type])){Add-Type -Path (Join-Path $PSScriptRoot 'lib/windows-job.cs')}
  $timeout=if($TimeoutFault){'4s'}else{'8m'}
@@ -84,7 +87,15 @@ try {
  $clean=$false
  if($started){try{$report.cleanup=& (Join-Path $PSScriptRoot 'Stop-ResidentFixture.ps1') -Evidence $proof -PostgresBin $layout.postgres_bin;$clean=$report.cleanup.verified}catch{$report.passed=$false;$report.cleanup_failure=$_.Exception.Message}}
  if($started -and $clean){& $pgctl -D $FixtureRoot stop -m fast -w *> (Join-Path $proof 'postgres-stop.log');$report.fixture_stop_exit=$LASTEXITCODE;if($LASTEXITCODE){$report.passed=$false}}
- if($report.passed -and -not $TimeoutFault){try{& (Join-Path $PSScriptRoot 'Summarize-ResidentProcesses.ps1') -Evidence $proof}catch{$report.passed=$false;$report.measurement_failure=$_.Exception.Message}}
+ if($report.passed -and -not $TimeoutFault){try{& (Join-Path $PSScriptRoot 'Summarize-ResidentProcesses.ps1') -Evidence $proof -Lifecycle:$Lifecycle}catch{$report.passed=$false;$report.measurement_failure=$_.Exception.Message}}
+ if($Lifecycle -and $report.passed){
+  try{
+   $lifecycleReport=Get-Content -LiteralPath (Join-Path $proof 'lifecycle.json') -Raw|ConvertFrom-Json
+   if(-not $lifecycleReport.passed -or @($lifecycleReport.scenarios).Count -ne 4 -or $lifecycleReport.recovery_tasks -ne 4 -or $report.cleanup.databases_removed -ne 2){throw 'Lifecycle acceptance incomplete'}
+   foreach($role in @('runtime','worker','storage')){$null=Read-ReleaseDescriptor $layout $catalog.services[$role].current -Verify}
+   $report.released_assets_verified_after=$true
+  }catch{$report.passed=$false;$report.lifecycle_failure=$_.Exception.Message}
+ }
  if($TimeoutFault -and $report.passed -and $report.cleanup.databases_removed -ne 2){$report.passed=$false;$report.failure='Fault did not reach both fixture databases'}
  $report.catalog_after=(Get-FileHash -LiteralPath (Join-Path $layout.release_root 'current.json')).Hash
  if($report.catalog_before -and $report.catalog_before -ne $report.catalog_after){$report.passed=$false;$report.catalog_changed=$true}

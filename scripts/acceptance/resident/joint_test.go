@@ -104,7 +104,11 @@ func start(t *testing.T, ctx context.Context, dir, name, binary string, config m
 	c.Stdout = log
 	c.Stderr = log
 	for _, key := range []string{"PATH", "SystemRoot", "WINDIR", "TEMP", "TMP", "LANG"} {
-		if v := os.Getenv(key); v != "" {
+		v := os.Getenv(key)
+		if (key == "TEMP" || key == "TMP") && os.Getenv("JOINT_PROCESS_TEMP") != "" {
+			v = os.Getenv("JOINT_PROCESS_TEMP")
+		}
+		if v != "" {
 			c.Env = append(c.Env, key+"="+v)
 		}
 	}
@@ -169,28 +173,34 @@ func database(t *testing.T, ctx context.Context, admin *pgxpool.Pool, suffix, ki
 }
 
 type scenario struct {
-	mu           sync.Mutex
-	Name         string        `json:"name"`
-	Target       int           `json:"model_request_budget"`
-	ID           string        `json:"run_id"`
-	Models       int           `json:"model_requests"`
-	Ordinary     int           `json:"ordinary_requests"`
-	Summaries    int           `json:"compact_requests"`
-	Tools        int           `json:"tool_invocations"`
-	Source       string        `json:"source_receipt"`
-	AfterCompact bool          `json:"state_after_compact"`
-	Failure      string        `json:"failure,omitempty"`
-	Kill         bool          `json:"kill"`
-	Blocked      bool          `json:"-"`
-	KillPoint    chan struct{} `json:"-"`
-	Barrier      chan struct{} `json:"-"`
-	Entered      chan struct{} `json:"-"`
-	Registered   chan struct{} `json:"-"`
-	KilledAt     time.Time     `json:"killed_at,omitempty"`
-	ClaimedAt    time.Time     `json:"claimed_at,omitempty"`
-	FirstNewAt   time.Time     `json:"first_new_request_at,omitempty"`
-	Started      time.Time     `json:"started_at"`
-	Finished     time.Time     `json:"finished_at"`
+	mu            sync.Mutex
+	Name          string        `json:"name"`
+	Target        int           `json:"model_request_budget"`
+	ID            string        `json:"run_id"`
+	Models        int           `json:"model_requests"`
+	Ordinary      int           `json:"ordinary_requests"`
+	Summaries     int           `json:"compact_requests"`
+	Tools         int           `json:"tool_invocations"`
+	Source        string        `json:"source_receipt"`
+	AfterCompact  bool          `json:"state_after_compact"`
+	Failure       string        `json:"failure,omitempty"`
+	Kill          bool          `json:"kill"`
+	Blocked       bool          `json:"-"`
+	KillPoint     chan struct{} `json:"-"`
+	Barrier       chan struct{} `json:"-"`
+	Entered       chan struct{} `json:"-"`
+	Registered    chan struct{} `json:"-"`
+	ReleaseFault  chan struct{} `json:"-"`
+	RequestEnded  chan struct{} `json:"-"`
+	FaultStatus   int           `json:"fault_status,omitempty"`
+	FaultBody     string        `json:"fault_body,omitempty"`
+	FaultWritten  bool          `json:"fault_written,omitempty"`
+	HeldOperation string        `json:"held_operation,omitempty"`
+	KilledAt      time.Time     `json:"killed_at,omitempty"`
+	ClaimedAt     time.Time     `json:"claimed_at,omitempty"`
+	FirstNewAt    time.Time     `json:"first_new_request_at,omitempty"`
+	Started       time.Time     `json:"started_at"`
+	Finished      time.Time     `json:"finished_at"`
 }
 
 func (s *scenario) model(w http.ResponseWriter, r *http.Request) {
@@ -241,6 +251,25 @@ func (s *scenario) model(w http.ResponseWriter, r *http.Request) {
 		message["content"] = "Synthetic checkpoint omits source quantities deliberately."
 	} else {
 		s.Ordinary++
+		if s.Ordinary == 3 && (s.Name == "cancel-model" || s.Name == "provider-401" || s.Name == "provider-truncated") {
+			close(s.Entered)
+			defer close(s.RequestEnded)
+			select {
+			case <-s.ReleaseFault:
+			case <-r.Context().Done():
+				return
+			}
+			if s.Name == "provider-401" {
+				s.FaultStatus, s.FaultBody = http.StatusUnauthorized, "synthetic provider rejection"
+			} else if s.Name == "provider-truncated" {
+				s.FaultStatus, s.FaultBody = http.StatusOK, `{"choices":`
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(s.FaultStatus)
+			n, err := w.Write([]byte(s.FaultBody))
+			s.FaultWritten = err == nil && n == len(s.FaultBody)
+			return
+		}
 		var view struct {
 			Revision int
 			State    *struct {
@@ -365,7 +394,8 @@ func TestResidentReleasedServices(t *testing.T) {
 			return
 		}
 		var inv struct {
-			RunID string `json:"run_id"`
+			RunID       string `json:"run_id"`
+			OperationID string `json:"operation_id"`
 		}
 		_ = json.Unmarshal(b, &inv)
 		smu.Lock()
@@ -390,12 +420,24 @@ func TestResidentReleasedServices(t *testing.T) {
 		}
 		selected.mu.Lock()
 		selected.Tools++
+		cancelTool := selected.Name == "cancel-committed-tool" && selected.Tools == 2
+		if cancelTool {
+			selected.HeldOperation = inv.OperationID
+		}
 		block := selected.Kill && !selected.Blocked && selected.Models >= selected.Target-5
 		if block {
 			selected.Blocked = true
 			close(selected.KillPoint)
 		}
 		selected.mu.Unlock()
+		if cancelTool {
+			// The local note and receipt have committed in the real Runtime;
+			// only the HTTP reply to the Worker is withheld.
+			close(selected.Entered)
+			defer close(selected.RequestEnded)
+			<-r.Context().Done()
+			return
+		}
 		if block {
 			<-r.Context().Done()
 			return
@@ -443,7 +485,7 @@ func TestResidentReleasedServices(t *testing.T) {
 	time.Sleep(time.Second)
 	parallelBarrier := make(chan struct{})
 	create := func(name string, target int, kill bool) *scenario {
-		s := &scenario{Name: name, Target: target, Kill: kill, KillPoint: make(chan struct{}), Entered: make(chan struct{}), Registered: make(chan struct{}), Started: time.Now()}
+		s := &scenario{Name: name, Target: target, Kill: kill, KillPoint: make(chan struct{}), Entered: make(chan struct{}), Registered: make(chan struct{}), ReleaseFault: make(chan struct{}), RequestEnded: make(chan struct{}), Started: time.Now()}
 		if strings.HasPrefix(name, "parallel-") {
 			s.Barrier = parallelBarrier
 		}
@@ -578,6 +620,10 @@ func TestResidentReleasedServices(t *testing.T) {
 		need(t, db.QueryRow(ctx, "SELECT pg_database_size(current_database())").Scan(&dbbytes))
 		need(t, storageDB.QueryRow(ctx, "SELECT pg_database_size(current_database())").Scan(&storagebytes))
 		save(t, dir, s.Name+".json", object{"scenario": s, "archive_count": len(hashes), "event_bytes": total, "calls_response_bytes": len(calls), "calls_read_ms": callsMS, "runtime_database_bytes": dbbytes, "storage_database_bytes": storagebytes, "unconfirmed_batches": unconfirmed, "duplicate_attempts": duplicates, "historical_state_read": true, "all_archive_parts_read": true})
+	}
+	if os.Getenv("JOINT_LIFECYCLE") == "1" {
+		testLifecycle(t, ctx, dir, runtimeURL, storageURL, tokens["control"], db, func(name string) *scenario { return create(name, 20, false) }, finish, phase)
+		return
 	}
 	for _, n := range []int{20, 50} {
 		name := fmt.Sprintf("single-%d", n)
