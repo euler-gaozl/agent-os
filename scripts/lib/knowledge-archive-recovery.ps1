@@ -34,7 +34,20 @@ WITH manifest AS (
  JOIN knowledge.artifacts raw ON raw.hash=rr.hash
  JOIN knowledge.artifact_refs tr ON tr.root=rr.root AND tr.hash=m->>'text_sha256'
  JOIN knowledge.artifacts text ON text.hash=tr.hash
- WHERE 'knowledge-source:'||f.id||':manifests'='{ROOT}' AND m->>'format'='1'
+ WHERE 'knowledge-source:'||f.id||':manifests'='{ROOT}' AND (
+  (m->>'format'='1'
+   AND m->>'provenance'='operator_imported_archive: URL, capture time and extraction method are submitter assertions; hashes and matching spans verify retention consistency, not raw-to-text derivation, completeness or factual accuracy'
+   AND (NOT m ? 'capture' OR m->'capture'='null'::jsonb))
+  OR (m->>'format'='2'
+   AND m->>'provenance'='sources_service_capture: bytes and metadata were read from an authenticated retained Sources capture; raw is the HTTP client response body after transport/content decoding; hashes and matching spans verify retention consistency, not website authenticity, extraction completeness or factual accuracy; fetched_at is collection time, not publication or statistical period'
+   AND jsonb_typeof(m->'capture')='object'
+   AND m->'capture'->>'capture_id' ~ '^[a-f0-9]{32}$'
+   AND m->'capture'->>'requested_url'=m->>'url'
+   AND m->'capture'->>'final_url'=m->>'url'
+   AND m->'capture'->>'import_format'='source-capture-document-v1'
+   AND m->'capture'->>'extraction_version' IN ('agentos-text-html-v1','unrecorded')
+   AND m->>'extraction_method'='Sources extraction: '||(m->'capture'->>'extraction_version')
+   AND m->>'raw_encoding'='identity'))
  AND m->>'file_sha256'=f.artifact_hash AND m->>'document_id'=f.document_id
  AND m->'knowledge'->>'id'=f.kb_id AND (m->'knowledge'->>'revision')::int=f.kb_revision
  AND octet_length(raw.body) BETWEEN 1 AND 1048576 AND octet_length(raw.body)=(m->>'stored_raw_bytes')::int
@@ -68,6 +81,6 @@ FROM association WHERE NOT EXISTS (
         $count++
     }
     $identityHash=[Convert]::ToHexStringLower($identityDigest.GetHashAndReset())
-    return @{present=$true;manifests=$count;identity_sha256=$identityHash;member_hashes_and_lengths=$true;gzip_expansion=$true;file_document_revision_and_spans=$true;provider_calls=0}
+    return @{present=$true;manifests=$count;identity_sha256=$identityHash;member_hashes_and_lengths=$true;gzip_expansion=$true;file_document_revision_and_spans=$true;versioned_provenance=$true;provider_calls=0}
     } finally {$identityDigest.Dispose()}
 }
