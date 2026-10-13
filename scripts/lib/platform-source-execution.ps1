@@ -1,9 +1,17 @@
 # Source-engine release policy. No configuration or database writes occur here.
 function Get-SourceEngineName { return 'dsh-source-639ed015-state-v1' }
+function Get-ResidentEngineName { return 'dsh-source-639ed015-resident-v2' }
+function Get-SourceEngineProfiles {
+    return @(
+        @{engine=(Get-SourceEngineName);metadata='source_execution';asset='source_harness';environment='DSH_SOURCE_RUNNER';runs='source_runs';resumable='resumable_source_runs'},
+        @{engine=(Get-ResidentEngineName);metadata='resident_execution';asset='resident_harness';environment='DSH_RESIDENT_RUNNER';runs='resident_runs';resumable='resumable_resident_runs'}
+    )
+}
 function Assert-SourceExecutionDescriptor([System.Collections.IDictionary]$Descriptor){
-    $source=$Descriptor['source_execution'];$asset=$Descriptor.assets['source_harness']
-    if(-not $source){if($asset){throw 'Source Harness asset has no execution provenance.'};return}
-    if($source.format -ne 1 -or $source.engine -cne (Get-SourceEngineName) -or $source.execution_protocol -cne 'runtime-execution-v1'){throw 'Unsupported source execution metadata.'}
+    foreach($profile in (Get-SourceEngineProfiles)){
+    $source=$Descriptor[$profile.metadata];$asset=$Descriptor.assets[$profile.asset]
+    if(-not $source){if($asset){throw 'Source Harness asset has no execution provenance.'};continue}
+    if($source.format -ne 1 -or $source.engine -cne $profile.engine -or $source.execution_protocol -cne 'runtime-execution-v1'){throw 'Unsupported source execution metadata.'}
     switch($Descriptor.role){
         runtime {
             if($asset -or $source.state_protocol -cne 'source-state-recovery-v1' -or $source.submission_protocol -cne 'source-root-default-v1' -or $source.preview_protocol -cne 'source-recovery-preview-v1' -or $Descriptor.contract.http -cne 'agentos-http-v0.7-source-state-v1' -or $Descriptor.contract.data -cne 'execution-v0.7-working-state'){throw 'Runtime source protocols are incomplete.'}
@@ -13,6 +21,8 @@ function Assert-SourceExecutionDescriptor([System.Collections.IDictionary]$Descr
         }
         default {throw 'Source execution capability belongs only to Runtime or Worker.'}
     }
+    }
+    if($Descriptor.role -ceq 'runtime' -and $Descriptor['resident_execution'] -and -not $Descriptor['source_execution']){throw 'Resident Runtime must retain the v1 source protocols.'}
 }
 function Test-SourceRuntimeTransition([System.Collections.IDictionary]$Previous,[System.Collections.IDictionary]$Next){
     if($Previous.role -cne 'runtime' -or $Next.role -cne 'runtime'){return $false}
@@ -25,18 +35,21 @@ function Test-SourceRuntimeTransition([System.Collections.IDictionary]$Previous,
 }
 function Assert-SourceExecutionPolicy([System.Collections.IDictionary]$Runtime,[System.Collections.IDictionary]$Worker,[string]$DefaultEngine,[System.Collections.IDictionary]$Facts){
     Assert-SourceExecutionDescriptor $Runtime;Assert-SourceExecutionDescriptor $Worker
-    $source=Get-SourceEngineName
     if(-not $DefaultEngine){$DefaultEngine='dsh-0.2.0-rc.2-evidence-v1'}
-    if($DefaultEngine -cnotin @('dsh-0.2.0-rc.2-evidence-v1',$source)){throw 'Unknown configured submission engine.'}
-    foreach($key in @('source_runs','resumable_source_runs','working_state_ready')){if(-not $Facts.Contains($key)){throw 'Execution compatibility facts are incomplete.'}}
-    if($Facts.source_runs -isnot [long] -and $Facts.source_runs -isnot [int]){throw 'Invalid source-run count.'}
-    if($Facts.resumable_source_runs -isnot [long] -and $Facts.resumable_source_runs -isnot [int]){throw 'Invalid resumable-source count.'}
-    if($Facts.source_runs -lt 0 -or $Facts.resumable_source_runs -lt 0 -or $Facts.resumable_source_runs -gt $Facts.source_runs -or $Facts.working_state_ready -isnot [bool]){throw 'Invalid execution compatibility facts.'}
-    $runtimeSource=[bool]$Runtime['source_execution'];$workerSource=[bool]$Worker['source_execution']
-    if($Runtime.contract.data -ceq 'execution-v0.7-working-state' -and -not $runtimeSource){throw 'New Runtime data contract lacks source protocol provenance.'}
-    if($runtimeSource -and -not $Facts.working_state_ready){throw 'Run the additive Runtime working-state migration before selecting this release.'}
-    if(($workerSource -or $DefaultEngine -ceq $source -or $Facts.source_runs -gt 0) -and -not $runtimeSource){throw 'Source execution or retained state requires the compatible Runtime; downgrade refused.'}
-    if(($DefaultEngine -ceq $source -or $Facts.resumable_source_runs -gt 0) -and -not $workerSource){throw 'Default or resumable source tasks require a pinned source-enabled Worker; rollback refused.'}
+    if($DefaultEngine -cnotin @('dsh-0.2.0-rc.2-evidence-v1',(Get-SourceEngineName),(Get-ResidentEngineName))){throw 'Unknown configured submission engine.'}
+    if(-not $Facts.Contains('working_state_ready') -or $Facts.working_state_ready -isnot [bool]){throw 'Execution compatibility facts are incomplete.'}
+    if($Runtime.contract.data -ceq 'execution-v0.7-working-state' -and -not $Runtime['source_execution']){throw 'New Runtime data contract lacks source protocol provenance.'}
+    foreach($profile in (Get-SourceEngineProfiles)){
+        foreach($key in @($profile.runs,$profile.resumable)){
+            if(-not $Facts.Contains($key)){throw 'Execution compatibility facts are incomplete.'}
+            if(($Facts[$key] -isnot [long] -and $Facts[$key] -isnot [int]) -or $Facts[$key] -lt 0){throw 'Invalid execution run count.'}
+        }
+        if($Facts[$profile.resumable] -gt $Facts[$profile.runs]){throw 'Invalid execution compatibility facts.'}
+        $runtimeSource=[bool]$Runtime[$profile.metadata];$workerSource=[bool]$Worker[$profile.metadata]
+        if($runtimeSource -and -not $Facts.working_state_ready){throw 'Run the additive Runtime working-state migration before selecting this release.'}
+        if(($workerSource -or $DefaultEngine -ceq $profile.engine -or $Facts[$profile.runs] -gt 0) -and -not $runtimeSource){throw ('Retained tasks or Worker capability require Runtime support for '+$profile.engine+'; downgrade refused.')}
+        if(($DefaultEngine -ceq $profile.engine -or $Facts[$profile.resumable] -gt 0) -and -not $workerSource){throw ('Default or resumable tasks require a pinned Worker for '+$profile.engine+'; rollback refused.')}
+    }
 }
 function Get-SourceExecutionFacts([hashtable]$Layout,[System.Collections.IDictionary]$Configuration=$null){
     . (Join-Path $PSScriptRoot 'platform-recovery.ps1')
@@ -55,6 +68,8 @@ required_keys(names) AS (VALUES (ARRAY['run_id','revision']::text[]),(ARRAY['run
 SELECT jsonb_build_object(
  'source_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-state-v1'),
  'resumable_source_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-state-v1' AND status NOT IN('completed','cancelled')),
+ 'resident_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-resident-v2'),
+ 'resumable_resident_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-resident-v2' AND status NOT IN('completed','cancelled')),
  'working_state_ready',(SELECT CASE WHEN t.oid IS NULL THEN false ELSE
  has_table_privilege(current_user,t.oid,'SELECT') AND has_table_privilege(current_user,t.oid,'INSERT')
  AND NOT EXISTS(SELECT 1 FROM required_columns c WHERE NOT EXISTS(
@@ -133,12 +148,13 @@ function Assert-SourceExecutionDeployment([hashtable]$Layout,[System.Collections
         Assert-SourceExecutionPolicy $descriptors.runtime $descriptors.worker ([string]$config['DEFAULT_RUN_ENGINE']) $facts
     }finally{$config=$null}
 }
-function Copy-PinnedSourceHarness([string]$Artifact,[string]$Destination,[string]$PinFile){
+function Copy-PinnedSourceHarness([string]$Artifact,[string]$Destination,[string]$PinFile,[string]$Engine=(Get-SourceEngineName)){
+    if($Engine -cnotin @((Get-SourceEngineName),(Get-ResidentEngineName))){throw 'Unknown source Harness engine.'}
     $artifactRoot=[IO.Path]::GetFullPath($Artifact)
     Assert-ReleasePhysicalPath (Split-Path -Parent ([IO.Path]::GetFullPath($PinFile))) $PinFile
     Assert-ReleasePhysicalPath (Split-Path -Parent ([IO.Path]::GetFullPath($Destination))) $Destination
     $pin=Read-ReleaseJson $PinFile
-    if($pin.format -ne 1 -or $pin.engine -cne (Get-SourceEngineName) -or $pin.manifest_sha256 -cnotmatch '^[a-f0-9]{64}$' -or $pin.commit -cnotmatch '^[a-f0-9]{40}$'){throw 'Invalid compiled source Harness pin.'}
+    if($pin.format -ne 1 -or $pin.engine -cne $Engine -or $pin.manifest_sha256 -cnotmatch '^[a-f0-9]{64}$' -or $pin.commit -cnotmatch '^[a-f0-9]{40}$'){throw 'Invalid compiled source Harness pin.'}
     $manifestPath=Join-Path $artifactRoot 'dist/manifest.json'
     Assert-ReleasePhysicalPath $artifactRoot $manifestPath
     if((Get-FileHash -LiteralPath $manifestPath).Hash.ToLowerInvariant() -cne $pin.manifest_sha256){throw 'Harness manifest differs from the selected Worker compiled pin.'}

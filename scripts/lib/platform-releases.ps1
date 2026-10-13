@@ -55,12 +55,13 @@ function Get-ReleaseInventory([string]$Root,[System.Collections.IDictionary]$Ass
     }
     return @{files=@($files.Keys|Sort-Object|ForEach-Object{$files[$_]});links=@($links.Keys|Sort-Object|ForEach-Object{$links[$_]})}
 }
-function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Assets,[System.Collections.IDictionary]$Contract,[System.Collections.IDictionary]$Provenance,[System.Collections.IDictionary]$SourceExecution=$null){
+function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Assets,[System.Collections.IDictionary]$Contract,[System.Collections.IDictionary]$Provenance,[System.Collections.IDictionary]$SourceExecution=$null,[System.Collections.IDictionary]$ResidentExecution=$null){
     Assert-ReleaseAssets $Role $Assets
     $identifier=$Role+'-'+[guid]::NewGuid().ToString('N')
     $inventory=Get-ReleaseInventory $Layout.release_root $Assets
     $descriptor=@{format=1;id=$identifier;role=$Role;created_at=[datetime]::UtcNow.ToString('o');assets=$Assets;contract=$Contract;provenance=$Provenance;files=$inventory.files;links=$inventory.links}
     if($SourceExecution){$descriptor.source_execution=$SourceExecution}
+    if($ResidentExecution){$descriptor.resident_execution=$ResidentExecution}
     Assert-SourceExecutionDescriptor $descriptor
     $relative='descriptors/'+$identifier+'.json';$path=Resolve-ReleasePath $Layout.release_root $relative
     Assert-ReleasePhysicalPath $Layout.release_root $path
@@ -168,6 +169,7 @@ function Assert-ReleaseAssets([string]$Role,[System.Collections.IDictionary]$Ass
     if($Role -notin @('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','sources','migrate-services')){throw 'Unknown release role.'}
     $expected=@('binary');if($Role -eq 'worker'){$expected+=@('node','harness')};if($Role -in @('control','futures')){$expected+='web'}
     if($Role -eq 'worker' -and $Assets.Contains('source_harness')){$expected+='source_harness'}
+    if($Role -eq 'worker' -and $Assets.Contains('resident_harness')){$expected+='resident_harness'}
     if(@(Compare-Object @($Assets.Keys|Sort-Object) @($expected|Sort-Object)).Count){throw 'Release does not contain the complete role-specific asset set.'}
 }
 function Assert-CompatibleRelease([System.Collections.IDictionary]$Previous,[System.Collections.IDictionary]$Next){

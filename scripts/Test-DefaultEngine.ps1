@@ -1,8 +1,9 @@
-param([string]$CrashRoot='',[string]$CrashPoint='',[switch]$HoldCheckpoint)
+param([string]$CrashRoot='',[string]$CrashPoint='',[switch]$HoldCheckpoint,[ValidateSet('source','resident')][string]$Candidate='source')
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 foreach($library in @('platform-paths','platform-lock','platform-processes','platform-releases','platform-release-operations')){. (Join-Path $PSScriptRoot ('lib/'+$library+'.ps1'))}
+$candidateEngine=if($Candidate -ceq 'resident'){Get-ResidentEngineName}else{Get-SourceEngineName}
 function Check([bool]$Value,[string]$Name){if(-not $Value){throw $Name};$checks.Add($Name)}
 function Reject([scriptblock]$Action,[string]$Pattern,[string]$Name){$message='';try{& $Action|Out-Null}catch{$message=$_.Exception.Message};if($message -notmatch $Pattern){throw ($Name+': unexpected outcome '+$message)};$checks.Add($Name)}
 if($CrashRoot){
@@ -19,7 +20,7 @@ if($CrashRoot){
             [Environment]::Exit(199)
         }}
         if($CrashPoint -in @('reverting','prior_configuration_written','recovery_ready')){Restore-PendingEngineConfiguration $layout $PSScriptRoot $lock 3 $checkpoint|Out-Null}
-        else{Set-DefaultEngine $layout source $PSScriptRoot $lock 3 $checkpoint|Out-Null}
+        else{Set-DefaultEngine $layout $Candidate $PSScriptRoot $lock 3 $checkpoint|Out-Null}
     }finally{$lock.Dispose()}
     throw 'Configuration crash point was not reached.'
 }
@@ -34,6 +35,7 @@ $fixture='D:\workspace\agent-platform\local\evidence\p2-first-services-85be4f84e
 $pg=$layout.postgres_bin;$dbName='engine_'+[guid]::NewGuid().ToString('N');$roleName='reader_'+[guid]::NewGuid().ToString('N')
 $admin=@{host='127.0.0.1';port=55591;user='p2_fixture';password='fixture-only';database='postgres'}
 $result=@{passed=$false;paid_model_calls=0;scope='Real Windows synthetic HTTP Runtime/two Workers and disposable PostgreSQL owner state table; real configuration journal and process crashes, no actual agent/model execution';checks=@()}
+$result.candidate_engine=$candidateEngine
 function Save-Catalog {Write-PlatformJson (Join-Path $layout.release_root 'current.json') $catalog}
 function Assert-Default([string]$Engine){
     $catalog=Read-ReleaseCatalog $layout
@@ -55,7 +57,7 @@ function Close-FaultChild {
     $script:activeFaultChild.Dispose();$script:activeFaultChild=$null
 }
 function Crash([string]$Point,[string]$Label,[switch]$TimeoutProbe){
-    $arguments=@('-NoProfile','-File',('"'+$PSCommandPath+'"'),'-CrashRoot',('"'+$proof+'"'),'-CrashPoint',$Point)
+    $arguments=@('-NoProfile','-File',('"'+$PSCommandPath+'"'),'-CrashRoot',('"'+$proof+'"'),'-CrashPoint',$Point,'-Candidate',$Candidate)
     if($TimeoutProbe){$arguments+='-HoldCheckpoint'}
     $script:activeFaultChild=Start-Process -FilePath (Get-Process -Id $PID).Path -ArgumentList $arguments -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $proof ($Label+'.out.log')) -RedirectStandardError (Join-Path $proof ($Label+'.err.log'))
     if($TimeoutProbe){
@@ -105,9 +107,17 @@ try{
     $newContract=@{http='agentos-http-v0.7-source-state-v1';data='execution-v0.7-working-state';engines=@();tools=@()}
     $runtimeMetadata=@{format=1;engine=(Get-SourceEngineName);execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';submission_protocol='source-root-default-v1';preview_protocol='source-recovery-preview-v1'}
     $workerMetadata=@{format=1;engine=(Get-SourceEngineName);execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';manifest_sha256=('a'*64);harness_commit=('b'*40)}
-    $runtimeRef=New-ReleaseDescriptor $layout runtime @{binary='fixture.exe'} $newContract @{kind='synthetic';dirty=$false} $runtimeMetadata
+    $residentRuntime=$null;$residentWorker=$null
+    $workerAssets=@{binary='fixture.exe';node='node.exe';harness='harness';source_harness='source'}
+    if($Candidate -ceq 'resident'){
+        $residentRuntime=$runtimeMetadata.Clone();$residentRuntime.engine=Get-ResidentEngineName
+        $residentWorker=$workerMetadata.Clone();$residentWorker.engine=Get-ResidentEngineName
+        Write-PlatformText (Join-Path $layout.release_root 'resident/source-runner.mjs') 'synthetic resident asset'
+        $workerAssets.resident_harness='resident'
+    }
+    $runtimeRef=New-ReleaseDescriptor $layout runtime @{binary='fixture.exe'} $newContract @{kind='synthetic';dirty=$false} $runtimeMetadata $residentRuntime
     $runtimeOld=New-ReleaseDescriptor $layout runtime @{binary='fixture.exe'} $oldContract @{kind='synthetic';dirty=$false}
-    $workerRef=New-ReleaseDescriptor $layout worker @{binary='fixture.exe';node='node.exe';harness='harness';source_harness='source'} $oldContract @{kind='synthetic';dirty=$false} $workerMetadata
+    $workerRef=New-ReleaseDescriptor $layout worker $workerAssets $oldContract @{kind='synthetic';dirty=$false} $workerMetadata $residentWorker
     $workerOld=New-ReleaseDescriptor $layout worker @{binary='fixture.exe';node='node.exe';harness='harness'} $oldContract @{kind='synthetic';dirty=$false}
     foreach($ref in @($runtimeRef,$runtimeOld)){$ref.config_sha256=Get-BytesHash $initialConfig}
     foreach($ref in @($workerRef,$workerOld)){$ref.config_sha256=(Get-FileHash -LiteralPath $workerPath).Hash.ToLowerInvariant()}
@@ -116,8 +126,11 @@ try{
     & (Join-Path $PSScriptRoot 'Start-Local.ps1') -LayoutPath $layout.layout_path -Service @('runtime','worker') -Workers 2 -MaintenanceLock $lock
     Assert-Default 'dsh-0.2.0-rc.2-evidence-v1'
     $workersBefore=Get-ReleaseProcessSnapshot $layout runtime
-    $null=Set-DefaultEngine $layout source $PSScriptRoot $lock 3
-    Assert-Default (Get-SourceEngineName)
+    $lock.Dispose();$lock=$null
+    & (Join-Path $PSScriptRoot 'Platform.ps1') set-engine -Engine $Candidate -LayoutPath $layout.layout_path | Out-Null
+    $lock=Enter-PlatformMaintenance $layout.state_root
+    Assert-Default $candidateEngine
+    $checks.Add('public_platform_entry_changes_selected_default')
     $null=Set-DefaultEngine $layout historical $PSScriptRoot $lock 3
     Assert-Default 'dsh-0.2.0-rc.2-evidence-v1'
     Check (Test-ReleaseSnapshotsEqual $workersBefore (Get-ReleaseProcessSnapshot $layout runtime)) 'source_historical_round_trip_preserves_both_worker_processes'
@@ -125,14 +138,14 @@ try{
     Check ($catalog.services.runtime.previous.config_sha256 -ceq $catalog.services.runtime.current.config_sha256) 'only_default_field_migration_rebinds_compatible_prior_code_configuration'
     Reject {Set-DefaultEngine $layout historical $PSScriptRoot $lock 3} 'already the default' 'duplicate_default_change_refused'
     $null=Invoke-RecoverySQL $pg $dbAdmin "INSERT INTO runs VALUES('active','dsh-0.2.0-rc.2-evidence-v1','queued')"
-    Reject {Set-DefaultEngine $layout source $PSScriptRoot $lock 3} 'Execution work is active' 'active_work_refused_before_preparing_configuration'
+    Reject {Set-DefaultEngine $layout $Candidate $PSScriptRoot $lock 3} 'Execution work is active' 'active_work_refused_before_preparing_configuration'
     $null=Invoke-RecoverySQL $pg $dbAdmin 'DELETE FROM runs'
-    Reject {Set-DefaultEngine $layout source $PSScriptRoot $lock 3 {param($point) if($point -eq 'prepared'){$null=Invoke-RecoverySQL $pg $dbAdmin "INSERT INTO runs VALUES('late','dsh-0.2.0-rc.2-evidence-v1','queued')"}}} 'Execution work is active' 'submission_arriving_before_runtime_stop_restores_prior_configuration'
+    Reject {Set-DefaultEngine $layout $Candidate $PSScriptRoot $lock 3 {param($point) if($point -eq 'prepared'){$null=Invoke-RecoverySQL $pg $dbAdmin "INSERT INTO runs VALUES('late','dsh-0.2.0-rc.2-evidence-v1','queued')"}}} 'Execution work is active' 'submission_arriving_before_runtime_stop_restores_prior_configuration'
     Assert-Default 'dsh-0.2.0-rc.2-evidence-v1'
     Check ((Invoke-RecoverySQL $pg $dbAdmin 'SELECT count(*) FROM runs').Trim() -ceq '1') 'late_task_is_preserved_during_configuration_recovery'
     $null=Invoke-RecoverySQL $pg $dbAdmin 'DELETE FROM runs'
     Write-PlatformText $marker 'fixture source candidate unhealthy'
-    Reject {Set-DefaultEngine $layout source $PSScriptRoot $lock 1} 'did not become ready' 'unhealthy_candidate_restores_previous_runtime_configuration'
+    Reject {Set-DefaultEngine $layout $Candidate $PSScriptRoot $lock 1} 'did not become ready' 'unhealthy_candidate_restores_previous_runtime_configuration'
     Remove-Item -LiteralPath $marker
     Assert-Default 'dsh-0.2.0-rc.2-evidence-v1'
     # Actual live launch bindings must agree, even when /readyz is healthy.
@@ -148,7 +161,7 @@ try{
         & (Join-Path $PSScriptRoot 'Start-Local.ps1') -LayoutPath $layout.layout_path -Service worker -Workers 2 -MaintenanceLock $lock
         Wait-ReleaseReady $layout worker 2 $catalog.services.worker.current 3
         $pattern=switch($case){database {'different execution database'};endpoint {'endpoint does not match'};identity {'does not recognize'}}
-        Reject {Assert-SourceWorkersReady $layout (Read-ReleaseCatalog $layout) 3} $pattern ('mismatched_worker_'+$case+'_denied')
+        Reject {Assert-SourceWorkersReady $layout (Read-ReleaseCatalog $layout) 3 $candidateEngine} $pattern ('mismatched_worker_'+$case+'_denied')
         & (Join-Path $PSScriptRoot 'Stop-Local.ps1') -LayoutPath $layout.layout_path -Service worker -MaintenanceLock $lock
         [IO.File]::WriteAllBytes($workerPath,$originalWorker)
         $catalog=Read-ReleaseCatalog $layout;$catalog.services.worker.current.config_sha256=Get-BytesHash $originalWorker;Save-Catalog
@@ -171,7 +184,7 @@ try{
         $catalog=Read-ReleaseCatalog $layout
         if($point -eq 'committed'){
             Check (-not $catalog.services.runtime.pending) 'commit_crash_leaves_no_pending_configuration'
-            Assert-Default (Get-SourceEngineName)
+            Assert-Default $candidateEngine
             Reject {Invoke-ReleaseChange $layout runtime recover $null $PSScriptRoot $lock 3} 'No pending release' 'recovery_cannot_rewind_committed_configuration'
             $null=Set-DefaultEngine $layout historical $PSScriptRoot $lock 3
         }else{

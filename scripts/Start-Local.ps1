@@ -86,8 +86,10 @@ try{
    $effective.INSTANCE_ID=$instance
    if($role -eq 'worker'){
     $effective.DSH_RUNNER=Join-Path $release.assets.harness 'runner.mjs';$effective.AGENTOS_NODE=$release.assets.node
-    if($effective['DSH_SOURCE_RUNNER']){throw 'Managed Worker source runner comes from the verified release asset, not service configuration.'}
-    if($release.assets['source_harness']){$effective.DSH_SOURCE_RUNNER=Join-Path $release.assets.source_harness 'source-runner.mjs'}
+    foreach($profile in (Get-SourceEngineProfiles)){
+     if($effective[$profile.environment]){throw 'Managed Worker source runner comes from the verified release asset, not service configuration.'}
+     if($release.assets[$profile.asset]){$effective[$profile.environment]=Join-Path $release.assets[$profile.asset] 'source-runner.mjs'}
+    }
    }
    if($role -eq 'control'){$effective.WEB_DIR=$release.assets.web}
    if($role -eq 'futures'){$effective.FUTURES_WEB_DIR=$release.assets.web}

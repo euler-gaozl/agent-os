@@ -8,7 +8,8 @@ param(
     [string]$Pnpm='pnpm',
     [string]$ReleaseSet='',
     [string]$SourceArtifact='',
-    [ValidateSet('source','historical')][string]$Engine='',
+    [string]$ResidentArtifact='',
+    [ValidateSet('source','resident','historical')][string]$Engine='',
     [switch]$WithDatabase
 )
 $ErrorActionPreference='Stop'
@@ -20,7 +21,7 @@ $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $layout=Get-PlatformLayout $root $LayoutPath
 switch($Action){
     'set-engine' {
-        if(-not $Engine){throw 'set-engine requires -Engine source or historical.'}
+        if(-not $Engine){throw 'set-engine requires -Engine source, resident or historical.'}
         & (Join-Path $PSScriptRoot 'Set-DefaultEngine.ps1') -LayoutPath $LayoutPath -Engine $Engine
     }
     {$_ -in @('update','rollback','release-recover')} {
@@ -40,8 +41,8 @@ switch($Action){
     }
     doctor {& (Join-Path $PSScriptRoot 'Doctor-Local.ps1') -LayoutPath $LayoutPath}
     build {
-        if($Service.Count){& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Service $Service -Pnpm $Pnpm -SourceArtifact $SourceArtifact}
-        else{& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Pnpm $Pnpm -SourceArtifact $SourceArtifact}
+        if($Service.Count){& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Service $Service -Pnpm $Pnpm -SourceArtifact $SourceArtifact -ResidentArtifact $ResidentArtifact}
+        else{& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Pnpm $Pnpm -SourceArtifact $SourceArtifact -ResidentArtifact $ResidentArtifact}
     }
     'restore-check' {
         if(-not $BackupDirectory){throw 'restore-check requires -BackupDirectory.'}
