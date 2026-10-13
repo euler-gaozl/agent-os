@@ -29,7 +29,7 @@
 | Storage 丢归档确认、取消保留首批、末批失败；harness_archive_test.go | Runtime 协议与 Storage HTTP 夹具 | 已迁 Runtime `archive_retention_test.go`，五项本机通过，含上传中接管；Storage 是 HTTP 内存夹具，磁盘持久化仍由 ENOSPC 等独立验证覆盖 |
 | 真实 Langfuse 接收、回读和重投；telemetry_live_test.go | Telemetry live CI | 已迁 Telemetry `telemetry/live_test.go`，提交 `0df5f8f`；实际 Owner CI 因额度取消，未通过最终验证；旧覆盖保留 |
 | Docker 沙箱隔离、broker 强杀；sandbox_integration_test.go | Sandbox 真实 Docker CI | 已迁 Sandbox `docker_integration_test.go` 和手动/reusable `isolation.yml`；本机三项授权/真实受限账号检查通过，Linux 测试交叉编译通过。实际 Docker 尚未执行 |
-| 旧 Storage 笔记授权退役；cmd/migrate-services/retire_test.go | Runtime 历史升级测试 | 待迁移；保留本机旧版本回滚所需授权 |
+| 旧 Storage 笔记授权退役；cmd/migrate-services/retire_test.go | Runtime 历史升级测试 | 已迁 Runtime 显式 `retire-access` 与真实登录/撤权回滚测试，Windows 23 项通过；见[审计与候选](runtime-access-retirement-20261013.md)。正式撤权待启动/发布/回退守卫；旧覆盖及回滚所需授权仍保留 |
 | Knowledge 的 Milvus/LightRAG/Embedding 三个 live 测试；rag-integration.yml | Knowledge 已有源码、接入真实后端工作流 | 独立 `retrieval.yml`、Milvus 配置与模型夹具已移交；固定后端、拒绝跳过。新 Owner 工作流未执行 |
 | 百万文档/千万分块；cmd/capacity | Knowledge 容量工具及专用工作流 | 独立容量命令/手动工作流已移交；新库上 1000 文档/10000 块、零查询错误、版本隔离和已有库拒绝通过。百万规模未重跑；不冒充全平台规模验证 |
 
