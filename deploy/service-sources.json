@@ -3,11 +3,11 @@
   "services": {
     "control": {
       "repository": "agent-os-console",
-      "commit": "937aa6617744b50d0b860a9196911a8fa6110605"
+      "commit": "2294340f58d89606b51cc71a6f7c82257825ef5d"
     },
     "futures": {
       "repository": "agent-os-futures",
-      "commit": "777d9a6392eb4a2315679cfed5dcfe9ed92caf0c"
+      "commit": "b1bd07f82bc66f93c65eb103f90466746b6fd572"
     },
     "registry": {
       "repository": "agent-os-registry",
@@ -34,7 +34,7 @@
       "repository": "agent-os-sources"
     },
     "knowledge": {
-      "commit": "5ba230c63ffc3ab5ce6a72179b5f899bf6928aa9",
+      "commit": "9712aec9af1d52ee7c7d8df878d837eb78831e06",
       "repository": "agent-os-knowledge"
     },
     "indexer": {
