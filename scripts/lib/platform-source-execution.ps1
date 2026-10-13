@@ -124,7 +124,7 @@ function Get-BoundRuntimeConfiguration([hashtable]$Layout,[System.Collections.ID
         # whose tasks will be queried. No credentials are returned or logged.
         $launch=Read-ReleaseJson $entry.launch_config
         try{
-            foreach($key in @('DEFAULT_RUN_ENGINE','DATABASE_URL')){
+            foreach($key in @('DEFAULT_RUN_ENGINE','DATABASE_URL','LISTEN')){
                 if([string]$launch[$key] -cne [string]$config[$key]){throw 'Live Runtime execution configuration differs from the registered configuration.'}
             }
         }finally{$launch=$null}

@@ -28,6 +28,10 @@ $settings=Get-Content -LiteralPath $adminConfig -Raw|ConvertFrom-Json
 $uri=[uri]$settings.DATABASE_URL
 if($uri.Host -eq '127.0.0.1' -and $uri.Port -eq 55432){$held=if($MaintenanceLock){$MaintenanceLock}else{$maintenance};& (Join-Path $PSScriptRoot 'Start-Database.ps1') -LayoutPath $LayoutPath -MaintenanceLock $held}
 $releases=@{};foreach($role in $selected){$releases[$role]=Get-PlatformRelease $layout $role $PendingOperation -Verify}
+if($catalog.format -eq 2 -and @($selected|Where-Object{$_ -in @('runtime','control')}).Count){
+ $receiptOverrides=@{};foreach($role in @('runtime','control')){if($releases.ContainsKey($role)){$receiptOverrides[$role]=$releases[$role].descriptor}}
+ Assert-ReceiptManagementDeployment $layout $receiptOverrides
+}
 if($catalog.format -eq 2 -and @($selected|Where-Object{$_ -in @('runtime','worker')}).Count){
  $executionOverrides=@{};foreach($role in @('runtime','worker')){if($releases.ContainsKey($role)){$executionOverrides[$role]=$releases[$role].descriptor}}
  Assert-SourceExecutionDeployment $layout $executionOverrides

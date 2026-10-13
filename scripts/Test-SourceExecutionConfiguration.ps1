@@ -79,6 +79,11 @@ try{
     $entries[0].source_config_sha256=$runtimeRef.config_sha256;Persist
     Reject {Get-BoundRuntimeConfiguration $layout $catalog} 'Live Runtime execution configuration differs' 'declared_source_hash_cannot_hide_different_effective_default'
     [IO.File]::WriteAllBytes($runtimePath,$sourceBytes);$runtimeRef.config_sha256=$savedRuntimeHash;$entries[0].source_config_sha256=$savedRuntimeHash;Persist;Save-Catalog
+    $changedListener=[Text.Encoding]::UTF8.GetString($sourceBytes)|ConvertFrom-Json -AsHashtable
+    $changedListener.LISTEN='127.0.0.1:18094';Write-PlatformJson $runtimePath $changedListener
+    $runtimeRef.config_sha256=(Get-FileHash -LiteralPath $runtimePath).Hash.ToLowerInvariant();$entries[0].source_config_sha256=$runtimeRef.config_sha256;Persist;Save-Catalog
+    Reject {Get-BoundRuntimeConfiguration $layout $catalog} 'Live Runtime execution configuration differs' 'declared_source_hash_cannot_hide_different_live_listener'
+    [IO.File]::WriteAllBytes($runtimePath,$sourceBytes);$runtimeRef.config_sha256=$savedRuntimeHash;$entries[0].source_config_sha256=$savedRuntimeHash;Persist;Save-Catalog
     # A crash after starting the candidate must still allow recovery while the
     # committed catalog points to prior and the live binary belongs to target.
     $catalog.services.runtime.current=$priorRef;$catalog.services.runtime.pending=@{id=[guid]::NewGuid().ToString('N');prior=$priorRef;target=$runtimeRef;phase='started'};Save-Catalog

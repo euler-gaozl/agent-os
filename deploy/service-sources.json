@@ -3,7 +3,7 @@
   "services": {
     "control": {
       "repository": "agent-os-console",
-      "commit": "1de4118b009822e591f1f78977d43bf0e95c3ec5"
+      "commit": "937aa6617744b50d0b860a9196911a8fa6110605"
     },
     "futures": {
       "repository": "agent-os-futures",
@@ -54,7 +54,7 @@
     },
     "runtime": {
       "repository": "agent-os-runtime",
-      "commit": "8404f3e0ad3d62c3742a5eba4b996b1f88a6e8b0"
+      "commit": "90e7e9c4721fe238d46da74711105ea1763ef65c"
     },
     "worker": {
       "owner_modules": [
