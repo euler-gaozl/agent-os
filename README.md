@@ -9,6 +9,29 @@
 
 当前正在进行 **v0.6 端到端交付**。Windows 新根任务已使用固定源码构建的 DSH，历史任务保留原包与引擎。真实 DeepSeek 的知识库回读、结构化工作状态、来源回执与笔记落盘已联调，并经过完整备份还原，见[源码执行器激活验收](docs/source-engine-activation-20261013.md)。父子 Agent、MCP/Skill 和业务入口的其他历史成果见[交付账本](docs/delivery-v0.6.md)。完整内存边界、UI 和真实研究验收仍在进行；没有接入全品种基本面数据库，不把单篇联调当作研究覆盖率。
 
+## 源码仓库与交付状态
+
+各服务的源码、构建和维护说明已拆到独立私有仓库。本仓库负责版本组合、本机运维、业务包及整体验收；下面的入口均指向仓库默认分支。`main` 保存已提交的开发成果，不表示整个平台已经通过最终交付验收，也不自动替换本机安装版本。新改动继续使用开发分支；未提交的迁移草稿、密钥、数据库和研究私有资料不上传。
+
+| 仓库 | 职责 |
+| --- | --- |
+| [Console](https://github.com/euler-gaozl/agent-os-console) | 共用中台 Web 与 BFF |
+| [Futures](https://github.com/euler-gaozl/agent-os-futures) | 独立期货研究工作台与 BFF |
+| [Registry](https://github.com/euler-gaozl/agent-os-registry) | Agent、提示词与资源固定版本 |
+| [ToolHub](https://github.com/euler-gaozl/agent-os-toolhub) | Skill/MCP 登记、检测、验活和启停 |
+| [Runtime](https://github.com/euler-gaozl/agent-os-runtime) | 执行状态、回执、约束和任务恢复 |
+| [Worker](https://github.com/euler-gaozl/agent-os-worker) | 多实例任务执行与固定 Harness 包 |
+| [Knowledge](https://github.com/euler-gaozl/agent-os-knowledge) | 资料、检索与索引协议 |
+| [Indexer](https://github.com/euler-gaozl/agent-os-indexer) | 独立后台索引进程 |
+| [Storage](https://github.com/euler-gaozl/agent-os-storage) | 不可变产物、引用与分页读取 |
+| [Sources](https://github.com/euler-gaozl/agent-os-sources) | 有边界的公开资料采集和留存 |
+| [Sandbox](https://github.com/euler-gaozl/agent-os-sandbox) | 隔离执行服务；本机执行后端尚未配置 |
+| [Telemetry](https://github.com/euler-gaozl/agent-os-telemetry) | 事件接收与遥测导出；本机当前零实例 |
+| [Harness](https://github.com/euler-gaozl/agent-os-harness) | 固定 DSH 源码、持久化适配和上下文管理 |
+| [SDK](https://github.com/euler-gaozl/agent-os-sdk) | 固定公共协议与传输设施 |
+
+当前未关闭项见 [Windows 单机交付计划](docs/windows-single-machine-plan.md)：完整页面流程、真实研究成稿质量与引用回查、剩余迁移/旧权限退役及故障验收。各仓库 Actions 日常保持禁用，本机交付验收完成后集中运行一次最终 CI；代码同步不等于 CI 或生产验收通过。集成候选源码固定在 [service-sources.json](deploy/service-sources.json)，实际安装版本以本机 `ops/Platform.ps1 status` 和发布 catalog 为准。
+
 ## 已实现
 
 | 模块 | 行为 |
