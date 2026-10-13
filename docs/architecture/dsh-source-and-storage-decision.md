@@ -79,6 +79,26 @@ Worker 专用 HTTP 要求有效租约/fence、新引擎、同运行数字操作�
 
 ## 数据分层与责任
 
+### 2026-10-13 Worker 实接与固定发布包
+
+候选版本已保存到私有仓：Runtime `35660bf039afb2b826b179246a39b814bf3dcf83`、Worker `70d45cd1ef2e08def4450f3be8b003b51401b72f`、[Harness](https://github.com/euler-gaozl/agent-os-harness) `ec21432`（tag `v0.1.0-rc.1`）。新仓先禁用 Actions 再导入。Git HTTPS 重置后使用 Git Database API 逐 tree/commit 验证相同 SHA，没有覆盖用户历史。Worker 固定执行依赖 Runtime `v0.1.0-rc.2`（`870a4dd`），经 Go canonical module 再生成 vendor，无本地 replace。旧 SDK 缓存曾被 checksum 拒绝，使用已有验证的独立 module cache 后通过，未绕过校验。
+
+Worker 默认仍领取历史三种引擎。显式 `DSH_SOURCE_RUNNER` 必须通过编入程序的 manifest/upstream/runner/kernel/许可证锁；每次运行再次校验。源码 Node 从固定产物目录启动，禁止全局模块搜索，无模型或服务凭证。完整离线包可同时携带旧 npm 与新源码产物，二者不互换。最终模型 JSON 在追加当前约束、子任务结果和应用输出上限后计入预算；仍是 DSH UTF-16 字符/4 启发式加封装余量，不承诺供应商分词器的精确上限，尤其是中文。
+
+已修复评审发现的回复丢失收敛缺口：同一状态 Invocation 最多三次有界重试；耗尽后保留 `waiting_unknown`。Runtime 新增 control 专用 `resume-source-state`，在事务中校验最新整体 Exchange 为已归档状态读/更新、未取消且没有未决 calls，再保留原请求/规则/回执入队。取消只在没有未知外部效果时结束；有活动子任务则等待收尾，不执行被取消的状态更新。这个 `source-state-recovery-v1` 管理增量**不在** Runtime `v0.1.0-rc.2` 内，正式部署必须匹配新的 Runtime 服务版本，不能仅看 Worker 依赖 tag。
+
+| 本机证据（`local/evidence/` 下） | 实际结果与边界 |
+| --- | --- |
+| `p25-worker-package-cb02167fdc5540079faf5997f4d05843` | 干净提交离线打包；搬离原目录后核对所有文件/链接，两个历史 DSH 协议继续运行 |
+| `p25-worker-source-3ad9be3805e54fbb91773f42ade1e18e` | 直接运行搬迁包的 Worker、Node 和源码 runner；37 个 Worker 与 19 个 Runtime 集成通过记录（含子测试），零跳过；vet/所有权检查通过 |
+| `p25-working-state-cef60464478e4b93963c83202f219c75` | 扩大 Runtime 回归 61 个通过记录，vet/build 通过；5 个可执行集成 opt-in 本批跳过，其中3个源码场景由上一行实际覆盖，两个历史用例本轮未重跑 |
+
+三个实际 Worker 场景分别为状态提交后强杀并 fence=2 接管、断 HTTP 回复且原 Worker 存活、三次断回复耗尽后管理恢复；各有1次实际 Compact、69个归档批次、475,098字节事件。摘要故意遗漏日期/数值/来源，后续工作集保持完整，没有重复已提交模型/工具/状态效果。活动子任务取消与未知工具保护也通过。固定包 Worker SHA-256 为 `EC279257D68F2FBA13F3A357EDCC819CF2ECA0183F4F10F62B06550F2D1C00EB`。临时 PostgreSQL 均已停止。初版 `p25-worker-source-e44de4051bc8461b860af97d3f7029c9` 因测试构造的未确认归档违反表 CHECK 失败；已修合法夹具，失败日志保留。
+
+模型、ToolHub 路由、不可变 Storage 仍为显式夹具，不是 Storage 磁盘耐久或付费 DeepSeek 业务验收。独立评审读取源码和证据，没有代替执行测试。本轮零付费调用、零 Actions、未切换正式部署。剩余：任务提交与恢复 UI、部署兼容/回滚保护、Session 全历史内存和恢复耗时测量/必要核心补丁、缓存生命周期、真实研究交付；P2 的旧覆盖及权限退役缺口也继续保留。
+
+### 权威数据与清理规则
+
 | 信息 | 模型当前上下文 | 必须持久化的地方与时机 | 失效/清理规则 |
 | --- | --- | --- | --- |
 | 用户目标、纠正、约束、任务阶段 | 保留经过版本固定的精简当前状态 | Runtime 的结构化任务状态；接受修改时先提交，再进入后续模型步骤 | 版本历史和生效记录保留，不能被摘要覆盖 |
