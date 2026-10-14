@@ -3,7 +3,7 @@
   "services": {
     "control": {
       "repository": "agent-os-console",
-      "commit": "2294340f58d89606b51cc71a6f7c82257825ef5d"
+      "commit": "1b4b4e4211053e99a836d8707988e297315e20ef"
     },
     "futures": {
       "repository": "agent-os-futures",
