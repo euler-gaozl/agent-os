@@ -18,7 +18,8 @@
     "evidence_document",
     "observed_run",
     "constraint",
-    "deferred_scope"
+    "deferred_scope",
+    "environment"
   ],
   "relation_types": {
     "part_of": "属于项目或阶段",
@@ -38,7 +39,11 @@
     "affects": "待办可能涉及的 Owner",
     "documented_by": "存在范围限定的说明/证据索引，不表示整体通过",
     "documents_failure_of": "记录能力的失败样本",
-    "addresses": "待办处理该观测问题"
+    "addresses": "待办处理该观测问题",
+    "observed_in": "历史运行或服务状态的归属环境；不表示已授权访问",
+    "development_environment": "当前接手开发环境；配置数据独立",
+    "historical_deployment_environment": "历史部署记录归属，不是接手操作目标",
+    "future_target_environment": "后续交付环境；未验收"
   },
   "query_examples": [
     {
@@ -271,108 +276,168 @@
       "type": "service",
       "label": "Console 中台",
       "role": "control",
-      "default_local_port": 8090,
       "doc": "architecture.md",
-      "deployment_status": "observed_running_at_handoff"
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8090,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
     },
     {
       "id": "service:futures",
       "type": "service",
       "label": "Futures 业务端",
       "role": "futures",
-      "default_local_port": 8098,
       "doc": "architecture.md",
-      "deployment_status": "observed_running_at_handoff"
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8098,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
     },
     {
       "id": "service:registry",
       "type": "service",
       "label": "Registry",
       "role": "registry",
-      "default_local_port": 8096,
       "doc": "architecture.md",
-      "deployment_status": "observed_running_at_handoff"
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8096,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
     },
     {
       "id": "service:runtime",
       "type": "service",
       "label": "Runtime",
       "role": "runtime",
-      "default_local_port": 8094,
       "doc": "architecture.md",
-      "deployment_status": "observed_running_at_handoff"
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8094,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
     },
     {
       "id": "service:worker",
       "type": "service",
       "label": "Worker",
       "role": "worker",
-      "default_local_port": 8099,
       "doc": "architecture.md",
-      "deployment_status": "observed_running_at_handoff"
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8099,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
     },
     {
       "id": "service:toolhub",
       "type": "service",
       "label": "ToolHub",
       "role": "toolhub",
-      "default_local_port": 8091,
       "doc": "architecture.md",
-      "deployment_status": "observed_running_at_handoff"
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8091,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
     },
     {
       "id": "service:knowledge",
       "type": "service",
       "label": "Knowledge",
       "role": "knowledge",
-      "default_local_port": 8095,
       "doc": "architecture.md",
-      "deployment_status": "observed_running_at_handoff"
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8095,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
     },
     {
       "id": "service:indexer",
       "type": "service",
       "label": "Indexer",
       "role": "indexer",
-      "default_local_port": 8097,
       "doc": "architecture.md",
-      "deployment_status": "observed_running_at_handoff"
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8097,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
     },
     {
       "id": "service:storage",
       "type": "service",
       "label": "Storage",
       "role": "storage",
-      "default_local_port": 8092,
       "doc": "architecture.md",
-      "deployment_status": "observed_running_at_handoff"
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8092,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
     },
     {
       "id": "service:sources",
       "type": "service",
       "label": "Sources",
       "role": "sources",
-      "default_local_port": 8101,
       "doc": "architecture.md",
-      "deployment_status": "observed_running_at_handoff"
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8101,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
     },
     {
       "id": "service:sandbox",
       "type": "service",
       "label": "Sandbox",
       "role": "sandbox",
-      "default_local_port": 8093,
       "doc": "architecture.md",
-      "deployment_status": "api_only_backend_unconfigured"
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8093,
+        "status": "api_only_backend_unconfigured",
+        "scope": "historical_owner_host_only"
+      }
     },
     {
       "id": "service:telemetry",
       "type": "service",
       "label": "Telemetry",
       "role": "telemetry",
-      "default_local_port": 8100,
       "doc": "architecture.md",
-      "deployment_status": "zero_instances"
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8100,
+        "status": "zero_instances",
+        "scope": "historical_owner_host_only"
+      }
     },
     {
       "id": "engine:dsh",
@@ -466,49 +531,56 @@
       "type": "phase",
       "label": "恢复基线",
       "status": "passed_at_scope",
-      "doc": "../windows-single-machine-plan.md"
+      "doc": "../windows-single-machine-plan.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
     },
     {
       "id": "phase:P1",
       "type": "phase",
       "label": "Windows 运维与迁移",
       "status": "passed_at_scope",
-      "doc": "../windows-single-machine-plan.md"
+      "doc": "../windows-single-machine-plan.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
     },
     {
       "id": "phase:P2",
       "type": "phase",
       "label": "独立服务与旧覆盖退役",
       "status": "partial",
-      "doc": "../windows-single-machine-plan.md"
+      "doc": "../windows-single-machine-plan.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
     },
     {
       "id": "phase:P2.5",
       "type": "phase",
       "label": "源码 DSH 与存储",
       "status": "partial",
-      "doc": "../windows-single-machine-plan.md"
+      "doc": "../windows-single-machine-plan.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
     },
     {
       "id": "phase:P3",
       "type": "phase",
       "label": "中台和业务端",
       "status": "partial",
-      "doc": "../windows-single-machine-plan.md"
+      "doc": "../windows-single-machine-plan.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
     },
     {
       "id": "phase:P4",
       "type": "phase",
       "label": "故障与资源验收",
       "status": "partial",
-      "doc": "../windows-single-machine-plan.md"
+      "doc": "../windows-single-machine-plan.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
     },
     {
       "id": "phase:P5",
       "type": "phase",
       "label": "真实研究交付",
       "status": "failed",
-      "doc": "../windows-single-machine-plan.md"
+      "doc": "../windows-single-machine-plan.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
     },
     {
       "id": "acceptance:W01",
@@ -613,56 +685,64 @@
       "type": "capability",
       "label": "Agent 固定资源配置",
       "status": "partial",
-      "doc": "current-state.md"
+      "doc": "current-state.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
     },
     {
       "id": "capability:toolhub",
       "type": "capability",
       "label": "Skill/MCP 校验验活",
       "status": "partial",
-      "doc": "current-state.md"
+      "doc": "current-state.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
     },
     {
       "id": "capability:knowledge",
       "type": "capability",
       "label": "资料采集检索回读",
       "status": "partial",
-      "doc": "current-state.md"
+      "doc": "current-state.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
     },
     {
       "id": "capability:execution",
       "type": "capability",
       "label": "可恢复多实例执行",
       "status": "partial",
-      "doc": "current-state.md"
+      "doc": "current-state.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
     },
     {
       "id": "capability:storage-lifecycle",
       "type": "capability",
       "label": "运行时存储生命周期",
       "status": "partial",
-      "doc": "current-state.md"
+      "doc": "current-state.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
     },
     {
       "id": "capability:research",
       "type": "capability",
       "label": "事实研究报告",
       "status": "partial",
-      "doc": "current-state.md"
+      "doc": "current-state.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
     },
     {
       "id": "capability:operations",
       "type": "capability",
       "label": "独立发布与恢复",
       "status": "partial",
-      "doc": "current-state.md"
+      "doc": "current-state.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
     },
     {
       "id": "capability:ui",
       "type": "capability",
       "label": "中台与业务 UI",
       "status": "partial",
-      "doc": "current-state.md"
+      "doc": "current-state.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
     },
     {
       "id": "task:research-completion",
@@ -743,7 +823,9 @@
       "doc": "../research-draft-visibility-20261014.md",
       "scope": "已通过草稿显示，不代表研究质量通过",
       "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
-      "verification": "original_maintainer_record_not_new_retest"
+      "verification": "original_maintainer_record_not_new_retest",
+      "evidence_environment_id": "environment:owner-windows",
+      "mac_usage": "公开说明可读；私有原始证据不可从路径访问或推定存在"
     },
     {
       "id": "evidence:capture",
@@ -752,7 +834,9 @@
       "doc": "../console-capture-acceptance-20261014.md",
       "scope": "文档所列范围",
       "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
-      "verification": "original_maintainer_record_not_new_retest"
+      "verification": "original_maintainer_record_not_new_retest",
+      "evidence_environment_id": "environment:owner-windows",
+      "mac_usage": "公开说明可读；私有原始证据不可从路径访问或推定存在"
     },
     {
       "id": "evidence:source-engine",
@@ -761,7 +845,9 @@
       "doc": "../source-engine-activation-20261013.md",
       "scope": "版本限定",
       "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
-      "verification": "original_maintainer_record_not_new_retest"
+      "verification": "original_maintainer_record_not_new_retest",
+      "evidence_environment_id": "environment:owner-windows",
+      "mac_usage": "公开说明可读；私有原始证据不可从路径访问或推定存在"
     },
     {
       "id": "evidence:resident",
@@ -770,7 +856,9 @@
       "doc": "../resident-joint-acceptance-20261013.md",
       "scope": "真实进程/数据库与合成模型，不是全平台上界",
       "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
-      "verification": "original_maintainer_record_not_new_retest"
+      "verification": "original_maintainer_record_not_new_retest",
+      "evidence_environment_id": "environment:owner-windows",
+      "mac_usage": "公开说明可读；私有原始证据不可从路径访问或推定存在"
     },
     {
       "id": "evidence:retirement",
@@ -779,7 +867,9 @@
       "doc": "../p2-linux-cutover.md",
       "scope": "含未关闭项，不是通过证书",
       "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
-      "verification": "original_maintainer_record_not_new_retest"
+      "verification": "original_maintainer_record_not_new_retest",
+      "evidence_environment_id": "environment:owner-windows",
+      "mac_usage": "公开说明可读；私有原始证据不可从路径访问或推定存在"
     },
     {
       "id": "evidence:ui",
@@ -788,7 +878,9 @@
       "doc": "../ui-validation-v0.6.md",
       "scope": "历史页面与样本范围，不能覆盖最新全矩阵",
       "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
-      "verification": "original_maintainer_record_not_new_retest"
+      "verification": "original_maintainer_record_not_new_retest",
+      "evidence_environment_id": "environment:owner-windows",
+      "mac_usage": "公开说明可读；私有原始证据不可从路径访问或推定存在"
     },
     {
       "id": "evidence:recovery",
@@ -797,7 +889,9 @@
       "doc": "../windows-release-recovery-20261012.md",
       "scope": "当时状态，最新完整状态仍需恢复验证",
       "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
-      "verification": "original_maintainer_record_not_new_retest"
+      "verification": "original_maintainer_record_not_new_retest",
+      "evidence_environment_id": "environment:owner-windows",
+      "mac_usage": "公开说明可读；私有原始证据不可从路径访问或推定存在"
     },
     {
       "id": "run:research-20261014",
@@ -805,7 +899,10 @@
       "label": "豆粕固定资料研究失败",
       "status": "failed",
       "task_id": "4bdf967d35ab0b92ae43c38dc87a5947",
-      "doc": "current-state.md"
+      "doc": "current-state.md",
+      "environment_id": "environment:owner-windows",
+      "observed_at": "2026-10-14",
+      "mac_usage": "历史失败线索；在 Mac 建立新的复现任务，不恢复此 ID"
     },
     {
       "id": "constraint:secrets",
@@ -845,6 +942,36 @@
       "label": "全品种资料覆盖",
       "status": "deferred",
       "doc": "objective.md"
+    },
+    {
+      "id": "environment:maintainer-macos",
+      "type": "environment",
+      "label": "朋友自己的 Mac",
+      "doc": "environment.md",
+      "inventory": {
+        "file": "environments.json",
+        "environment_id": "environment:maintainer-macos"
+      }
+    },
+    {
+      "id": "environment:owner-windows",
+      "type": "environment",
+      "label": "原所有者 Windows",
+      "doc": "environment.md",
+      "inventory": {
+        "file": "environments.json",
+        "environment_id": "environment:owner-windows"
+      }
+    },
+    {
+      "id": "environment:future-linux",
+      "type": "environment",
+      "label": "后续 Linux 服务器目标",
+      "doc": "environment.md",
+      "inventory": {
+        "file": "environments.json",
+        "environment_id": "environment:future-linux"
+      }
     }
   ],
   "edges": [
@@ -2175,6 +2302,92 @@
       "from": "project:agent-platform",
       "relation": "tracks",
       "to": "deferred:commodities"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "development_environment",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "historical_deployment_environment",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "future_target_environment",
+      "to": "environment:future-linux"
+    },
+    {
+      "from": "service:control",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:futures",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:registry",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:worker",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:toolhub",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:knowledge",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:indexer",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:storage",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:sources",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:sandbox",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:telemetry",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "run:research-20261014",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
     }
-  ]
+  ],
+  "environment_policy": {
+    "file": "environments.json",
+    "default_execution_environment": "environment:maintainer-macos",
+    "updated_at": "2026-10-15",
+    "rule": "便携源码知识和逻辑架构可用于 Mac 开发；环境观测不可跨机器继承，不推导访问授权"
+  }
 }

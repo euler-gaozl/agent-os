@@ -1,80 +1,67 @@
-# 下载与接手环境
+# Mac 接手：独立开发与环境边界
 
-主仓：[euler-gaozl/agent-os](https://github.com/euler-gaozl/agent-os/tree/feat/end-to-end-delivery)。**本次交接入口位于 `feat/end-to-end-delivery`，不要假设默认 main 含所有最新增量。** 所有项目 URL、分支和已核对 SHA 在 [repositories.json](repositories.json)。15 仓公开，读取源码无需原所有者的 GitHub Token；提交推送用接手者自己的权限或 PR。
+2026-10-15 用户已确认接手者使用她自己的 Mac。本文件取代此前以 Windows/D 盘为默认的新电脑接手指令。
 
-## 新电脑先取得可审查的源码
+## 三种环境不能混用
 
-以下仅克隆源码，不安装、不启动、不读取私人配置。默认使用原所有者指定的 D 盘布局；若朋友没有 D 盘，应先明确一个自己的固定工作根目录，不能在原电脑擅改路径。已有目录时脚本直接停止，不覆盖或 reset。
+| 环境 | 本次用途 | 事实与权限边界 |
+| --- | --- | --- |
+| `environment:maintainer-macos` | 朋友自己的源码开发、构建、隔离测试、页面验证 | 当前实际开发环境；配置、数据库、账号、端口和证据由她独立建立 |
+| `environment:owner-windows` | 原所有者的历史部署记录，以及以后安排的 Windows 专项验收 | 现有资料不授予连接或修改该机器的权限；安装状态和私有路径不是 Mac 现状 |
+| `environment:future-linux` | 后续服务器交付目标，或明确建立的 Linux 隔离测试环境 | 当前没有服务器；Mac 上的 Linux VM/容器测试须注明 CPU 架构及覆盖范围 |
 
-```powershell
-$repoRoot = 'D:\workspace\agent-platform\repos'
-New-Item -ItemType Directory -Path $repoRoot -Force | Out-Null
-$integration = Join-Path $repoRoot 'agent-os'
-if (Test-Path -LiteralPath $integration) { throw '目录已存在，请先核对其 remote/status，不要覆盖。' }
-git clone --branch feat/end-to-end-delivery https://github.com/euler-gaozl/agent-os.git $integration
-if ($LASTEXITCODE -ne 0) { throw '主仓克隆失败' }
-$inventory = Get-Content -LiteralPath (Join-Path $integration 'docs/maintainer/repositories.json') -Raw | ConvertFrom-Json
-foreach ($repo in $inventory.repositories) {
-    if ($repo.name -eq 'agent-os') { continue }
-    $target = Join-Path $repoRoot $repo.name
-    if (Test-Path -LiteralPath $target) { throw "目录已存在：$target，请人工核对" }
-    git clone --branch $repo.branch $repo.clone_url $target
-    if ($LASTEXITCODE -ne 0) { throw "克隆失败：$($repo.name)" }
-    git -C $target checkout --detach $repo.source_head_at_audit
-    if ($LASTEXITCODE -ne 0) { throw "固定交接源码失败：$($repo.name)" }
-}
+可机读边界见 [environments.json](environments.json)。原目标中的 Windows 单机交付仍保留；更换开发机器不等于改为“Mac 产品交付”，也不证明任何平台已验收。
+
+## 默认目录与首次下载
+
+朋友的开发根目录默认 `~/workspace/agent-platform`。若已有她自己的明确工作区，使用那个目录并记录，避免另建重复副本。源码归 `repos`，本机配置/测试库/产物/日志/证据归 `local`，Mac 专用辅助入口归 `ops`。这些同名目录与原电脑没有同步或挂载关系。
+
+先核对 macOS、CPU 架构、可用空间、Git、Go、Node/pnpm 和当前工作区。不从 Windows 复制可执行文件。按各仓 `go.mod`、`package.json`、锁文件选择工具链；缺少 Docker 等可选环境时先完成可做的测试，不假装已安装。
+
+主仓：<https://github.com/euler-gaozl/agent-os/tree/feat/end-to-end-delivery>。先在 Mac 终端克隆交接分支，已有目录时停止并核对，不覆盖：
+
+```sh
+(
+  set -eu
+  project_root="$HOME/workspace/agent-platform"
+  mkdir -p "$project_root/repos"
+  target="$project_root/repos/agent-os"
+  if [ -e "$target" ]; then
+    echo "目录已存在，请先核对 remote、分支和未提交修改：$target" >&2
+    exit 1
+  fi
+  git clone --branch feat/end-to-end-delivery \
+    https://github.com/euler-gaozl/agent-os.git "$target"
+)
 ```
 
-服务仓检出交接源码基线，方便准确审查；开始修改前从基线建立自己的工作分支。**克隆 HEAD 不是安装指令**：若要复现原服务组合，先按 `deploy/service-sources.json` / installed snapshot 选择相应提交，并通过受管发布流程操作。主仓保留交接分支最新提交，以免固定到交接前 SHA 后丢掉这些文件；该区别在 JSON 中有说明。
+然后读取 `docs/maintainer/repositories.json`，将其余仓库克隆到同级 `repos`，核对清单分支与 `source_head_at_audit`；在核对过的基线上建立工作分支。主仓保留包含此次更正的交接分支最新提交。默认 main 不保证最新。不要盲目统一升级依赖，也不要把所有仓库 HEAD 当成兼容的安装组合。
 
-不要执行任意 `go get -u`、统一更新 lockfile 或移除固定 Owner 包。Go `go.mod` 和 JS `package.json` / lockfile 才是各仓依赖要求。
+`integration_pins` 是一个可审查的源码组合；`installed` 是原 Windows 的历史发布记录，不是 Mac 安装清单。固定 Owner 协议不能因换开发机器而随意更新。
 
-## 工具与不花钱的首轮验证
+## Mac 可以立即开展的工作
 
-原电脑使用 PowerShell 7.6、Go 1.27.2、Node 24.19、pnpm 11.25；这是观测版本，不把所有版本数字当最低要求。先读目标仓 AGENTS/README、go.mod/package.json 和测试说明。
+1. 核对代码、依赖、数据库迁移责任和已有测试，重现不依赖私人资料的失败。
+2. 构建适配当前 CPU 的 Go/Node/Web 组件；按照实际 package scripts 执行测试。
+3. 在自己的 Mac 原生 PostgreSQL，或已确认支持的本地 Linux 隔离环境中创建专用测试库。所有服务 URL、测试 DSN、凭证和输出目录必须来自她自己的配置；不得照抄历史环境地址。
+4. 用明确标记的公开/合成资料和新建 Agent/Skill 版本、新任务验证逻辑。数据库测试跳过必须报告；合成模型不算真实供应商验证。
+5. 缺少跨平台开发入口时，先补最小、隔离的开发适配并记录，不在开工阶段重造整套部署平台或声称 macOS 全链路已经通过。
+6. 提交代码、测试证据和目标环境复验说明；原 Windows 的安装与验证由所有者以后另行安排。
 
-- Go Owner：适当执行 `go test ./...`、`go vet ./...`、构建；需数据库的测试必须使用一次性隔离 PostgreSQL。没有 `TEST_DATABASE_URL` 时关注 skip，不能宣称数据库测试通过。
-- Console/Futures Web：按实际 scripts 执行固定依赖安装、测试和构建；不要凭本文件猜脚本名。
-- Harness：固定官方来源，按其 README 构建与验证包；夹具测试不消费真实模型，也不证明官方模型业务成功。
-- 原电脑证据不随仓库传输。缺少真实资料时先做脱敏夹具、协议与恢复测试，结果明确标记；真实研究验收仍待原环境或经过选择的数据交接。
+历史 `127.0.0.1:8090/8098` 指向当时的 Windows。在 Mac 上相同地址只会指向 Mac 自己；先确认她自己的进程、监听端口与配置，不能据此宣称原系统在线。不会因知识库存在路径，就获得路径内容或该系统的访问权限。
 
-提交前检查 diff 和凭证扫描。15 仓 Actions 保持禁用，不为“验证提交”开启 CI；最终整体验收才使用一次预算明确的汇总 CI。
+## 不能作为 Mac 开工步骤的内容
 
-## 原电脑：先只读核对
+- D 盘路径、`ops/Platform.ps1`、Windows 发布 catalog、DPAPI、旧 `Start -Migrate` 和原数据库目录：仅供理解历史实现。不要直接执行、映射、挂载、同步或寻找原电脑。
+- 原任务 ID、真实草稿、历史 Agent revision、私有证据指针：属于旧环境的数据对象。不能在新库假装存在，也不尝试恢复或续跑这些 ID。
+- 原 Key、加密配置、备份和完整数据库：不在 GitHub 内，不能从旧聊天或历史提交寻找。确需真实模型时使用专门为当前开发环境安全配置的凭证。
+- Windows 受管升级/回滚、DPAPI、原库备份恢复：Mac 不能直接证明这些场景。保留测试计划、可执行条件和待复验状态，不主动连接原电脑完成它们。
+- Linux provision 不是已验证的 macOS 引导器。容器里通过 Linux 测试，也不等于通过原生 macOS 或 Windows 验收。
 
-```powershell
-git -C 'D:\workspace\agent-platform\repos\agent-os' status --short
-& 'D:\workspace\agent-platform\ops\Platform.ps1' status
-& 'D:\workspace\agent-platform\ops\Platform.ps1' doctor
-```
+## 知识和验证记录怎么使用
 
-先阅读命令输出及脚本，不在未知 pending 状态下强行启动、更新、回滚。正式入口为 `ops/Platform.ps1`，转发到主仓 `scripts/Platform.ps1`。不同维护动作共享全局锁，等待上一项结束再执行下一项。不要并行跑安装、配置事务、备份与恢复。
+先读 [完整目标](objective.md) 与 [待办](backlog.md)。[状态快照](current-state.md) 是问题线索，不是需要在 Mac 自动执行的运维清单。既有证据可注明“原维护者记录”；自己执行的新证据必须记录环境 ID、OS/CPU、源码版本、依赖、数据来源、命令、结果及 skip。
 
-本机布局：
+Mac 工作期间新增的环境文件、库、日志及原始证据留在她的 `local`，不进 Git。可公开的脱敏验收说明和环境差异进入仓库；不要覆盖旧记录，或把 Mac 通过写成 Windows 通过。
 
-```text
-D:\workspace\agent-platform\
-  repos\          15 个源码仓库
-  local\
-    data\postgres\  原正式数据库，不重新 initdb
-    releases\       format2 catalog / 固定发布 manifest / Harness 包
-    evidence\       私有验收输入输出
-    ...             配置、运行状态、日志、备份等，按实际布局核对
-  ops\            机器维护入口、证据指针与辅助脚本
-```
-
-`local/releases/current.json` 以 role.current.manifest 指向固定发布；读取 manifest.provenance 和 contract，不用文件夹名猜安装版本。工具通常在 `D:\workspace\.tools`；Node 也有固定受管发布。`ops/*.path` 是证据目录指针，不是可以上传的资源包。
-
-## 新 Windows 的真实限制
-
-当前 Windows 维护链主要基于已有 layout、受保护配置和 catalog；[`cmd/provision` 的部署流程](../fresh-deployment-provision.md) 是 Linux 路线。不能把 Linux 测试或早期 `Initialize-Local.ps1` 当作“全新 Windows 一键重建当前 12 服务”的证明。
-
-新机器若需要运行完整平台，要补齐/验收 `task:fresh-windows-bootstrap`：数据库初始化、各 Owner 迁移/受限身份、固定发布登记、Harness 包、凭证录入及冷启动。不要调用旧 `Start -Migrate` 重建共享迁移，不覆盖原机数据库。可以先在朋友机器完成源码修改和隔离测试，回原机受管安装与真实验收。
-
-Windows DPAPI 凭证绑定用户/机器上下文；直接复制加密文件不保证可解密。朋友需要真实调用时由所有者安全配置供应商凭证，不从聊天、日志或旧 Git 记录提取 Key。提供数据库/证据资料需要另行选择与脱敏；此次交接没有授权公开原始私人资料。
-
-## 真正要恢复的业务输入
-
-本机 Registry 当前研究 Agent revision 17、Skill revision 6 和研究输入见 [状态快照](current-state.md)；不等同于静态 packs 种子。原环境通过只读 API/证据检查完整版本；新机器需选取可分享的资源配置与资料，不在公共仓补传整库。
-
-交接前没有悬空的功能代码修改；只读定位停在模型轮次分配/报告质量。先从 [backlog.md](backlog.md) 第一项继续，保留完整目标。旧聊天 Goal 会暂停；接手者在自己的聊天按同一范围设新 Goal，原聊天权限、历史工具会话和记忆不会自动迁移。
+15 仓日常 Actions 保持禁用，不为交接或每次提交启动 CI。最后一次统一 CI 仍按完整计划和预算安排。现有旧聊天 Goal 保持暂停，朋友在自己的聊天为接手工作建立 Goal，完整目标与环境依赖不能删除。

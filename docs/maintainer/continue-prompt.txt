@@ -1,16 +1,31 @@
-请接手并继续完成我的 Agent Platform 项目，不要从零重做。前一位 Codex 已按我的要求交接并将暂停原 Goal。请先读交接资料、核对现场，再建立完整 Goal 持续执行，不能把目标缩成只修一个报告。
+你现在运行在维护者自己的 Mac 上，请接手我的 Agent Platform 项目。原所有者的电脑是另一台 Windows；你无权因为收到知识库就连接或修改它。先读交接知识库，核对 Mac 与源码，然后设定 Goal 持续开发，不从零重造，也不停在计划阶段。
 
+入口：
+https://github.com/euler-gaozl/agent-os/blob/feat/end-to-end-delivery/HANDOFF.md
 主仓：https://github.com/euler-gaozl/agent-os
 交接分支：feat/end-to-end-delivery
-入口：https://github.com/euler-gaozl/agent-os/blob/feat/end-to-end-delivery/HANDOFF.md
-项目知识库：docs/maintainer/README.md；完整目标 objective.md；状态 current-state.md；待办 backlog.md；下载和环境 environment.md；15 仓地址/分支/固定版本 repositories.json；架构 architecture.md；本体映射 ontology.json。请沿本体关系找到服务 Owner、数据域、验收证据和剩余任务，不一次读取所有旧日志。
 
-正式项目布局 D:\workspace\agent-platform\repos；配置/数据库/运行状态在 local，维护入口在 ops。原电脑不在 C/H/J 盘另建项目。朋友新电脑若没有 D 盘请明确自己的固定工作目录。15 仓公开，可以先下载源码；按 environment.md 核对分支和提交，不能默认 main 最新，也不能把各仓 HEAD 一键部署。本机安装、集成 pin、编译依赖版本是三层不同信息。
+首先阅读 docs/maintainer/environment.md 和 environments.json，这是 Mac 接手与环境边界的最新说明。之后读 README.md、objective.md、current-state.md、backlog.md、architecture.md、repositories.json、ontology.json，以及目标仓 AGENTS.md。后续明确的 Mac 环境说明优先于历史文档里未标环境的“本机”“D盘”“默认已启动”等说法。
 
-目标：先完成 Windows 单机端到端交付，保留独立服务/多实例/恢复边界。Go/TS/Rust 按适用性选用，原则上不用 Python。官方 DSH 固定源码负责循环和 Compact，Go 负责持久化和服务；不要再造 loop 或偷偷切换旧任务的引擎/提示词/预算。模型上下文、工作状态、回执、原文、缓存和长期记忆分层；需要恢复的内容先落盘，永久资料不能当缓存删。统一中台与独立 Futures 业务端分别验收全部页面。
+知识库的用途是交接代码知识、目标、依赖和证据边界，不能把环境记录误当执行指令：
+- GitHub 仓库、接口、数据所有权、问题和待办可以供你开发。
+- D:\workspace、Windows 维护脚本、已安装版本、DPAPI、旧任务 ID、私有证据目录和历史 localhost 地址只属于原 Windows。
+- 不要自动连接、映射、挂载、恢复、同步或修改原电脑；不索取整库备份作为开工前提。
+- Mac 的 localhost 指 Mac 自己。使用自己的新配置、测试数据库、新任务和独立凭证；不从旧聊天或历史 Git 提取 Key。
+- 原 Windows 的验收仍保留，无法在 Mac 执行的场景标记待目标环境复验，不假装通过。
 
-现状：P0/P1 已通过当时验收，P2/P2.5/P3/P4 部分完成，P5 真实研究质量未过；不是“仅缺服务器”。最新失败任务 4bdf967d35ab0b92ae43c38dc87a5947 耗尽 12 次模型请求，两份草稿可回读但没有最终结果，报告仍有引用、日期、口径和缺口错误。先定位完整成稿与证据质量，保留已经做好且验证过的能力，再按 backlog 关闭拆仓/旧权限退役、生命周期、全 UI、剩余故障/资源、最新备份实际恢复和最终统一验收。不把测试夹具当真实供应商/真实业务验收。
+Mac 工作根默认 ~/workspace/agent-platform，源码放 repos，独立配置/测试数据/日志/证据放 local，Mac 辅助入口放 ops。若维护者已有固定工作区，核对后沿用。已有目录先查 remote、分支和未提交修改，不覆盖或 reset。
 
-期货研究只负责信息收集、校验、分类、事实反馈和留存；我负责预测及交易判断。不能用行情解释基本面，不能编造数据或为了绿灯删证据。当前真实任务资源在原电脑数据库，不等同于 packs 初始种子；新电脑克隆源码不含原始资料、数据库、凭证或原任务。Windows 全新安装仍有 bootstrap 缺口，DPAPI 不保证跨机器可用。先完成能做的隔离测试，需要真实环境时准确说清依赖，不伪称已运行。
+按 environment.md 克隆主仓交接分支，再按 repositories.json 获取其余项目；15 个仓库已公开。核对源码基线后建立工作分支。不要默认 main 最新，不把各仓 HEAD 一键部署，不把 installed 的 Windows 发布记录当成 Mac 安装清单，也不要任意升级固定依赖。
 
-不上传或打印密钥/个人数据库/原始私人资料，不从旧聊天取密钥；真实模型调用须小额有界，先修程序再做最小真实验证。15 仓 Actions 当前禁用，日常提交不要跑 CI；本机验收完成后仅做一次预算明确的汇总 CI。重要变化接受独立评估 Agent 的真实审查，说明静态/动态边界。每个增量更新知识库、本体关系、提交/安装版本和证据，保留未完成项；按完整 P0–P5/W01–W14 核对后才能说完成。
+先检测 Mac 的 OS/CPU 和 Git、Go、Node/pnpm。按各仓模块/锁文件选择工具链、构建当前架构产物。先跑可移植 Go/Web/Harness 测试；数据库测试用 Mac 自己的隔离 PostgreSQL 或已经确认可用的本地 Linux 测试环境。缺少跨平台开发入口时补最小隔离适配，不照搬 Windows 运维脚本。记录未执行/跳过项，不声称已有 Mac 全链路验收。
+
+完整产品目标和 P0–P5/P2.5、W01–W14 在 objective.md 和原计划中，不能缩减。当前交接记录：P0/P1 按当时范围已过，P2/P2.5/P3/P4 部分完成，P5 真实研究质量未过。先核对代码解决研究轮次分配、完整成稿和引用/日期/统计口径质量；原失败任务及草稿是历史问题线索，你在 Mac 建立新的复现数据和任务，不恢复它的 ID。随后继续服务退役、存储生命周期、完整 UI、故障/资源等待办。依赖原 Windows 或私人真实资料的最终验收单列，保留条件和验证计划。
+
+技术约束：优先 Go/TS/Rust，原则上不用 Python；官方固定 DSH 源码负责 loop/Compact，Go 负责持久化与服务。不要另造循环，或静默改变旧任务快照。保留 native-v4、legacy budget-v3 等兼容边界及固定 Owner 协议。模型上下文、工作状态、回执、原文、缓存和长期记忆分层；可恢复内容及时落盘，永久资料不能当缓存删除。中台与期货业务前端独立，UI 要逐页验证。
+
+期货研究只收集、校验、分类、反馈事实和留存，预测及交易判断由我负责。不用价格解释基本面，不编造数据，不为检查变绿删证据。缺少私有数据先做公开/合成复现，明确其边界。
+
+不上传凭证、私人数据和本机配置。真实模型调用有界、记录 usage；先排除程序错误再做最小真实验证。15 仓 Actions 日常保持禁用，不在每次提交跑 CI，最后才安排一次预算明确的统一验收。重要变化进行真实独立评审，说明静态/动态范围。
+
+现在先核对 Mac 和仓库，给出简短的接手结论与执行顺序，然后直接开始可独立推进的工作。只询问真正阻断的问题。每次有意义的增量更新知识库、关系映射、版本、环境归属、测试证据和剩余任务；不要以 Mac 测试结果覆盖原 Windows 的历史或待验收项。

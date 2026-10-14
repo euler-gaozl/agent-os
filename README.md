@@ -4,6 +4,8 @@
 
 **维护者交接入口：[HANDOFF.md](HANDOFF.md)。** [项目群知识库](docs/maintainer/README.md) 包含完整目标、未完成任务、15 仓版本清单、原电脑/新电脑接手方法及可机读本体映射。交接分支为 `feat/end-to-end-delivery`；项目整体尚未完成，源码、集成 pin 与实际安装版本分别记录。下文保留历史增量状态，接手先读知识库的带日期快照再核对现场。
 
+**2026-10-15：朋友在自己的 Mac 上接手。** 先读 [Mac 环境说明](docs/maintainer/environment.md) 和 [环境映射](docs/maintainer/environments.json)。下文 Windows 的 D 盘、localhost、已安装状态和私有证据只描述原电脑，不能作为 Mac 的执行指令或访问授权；开发配置与测试数据必须独立。
+
 ## 当前可用的两个入口
 
 - 能力中台：<http://127.0.0.1:8090>。管理自定义 Agent、提示词、Skill、MCP、知识库、工作记忆和运行记录；Agent 编辑器右侧试运行，在“发布”页设置业务入口。

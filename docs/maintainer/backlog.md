@@ -2,6 +2,8 @@
 
 先核对本机与仓库，不再从零扩展架构。按下列顺序推进；任务顺序不删减完整目标。证据不足的项目保持未关闭。
 
+**2026-10-15：这里的执行者在自己的 Mac。** 先核对 Mac 和下载的源码，不去核对或操作原电脑。能做的代码修复、协议/夹具/独立数据库测试、Web 页面验证先完成；原 Windows 的真实任务、DPAPI、发布恢复等依赖原环境的项目保留为待专项复验。本文件后续“原电脑执行”仅指定最终验证所需环境，不是给朋友远程连接或修改它的指令。Mac 上建立全新测试数据与新任务，不尝试恢复历史任务 ID。
+
 ## 1. task:research-completion — 先让研究稳定成稿
 
 Owner：Futures 业务协议/检查器和集成业务包；涉及 Runtime/Worker/Harness 的变更要遵守冻结重放协议。
@@ -48,4 +50,4 @@ Owner：Harness/Runtime/Worker/Storage。已有驻留事件释放、工作状态
 
 ## 新环境额外缺口
 
-`task:fresh-windows-bootstrap`：朋友若换电脑，当前 Windows 操作链主要服务已有 catalog；Linux provision 不能直接当新 Windows 的一键初始化。源码克隆与 Go/Web 隔离测试可以先做；要在全新 Windows 重建服务时，须检查并补齐受保护身份、Owner 迁移、固定发布登记，不照搬原用户的密钥，也不执行旧 `Start -Migrate`。这是复现前提的真实限制，不把它伪装成仅缺一个 API Key。
+`task:fresh-windows-bootstrap`：仅在以后明确要初始化新 Windows 时适用，不是朋友 Mac 开工的前提。当前 Windows 操作链主要服务已有 catalog；Linux provision 不能直接当新 Windows 的一键初始化。未来重建时仍须检查受保护身份、Owner 迁移和固定发布登记。朋友当前先按 [Mac 环境说明](environment.md) 做独立开发与验证，不照搬原用户的密钥或执行旧 `Start -Migrate`。

@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-15",
+  "purpose": "区分可移植项目知识与环境绑定观测，避免在 Mac 误用原所有者 Windows 环境",
+  "default_execution_environment": "environment:maintainer-macos",
+  "environments": [
+    {
+      "id": "environment:maintainer-macos",
+      "label": "朋友自己的 Mac",
+      "os": "macOS",
+      "role": "isolated_development",
+      "root_hint": "~/workspace/agent-platform",
+      "root_status": "recommended_not_observed",
+      "cpu_architecture": "detect_on_host",
+      "provisioning_status": "not_verified",
+      "data_policy": "fresh_local_config_databases_tasks_and_evidence",
+      "allowed_scope": [
+        "read_public_source",
+        "modify_checkouts_in_own_workspace",
+        "build_for_detected_architecture",
+        "run_isolated_tests",
+        "document_platform_gaps"
+      ],
+      "inherits_owner_installation": false,
+      "inherits_owner_credentials": false
+    },
+    {
+      "id": "environment:owner-windows",
+      "label": "原所有者 Windows",
+      "os": "Windows",
+      "role": "historical_deployment_reference_and_later_target_validation",
+      "root_hint": "D:\\workspace\\agent-platform",
+      "observation_date": "2026-10-14",
+      "access_for_mac_handoff": "not_authorized",
+      "allowed_scope": [
+        "read_public_historical_documentation"
+      ],
+      "not_authorized_by_handoff": [
+        "connect",
+        "mount",
+        "synchronize_private_state",
+        "start_or_stop",
+        "update_or_rollback",
+        "restore_database",
+        "resume_historical_run"
+      ],
+      "local_urls_are": "relative_to_owner_windows_not_maintainer_mac",
+      "private_evidence_availability": "not_in_git"
+    },
+    {
+      "id": "environment:future-linux",
+      "label": "后续 Linux 服务器目标",
+      "os": "Linux",
+      "role": "future_delivery_target",
+      "provisioning_status": "no_server_provided",
+      "not_implied_by_mac_tests": [
+        "physical_node_ha",
+        "production_capacity",
+        "native_windows_validation"
+      ]
+    }
+  ],
+  "knowledge_classes": [
+    {
+      "id": "portable_source_knowledge",
+      "examples": [
+        "repository_urls",
+        "source_commits",
+        "interfaces",
+        "logical_data_ownership",
+        "backlog"
+      ],
+      "usage": "可阅读与用于开发，平台特定实现仍须实际验证"
+    },
+    {
+      "id": "environment_bound_observation",
+      "examples": [
+        "installed_manifests",
+        "running_instances",
+        "localhost_urls",
+        "historic_run_ids",
+        "private_evidence_paths"
+      ],
+      "required_metadata": [
+        "environment_id",
+        "observed_at"
+      ],
+      "usage": "只能解释归属环境的历史状态，不能跨机器推定"
+    },
+    {
+      "id": "target_environment_validation",
+      "examples": [
+        "Windows_DPAPI",
+        "Windows_release_recovery",
+        "owner_database_restore"
+      ],
+      "usage": "保留范围和条件，Mac 上未执行则仍待目标环境复验"
+    }
+  ],
+  "maintenance_rules": [
+    "Mac 新证据独立记录环境、OS/CPU、提交、命令、数据来源、结果和跳过项",
+    "原 Windows 观测不覆盖，Mac 结果不写成 Windows 通过",
+    "旧 Goal 仍暂停；接手者在自己的聊天建立完整范围目标",
+    "禁止从仓库路径或历史本机状态推导出访问授权"
+  ]
+}

@@ -2,6 +2,8 @@
 
 这是维护定位图。每条调用的认证、路由、字段与版本仍以 Owner 代码和固定契约为准；图不表示所有可选后端已安装。
 
+逻辑服务/数据归属可跨平台使用。下文端口、安装和生产默认描述均来自原 Windows；Mac 接手者不得据此认定服务已启动或凭证可用，需按 [环境映射](environments.json) 建立自己的独立配置和观测。
+
 ```mermaid
 flowchart TD
   Console[Console 中台 Web / BFF] --> Registry[Registry 固定资源与 Agent]

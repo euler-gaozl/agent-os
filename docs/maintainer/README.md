@@ -4,10 +4,12 @@
 
 ## 先读这四份
 
+**接手者已确定使用自己的 Mac。先读 [environment.md](environment.md) 和 [environments.json](environments.json)，再读下面四类资料。** 原电脑的可用状态不能推导出 Mac 的可用状态，路径和 localhost 地址也不能跨机器解释。
+
 1. [objective.md](objective.md)：原 Goal 全文、有效用户约束和验收矩阵入口。
-2. [current-state.md](current-state.md)：核对时的实际状态、代码/部署版本及真实失败。
-3. [backlog.md](backlog.md)：具体下一步、涉及的仓库、完成证据和已知陷阱。
-4. [environment.md](environment.md)：下载和运行前提，原电脑与新电脑分开。
+2. [current-state.md](current-state.md)：目标进度与原 Windows 的历史观测；不是 Mac 现场。
+3. [backlog.md](backlog.md)：具体下一步、Owner、环境依赖及完成证据。
+4. [architecture.md](architecture.md)：可跨环境理解的逻辑架构和数据所有权。
 
 之后按任务读取 [architecture.md](architecture.md)、[repositories.json](repositories.json)、[ontology.json](ontology.json)，以及各仓库 AGENTS.md / README。不要一次把全部历史日志塞进上下文。
 
@@ -32,6 +34,8 @@
 `ontology.json` 提供类型、实体和有方向的关系。实体包括项目、仓库、服务、数据域、执行器、能力、阶段、验收项、待办和证据说明。关系说明“谁实现什么、谁依赖谁、谁拥有数据、用什么验收、还缺什么”。
 
 `repositories.json` 提供实际 URL、分支、交接基线提交、集成 pin、安装提交。`ontology.json` 不复制密钥或数据库内容；机器处理时以实体 ID 连接上述文件。关系是人工依据代码与文档核对的架构索引，不是运行时自动发现或证明。
+
+`environments.json` 区分 `environment:maintainer-macos`（朋友的独立开发环境）、`environment:owner-windows`（原电脑的历史部署与后续专项验收）和 `environment:future-linux`（后续服务器目标）。仓库 `installed`、服务部署观测、历史真实任务与私有证据均带原 Windows 的环境归属。源码/接口可跨平台阅读，安装事实和访问授权不可继承。Mac 的测试结果单独记录，不覆盖原证据，也不把未运行的 Windows 用例写成通过。
 
 例如：`task:research-completion → affects → service:futures / service:runtime / service:worker`；`service:worker → consumes_fixed_protocol → service:runtime`；`service:runtime → owns → domain:execution`。沿关系找到 Owner 后，读取该仓库实际接口再改。
 

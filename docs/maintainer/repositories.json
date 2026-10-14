@@ -57,7 +57,8 @@
           },
           "owner_modules": [],
           "observed_at": "2026-10-14",
-          "observation": "固定发布 manifest；并不保证接手时仍在线"
+          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
+          "environment_id": "environment:owner-windows"
         }
       ]
     },
@@ -96,7 +97,8 @@
           },
           "owner_modules": [],
           "observed_at": "2026-10-14",
-          "observation": "固定发布 manifest；并不保证接手时仍在线"
+          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
+          "environment_id": "environment:owner-windows"
         }
       ]
     },
@@ -170,7 +172,8 @@
             }
           ],
           "observed_at": "2026-10-14",
-          "observation": "固定发布 manifest；并不保证接手时仍在线"
+          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
+          "environment_id": "environment:owner-windows"
         }
       ]
     },
@@ -209,7 +212,8 @@
           },
           "owner_modules": [],
           "observed_at": "2026-10-14",
-          "observation": "固定发布 manifest；并不保证接手时仍在线"
+          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
+          "environment_id": "environment:owner-windows"
         }
       ]
     },
@@ -248,7 +252,8 @@
           },
           "owner_modules": [],
           "observed_at": "2026-10-14",
-          "observation": "固定发布 manifest；并不保证接手时仍在线"
+          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
+          "environment_id": "environment:owner-windows"
         }
       ]
     },
@@ -287,7 +292,8 @@
           },
           "owner_modules": [],
           "observed_at": "2026-10-14",
-          "observation": "固定发布 manifest；并不保证接手时仍在线"
+          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
+          "environment_id": "environment:owner-windows"
         }
       ]
     },
@@ -326,7 +332,8 @@
           },
           "owner_modules": [],
           "observed_at": "2026-10-14",
-          "observation": "固定发布 manifest；并不保证接手时仍在线"
+          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
+          "environment_id": "environment:owner-windows"
         }
       ]
     },
@@ -380,7 +387,8 @@
           },
           "owner_modules": [],
           "observed_at": "2026-10-14",
-          "observation": "固定发布 manifest；并不保证接手时仍在线"
+          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
+          "environment_id": "environment:owner-windows"
         }
       ]
     },
@@ -419,7 +427,8 @@
           },
           "owner_modules": [],
           "observed_at": "2026-10-14",
-          "observation": "固定发布 manifest；并不保证接手时仍在线"
+          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
+          "environment_id": "environment:owner-windows"
         }
       ]
     },
@@ -458,7 +467,8 @@
           },
           "owner_modules": [],
           "observed_at": "2026-10-14",
-          "observation": "固定发布 manifest；并不保证接手时仍在线"
+          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
+          "environment_id": "environment:owner-windows"
         }
       ]
     },
@@ -497,7 +507,8 @@
           },
           "owner_modules": [],
           "observed_at": "2026-10-14",
-          "observation": "固定发布 manifest；并不保证接手时仍在线"
+          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
+          "environment_id": "environment:owner-windows"
         }
       ]
     },
@@ -556,9 +567,17 @@
             }
           ],
           "observed_at": "2026-10-14",
-          "observation": "固定发布 manifest；并不保证接手时仍在线"
+          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
+          "environment_id": "environment:owner-windows"
         }
       ]
     }
-  ]
+  ],
+  "environment_policy": {
+    "file": "environments.json",
+    "default_execution_environment": "environment:maintainer-macos",
+    "source_metadata_scope": "portable_source_knowledge",
+    "installed_metadata_scope": "owner_windows_history_only",
+    "updated_at": "2026-10-15"
+  }
 }
