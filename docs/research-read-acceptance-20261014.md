@@ -27,4 +27,8 @@
 
 证据入口：`ops/research-intake.path`（采集、原失败、reading-repair）、`ops/research-read-repairs.path`（代码检查）、`ops/native-recovery.path`（此前实际恢复）。完整资料、模型输出和配置仅在本机。
 
-当前修复通过本机检查，尚待受管安装与原任务恢复核验。GitHub Actions 保持禁用；无最终 CI、完整页面或整体交付完成的声明。
+Knowledge `ed54550`、Storage `ded5920` 已分别通过受管安装，就绪及非目标实例保持检查通过；Runtime 本次只有测试变更，正式版本未替换。发布事务均已提交，正式状态为 11 类启用服务、12 个实例、`core_ready=true`；Sandbox 的 Windows 隔离执行仍未配置。
+
+原 revision 17 任务已恢复并完成，累计 7 次模型请求、247661 个计量 token，未知用量 0；恢复后新增 3 次请求，未从头提交新任务。结果含 27 项报数和 1 项比较，检查状态为 `needs_review`，21 条引用匹配、6 条尚未匹配。63 条检查提示包含规则未能确认的日期/语义及比较问题，不等于 63 个已证实事实错误。
+
+实质质量仍未通过：正文受限页面的 AI 摘要报数被当作来源事实，部分周度数据填成发布日期，已经取得的两期库存仍被列为缺口。后续先修正证据适用性与最终稿检查闭环，不能靠重复提交或放宽检查过关。证据在 `reading-repair/task-latest.json`、`usage.json`、`report-check.json` 和 `calls-after-resume.json`。最新资料和部署状态的完整备份恢复仍待补齐。GitHub Actions 保持禁用；无最终 CI、完整页面或整体交付完成的声明。
