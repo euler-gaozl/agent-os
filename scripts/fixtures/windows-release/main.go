@@ -5,6 +5,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"net"
@@ -37,7 +39,7 @@ func main() {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			return
 		}
-		if (strings.Contains(config["MCP_ALLOWED_HOSTS"], ":8098") || strings.Contains(config["SOURCE_ALLOWED_HOSTS"], "example.org")) && config["unready_mcp_marker"] != "" {
+		if (strings.Contains(config["MCP_ALLOWED_HOSTS"], ":8098") || strings.Contains(config["SOURCE_ALLOWED_HOSTS"], "example.org") || strings.Contains(config["APP_RECEIPT_EXPORTS"], "check-8098")) && config["unready_mcp_marker"] != "" {
 			if _, err := os.Stat(config["unready_mcp_marker"]); err == nil {
 				w.WriteHeader(http.StatusServiceUnavailable)
 				return
@@ -71,6 +73,30 @@ func main() {
 			return
 		}
 		_ = json.NewEncoder(w).Encode(map[string]string{"hosts": config["SOURCE_ALLOWED_HOSTS"]})
+	})
+	mux.HandleFunc("/fixture/receipt-exports", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+config["SERVICE_TOKEN"] {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]string{"hosts": config["APP_RECEIPT_EXPORTS"]})
+	})
+	mux.HandleFunc("/v1/receipt-projections", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+config["SERVICE_TOKEN"] {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		mode, _ := os.ReadFile(config["receipt_protocol_marker"])
+		if string(mode) == "unsupported" {
+			http.NotFound(w, r)
+			return
+		}
+		sum := sha256.Sum256([]byte(config["APP_RECEIPT_EXPORTS"]))
+		digest := hex.EncodeToString(sum[:])
+		if string(mode) == "digest" && strings.Contains(config["APP_RECEIPT_EXPORTS"], "check-8098") {
+			digest = strings.Repeat("0", 64)
+		}
+		_ = json.NewEncoder(w).Encode(map[string]string{"protocol": "app-receipt-projection-v1", "configuration_sha256": digest})
 	})
 	address := config["LISTEN"]
 	if address == "" {

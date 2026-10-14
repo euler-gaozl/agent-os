@@ -1,7 +1,12 @@
 # One exact host policy changes here: MCP_ALLOWED_HOSTS for Runtime/ToolHub,
 # SOURCE_ALLOWED_HOSTS for Sources. Existing function names remain compatible.
 # The service release journal owns commit/recovery; configurations use DPAPI.
-function Get-NetworkHostProfile([string]$Role){
+function Get-NetworkHostProfile([string]$Role,[string]$Policy='network'){
+    if($Policy -ceq 'receipt-exports'){
+        if($Role -cne 'runtime'){throw 'Receipt projections belong to Runtime.'}
+        return @{key='APP_RECEIPT_EXPORTS';scope='receipt-exports';action='configure-receipt-exports';kind='receipt_configuration'}
+    }
+    if($Policy -cne 'network'){throw 'Unknown service configuration policy.'}
     if($Role -ceq 'sources'){return @{key='SOURCE_ALLOWED_HOSTS';scope='source-hosts';action='configure-source-hosts';kind='source_configuration'}}
     if($Role -cin @('runtime','toolhub')){return @{key='MCP_ALLOWED_HOSTS';scope='mcp-hosts';action='configure-mcp-hosts';kind='mcp_configuration'}}
     throw 'Host policy is owned by runtime, toolhub or sources.'
@@ -17,7 +22,37 @@ function ConvertTo-SourceHosts([string[]]$Hosts){
     if(@($Hosts|Sort-Object -Unique).Count -ne $Hosts.Count){throw 'Duplicate Sources host.'}
     return (@($Hosts|Sort-Object) -join ',')
 }
-function ConvertTo-NetworkHosts([string]$Role,[string[]]$Hosts){
+function ConvertTo-ReceiptExports([string]$Value){
+    if(-not $Value -or $Value.Length -gt 32768){throw 'Receipt projection configuration must be a bounded JSON array.'}
+    try{$rules=ConvertFrom-Json -InputObject $Value -AsHashtable -NoEnumerate}catch{throw 'Invalid receipt projection JSON.'}
+    if($rules -isnot [array] -or $rules.Count -gt 16){throw 'Receipt projection configuration needs at most 16 entries.'}
+    $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach($rule in $rules){
+        if($rule -isnot [System.Collections.IDictionary] -or $rule.Count -ne 5){throw 'Invalid receipt projection fields.'}
+        foreach($key in @('app','id','tool')){if($rule[$key] -isnot [string] -or $rule[$key] -cnotmatch '^[a-zA-Z0-9_-]{1,120}$'){throw 'Invalid receipt projection identifier.'}}
+        if(-not $seen.Add($rule.app+'/'+$rule.id)){throw 'Duplicate receipt projection.'}
+        foreach($key in @('input_path','output_path')){
+            $path=$rule[$key]
+            if($path -isnot [array] -or $path.Count -lt 1 -or $path.Count -gt 8){throw 'Receipt projections require explicit JSON string paths.'}
+            foreach($part in $path){if($part -isnot [string] -or $part -cnotmatch '^[a-zA-Z0-9_-]{1,120}$'){throw 'Invalid receipt projection path.'}}
+        }
+    }
+    return ConvertTo-Json -InputObject $rules -Depth 8 -Compress
+}
+function Assert-ReceiptProjectionConfiguration([hashtable]$Layout,[System.Collections.IDictionary]$Configuration){
+    if([string]$Configuration.LISTEN -cnotmatch '^127\.0\.0\.1:[0-9]{1,5}$'){throw 'Receipt projection verification needs the managed loopback Runtime.'}
+    $uri='http://'+$Configuration.LISTEN+'/v1/receipt-projections'
+    try{$reply=Invoke-RestMethod $uri -Headers @{Authorization=('Bearer '+$Configuration.SERVICE_TOKEN)} -NoProxy -TimeoutSec 5}
+    catch{throw 'Runtime does not expose the required receipt projection protocol; install the supporting Runtime first.'}
+    $expected=Get-BytesHash ([Text.Encoding]::UTF8.GetBytes([string]$Configuration['APP_RECEIPT_EXPORTS']))
+    if($reply.protocol -cne 'app-receipt-projection-v1' -or $reply.configuration_sha256 -cne $expected){throw 'Runtime receipt projection protocol or loaded configuration digest differs.'}
+}
+function ConvertTo-NetworkHosts([string]$Role,[string[]]$Hosts,[string]$Policy='network'){
+    if($Policy -ceq 'receipt-exports'){
+        $null=Get-NetworkHostProfile $Role $Policy
+        if($Hosts.Count -ne 1){throw 'Expected one receipt projection JSON array.'}
+        return ConvertTo-ReceiptExports $Hosts[0]
+    }
     if($Role -ceq 'sources'){return ConvertTo-SourceHosts $Hosts}
     $null=Get-NetworkHostProfile $Role
     return ConvertTo-MCPHosts $Hosts
@@ -80,7 +115,8 @@ function Get-MCPChangeDirectory([hashtable]$Layout,[string]$ID){
     return $path
 }
 function Read-MCPChange([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Pending){
-    $profile=Get-NetworkHostProfile $Role
+    $policy=if($Pending.action -ceq 'configure-receipt-exports'){'receipt-exports'}else{'network'}
+    $profile=Get-NetworkHostProfile $Role $policy
     if($Pending.action -cne $profile.action -or $Pending.configuration.format -ne 1 -or $Pending.configuration.scope -cne $profile.scope -or $Pending.configuration.role -cne $Role -or $Pending.replicas -ne 1){throw 'Invalid network host configuration journal.'}
     foreach($key in @('id','sha256','manifest')){if($Pending.prior[$key] -cne $Pending.target[$key]){throw 'MCP configuration cannot replace code.'}}
     if($Pending.prior.config_sha256 -ceq $Pending.target.config_sha256){throw 'MCP configuration versions are identical.'}
@@ -100,7 +136,8 @@ function Read-MCPChange([hashtable]$Layout,[string]$Role,[System.Collections.IDi
     if(@(Compare-Object $keys $nextKeys).Count){throw 'MCP migration changed unrelated keys.'}
     foreach($key in $keys){if($result.prior.config[$key] -cne $result.target.config[$key]){throw 'MCP migration changed unrelated configuration.'}}
     $next=[string]$result.target.config[$profile.key]
-    if($next -cne (ConvertTo-NetworkHosts $Role @(if($next){$next.Split(',')})) -or $next -ceq [string]$result.prior.config[$profile.key]){throw 'Network host policy did not change or is not canonical.'}
+    $values=if($policy -ceq 'receipt-exports'){@($next)}else{@(if($next){$next.Split(',')})}
+    if($next -cne (ConvertTo-NetworkHosts $Role $values $policy) -or $next -ceq [string]$result.prior.config[$profile.key]){throw 'Service policy did not change or is not canonical.'}
     if($Pending.configuration['previous_after']){
         $before=$Pending.configuration.previous_before;$after=$Pending.configuration.previous_after
         if(-not $before){throw 'Missing prior-code binding.'}
@@ -140,17 +177,19 @@ function Restore-PendingMCPConfiguration([hashtable]$Layout,[string]$Role,[strin
     Write-MCPConfiguration $Layout $Role $saved.prior.bytes; & $Checkpoint 'prior_configuration_written'
     & (Join-Path $Scripts 'Start-Local.ps1') -LayoutPath $Layout.layout_path -Service $Role -PendingOperation $pending.id -MaintenanceLock $Lock
     Wait-ReleaseReady $Layout $Role 1 $pending.prior $TimeoutSeconds
+    if($pending.action -ceq 'configure-receipt-exports'){Assert-ReceiptProjectionConfiguration $Layout $saved.prior.config}
     $null=Save-ReleasePhase $Layout $Role $pending.id 'recovery_ready'; & $Checkpoint 'recovery_ready'
     $after=Get-ReleaseProcessSnapshot $Layout $Role -AllowStopped
     $catalog=Read-ReleaseCatalog $Layout
     if($catalog.services[$Role].pending.id -cne $pending.id){throw 'MCP recovery identity changed.'}
     $catalog.services[$Role].pending=$null;$catalog.generation++
     Write-PlatformJson (Join-Path $Layout.release_root 'current.json') $catalog
-    return @{operation=$pending.id;outcome='restored_prior';role=$Role;kind=(Get-NetworkHostProfile $Role).kind;current=$pending.prior.id;non_target_unchanged=(Test-ReleaseSnapshotsEqual $pending.non_target $after);non_target_unchanged_during_recovery=(Test-ReleaseSnapshotsEqual $before $after);readiness='verified'}
+    $policy=if($pending.action -ceq 'configure-receipt-exports'){'receipt-exports'}else{'network'}
+    return @{operation=$pending.id;outcome='restored_prior';role=$Role;kind=(Get-NetworkHostProfile $Role $policy).kind;current=$pending.prior.id;non_target_unchanged=(Test-ReleaseSnapshotsEqual $pending.non_target $after);non_target_unchanged_during_recovery=(Test-ReleaseSnapshotsEqual $before $after);readiness='verified'}
 }
-function Set-ServiceMCPHosts([hashtable]$Layout,[string]$Role,[string[]]$Hosts,[string]$Scripts,[IO.FileStream]$Lock,[int]$TimeoutSeconds=30,[scriptblock]$Checkpoint={param($point)}){
-    $profile=Get-NetworkHostProfile $Role
-    $next=ConvertTo-NetworkHosts $Role $Hosts
+function Set-ServiceMCPHosts([hashtable]$Layout,[string]$Role,[string[]]$Hosts,[string]$Scripts,[IO.FileStream]$Lock,[int]$TimeoutSeconds=30,[scriptblock]$Checkpoint={param($point)},[string]$Policy='network'){
+    $profile=Get-NetworkHostProfile $Role $Policy
+    $next=ConvertTo-NetworkHosts $Role $Hosts $Policy
     Assert-NoPendingOwnerMigration $Layout
     $catalog=Read-ReleaseCatalog $Layout;Assert-NoPendingRelease $catalog
     if($catalog.format -ne 2){throw 'MCP configuration needs a versioned deployment.'}
@@ -170,6 +209,7 @@ function Set-ServiceMCPHosts([hashtable]$Layout,[string]$Role,[string[]]$Hosts,[
     $snapshot=Get-ReleaseProcessSnapshot $Layout
     if(@($snapshot|Where-Object role -eq $Role).Count -ne 1){throw 'Start exactly one managed target service before configuring it.'}
     Wait-ReleaseReady $Layout $Role 1 $prior $TimeoutSeconds
+    if($Policy -ceq 'receipt-exports'){Assert-ReceiptProjectionConfiguration $Layout $config}
     $targetConfig=$config.Clone();$targetConfig[$profile.key]=$next
     $targetBytes=[Text.Encoding]::UTF8.GetBytes((ConvertTo-Json -InputObject $targetConfig -Depth 12))
     $target=$prior.Clone();$target.config_sha256=Get-BytesHash $targetBytes
@@ -197,6 +237,7 @@ function Set-ServiceMCPHosts([hashtable]$Layout,[string]$Role,[string[]]$Hosts,[
         & (Join-Path $Scripts 'Start-Local.ps1') -LayoutPath $Layout.layout_path -Service $Role -PendingOperation $id -MaintenanceLock $Lock
         $null=Save-ReleasePhase $Layout $Role $id 'started'; & $Checkpoint 'started'
         Wait-ReleaseReady $Layout $Role 1 $target $TimeoutSeconds
+        if($Policy -ceq 'receipt-exports'){Assert-ReceiptProjectionConfiguration $Layout $targetConfig}
         Assert-ReleaseSnapshot $Layout $Role $pending.non_target
         $null=Save-ReleasePhase $Layout $Role $id 'ready'; & $Checkpoint 'ready'
         $catalog=Read-ReleaseCatalog $Layout
@@ -207,7 +248,9 @@ function Set-ServiceMCPHosts([hashtable]$Layout,[string]$Role,[string[]]$Hosts,[
         }
         $catalog.services[$Role].current=$target;$catalog.services[$Role].pending=$null;$catalog.generation++
         Write-PlatformJson (Join-Path $Layout.release_root 'current.json') $catalog; & $Checkpoint 'committed'
-        return @{operation=$id;outcome='committed';role=$Role;kind=$profile.kind;current=$target.id;allowed_hosts=$next;non_target_unchanged=$true;readiness='verified'}
+        $report=@{operation=$id;outcome='committed';role=$Role;kind=$profile.kind;current=$target.id;non_target_unchanged=$true;readiness='verified'}
+        if($Policy -ceq 'receipt-exports'){$report.policy_sha256=Get-BytesHash ([Text.Encoding]::UTF8.GetBytes($next))}else{$report.allowed_hosts=$next}
+        return $report
     }catch{
         $failure=$_;$observed=Read-ReleaseCatalog $Layout
         if($observed.services[$Role]['pending']){$null=Restore-PendingMCPConfiguration $Layout $Role $Scripts $Lock $TimeoutSeconds}

@@ -76,7 +76,7 @@ function Restore-PendingRelease([hashtable]$Layout,[string]$Role,[string]$Script
     $catalog=Read-ReleaseCatalog $Layout;$pending=$catalog.services[$Role]['pending']
     if(-not $pending){throw 'No pending release to recover.'}
     if($pending['configuration']){
-        if($pending.action -cin @('configure-mcp-hosts','configure-source-hosts')){return Restore-PendingMCPConfiguration $Layout $Role $Scripts $Lock $TimeoutSeconds $Checkpoint}
+        if($pending.action -cin @('configure-mcp-hosts','configure-source-hosts','configure-receipt-exports')){return Restore-PendingMCPConfiguration $Layout $Role $Scripts $Lock $TimeoutSeconds $Checkpoint}
         if($Role -cne 'runtime'){throw 'Unknown configuration migration role.'}
         return Restore-PendingEngineConfiguration $Layout $Scripts $Lock $TimeoutSeconds $Checkpoint
     }

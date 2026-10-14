@@ -1,4 +1,4 @@
-param([string]$CrashRoot='',[string]$CrashPoint='',[ValidateSet('runtime','toolhub','sources')][string]$Role='runtime')
+param([string]$CrashRoot='',[string]$CrashPoint='',[ValidateSet('runtime','toolhub','sources')][string]$Role='runtime',[ValidateSet('network','receipt-exports')][string]$Policy='network')
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -10,11 +10,15 @@ $fixtureScripts=Join-Path $PSScriptRoot 'fixtures/mcp-config'
 $script:extraRoot=$null
 function Get-MCPManagedRoots([hashtable]$Layout){return ,@( $Layout; if($script:extraRoot){$script:extraRoot} )}
 function Test-HostValues([string]$Service,[string[]]$Hosts){
+    if($Policy -ceq 'receipt-exports'){
+        $rules=@($Hosts|Sort-Object|ForEach-Object{[ordered]@{app='fixture';id=('check-'+($_.Split(':')[-1]));tool=('fixture_check_'+($_.Split(':')[-1]));input_path=@('arguments','draft');output_path=@('content','0','text')}})
+        return ,@((ConvertTo-ReceiptExports (ConvertTo-Json -InputObject $rules -Depth 8 -Compress)))
+    }
     if($Service -cne 'sources'){return ,$Hosts}
     return ,@($Hosts|ForEach-Object{if($_ -ceq '127.0.0.1:8101'){'example.com'}elseif($_ -ceq '127.0.0.1:8098'){'example.org'}else{throw 'Unknown synthetic host mapping.'}})
 }
 function Set-TestHosts([hashtable]$Target,[string]$Service,[string[]]$Hosts,[string]$Scripts,[IO.FileStream]$Lock,[int]$TimeoutSeconds=30,[scriptblock]$Checkpoint={param($point)}){
-    Set-ServiceMCPHosts $Target $Service (Test-HostValues $Service $Hosts) $Scripts $Lock $TimeoutSeconds $Checkpoint
+    Set-ServiceMCPHosts $Target $Service (Test-HostValues $Service $Hosts) $Scripts $Lock $TimeoutSeconds $Checkpoint -Policy $Policy
 }
 if($CrashRoot){
     if(-not(Test-PathWithin $CrashRoot 'D:\workspace\agent-platform\local\evidence')){throw 'Invalid fault fixture root.'}
@@ -38,14 +42,15 @@ function Reject([scriptblock]$Action,[string]$Pattern,[string]$Name){$message=''
 function Assert-Hosts([string]$Service,[string]$Expected){
     $catalog=Read-ReleaseCatalog $layout;$config=Read-ReleaseJson (Join-Path $layout.config_root ('services/'+$Service+'.json'))
     Wait-ReleaseReady $layout $Service 1 $catalog.services[$Service].current 4
-    $suffix=if($Service -ceq 'sources'){'source-hosts'}else{'mcp-hosts'}
-    if($Service -ceq 'sources'){$Expected=ConvertTo-SourceHosts (Test-HostValues $Service $Expected.Split(','))}
+    $suffix=if($Policy -ceq 'receipt-exports'){'receipt-exports'}elseif($Service -ceq 'sources'){'source-hosts'}else{'mcp-hosts'}
+    if($Policy -ceq 'receipt-exports'){$Expected=(Test-HostValues $Service $Expected.Split(','))[0]}
+    elseif($Service -ceq 'sources'){$Expected=ConvertTo-SourceHosts (Test-HostValues $Service $Expected.Split(','))}
     $reply=Invoke-RestMethod ('http://'+$config.LISTEN+'/fixture/'+$suffix) -Headers @{Authorization=('Bearer '+$config.SERVICE_TOKEN)} -NoProxy -TimeoutSec 3
     if($reply.hosts -cne $Expected){throw 'Actual process loaded different MCP policy.'}
     $null=Get-BoundRuntimeConfiguration $layout $catalog
 }
 function Crash([string]$Service,[string]$Point){
-    $script:child=Start-Process -FilePath (Get-Process -Id $PID).Path -ArgumentList @('-NoProfile','-File',('"'+$PSCommandPath+'"'),'-CrashRoot',('"'+$proof+'"'),'-CrashPoint',$Point,'-Role',$Service) -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $proof ($Service+'-'+$Point+'.out.log')) -RedirectStandardError (Join-Path $proof ($Service+'-'+$Point+'.err.log'))
+    $script:child=Start-Process -FilePath (Get-Process -Id $PID).Path -ArgumentList @('-NoProfile','-File',('"'+$PSCommandPath+'"'),'-CrashRoot',('"'+$proof+'"'),'-CrashPoint',$Point,'-Role',$Service,'-Policy',$Policy) -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $proof ($Service+'-'+$Point+'.out.log')) -RedirectStandardError (Join-Path $proof ($Service+'-'+$Point+'.err.log'))
     if(-not $script:child.WaitForExit(45000)){ $script:child.Kill();if(-not $script:child.WaitForExit(10000)){throw 'Fault child exit unconfirmed'};throw 'MCP fault deadline exceeded; terminated exact child' }
     if($script:child.ExitCode -ne 197){throw ('MCP fault not reached: '+$Service+'/'+$Point)}
     $script:child.Dispose();$script:child=$null
@@ -67,6 +72,7 @@ try{
         $config=Read-ReleaseJson (Join-Path $layout.config_root 'services/runtime.json')
         $listener=[Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback,0);$listener.Start();$port=$listener.LocalEndpoint.Port;$listener.Stop()
         $config.LISTEN='127.0.0.1:'+$port;$config.MCP_ALLOWED_HOSTS='127.0.0.1:8101';$config.unready_mcp_marker=$marker
+        if($Policy -ceq 'receipt-exports'){$config.APP_RECEIPT_EXPORTS=(Test-HostValues runtime @('127.0.0.1:8101'))[0];$config.receipt_protocol_marker=$marker+'.protocol'}
         if($service -ceq 'sources'){$config.SOURCE_ALLOWED_HOSTS='example.com'}
         Write-PlatformJson (Join-Path $layout.config_root ('services/'+$service+'.json')) $config
         $relative='bundles/'+$service+'/current.exe';$path=Resolve-ReleasePath $layout.release_root $relative;New-Item -ItemType Directory -Path (Split-Path -Parent $path) -Force|Out-Null;Copy-Item -LiteralPath $binary -Destination $path
@@ -84,8 +90,21 @@ try{
     Reject {ConvertTo-SourceHosts @()} 'Sources' 'empty_sources_policy_rejected_without_default_fallback'
     Reject {ConvertTo-SourceHosts @('example.com','example.com')} 'Duplicate' 'duplicate_source_host_rejected'
     Check ((ConvertTo-SourceHosts @('example.org','example.com')) -ceq 'example.com,example.org') 'source_hosts_canonical'
-    foreach($service in @('runtime','toolhub','sources')){
-        $hostKey=(Get-NetworkHostProfile $service).key
+    if($Policy -ceq 'receipt-exports'){
+        foreach($bad in @('{}','null','[{"app":"x"}]','[{"app":"x","id":"y","tool":"z","input_path":[],"output_path":["x"]}]')){Reject {ConvertTo-ReceiptExports $bad} 'receipt|Receipt' 'invalid_receipt_projection_denied'}
+        Check ((ConvertTo-ReceiptExports '[]') -ceq '[]') 'empty_receipt_policy_is_closed'
+        $priorConfigHash=(Get-FileHash -LiteralPath (Join-Path $layout.config_root 'services/runtime.json')).Hash
+        [IO.File]::WriteAllText(($marker+'.protocol'),'unsupported')
+        Reject {Set-TestHosts $layout runtime @('127.0.0.1:8101','127.0.0.1:8098') $fixtureScripts $lock 4} 'required receipt projection protocol' 'old_runtime_refused_before_configuration'
+        Check ((Get-FileHash -LiteralPath (Join-Path $layout.config_root 'services/runtime.json')).Hash -ceq $priorConfigHash) 'old_runtime_configuration_unchanged'
+        [IO.File]::WriteAllText(($marker+'.protocol'),'digest')
+        Reject {Set-TestHosts $layout runtime @('127.0.0.1:8101','127.0.0.1:8098') $fixtureScripts $lock 4} 'loaded configuration digest' 'unloaded_projection_policy_refused_after_restart'
+        Check ((Get-FileHash -LiteralPath (Join-Path $layout.config_root 'services/runtime.json')).Hash -ceq $priorConfigHash -and -not (Read-ReleaseCatalog $layout).services.runtime.pending) 'digest_failure_restores_prior_configuration'
+        Remove-Item -LiteralPath ($marker+'.protocol')
+    }
+    $testedServices=if($Policy -ceq 'receipt-exports'){@('runtime')}else{@('runtime','toolhub','sources')}
+    foreach($service in $testedServices){
+        $hostKey=(Get-NetworkHostProfile $service $Policy).key
         $others=Get-ReleaseProcessSnapshot $layout $service
         $entries=Read-PlatformProcesses $layout;$live=@($entries|Where-Object role -eq $service)[0]
         $savedLaunch=[IO.File]::ReadAllBytes($live.launch_config);$savedProcesses=[IO.File]::ReadAllBytes((Join-Path $layout.state_root 'processes.json'))
