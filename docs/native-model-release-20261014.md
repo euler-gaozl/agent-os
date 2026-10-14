@@ -2,6 +2,25 @@
 
 当前四个服务已正式安装，默认已切为 native-v4。既有旧 Agent 配置仍走 budget-v3。此文件记录可重复检查与实际安装的边界，不代表真实研究已经验收。
 
+## 最新增量：Futures 已安装，真实研究仍未整体通过
+
+Futures `e7b1c8e511e9374f029bd195784301a7666dd5cc` 已通过标准入口完成更新→回退→重新更新，三次均 `committed`、`readiness=verified`、`non_target_unchanged=true`。证据为 `ops/native-futures.path` 下的 `managed-install.json` 和 `doctor-installed.json`。当前本机状态再次确认核心就绪、12 个实例、没有 pending 发布。
+
+研究 Agent 的原生能力 revision 15、16 均已正式发布。两次使用相同问题 SHA `8cd87684a404817f4ca9e784accbf8f890217636fa87ee97a7831243155f9cf1` 和原有五份留存资料，通过正式业务入口调用官方 DeepSeek；没有缩小原问题来换取通过。
+
+| 任务 | 实际执行 | 结果与限制 |
+| --- | --- | --- |
+| `856b4d1d3679e15185c7fd0998a462f0`，revision 15 | completed，3 次模型调用，54150 计量 token | 21664 字节最终稿，24 条引文匹配；仍有无效比较和不存在的事实引用，研究质量不通过 |
+| `f272fd4c8f65383383a660df8296e6a0`，revision 16 | completed，4 次模型调用，81534 计量 token | 12093 字节最终稿，20 个事实、0 个比较、5 个问题；预设 20 项关键报数均保留，20 条引文匹配；最终结构、引用及比较规则没有错误，但仍有 45 项日期/性质定位待核 |
+
+第二次调整了 Agent 的检查反馈与修订提示词，并实际调用检查工具两次。最终稿只相对最后一次检查稿移除了一个问题的两个事实引用，其中一个原引用不存在；因此最终稿并非已检查稿的严格副本，不能把提示词约定写成系统强制保证。
+
+原始证据在 `ops/native-research.path`，第二次位于 `checked-final-repair/`，包括任务/用量、两份实际检查稿和反馈、`checked-final-evidence.json`、`quality-audit.json`。两次共 7 次付费模型调用、135684 计量 token，未知用量 0；没有运行 Actions。
+
+此处只验证固定资料集的执行和成稿。尚无新的主动采集或独立交叉核验，若干年份取自发布日期推断，原资料截断缺口仍需处理；20 项报数匹配不等于完整研究或外部真实性核验。P5 保持未通过。升级前备份恢复证据仍有效，但还不能覆盖新增的原生 Agent、任务和 Futures 发布记录，需补最新备份及实际恢复。
+
+以下记录保留各增量当时的安装状态，以上述最新记录为准。
+
 ## 正式安装与实际回退
 
 本次通过标准维护入口安装：Registry `755b8de85531f0b9620a98beaf1e3a9dccc9d6b0`、Runtime `7d1926162dd8b6e8296963d9b486e7b26fa9c475`、Worker `ff9a2f07f397bf0b408256e8a71644b3d2976376`、Console `00bc6280d13e5b1bb57276b0dedef90ea2226c68`。发布集 `11a632f5be3a4d968ccd469590571a02` 从干净、固定源码构建，保留四份 Harness 及 Node。

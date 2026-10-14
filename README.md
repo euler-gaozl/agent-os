@@ -9,6 +9,8 @@
 
 当前正在进行 **v0.6 端到端交付**。Windows 新根任务已使用固定源码构建的 DSH，历史任务保留原包与引擎。真实 DeepSeek 的知识库回读、结构化工作状态、来源回执与笔记落盘已联调，并经过完整备份还原，见[源码执行器激活验收](docs/source-engine-activation-20261013.md)。父子 Agent、MCP/Skill 和业务入口的其他历史成果见[交付账本](docs/delivery-v0.6.md)。完整内存边界、UI 和真实研究验收仍在进行；没有接入全品种基本面数据库，不把单篇联调当作研究覆盖率。
 
+**最新核对：整体尚未交付。** 原生模型能力的 Registry/Runtime/Worker/Console/Futures 已实际安装，双 Worker 在内的 12 个实例运行、核心就绪。真实 DeepSeek 研究任务已执行完成，最新稿 20 条引文匹配留存原文，但主动补数、独立交叉核验和部分日期口径尚未通过。旧实现/权限退役、完整 UI、剩余故障与资源测量、新状态备份恢复及最终一次统一 CI 仍有工作。详见[当前交付状态](docs/windows-single-machine-plan.md#当前交付状态最新核对)和[实际发布与研究记录](docs/native-model-release-20261014.md)。下面各时间段保留实施时的历史状态。
+
 **2026-10-14 当前进度**：Console 网页采集、原文预览和保存已安装。一份真实国家统计局网页已在浏览器完成采集、入库、下载及检索；重复保存不新增文件，包含新资料的完整备份已实际隔离恢复，见[中台采集与恢复验收](docs/console-capture-acceptance-20261014.md)。Sources/Knowledge 独立迁移、发布兼容及旧资料恢复见[Sources 记录](docs/sources-owner-migration-20261014.md)和[Knowledge 记录](docs/capture-import-bridge-20261014.md)。这不等于“采集 → 入库 → 研究报告”全部完成：已有真实模型报告仍存在时间分类和事实表述问题，研究质量验收未通过。其余页面、服务退役和故障缺口见[单机交付计划](docs/windows-single-machine-plan.md)。
 
 下午增量：关机后原库及12进程已恢复，Runtime 修复回查参数与 MCP 执行期限，原豆粕任务恢复完成。结构化报告的17处原句可定位到任务留存记录，比较和字段质量仍不通过；待核提示不代表原文数据为假。见[原任务恢复与具体缺陷](docs/structured-research-acceptance-20261014.md)，不将执行完成写成研究验收完成。
