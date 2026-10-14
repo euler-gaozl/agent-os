@@ -9,6 +9,12 @@
 SDK/Registry能力发现和Harness候选已取得本地证据，正式执行链仍待接齐。
 P2权限退役、P2.5生命周期/测量、P3/P4其他验收及最终统一CI不删除，也不因优先完成一条日用路径而假称整体完成。
 
+19:50增量：原生长度的 Runtime rc5 与 Worker `ff9a2f0` 已接通；完整独立包搬迁后，
+真实 Worker/Node/Runtime HTTP/受限 PostgreSQL 完成大文本、三种强杀接管、在途取消及部分回包检查。
+4.5MB输入、9MB输出、约27MB事件批次保留完整，没有重复已提交调用；测试供应商/Storage为明确夹具。
+Console与受管安装/回滚门禁仍待接入，正式默认仍budget-v3；下一步完成这两项并安装，
+随后同一研究任务质量验收。详见[原生长度](architecture/model-native-limits.md)。本轮零付费调用、零Actions。
+
 当前续作（10月14日 budget-v3）：[执行器验收](budget-engine-acceptance-20261014.md)
 已完成配置输出上限、持久化预发送拒绝、usage 反馈和严格家族计量。
 固定完整包搬迁、受限 PostgreSQL 与真实 Worker/Node 联合恢复18项通过，

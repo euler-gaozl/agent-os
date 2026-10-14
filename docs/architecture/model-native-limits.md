@@ -29,10 +29,28 @@ Registry `756813a` 已发布 `feat/model-native-limits`：服务端解析官方�
 Harness `a8a18e41de` 的 native-v4 候选已完成真实 Node/DSH 的17条合成协议检查及历史50条回归，全部零跳过，
 含4.5MB输入/5.25MB输出、压缩后重试和进程强杀重放。旧v3重建内核摘要不变；native重复构建manifest相同。
 大文本实际撞到旧resident容量后，增加了仅native构建生效的容量变换；不把字节夹具当作1M真实token性能证明。
-证据为`ops/native-harness.path`。Runtime/Worker、Console及发布门禁尚未接齐；正式程序仍为budget-v3，
-新要求尚未安装。原SDK离线缓存选择失败、Harness两次初始失败记录保留。
+证据为`ops/native-harness.path`。正式程序仍为budget-v3，新要求尚未安装。
+原SDK离线缓存选择失败、Harness两次初始失败记录保留。
 独立只读评审核对了新内核/runner/构建脚本及200个manifest输入摘要，未发现候选提交阻断；
 该结论不覆盖真实Worker、数据库恢复或生产内存峰值。
+
+Runtime `4ce5132` / 模块 `v0.1.0-rc.5` 已发布：native-v4 冻结最终模型意图、
+HTTP 状态和供应商回执，已发送的上下文拒绝标记 not_sent=false；不再用字符估算拒绝请求。
+同键大任务跨默认引擎切换保持幂等。隔离 PostgreSQL 首轮163条、评审修复后相关44条通过，
+均零跳过，vet/build通过；证据 `ops/native-runtime.path`。Registry `0cfcd71` 补齐
+未配置调用次数时的36次默认策略，显式次数不改；不恢复旧整任务token限额。
+
+Worker `ff9a2f0` 已完成固定 rc5 模块和四套 Harness 接入：native 使用模型原生输出能力，
+移除90秒整次生成截止，保留发送/首响应与响应空闲保护；native 状态HTTP容量单独扩大。
+独立评审发现的状态4MiB旧边界、上传阻塞无截止均已修复；96条本机检查零跳过，vet/build通过。
+完整四引擎包实际搬迁、原路径不存在时启动成功，证据 `ops/native-worker.path`。
+
+该搬迁包与真实 Runtime HTTP/受限 PostgreSQL 联合六场景（加汇总共7条）通过、零跳过：
+4.5MB任务、9MB输出、27001260字节事件归档；完成回执/上下文拒绝/压缩后真实强杀接管，
+在途取消、部分回包。已提交模型/工具不重复，未知用量保留，归档分段重建哈希一致。
+TLS供应商和内存Storage为明确夹具，进程仅通过临时CA文件信任测试证书；没有系统信任修改。
+首轮测试源码语法失败已留存；最新报告 `ops/native-worker-joint.path`，临时PG已停止。
+本轮付费调用0、Actions0。Console、安装/回滚兼容门禁、正式版本切换及真实供应商复验仍待完成。
 
 ## 独立评审处理
 
