@@ -4,7 +4,7 @@
 function Get-SubmissionEngine([System.Collections.IDictionary]$Config){
     $engine=[string]$Config['DEFAULT_RUN_ENGINE']
     if(-not $engine){return 'dsh-0.2.0-rc.2-evidence-v1'}
-    if($engine -cnotin @('dsh-0.2.0-rc.2-evidence-v1',(Get-SourceEngineName),(Get-ResidentEngineName))){throw 'Unknown submission engine in configuration.'}
+    if($engine -cnotin @('dsh-0.2.0-rc.2-evidence-v1',(Get-SourceEngineName),(Get-ResidentEngineName),(Get-BudgetEngineName))){throw 'Unknown submission engine in configuration.'}
     return $engine
 }
 function Get-EngineChangeDirectory([hashtable]$Layout,[string]$ID){
@@ -121,7 +121,7 @@ function Restore-PendingEngineConfiguration([hashtable]$Layout,[string]$Scripts,
 }
 function Set-DefaultEngine([hashtable]$Layout,[string]$Engine,[string]$Scripts,[IO.FileStream]$Lock,[int]$TimeoutSeconds=30,[scriptblock]$Checkpoint={param($point)}){
     Assert-NoPendingOwnerMigration $Layout
-    $nextEngine=switch -CaseSensitive ($Engine){source {Get-SourceEngineName};resident {Get-ResidentEngineName};historical {'dsh-0.2.0-rc.2-evidence-v1'};default {throw 'Choose source, resident or historical.'}}
+    $nextEngine=switch -CaseSensitive ($Engine){source {Get-SourceEngineName};resident {Get-ResidentEngineName};budget {Get-BudgetEngineName};historical {'dsh-0.2.0-rc.2-evidence-v1'};default {throw 'Choose source, resident, budget or historical.'}}
     $catalog=Read-ReleaseCatalog $Layout
     if($catalog.format -ne 2){throw 'Default changes require a versioned deployment.'}
     Assert-NoPendingRelease $catalog
@@ -137,7 +137,7 @@ function Set-DefaultEngine([hashtable]$Layout,[string]$Engine,[string]$Scripts,[
     $snapshot=Get-ReleaseProcessSnapshot $Layout
     if(@($snapshot|Where-Object role -eq 'runtime').Count -ne 1){throw 'Start exactly one managed Runtime before changing its default.'}
     Wait-ReleaseReady $Layout runtime 1 $prior $TimeoutSeconds
-    if($Engine -cin @('source','resident')){Assert-SourceWorkersReady $Layout $catalog $TimeoutSeconds $nextEngine}
+    if($Engine -cin @('source','resident','budget')){Assert-SourceWorkersReady $Layout $catalog $TimeoutSeconds $nextEngine}
     $bytes=[IO.File]::ReadAllBytes((Join-Path $Layout.config_root 'services/runtime.json'))
     if((Get-BytesHash $bytes) -cne $prior.config_sha256){throw 'Runtime configuration changed during preparation.'}
     $targetConfig=[Text.Encoding]::UTF8.GetString($bytes)|ConvertFrom-Json -AsHashtable
@@ -178,7 +178,7 @@ function Set-DefaultEngine([hashtable]$Layout,[string]$Engine,[string]$Scripts,[
         $null=Save-ReleasePhase $Layout runtime $id 'started'
         & $Checkpoint 'started'
         Wait-ReleaseReady $Layout runtime 1 $target $TimeoutSeconds
-        if($Engine -cin @('source','resident')){Assert-SourceWorkersReady $Layout (Read-ReleaseCatalog $Layout) $TimeoutSeconds $nextEngine}
+        if($Engine -cin @('source','resident','budget')){Assert-SourceWorkersReady $Layout (Read-ReleaseCatalog $Layout) $TimeoutSeconds $nextEngine}
         Assert-ReleaseSnapshot $Layout runtime $pending.non_target
         $null=Save-ReleasePhase $Layout runtime $id 'ready'
         & $Checkpoint 'ready'

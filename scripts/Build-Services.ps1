@@ -1,6 +1,6 @@
 param(
     [string[]]$Service=@('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','sources'),
-    [string]$LayoutPath='', [string]$Pnpm='pnpm', [string]$NodeBinary='', [string]$SourceArtifact='', [string]$ResidentArtifact='', [switch]$AllowDirty
+    [string]$LayoutPath='', [string]$Pnpm='pnpm', [string]$NodeBinary='', [string]$SourceArtifact='', [string]$ResidentArtifact='', [string]$BudgetArtifact='', [switch]$AllowDirty
 )
 $ErrorActionPreference='Stop'
 $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -17,6 +17,7 @@ try{
     if(-not $Service.Count){throw 'Select at least one service to build.'}
     if($SourceArtifact -and 'worker' -notin $Service){throw 'SourceArtifact requires a selected Worker build.'}
     if($ResidentArtifact -and 'worker' -notin $Service){throw 'ResidentArtifact requires a selected Worker build.'}
+    if($BudgetArtifact -and 'worker' -notin $Service){throw 'BudgetArtifact requires a selected Worker build.'}
     foreach($role in $Service){if($role -notin $allowed){throw ('Unknown service: '+$role)}}
     if(Test-Path -LiteralPath (Join-Path $layout.release_root 'current.json')){Assert-NoPendingRelease (Read-ReleaseCatalog $layout)}
     $revision=(& git -C $repoRoot rev-parse HEAD).Trim();if($LASTEXITCODE){throw 'Cannot identify build source.'}
@@ -40,15 +41,20 @@ try{
             $contract=Get-ServiceReleaseContract $repoRoot $role
             $owner=Get-SelectedServiceSource $repoRoot $role $contract
             if($owner){$contract=$owner.contract}
-            $sourceExecution=$null;$residentExecution=$null
+            $sourceExecution=$null;$residentExecution=$null;$budgetExecution=$null
             if($role -eq 'runtime' -and $owner -and $owner.release['source_submission_protocol']){
                 $sourceExecution=@{format=1;engine=$owner.release.source_engine_candidate;execution_protocol=$owner.release.execution_protocol;state_protocol=$owner.release.source_management_protocol;submission_protocol=$owner.release.source_submission_protocol;preview_protocol=$owner.release.source_management_preview_protocol}
                 if($owner.release['source_engine_candidates']){
                     $candidates=@($owner.release.source_engine_candidates)
-                    if($candidates.Count -ne @($candidates|Sort-Object -Unique).Count -or @($candidates|Where-Object{$_ -cnotin @((Get-SourceEngineName),(Get-ResidentEngineName))}).Count){throw 'Runtime declares unsupported or duplicate source engines.'}
+                    if($candidates.Count -ne @($candidates|Sort-Object -Unique).Count -or @($candidates|Where-Object{$_ -cnotin @((Get-SourceEngineName),(Get-ResidentEngineName),(Get-BudgetEngineName))}).Count){throw 'Runtime declares unsupported or duplicate source engines.'}
                     if((Get-ResidentEngineName) -cin $candidates){
                         $residentExecution=@{};foreach($key in $sourceExecution.Keys){$residentExecution[$key]=$sourceExecution[$key]}
                         $residentExecution.engine=Get-ResidentEngineName
+                    }
+                    if((Get-BudgetEngineName) -cin $candidates){
+                        if($owner.release['budget_model_receipt_protocol'] -ne 1){throw 'Runtime budget receipt protocol is missing.'}
+                        $budgetExecution=$sourceExecution.Clone();$budgetExecution.engine=Get-BudgetEngineName
+                        $budgetExecution.model_receipt_protocol='budget-model-receipt-v1'
                     }
                 }
             }
@@ -118,6 +124,12 @@ try{
                     $residentExecution=Copy-PinnedSourceHarness $ResidentArtifact $residentPath (Join-Path $owner.root 'worker/resident-harness-lock.json') (Get-ResidentEngineName)
                     $assets.resident_harness=Get-ReleaseRelative $layout.release_root $residentPath
                 }
+                if($BudgetArtifact){
+                    if(-not $owner -or $owner.release['budget_engine_candidate'] -cne (Get-BudgetEngineName) -or $owner.release['budget_model_receipt_protocol'] -ne 1){throw 'Budget Harness requires a compatible independent Worker.'}
+                    $budgetPath=Join-Path $directory 'budget-harness'
+                    $budgetExecution=Copy-PinnedSourceHarness $BudgetArtifact $budgetPath (Join-Path $owner.root 'worker/budget-harness-lock.json') (Get-BudgetEngineName)
+                    $assets.budget_harness=Get-ReleaseRelative $layout.release_root $budgetPath
+                }
             }
             if($role -in @('control','futures')){
                 $webSource=Join-Path $owner.root 'web'
@@ -139,7 +151,7 @@ try{
             if($null -ne $executionAccess){Assert-ExecutionAccessBinary $binary @{role=$role;execution_access=$executionAccess}}
             $knowledgeArchives=$null;if($owner){$knowledgeArchives=Get-DeclaredKnowledgeArchives $owner.release}
             if($null -ne $knowledgeArchives){Assert-KnowledgeArchiveBinary $binary @{role=$role;contract=$contract;source_archives=$knowledgeArchives}}
-            $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance $sourceExecution $residentExecution $receiptManagement $executionAccess $knowledgeArchives
+            $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance $sourceExecution $residentExecution $receiptManagement $executionAccess $knowledgeArchives -BudgetExecution $budgetExecution
         }
     }finally{Pop-Location}
     $staged=Join-Path $layout.release_root ('staged/'+$buildId+'.json')

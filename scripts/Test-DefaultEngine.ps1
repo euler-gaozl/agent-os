@@ -1,9 +1,9 @@
-param([string]$CrashRoot='',[string]$CrashPoint='',[switch]$HoldCheckpoint,[ValidateSet('source','resident')][string]$Candidate='source')
+param([string]$CrashRoot='',[string]$CrashPoint='',[switch]$HoldCheckpoint,[ValidateSet('source','resident','budget')][string]$Candidate='source')
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 foreach($library in @('platform-paths','platform-lock','platform-processes','platform-releases','platform-release-operations')){. (Join-Path $PSScriptRoot ('lib/'+$library+'.ps1'))}
-$candidateEngine=if($Candidate -ceq 'resident'){Get-ResidentEngineName}else{Get-SourceEngineName}
+$candidateEngine=switch($Candidate){resident {Get-ResidentEngineName};budget {Get-BudgetEngineName};default{Get-SourceEngineName}}
 function Check([bool]$Value,[string]$Name){if(-not $Value){throw $Name};$checks.Add($Name)}
 function Reject([scriptblock]$Action,[string]$Pattern,[string]$Name){$message='';try{& $Action|Out-Null}catch{$message=$_.Exception.Message};if($message -notmatch $Pattern){throw ($Name+': unexpected outcome '+$message)};$checks.Add($Name)}
 if($CrashRoot){
@@ -29,10 +29,11 @@ New-ProtectedDirectory $proof
 $layout=@{format=1;project_root=$repo;state_root=(Join-Path $proof 'run');release_root=(Join-Path $proof 'releases');config_root=(Join-Path $proof 'config');log_root=(Join-Path $proof 'logs');layout_path=(Join-Path $proof 'layout.json');database_root=(Join-Path $proof 'unused-db');harness_root=(Join-Path $proof 'unused-harness');console_web_root=(Join-Path $proof 'unused-console');futures_web_root=(Join-Path $proof 'unused-futures');postgres_bin='D:\workspace\.tools\postgresql\pgsql\bin'}
 foreach($path in @($layout.state_root,$layout.release_root,$layout.log_root,$layout.config_root)){New-Item -ItemType Directory -Path $path -Force|Out-Null}
 Write-PlatformJson $layout.layout_path $layout
-$checks=[Collections.Generic.List[string]]::new();$lock=$null;$started=$false;$dbCreated=$false;$roleCreated=$false
+$checks=[Collections.Generic.List[string]]::new();$lock=$null;$started=$false;$dbCreated=$false;$roleCreated=$false;$workerRoleCreated=$false
 $script:activeFaultChild=$null
 $fixture='D:\workspace\agent-platform\local\evidence\p2-first-services-85be4f84e89f47ad935b6ed8882093c0\postgres'
 $pg=$layout.postgres_bin;$dbName='engine_'+[guid]::NewGuid().ToString('N');$roleName='reader_'+[guid]::NewGuid().ToString('N')
+$workerRole='worker_'+[guid]::NewGuid().ToString('N')
 $admin=@{host='127.0.0.1';port=55591;user='p2_fixture';password='fixture-only';database='postgres'}
 $result=@{passed=$false;paid_model_calls=0;scope='Real Windows synthetic HTTP Runtime/two Workers and disposable PostgreSQL owner state table; real configuration journal and process crashes, no actual agent/model execution';checks=@()}
 $result.candidate_engine=$candidateEngine
@@ -84,20 +85,28 @@ try{
     if(-not $pgStart.WaitForExit(15000) -or $pgStart.ExitCode){throw 'Fixture PostgreSQL startup failed'};$started=$true
     $null=Invoke-RecoverySQL $pg $admin ('CREATE DATABASE '+(Quote-PgIdentifier $dbName));$dbCreated=$true
     $null=Invoke-RecoverySQL $pg $admin ('CREATE ROLE '+(Quote-PgIdentifier $roleName)+' LOGIN');$roleCreated=$true
+    $null=Invoke-RecoverySQL $pg $admin ('CREATE ROLE '+(Quote-PgIdentifier $workerRole)+' LOGIN');$workerRoleCreated=$true
     $dbAdmin=$admin.Clone();$dbAdmin.database=$dbName
     $migration=Get-Content -LiteralPath (Join-Path (Split-Path -Parent $repo) 'agent-os-runtime/runtime/working_state.sql') -Raw
     $null=Invoke-RecoverySQL $pg $dbAdmin ('CREATE TABLE runs(id text PRIMARY KEY,engine text,status text); '+$migration+' GRANT SELECT ON runs TO '+(Quote-PgIdentifier $roleName)+'; GRANT SELECT,INSERT ON run_working_states TO '+(Quote-PgIdentifier $roleName))
+    # The fixture services do not execute tasks. These inert relations provide
+    # the real ACL boundary now required by the maintenance coordinator; distinct
+    # leaf logins and both historical/minimum grants remain fully checked.
+    foreach($table in @('calls','model_attempts','harness_exchanges','harness_archives','documents','note_roots','note_versions','note_audits','note_admin_receipts','business_runs','app_runs','instances')){
+        $null=Invoke-RecoverySQL $pg $dbAdmin ('CREATE TABLE '+(Quote-PgIdentifier $table)+'(id text)')
+    }
+    $null=Invoke-RecoverySQL $pg $dbAdmin ('CREATE TABLE events(seq bigserial); GRANT USAGE ON SCHEMA public TO '+(Quote-PgIdentifier $workerRole)+'; GRANT SELECT ON ALL TABLES IN SCHEMA public TO '+(Quote-PgIdentifier $workerRole)+'; GRANT UPDATE ON runs,calls,model_attempts,harness_exchanges,harness_archives TO '+(Quote-PgIdentifier $workerRole)+'; GRANT INSERT ON calls,model_attempts,harness_exchanges,harness_archives,events TO '+(Quote-PgIdentifier $workerRole)+'; GRANT USAGE,SELECT ON SEQUENCE events_seq_seq TO '+(Quote-PgIdentifier $workerRole))
     $binary=Join-Path $layout.release_root 'fixture.exe'
     $env:GOCACHE='D:\workspace\.tools\gocache';$env:GOPATH='D:\workspace\.tools\gopath';$env:GOWORK='off';$env:GOTOOLCHAIN='local'
     & 'D:\workspace\.tools\go\bin\go.exe' build -trimpath -o $binary (Join-Path $PSScriptRoot 'fixtures/windows-release/main.go')
     if($LASTEXITCODE){throw 'Synthetic service build failed'}
     $portListener=[Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback,0);$portListener.Start();$runtimePort=$portListener.LocalEndpoint.Port;$portListener.Stop()
     $runtimeURL='http://127.0.0.1:'+$runtimePort
-    $dsn='postgres://'+$roleName+':fixture-only@127.0.0.1:55591/'+$dbName+'?sslmode=disable'
+    $dsn='postgres://'+$roleName+':fixture-only@127.0.0.1:55591/'+$dbName+'?sslmode=disable&search_path=public'
     $marker=Join-Path $proof 'source-unready.marker'
     $runtimeConfig=@{SERVICE_TOKEN='fixture-runtime';SERVICE_PEERS=(@{worker=(Get-BytesHash ([Text.Encoding]::UTF8.GetBytes('fixture-worker')))}|ConvertTo-Json -Compress);DATABASE_URL=$dsn;LISTEN=('127.0.0.1:'+$runtimePort);unready_source_marker=$marker}
     $runtimePath=Join-Path $layout.config_root 'services/runtime.json';Write-PlatformJson $runtimePath $runtimeConfig
-    $workerConfig=@{SERVICE_TOKEN='fixture-worker';DATABASE_URL=$dsn;RUNTIME_URL=$runtimeURL}
+    $workerConfig=@{SERVICE_TOKEN='fixture-worker';DATABASE_URL=$dsn.Replace($roleName,$workerRole);RUNTIME_URL=$runtimeURL}
     $workerPath=Join-Path $layout.config_root 'services/worker.json';Write-PlatformJson $workerPath $workerConfig
     Write-PlatformJson (Join-Path $layout.config_root 'dev.json') @{DATABASE_URL=$dsn}
     $initialConfig=[IO.File]::ReadAllBytes($runtimePath)
@@ -107,17 +116,23 @@ try{
     $newContract=@{http='agentos-http-v0.7-source-state-v1';data='execution-v0.7-working-state';engines=@();tools=@()}
     $runtimeMetadata=@{format=1;engine=(Get-SourceEngineName);execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';submission_protocol='source-root-default-v1';preview_protocol='source-recovery-preview-v1'}
     $workerMetadata=@{format=1;engine=(Get-SourceEngineName);execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';manifest_sha256=('a'*64);harness_commit=('b'*40)}
-    $residentRuntime=$null;$residentWorker=$null
+    $residentRuntime=$null;$residentWorker=$null;$budgetRuntime=$null;$budgetWorker=$null
     $workerAssets=@{binary='fixture.exe';node='node.exe';harness='harness';source_harness='source'}
-    if($Candidate -ceq 'resident'){
+    if($Candidate -cin @('resident','budget')){
         $residentRuntime=$runtimeMetadata.Clone();$residentRuntime.engine=Get-ResidentEngineName
         $residentWorker=$workerMetadata.Clone();$residentWorker.engine=Get-ResidentEngineName
         Write-PlatformText (Join-Path $layout.release_root 'resident/source-runner.mjs') 'synthetic resident asset'
         $workerAssets.resident_harness='resident'
     }
-    $runtimeRef=New-ReleaseDescriptor $layout runtime @{binary='fixture.exe'} $newContract @{kind='synthetic';dirty=$false} $runtimeMetadata $residentRuntime
+    if($Candidate -ceq 'budget'){
+        $budgetRuntime=$runtimeMetadata.Clone();$budgetRuntime.engine=Get-BudgetEngineName;$budgetRuntime.model_receipt_protocol='budget-model-receipt-v1'
+        $budgetWorker=$workerMetadata.Clone();$budgetWorker.engine=Get-BudgetEngineName;$budgetWorker.model_receipt_protocol='budget-model-receipt-v1'
+        Write-PlatformText (Join-Path $layout.release_root 'budget/source-runner.mjs') 'synthetic budget asset'
+        $workerAssets.budget_harness='budget'
+    }
+    $runtimeRef=New-ReleaseDescriptor $layout runtime @{binary='fixture.exe'} $newContract @{kind='synthetic';dirty=$false} $runtimeMetadata $residentRuntime -BudgetExecution $budgetRuntime
     $runtimeOld=New-ReleaseDescriptor $layout runtime @{binary='fixture.exe'} $oldContract @{kind='synthetic';dirty=$false}
-    $workerRef=New-ReleaseDescriptor $layout worker $workerAssets $oldContract @{kind='synthetic';dirty=$false} $workerMetadata $residentWorker
+    $workerRef=New-ReleaseDescriptor $layout worker $workerAssets $oldContract @{kind='synthetic';dirty=$false} $workerMetadata $residentWorker -BudgetExecution $budgetWorker
     $workerOld=New-ReleaseDescriptor $layout worker @{binary='fixture.exe';node='node.exe';harness='harness'} $oldContract @{kind='synthetic';dirty=$false}
     foreach($ref in @($runtimeRef,$runtimeOld)){$ref.config_sha256=Get-BytesHash $initialConfig}
     foreach($ref in @($workerRef,$workerOld)){$ref.config_sha256=(Get-FileHash -LiteralPath $workerPath).Hash.ToLowerInvariant()}
@@ -152,16 +167,28 @@ try{
     $originalWorker=[IO.File]::ReadAllBytes($workerPath)
     foreach($case in @('database','endpoint','identity')){
         & (Join-Path $PSScriptRoot 'Stop-Local.ps1') -LayoutPath $layout.layout_path -Service worker -MaintenanceLock $lock
+        if($case -eq 'database'){
+            Reject {Set-DefaultEngine $layout $Candidate $PSScriptRoot $lock 3} 'at least one running managed source Worker' 'actual_default_switch_refused_without_running_worker'
+            Assert-Default 'dsh-0.2.0-rc.2-evidence-v1'
+        }
         $changed=[Text.Encoding]::UTF8.GetString($originalWorker)|ConvertFrom-Json -AsHashtable
         if($case -eq 'database'){$changed.DATABASE_URL=$dsn.Replace($dbName,'different_db')}
         if($case -eq 'endpoint'){$changed.RUNTIME_URL='http://127.0.0.1:1'}
         if($case -eq 'identity'){$changed.SERVICE_TOKEN='wrong-fixture-identity'}
         Write-PlatformJson $workerPath $changed
         $catalog=Read-ReleaseCatalog $layout;$catalog.services.worker.current.config_sha256=(Get-FileHash -LiteralPath $workerPath).Hash.ToLowerInvariant();Save-Catalog
-        & (Join-Path $PSScriptRoot 'Start-Local.ps1') -LayoutPath $layout.layout_path -Service worker -Workers 2 -MaintenanceLock $lock
-        Wait-ReleaseReady $layout worker 2 $catalog.services.worker.current 3
-        $pattern=switch($case){database {'different execution database'};endpoint {'endpoint does not match'};identity {'does not recognize'}}
-        Reject {Assert-SourceWorkersReady $layout (Read-ReleaseCatalog $layout) 3 $candidateEngine} $pattern ('mismatched_worker_'+$case+'_denied')
+        if($case -eq 'database'){
+            Reject {& (Join-Path $PSScriptRoot 'Start-Local.ps1') -LayoutPath $layout.layout_path -Service worker -Workers 2 -MaintenanceLock $lock} 'Worker execution database differs' 'mismatched_worker_database_denied_before_start'
+            Check (@((Read-PlatformProcesses $layout)|Where-Object role -eq 'worker').Count -eq 0) 'database_mismatch_launches_no_worker'
+        }else{
+            & (Join-Path $PSScriptRoot 'Start-Local.ps1') -LayoutPath $layout.layout_path -Service worker -Workers 2 -MaintenanceLock $lock
+            Wait-ReleaseReady $layout worker 2 $catalog.services.worker.current 3
+            $pattern=switch($case){endpoint {'endpoint does not match'};identity {'does not recognize'}}
+            Reject {Assert-SourceWorkersReady $layout (Read-ReleaseCatalog $layout) 3 $candidateEngine} $pattern ('mismatched_worker_'+$case+'_denied')
+            Reject {Set-DefaultEngine $layout $Candidate $PSScriptRoot $lock 3} $pattern ('actual_default_switch_refused_with_wrong_'+$case)
+            Assert-Default 'dsh-0.2.0-rc.2-evidence-v1'
+            Assert-NoPendingRelease (Read-ReleaseCatalog $layout)
+        }
         & (Join-Path $PSScriptRoot 'Stop-Local.ps1') -LayoutPath $layout.layout_path -Service worker -MaintenanceLock $lock
         [IO.File]::WriteAllBytes($workerPath,$originalWorker)
         $catalog=Read-ReleaseCatalog $layout;$catalog.services.worker.current.config_sha256=Get-BytesHash $originalWorker;Save-Catalog
@@ -237,6 +264,7 @@ finally{
         try{
             if($dbCreated){$null=Invoke-RecoverySQL $pg $admin ('DROP DATABASE '+(Quote-PgIdentifier $dbName))}
             if($roleCreated){$null=Invoke-RecoverySQL $pg $admin ('DROP ROLE '+(Quote-PgIdentifier $roleName))}
+            if($workerRoleCreated){$null=Invoke-RecoverySQL $pg $admin ('DROP ROLE '+(Quote-PgIdentifier $workerRole))}
             & (Join-Path $pg 'pg_ctl.exe') -D $fixture stop -m fast -w *> (Join-Path $proof 'pg-stop.log');$result.fixture_stop_exit=$LASTEXITCODE
             if($LASTEXITCODE){throw 'Disposable PostgreSQL stop failed'}
         }catch{$cleanupSafe=$false;$result.passed=$false;$result.database_cleanup_failure='Disposable database cleanup incomplete; preserve remaining fixture state'}

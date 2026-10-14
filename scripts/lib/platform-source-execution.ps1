@@ -1,10 +1,12 @@
 # Source-engine release policy. No configuration or database writes occur here.
 function Get-SourceEngineName { return 'dsh-source-639ed015-state-v1' }
 function Get-ResidentEngineName { return 'dsh-source-639ed015-resident-v2' }
+function Get-BudgetEngineName { return 'dsh-source-639ed015-budget-v3' }
 function Get-SourceEngineProfiles {
     return @(
         @{engine=(Get-SourceEngineName);metadata='source_execution';asset='source_harness';environment='DSH_SOURCE_RUNNER';runs='source_runs';resumable='resumable_source_runs'},
-        @{engine=(Get-ResidentEngineName);metadata='resident_execution';asset='resident_harness';environment='DSH_RESIDENT_RUNNER';runs='resident_runs';resumable='resumable_resident_runs'}
+        @{engine=(Get-ResidentEngineName);metadata='resident_execution';asset='resident_harness';environment='DSH_RESIDENT_RUNNER';runs='resident_runs';resumable='resumable_resident_runs'},
+        @{engine=(Get-BudgetEngineName);metadata='budget_execution';asset='budget_harness';environment='DSH_BUDGET_RUNNER';runs='budget_runs';resumable='resumable_budget_runs'}
     )
 }
 function Assert-SourceExecutionDescriptor([System.Collections.IDictionary]$Descriptor){
@@ -12,6 +14,7 @@ function Assert-SourceExecutionDescriptor([System.Collections.IDictionary]$Descr
     $source=$Descriptor[$profile.metadata];$asset=$Descriptor.assets[$profile.asset]
     if(-not $source){if($asset){throw 'Source Harness asset has no execution provenance.'};continue}
     if($source.format -ne 1 -or $source.engine -cne $profile.engine -or $source.execution_protocol -cne 'runtime-execution-v1'){throw 'Unsupported source execution metadata.'}
+    if($profile.engine -ceq (Get-BudgetEngineName) -and $source['model_receipt_protocol'] -cne 'budget-model-receipt-v1'){throw 'Budget engine requires durable model receipt protocol 1.'}
     switch($Descriptor.role){
         runtime {
             if($asset -or $source.state_protocol -cne 'source-state-recovery-v1' -or $source.submission_protocol -cne 'source-root-default-v1' -or $source.preview_protocol -cne 'source-recovery-preview-v1' -or $Descriptor.contract.http -cne 'agentos-http-v0.7-source-state-v1' -or $Descriptor.contract.data -cne 'execution-v0.7-working-state'){throw 'Runtime source protocols are incomplete.'}
@@ -23,6 +26,7 @@ function Assert-SourceExecutionDescriptor([System.Collections.IDictionary]$Descr
     }
     }
     if($Descriptor.role -ceq 'runtime' -and $Descriptor['resident_execution'] -and -not $Descriptor['source_execution']){throw 'Resident Runtime must retain the v1 source protocols.'}
+    if($Descriptor.role -ceq 'runtime' -and $Descriptor['budget_execution'] -and (-not $Descriptor['source_execution'] -or -not $Descriptor['resident_execution'])){throw 'Budget Runtime must retain v1/v2 source protocols.'}
 }
 function Test-SourceRuntimeTransition([System.Collections.IDictionary]$Previous,[System.Collections.IDictionary]$Next){
     if($Previous.role -cne 'runtime' -or $Next.role -cne 'runtime'){return $false}
@@ -36,7 +40,7 @@ function Test-SourceRuntimeTransition([System.Collections.IDictionary]$Previous,
 function Assert-SourceExecutionPolicy([System.Collections.IDictionary]$Runtime,[System.Collections.IDictionary]$Worker,[string]$DefaultEngine,[System.Collections.IDictionary]$Facts){
     Assert-SourceExecutionDescriptor $Runtime;Assert-SourceExecutionDescriptor $Worker
     if(-not $DefaultEngine){$DefaultEngine='dsh-0.2.0-rc.2-evidence-v1'}
-    if($DefaultEngine -cnotin @('dsh-0.2.0-rc.2-evidence-v1',(Get-SourceEngineName),(Get-ResidentEngineName))){throw 'Unknown configured submission engine.'}
+    if($DefaultEngine -cnotin @('dsh-0.2.0-rc.2-evidence-v1',(Get-SourceEngineName),(Get-ResidentEngineName),(Get-BudgetEngineName))){throw 'Unknown configured submission engine.'}
     if(-not $Facts.Contains('working_state_ready') -or $Facts.working_state_ready -isnot [bool]){throw 'Execution compatibility facts are incomplete.'}
     if($Runtime.contract.data -ceq 'execution-v0.7-working-state' -and -not $Runtime['source_execution']){throw 'New Runtime data contract lacks source protocol provenance.'}
     foreach($profile in (Get-SourceEngineProfiles)){
@@ -70,6 +74,8 @@ SELECT jsonb_build_object(
  'resumable_source_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-state-v1' AND status NOT IN('completed','cancelled')),
  'resident_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-resident-v2'),
  'resumable_resident_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-resident-v2' AND status NOT IN('completed','cancelled')),
+ 'budget_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-budget-v3'),
+ 'resumable_budget_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-budget-v3' AND status NOT IN('completed','cancelled')),
  'working_state_ready',(SELECT CASE WHEN t.oid IS NULL THEN false ELSE
  has_table_privilege(current_user,t.oid,'SELECT') AND has_table_privilege(current_user,t.oid,'INSERT')
  AND NOT EXISTS(SELECT 1 FROM required_columns c WHERE NOT EXISTS(
@@ -151,7 +157,7 @@ function Assert-SourceExecutionDeployment([hashtable]$Layout,[System.Collections
     }finally{$config=$null}
 }
 function Copy-PinnedSourceHarness([string]$Artifact,[string]$Destination,[string]$PinFile,[string]$Engine=(Get-SourceEngineName)){
-    if($Engine -cnotin @((Get-SourceEngineName),(Get-ResidentEngineName))){throw 'Unknown source Harness engine.'}
+    if($Engine -cnotin @((Get-SourceEngineName),(Get-ResidentEngineName),(Get-BudgetEngineName))){throw 'Unknown source Harness engine.'}
     $artifactRoot=[IO.Path]::GetFullPath($Artifact)
     Assert-ReleasePhysicalPath (Split-Path -Parent ([IO.Path]::GetFullPath($PinFile))) $PinFile
     Assert-ReleasePhysicalPath (Split-Path -Parent ([IO.Path]::GetFullPath($Destination))) $Destination
@@ -176,5 +182,7 @@ function Copy-PinnedSourceHarness([string]$Artifact,[string]$Destination,[string
         if((Get-FileHash -LiteralPath $target).Hash.ToLowerInvariant() -cne $files[$relative]){throw 'Copied source Harness content differs.'}
     }
     Copy-Item -LiteralPath $PinFile -Destination (Join-Path $Destination 'source-lock.json')
-    return @{format=1;engine=$pin.engine;execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';manifest_sha256=$pin.manifest_sha256;harness_commit=$pin.commit}
+    $metadata=@{format=1;engine=$pin.engine;execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';manifest_sha256=$pin.manifest_sha256;harness_commit=$pin.commit}
+    if($Engine -ceq (Get-BudgetEngineName)){$metadata.model_receipt_protocol='budget-model-receipt-v1'}
+    return $metadata
 }
