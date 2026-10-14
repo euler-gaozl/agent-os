@@ -43,7 +43,7 @@ func main() {
 				return
 			}
 		}
-		if (config["DEFAULT_RUN_ENGINE"] == "dsh-source-639ed015-state-v1" || config["DEFAULT_RUN_ENGINE"] == "dsh-source-639ed015-resident-v2" || config["DEFAULT_RUN_ENGINE"] == "dsh-source-639ed015-budget-v3") && config["unready_source_marker"] != "" {
+		if (config["DEFAULT_RUN_ENGINE"] == "dsh-source-639ed015-state-v1" || config["DEFAULT_RUN_ENGINE"] == "dsh-source-639ed015-resident-v2" || config["DEFAULT_RUN_ENGINE"] == "dsh-source-639ed015-budget-v3" || config["DEFAULT_RUN_ENGINE"] == "dsh-source-639ed015-native-v4") && config["unready_source_marker"] != "" {
 			if _, err := os.Stat(config["unready_source_marker"]); err == nil {
 				w.WriteHeader(http.StatusServiceUnavailable)
 				return

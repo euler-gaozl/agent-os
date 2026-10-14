@@ -40,6 +40,10 @@ if($catalog.format -eq 2 -and @($selected|Where-Object{$_ -in @('runtime','worke
  $executionOverrides=@{};foreach($role in @('runtime','worker')){if($releases.ContainsKey($role)){$executionOverrides[$role]=$releases[$role].descriptor}}
  Assert-SourceExecutionDeployment $layout $executionOverrides
 }
+if($catalog.format -eq 2 -and @($selected|Where-Object{$_ -in @('registry','runtime','control')}).Count){
+ $modelOverrides=@{};foreach($role in @('registry','runtime','control')){if($releases.ContainsKey($role)){$modelOverrides[$role]=$releases[$role].descriptor}}
+ Assert-ModelManagementDeployment $layout $modelOverrides
+}
 $previous=Read-PlatformProcesses $layout
 $knownRoots='D:\workspace\agent-platform\ops\managed-roots.json'
 if(Test-Path -LiteralPath $knownRoots){

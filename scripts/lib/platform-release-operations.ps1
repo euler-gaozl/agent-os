@@ -93,10 +93,12 @@ function Restore-PendingRelease([hashtable]$Layout,[string]$Role,[string]$Script
     if($Role -in @('worker','telemetry')){$priorDescriptor=Read-ReleaseDescriptor $Layout $pending.prior -Verify;Assert-ExecutionAccessDeployment $Layout @($Role) @{$Role=$priorDescriptor}}
     if($Role -in @('runtime','worker')){$priorDescriptor=Read-ReleaseDescriptor $Layout $pending.prior -Verify;Assert-SourceExecutionDeployment $Layout @{$Role=$priorDescriptor}}
     if($Role -in @('runtime','control')){$priorDescriptor=Read-ReleaseDescriptor $Layout $pending.prior -Verify;Assert-ReceiptManagementDeployment $Layout @{$Role=$priorDescriptor}}
+    if($Role -in @('registry','runtime','control')){$priorDescriptor=Read-ReleaseDescriptor $Layout $pending.prior -Verify;Assert-ModelManagementDeployment $Layout @{$Role=$priorDescriptor}}
     $pending=Save-ReleasePhase $Layout $Role $pending.id 'reverting'
     & $Checkpoint 'reverting'
     & (Join-Path $Scripts 'Stop-Local.ps1') -LayoutPath $Layout.layout_path -Service @($Role) -MaintenanceLock $Lock
     if($Role -eq 'knowledge'){Assert-KnowledgeArchiveDeployment $Layout $priorDescriptor -Stopped}
+    if($Role -in @('registry','runtime','control')){Assert-ModelManagementDeployment $Layout @{$Role=$priorDescriptor} -RegistryStopped:($Role -eq 'registry')}
     if($pending.replicas -gt 0){
         & (Join-Path $Scripts 'Start-Local.ps1') -LayoutPath $Layout.layout_path -Service @($Role) -Workers ([Math]::Max(1,$pending.replicas)) -PendingOperation $pending.id -MaintenanceLock $Lock
     }
@@ -133,6 +135,7 @@ function Invoke-ReleaseChange([hashtable]$Layout,[string]$Role,[string]$Action,[
     if($Role -in @('worker','telemetry')){Assert-ExecutionAccessDeployment $Layout @($Role) @{$Role=$after}}
     if($Role -in @('runtime','control')){Assert-ReceiptManagementDeployment $Layout @{$Role=$after}}
     if($Role -in @('runtime','worker')){Assert-SourceExecutionDeployment $Layout @{$Role=$after}}
+    if($Role -in @('registry','runtime','control')){Assert-ModelManagementDeployment $Layout @{$Role=$after}}
     $configHash=Assert-ReleaseConfiguration $Layout $Role $prior
     $targetBound=@{};foreach($key in $Target.Keys){$targetBound[$key]=$Target[$key]}
     if($targetBound['config_sha256'] -and $targetBound.config_sha256 -cne $configHash){throw 'Rollback configuration differs from the currently deployed configuration.'}
@@ -154,6 +157,7 @@ function Invoke-ReleaseChange([hashtable]$Layout,[string]$Role,[string]$Action,[
         $null=Save-ReleasePhase $Layout $Role $pending.id 'stopped'
         & $Checkpoint 'stopped'
         if($Role -eq 'knowledge'){Assert-KnowledgeArchiveDeployment $Layout $after -Stopped}
+        if($Role -in @('registry','runtime','control')){Assert-ModelManagementDeployment $Layout @{$Role=$after} -RegistryStopped:($Role -eq 'registry')}
         if($pending.replicas -gt 0){
             & (Join-Path $Scripts 'Start-Local.ps1') -LayoutPath $Layout.layout_path -Service @($Role) -Workers ([Math]::Max(1,$pending.replicas)) -PendingOperation $pending.id -MaintenanceLock $Lock
         }

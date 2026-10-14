@@ -71,7 +71,7 @@ function Get-BoundReceiptControlConfiguration([hashtable]$Layout,[System.Collect
         $descriptor=Read-ReleaseDescriptor $Layout $reference[0] -Verify
         if($entry.binary -ne (Resolve-ReleasePath $Layout.release_root $descriptor.assets.binary)){throw 'Live Console binary differs from its registered deployment.'}
         $launch=Read-ReleaseJson $entry.launch_config
-        try{if([string]$launch['RUNTIME_URL'] -cne [string]$config['RUNTIME_URL']){throw 'Live Console Runtime target differs from registered configuration.'}}finally{$launch=$null}
+        try{foreach($key in @('RUNTIME_URL','REGISTRY_URL')){if([string]$launch[$key] -cne [string]$config[$key]){throw 'Live Console service target differs from registered configuration.'}}}finally{$launch=$null}
     }
     return $config
 }

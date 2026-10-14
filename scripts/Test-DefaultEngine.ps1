@@ -1,9 +1,9 @@
-param([string]$CrashRoot='',[string]$CrashPoint='',[switch]$HoldCheckpoint,[ValidateSet('source','resident','budget')][string]$Candidate='source')
+param([string]$CrashRoot='',[string]$CrashPoint='',[switch]$HoldCheckpoint,[ValidateSet('source','resident','budget','native')][string]$Candidate='source')
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 foreach($library in @('platform-paths','platform-lock','platform-processes','platform-releases','platform-release-operations')){. (Join-Path $PSScriptRoot ('lib/'+$library+'.ps1'))}
-$candidateEngine=switch($Candidate){resident {Get-ResidentEngineName};budget {Get-BudgetEngineName};default{Get-SourceEngineName}}
+$candidateEngine=switch($Candidate){resident {Get-ResidentEngineName};budget {Get-BudgetEngineName};native {Get-NativeEngineName};default{Get-SourceEngineName}}
 function Check([bool]$Value,[string]$Name){if(-not $Value){throw $Name};$checks.Add($Name)}
 function Reject([scriptblock]$Action,[string]$Pattern,[string]$Name){$message='';try{& $Action|Out-Null}catch{$message=$_.Exception.Message};if($message -notmatch $Pattern){throw ($Name+': unexpected outcome '+$message)};$checks.Add($Name)}
 if($CrashRoot){
@@ -116,23 +116,29 @@ try{
     $newContract=@{http='agentos-http-v0.7-source-state-v1';data='execution-v0.7-working-state';engines=@();tools=@()}
     $runtimeMetadata=@{format=1;engine=(Get-SourceEngineName);execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';submission_protocol='source-root-default-v1';preview_protocol='source-recovery-preview-v1'}
     $workerMetadata=@{format=1;engine=(Get-SourceEngineName);execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';manifest_sha256=('a'*64);harness_commit=('b'*40)}
-    $residentRuntime=$null;$residentWorker=$null;$budgetRuntime=$null;$budgetWorker=$null
+    $residentRuntime=$null;$residentWorker=$null;$budgetRuntime=$null;$budgetWorker=$null;$nativeRuntime=$null;$nativeWorker=$null
     $workerAssets=@{binary='fixture.exe';node='node.exe';harness='harness';source_harness='source'}
-    if($Candidate -cin @('resident','budget')){
+    if($Candidate -cin @('resident','budget','native')){
         $residentRuntime=$runtimeMetadata.Clone();$residentRuntime.engine=Get-ResidentEngineName
         $residentWorker=$workerMetadata.Clone();$residentWorker.engine=Get-ResidentEngineName
         Write-PlatformText (Join-Path $layout.release_root 'resident/source-runner.mjs') 'synthetic resident asset'
         $workerAssets.resident_harness='resident'
     }
-    if($Candidate -ceq 'budget'){
+    if($Candidate -cin @('budget','native')){
         $budgetRuntime=$runtimeMetadata.Clone();$budgetRuntime.engine=Get-BudgetEngineName;$budgetRuntime.model_receipt_protocol='budget-model-receipt-v1'
         $budgetWorker=$workerMetadata.Clone();$budgetWorker.engine=Get-BudgetEngineName;$budgetWorker.model_receipt_protocol='budget-model-receipt-v1'
         Write-PlatformText (Join-Path $layout.release_root 'budget/source-runner.mjs') 'synthetic budget asset'
         $workerAssets.budget_harness='budget'
     }
-    $runtimeRef=New-ReleaseDescriptor $layout runtime @{binary='fixture.exe'} $newContract @{kind='synthetic';dirty=$false} $runtimeMetadata $residentRuntime -BudgetExecution $budgetRuntime
+    if($Candidate -ceq 'native'){
+        $nativeRuntime=$runtimeMetadata.Clone();$nativeRuntime.engine=Get-NativeEngineName;$nativeRuntime.model_receipt_protocol='native-model-receipt-v2'
+        $nativeWorker=$workerMetadata.Clone();$nativeWorker.engine=Get-NativeEngineName;$nativeWorker.model_receipt_protocol='native-model-receipt-v2'
+        Write-PlatformText (Join-Path $layout.release_root 'native/source-runner.mjs') 'synthetic native asset'
+        $workerAssets.native_harness='native'
+    }
+    $runtimeRef=New-ReleaseDescriptor $layout runtime @{binary='fixture.exe'} $newContract @{kind='synthetic';dirty=$false} $runtimeMetadata $residentRuntime -BudgetExecution $budgetRuntime -NativeExecution $nativeRuntime
     $runtimeOld=New-ReleaseDescriptor $layout runtime @{binary='fixture.exe'} $oldContract @{kind='synthetic';dirty=$false}
-    $workerRef=New-ReleaseDescriptor $layout worker $workerAssets $oldContract @{kind='synthetic';dirty=$false} $workerMetadata $residentWorker -BudgetExecution $budgetWorker
+    $workerRef=New-ReleaseDescriptor $layout worker $workerAssets $oldContract @{kind='synthetic';dirty=$false} $workerMetadata $residentWorker -BudgetExecution $budgetWorker -NativeExecution $nativeWorker
     $workerOld=New-ReleaseDescriptor $layout worker @{binary='fixture.exe';node='node.exe';harness='harness'} $oldContract @{kind='synthetic';dirty=$false}
     foreach($ref in @($runtimeRef,$runtimeOld)){$ref.config_sha256=Get-BytesHash $initialConfig}
     foreach($ref in @($workerRef,$workerOld)){$ref.config_sha256=(Get-FileHash -LiteralPath $workerPath).Hash.ToLowerInvariant()}

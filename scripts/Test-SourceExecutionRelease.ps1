@@ -1,4 +1,4 @@
-param([Parameter(Mandatory)][string]$SourceArtifact,[Parameter(Mandatory)][string]$ResidentArtifact,[Parameter(Mandatory)][string]$BudgetArtifact)
+param([Parameter(Mandatory)][string]$SourceArtifact,[Parameter(Mandatory)][string]$ResidentArtifact,[Parameter(Mandatory)][string]$BudgetArtifact,[Parameter(Mandatory)][string]$NativeArtifact)
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -14,7 +14,7 @@ $newContract=Clone $oldContract;$newContract.http='agentos-http-v0.7-source-stat
 $runtimeOld=@{role='runtime';assets=@{binary='runtime.exe'};contract=$oldContract}
 $runtimeNew=@{role='runtime';assets=@{binary='runtime.exe'};contract=$newContract;source_execution=@{format=1;engine=(Get-SourceEngineName);execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';submission_protocol='source-root-default-v1';preview_protocol='source-recovery-preview-v1'}}
 $workerOld=@{role='worker';assets=@{binary='worker.exe';node='node.exe';harness='harness'};contract=$oldContract}
-$facts=@{source_runs=0;resumable_source_runs=0;resident_runs=0;resumable_resident_runs=0;budget_runs=0;resumable_budget_runs=0;working_state_ready=$false}
+$facts=@{source_runs=0;resumable_source_runs=0;resident_runs=0;resumable_resident_runs=0;budget_runs=0;resumable_budget_runs=0;native_runs=0;resumable_native_runs=0;working_state_ready=$false}
 $result=@{passed=$false;paid_model_calls=0;scope='Release compatibility policy, real pinned source artifact copy/export/restore, plus real PostgreSQL metadata probe on synthetic tables; no service activation';checks=@()}
 $fixture='D:\workspace\agent-platform\local\evidence\p2-first-services-85be4f84e89f47ad935b6ed8882093c0\postgres'
 $pg='D:\workspace\.tools\postgresql\pgsql\bin';$started=$false;$dbCreated=$false;$roleCreated=$false
@@ -121,11 +121,47 @@ try{
     $bad=Clone $workerTriple;$null=$bad.Remove('budget_execution')
     Reject {Assert-SourceExecutionDescriptor $bad} 'budget_asset_requires_provenance'
     Reject {Copy-PinnedSourceHarness $ResidentArtifact (Join-Path $proof 'wrong-v3') $budgetPin (Get-BudgetEngineName)} 'resident_bytes_cannot_satisfy_budget_pin'
+    $nativePin=Join-Path (Split-Path -Parent $repo) 'agent-os-worker/worker/native-harness-lock.json'
+    $native=Copy-PinnedSourceHarness $NativeArtifact (Join-Path $proof 'releases/bundles/worker/native-harness') $nativePin (Get-NativeEngineName)
+    $runtimeQuad=Clone $runtimeTriple;$runtimeQuad.native_execution=Clone $runtimeNew.source_execution
+    $runtimeQuad.native_execution.engine=Get-NativeEngineName;$runtimeQuad.native_execution.model_receipt_protocol='native-model-receipt-v2'
+    $workerQuad=Clone $workerTriple;$workerQuad.native_execution=$native;$workerQuad.assets.native_harness='bundles/worker/native-harness'
+    Assert-SourceExecutionPolicy $runtimeQuad $workerTriple (Get-BudgetEngineName) $facts;$checks.Add('native_runtime_precedes_native_worker')
+    Reject {Assert-SourceExecutionPolicy $runtimeTriple $workerQuad (Get-BudgetEngineName) $facts} 'native_worker_requires_native_runtime'
+    Reject {Assert-SourceExecutionPolicy $runtimeQuad $workerTriple (Get-NativeEngineName) $facts} 'native_default_requires_native_worker'
+    Assert-SourceExecutionPolicy $runtimeQuad $workerQuad (Get-NativeEngineName) $facts;$checks.Add('four_engine_pair_accepts_native_default')
+    $nativeOnly=Clone $workerQuad;$null=$nativeOnly.Remove('budget_execution');$null=$nativeOnly.assets.Remove('budget_harness')
+    Reject {Assert-SourceExecutionPolicy $runtimeQuad $nativeOnly (Get-NativeEngineName) $facts} 'native_default_retains_legacy_agent_execution'
+    $facts.native_runs=1;$facts.resumable_native_runs=1
+    Reject {Assert-SourceExecutionPolicy $runtimeQuad $workerTriple (Get-BudgetEngineName) $facts} 'resumable_native_task_blocks_worker_downgrade'
+    $facts.resumable_native_runs=0
+    Assert-SourceExecutionPolicy $runtimeQuad $workerTriple (Get-BudgetEngineName) $facts;$checks.Add('terminal_native_history_allows_worker_downgrade_with_legacy_default')
+    Reject {Assert-SourceExecutionPolicy $runtimeTriple $workerTriple (Get-BudgetEngineName) $facts} 'retained_native_history_blocks_runtime_downgrade'
+    foreach($role in @('runtime','worker')){
+        $bad=Clone $(if($role -eq 'runtime'){$runtimeQuad}else{$workerQuad});$bad.native_execution.model_receipt_protocol='budget-model-receipt-v1'
+        Reject {Assert-SourceExecutionDescriptor $bad} ($role+'_native_requires_protocol_2')
+    }
+    $bad=Clone $runtimeQuad;$null=$bad.Remove('budget_execution')
+    Reject {Assert-SourceExecutionDescriptor $bad} 'native_runtime_retains_v3'
+    $bad=Clone $workerQuad;$null=$bad.assets.Remove('native_harness')
+    Reject {Assert-SourceExecutionDescriptor $bad} 'native_capability_requires_artifact'
+    $bad=Clone $workerQuad;$null=$bad.Remove('native_execution')
+    Reject {Assert-SourceExecutionDescriptor $bad} 'native_asset_requires_provenance'
+    foreach($key in @('native_runs','resumable_native_runs')){
+        $badFacts=Clone $facts;$null=$badFacts.Remove($key)
+        Reject {Assert-SourceExecutionPolicy $runtimeQuad $workerQuad '' $badFacts} ('missing_'+$key+'_denied')
+        foreach($value in @(-1,'0',0.5)){
+            $badFacts=Clone $facts;$badFacts[$key]=$value
+            Reject {Assert-SourceExecutionPolicy $runtimeQuad $workerQuad '' $badFacts} ('invalid_'+$key+'_'+[string]$value+'_denied')
+        }
+    }
+    Reject {Copy-PinnedSourceHarness $BudgetArtifact (Join-Path $proof 'wrong-v4') $nativePin (Get-NativeEngineName)} 'budget_bytes_cannot_satisfy_native_pin'
     $layout=@{release_root=(Join-Path $proof 'releases')}
     foreach($relative in @('bundles/worker/worker.exe','bundles/worker/node.exe','bundles/worker/harness/runner.mjs','bundles/runtime/runtime.exe')){Write-PlatformText (Join-Path $layout.release_root $relative) 'synthetic non-executable inventory marker'}
     $workerAssets=@{binary='bundles/worker/worker.exe';node='bundles/worker/node.exe';harness='bundles/worker/harness';source_harness='bundles/worker/source-harness';resident_harness='bundles/worker/resident-harness';budget_harness='bundles/worker/budget-harness'}
-    $workerRef=New-ReleaseDescriptor $layout worker $workerAssets $oldContract @{kind='synthetic';dirty=$false} $source $resident -BudgetExecution $budget
-    $runtimeRef=New-ReleaseDescriptor $layout runtime @{binary='bundles/runtime/runtime.exe'} $newContract @{kind='synthetic';dirty=$false} $runtimeNew.source_execution $runtimeDual.resident_execution -BudgetExecution $runtimeTriple.budget_execution
+    $workerAssets.native_harness='bundles/worker/native-harness'
+    $workerRef=New-ReleaseDescriptor $layout worker $workerAssets $oldContract @{kind='synthetic';dirty=$false} $source $resident -BudgetExecution $budget -NativeExecution $native
+    $runtimeRef=New-ReleaseDescriptor $layout runtime @{binary='bundles/runtime/runtime.exe'} $newContract @{kind='synthetic';dirty=$false} $runtimeNew.source_execution $runtimeDual.resident_execution -BudgetExecution $runtimeTriple.budget_execution -NativeExecution $runtimeQuad.native_execution
     Write-PlatformJson (Join-Path $layout.release_root 'current.json') @{format=2;generation=1;services=@{worker=@{current=$workerRef;previous=$null;pending=$null};runtime=@{current=$runtimeRef;previous=$null;pending=$null}}}
     $export=Export-ReleaseCatalog $layout (Join-Path $proof 'archive')
     $restored=Restore-ReleaseCatalog (Join-Path $proof 'archive') (Join-Path $proof 'restored')
@@ -135,6 +171,12 @@ try{
     $restoredRuntime=Read-ReleaseDescriptor $restoredLayout $runtimeRef -Verify
     Check ($restoredRuntime.resident_execution.engine -ceq (Get-ResidentEngineName)) 'resident_protocol_provenance_survives_release_restore'
     Check ($restoredRuntime.budget_execution.model_receipt_protocol -ceq 'budget-model-receipt-v1') 'budget_receipt_protocol_survives_release_restore'
+    Check ($restoredRuntime.native_execution.model_receipt_protocol -ceq 'native-model-receipt-v2') 'native_receipt_protocol_survives_release_restore'
+    $nativeRunner=Join-Path $restoredLayout.release_root 'bundles/worker/native-harness/source-runner.mjs'
+    $nativeBytes=[IO.File]::ReadAllBytes($nativeRunner)
+    Write-PlatformText $nativeRunner 'tampered native fixture'
+    Reject {Read-ReleaseDescriptor $restoredLayout $workerRef -Verify} 'restored_native_runner_tamper_denied'
+    [IO.File]::WriteAllBytes($nativeRunner,$nativeBytes)
     $budgetRunner=Join-Path $restoredLayout.release_root 'bundles/worker/budget-harness/source-runner.mjs'
     $budgetBytes=[IO.File]::ReadAllBytes($budgetRunner)
     Write-PlatformText $budgetRunner 'tampered budget fixture'
@@ -169,6 +211,10 @@ try{
     $null=Invoke-RecoverySQL $pg $dbAdmin "INSERT INTO runs VALUES('v3-done','dsh-source-639ed015-budget-v3','completed'),('v3-cancel','dsh-source-639ed015-budget-v3','cancelled'),('v3-fail','dsh-source-639ed015-budget-v3','failed'),('v3-unknown','dsh-source-639ed015-budget-v3','waiting_unknown')"
     $actual=Get-SourceExecutionFacts $probeLayout
     Check ($actual.budget_runs -eq 4 -and $actual.resumable_budget_runs -eq 2 -and $actual.resident_runs -eq 4) 'restricted_probe_counts_budget_failed_unknown_as_resumable'
+    Check ($actual.native_runs -eq 0 -and $actual.resumable_native_runs -eq 0) 'restricted_probe_reports_absent_native_history'
+    $null=Invoke-RecoverySQL $pg $dbAdmin "INSERT INTO runs VALUES('v4-done','dsh-source-639ed015-native-v4','completed'),('v4-cancel','dsh-source-639ed015-native-v4','cancelled'),('v4-fail','dsh-source-639ed015-native-v4','failed'),('v4-unknown','dsh-source-639ed015-native-v4','waiting_unknown')"
+    $actual=Get-SourceExecutionFacts $probeLayout
+    Check ($actual.native_runs -eq 4 -and $actual.resumable_native_runs -eq 2 -and $actual.budget_runs -eq 4) 'restricted_probe_counts_native_failed_unknown_as_resumable'
     $null=Invoke-RecoverySQL $pg $dbAdmin ('CREATE TABLE run_working_states(revision bigint); GRANT SELECT ON run_working_states TO '+(Quote-PgIdentifier $roleName))
     Check (-not (Get-SourceExecutionFacts $probeLayout).working_state_ready) 'read_only_state_grant_is_not_migration_readiness'
     $null=Invoke-RecoverySQL $pg $dbAdmin ('GRANT INSERT ON run_working_states TO '+(Quote-PgIdentifier $roleName))

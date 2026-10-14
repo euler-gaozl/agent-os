@@ -4,6 +4,10 @@
 
 最新要求：取消输入/输出人为上限，使用模型原生能力。实际官方元数据为Flash总窗口1048576、最大输出393216；[实施与验收范围](architecture/model-native-limits.md)已记录，尚未部署。
 
+当前收尾：正式服务仍正常，原生长度候选尚未安装。Runtime 已修复默认引擎切为 native 后历史 Agent 新任务的兼容：全旧配置树仍使用 budget-v3，混合原生/旧配置树拒绝。独立评审发现重新验证展开后的提示词会误拒绝历史配置；新增真实 Snapshot 绑定提示词的回归先复现失败，再改为仅校验模型协议范围。修复后真实隔离 PostgreSQL 46 项零跳过及 vet/build 通过，见 `ops/native-legacy.path` 的 `result-review.json`；原失败留在 `native-legacy-prompt-regression-3fca4e05638f44e2b30c96603eade37c`。
+Registry 增加鉴权的模型配置协议声明，Console 保存前探测已绑定 Registry，旧版/错误响应时不转发保存；Registry 37 项、Console 30 项零跳过，vet、独立二进制构建及无配置 CLI 声明检查通过，见 `ops/native-management.path`。Runtime `7d19261`、Registry `755b8de`、Console `00bc628` 已推送功能分支；正式安装未变。发布器已接入协议绑定与回退保护，41 项模型管理检查和 53 项 native 默认切换故障检查通过，详见 [Windows 原生模型发布检查](native-model-release-20261014.md)。Futures 业务端容量尚需对齐。不能据此算原生长度正式交付；本轮零付费调用、零 Actions。
+整体仍只有 P0/P1 完整关闭；P2/P2.5/P3/P4 的已完成部分保留各自证据，P5 研究质量仍未通过。下一步不新增功能：完成这次安装与回退保护，验收同一真实研究任务，再补剩余权限/页面/故障和最后一次统一 CI。
+
 最新 Console 增量 `b2a1c8e`：新建 Agent 默认原生能力，历史 Agent 显式升级；供应商能力只读预览，保存由 Registry 重新查询并冻结。
 已修复单项任务 2 MiB/4 MiB 的旧代理边界，以及保存后迟到预览覆盖新观测的问题。
 Go 23 条、Web 19 条零跳过，实际浏览器能力/失败/保存竞态/390px 检查、独立完整包搬迁启动通过，

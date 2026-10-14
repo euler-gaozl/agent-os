@@ -4,6 +4,7 @@
 . (Join-Path $PSScriptRoot 'platform-receipts.ps1')
 . (Join-Path $PSScriptRoot 'platform-execution-access.ps1')
 . (Join-Path $PSScriptRoot 'platform-knowledge-archives.ps1')
+. (Join-Path $PSScriptRoot 'platform-model-management.ps1')
 . (Join-Path $PSScriptRoot 'platform-migration-journal.ps1')
 function Read-ReleaseJson([string]$Path){
     try{return Get-Content -LiteralPath $Path -Raw|ConvertFrom-Json -AsHashtable -DateKind String}catch{throw ('Invalid release metadata: '+[IO.Path]::GetFileName($Path))}
@@ -59,7 +60,7 @@ function Get-ReleaseInventory([string]$Root,[System.Collections.IDictionary]$Ass
     }
     return @{files=@($files.Keys|Sort-Object|ForEach-Object{$files[$_]});links=@($links.Keys|Sort-Object|ForEach-Object{$links[$_]})}
 }
-function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Assets,[System.Collections.IDictionary]$Contract,[System.Collections.IDictionary]$Provenance,[System.Collections.IDictionary]$SourceExecution=$null,[System.Collections.IDictionary]$ResidentExecution=$null,[System.Collections.IDictionary]$ReceiptManagement=$null,[System.Collections.IDictionary]$ExecutionAccess=$null,[System.Collections.IDictionary]$KnowledgeArchives=$null,[System.Collections.IDictionary]$BudgetExecution=$null){
+function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Assets,[System.Collections.IDictionary]$Contract,[System.Collections.IDictionary]$Provenance,[System.Collections.IDictionary]$SourceExecution=$null,[System.Collections.IDictionary]$ResidentExecution=$null,[System.Collections.IDictionary]$ReceiptManagement=$null,[System.Collections.IDictionary]$ExecutionAccess=$null,[System.Collections.IDictionary]$KnowledgeArchives=$null,[System.Collections.IDictionary]$BudgetExecution=$null,[System.Collections.IDictionary]$NativeExecution=$null,[System.Collections.IDictionary]$ModelManagement=$null){
     Assert-ReleaseAssets $Role $Assets
     $identifier=$Role+'-'+[guid]::NewGuid().ToString('N')
     $inventory=Get-ReleaseInventory $Layout.release_root $Assets
@@ -67,13 +68,16 @@ function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collecti
     if($SourceExecution){$descriptor.source_execution=$SourceExecution}
     if($ResidentExecution){$descriptor.resident_execution=$ResidentExecution}
     if($BudgetExecution){$descriptor.budget_execution=$BudgetExecution}
+    if($NativeExecution){$descriptor.native_execution=$NativeExecution}
     if($null -ne $ReceiptManagement){$descriptor.receipt_management=$ReceiptManagement}
     if($null -ne $ExecutionAccess){$descriptor.execution_access=$ExecutionAccess}
     if($null -ne $KnowledgeArchives){$descriptor.source_archives=$KnowledgeArchives}
+    if($null -ne $ModelManagement){$descriptor.model_management=$ModelManagement}
     Assert-SourceExecutionDescriptor $descriptor
     Assert-ReceiptManagementDescriptor $descriptor
     Assert-ExecutionAccessDescriptor $descriptor
     Assert-KnowledgeArchiveDescriptor $descriptor
+    Assert-ModelManagementDescriptor $descriptor
     $relative='descriptors/'+$identifier+'.json';$path=Resolve-ReleasePath $Layout.release_root $relative
     Assert-ReleasePhysicalPath $Layout.release_root $path
     if(Test-Path -LiteralPath $path){throw 'Release descriptor already exists.'}
@@ -92,6 +96,7 @@ function Read-ReleaseDescriptor([hashtable]$Layout,[System.Collections.IDictiona
     Assert-ReceiptManagementDescriptor $descriptor
     Assert-ExecutionAccessDescriptor $descriptor
     Assert-KnowledgeArchiveDescriptor $descriptor
+    Assert-ModelManagementDescriptor $descriptor
     foreach($relative in $descriptor.assets.Values){$null=Resolve-ReleasePath $Layout.release_root $relative}
     if($Verify){
         $actual=Get-ReleaseInventory $Layout.release_root $descriptor.assets
@@ -185,6 +190,7 @@ function Assert-ReleaseAssets([string]$Role,[System.Collections.IDictionary]$Ass
     if($Role -eq 'worker' -and $Assets.Contains('source_harness')){$expected+='source_harness'}
     if($Role -eq 'worker' -and $Assets.Contains('resident_harness')){$expected+='resident_harness'}
     if($Role -eq 'worker' -and $Assets.Contains('budget_harness')){$expected+='budget_harness'}
+    if($Role -eq 'worker' -and $Assets.Contains('native_harness')){$expected+='native_harness'}
     if(@(Compare-Object @($Assets.Keys|Sort-Object) @($expected|Sort-Object)).Count){throw 'Release does not contain the complete role-specific asset set.'}
 }
 function Assert-CompatibleRelease([System.Collections.IDictionary]$Previous,[System.Collections.IDictionary]$Next){
