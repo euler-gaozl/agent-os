@@ -1,5 +1,27 @@
-# Only MCP_ALLOWED_HOSTS changes here. One service's existing release journal
-# owns commit/recovery; saved configurations use the same DPAPI vault as backup.
+# One exact host policy changes here: MCP_ALLOWED_HOSTS for Runtime/ToolHub,
+# SOURCE_ALLOWED_HOSTS for Sources. Existing function names remain compatible.
+# The service release journal owns commit/recovery; configurations use DPAPI.
+function Get-NetworkHostProfile([string]$Role){
+    if($Role -ceq 'sources'){return @{key='SOURCE_ALLOWED_HOSTS';scope='source-hosts';action='configure-source-hosts';kind='source_configuration'}}
+    if($Role -cin @('runtime','toolhub')){return @{key='MCP_ALLOWED_HOSTS';scope='mcp-hosts';action='configure-mcp-hosts';kind='mcp_configuration'}}
+    throw 'Host policy is owned by runtime, toolhub or sources.'
+}
+function ConvertTo-SourceHosts([string[]]$Hosts){
+    if($Hosts.Count -eq 0 -or $Hosts.Count -gt 32){throw 'Sources needs 1 to 32 exact public DNS host names.'}
+    foreach($item in $Hosts){
+        $address=$null
+        if($item.Length -gt 253 -or $item -cnotmatch '^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$' -or [Net.IPAddress]::TryParse($item,[ref]$address) -or $item -match '\.(localhost|local|internal|test|invalid|example)$'){
+            throw 'Sources entries must be lowercase exact public DNS hosts, without URLs, ports, wildcards or IP literals.'
+        }
+    }
+    if(@($Hosts|Sort-Object -Unique).Count -ne $Hosts.Count){throw 'Duplicate Sources host.'}
+    return (@($Hosts|Sort-Object) -join ',')
+}
+function ConvertTo-NetworkHosts([string]$Role,[string[]]$Hosts){
+    if($Role -ceq 'sources'){return ConvertTo-SourceHosts $Hosts}
+    $null=Get-NetworkHostProfile $Role
+    return ConvertTo-MCPHosts $Hosts
+}
 function Get-MCPManagedRoots([hashtable]$Layout){
     $roots=@($Layout)
     $path='D:\workspace\agent-platform\ops\managed-roots.json'
@@ -28,6 +50,7 @@ function Assert-MCPExecutionIdle([hashtable]$Layout,[System.Collections.IDiction
     finally{$connection=$null}
 }
 function Assert-MCPInstanceConfiguration([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Reference,[System.Collections.IDictionary]$Configuration){
+    $profile=Get-NetworkHostProfile $Role
     $descriptor=Read-ReleaseDescriptor $Layout $Reference -Verify
     foreach($entry in @((Read-PlatformProcesses $Layout)|Where-Object role -eq $Role)){
         $state=Get-PlatformInstanceState $entry $Layout
@@ -35,7 +58,7 @@ function Assert-MCPInstanceConfiguration([hashtable]$Layout,[string]$Role,[Syste
         $launch=Read-ReleaseJson $entry.launch_config
         $expectedKeys=@($Configuration.Keys|Where-Object{$_ -cne 'INSTANCE_ID'});$actualKeys=@($launch.Keys|Where-Object{$_ -cne 'INSTANCE_ID'})
         if(@(Compare-Object $expectedKeys $actualKeys).Count){throw 'Live MCP consumer configuration differs from its registered configuration.'}
-        foreach($key in @($expectedKeys)+@('MCP_ALLOWED_HOSTS')){if([string]$launch[$key] -cne [string]$Configuration[$key]){throw 'Live MCP consumer configuration differs from its registered configuration.'}}
+        foreach($key in @($expectedKeys)+@($profile.key)){if([string]$launch[$key] -cne [string]$Configuration[$key]){throw 'Live MCP consumer configuration differs from its registered configuration.'}}
     }
 }
 function ConvertTo-MCPHosts([string[]]$Hosts){
@@ -57,7 +80,8 @@ function Get-MCPChangeDirectory([hashtable]$Layout,[string]$ID){
     return $path
 }
 function Read-MCPChange([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Pending){
-    if($Role -cnotin @('runtime','toolhub') -or $Pending.action -cne 'configure-mcp-hosts' -or $Pending.configuration.format -ne 1 -or $Pending.configuration.scope -cne 'mcp-hosts' -or $Pending.configuration.role -cne $Role -or $Pending.replicas -ne 1){throw 'Invalid MCP configuration journal.'}
+    $profile=Get-NetworkHostProfile $Role
+    if($Pending.action -cne $profile.action -or $Pending.configuration.format -ne 1 -or $Pending.configuration.scope -cne $profile.scope -or $Pending.configuration.role -cne $Role -or $Pending.replicas -ne 1){throw 'Invalid network host configuration journal.'}
     foreach($key in @('id','sha256','manifest')){if($Pending.prior[$key] -cne $Pending.target[$key]){throw 'MCP configuration cannot replace code.'}}
     if($Pending.prior.config_sha256 -ceq $Pending.target.config_sha256){throw 'MCP configuration versions are identical.'}
     $descriptor=Read-ReleaseDescriptor $Layout $Pending.prior -Verify
@@ -71,12 +95,12 @@ function Read-MCPChange([hashtable]$Layout,[string]$Role,[System.Collections.IDi
         foreach($value in $config.Values){if($value -isnot [string]){throw 'Service configuration values must be strings.'}}
         $result[$version]=@{bytes=$bytes;config=$config}
     }
-    $keys=@($result.prior.config.Keys|Where-Object{$_ -cne 'MCP_ALLOWED_HOSTS'})
-    $nextKeys=@($result.target.config.Keys|Where-Object{$_ -cne 'MCP_ALLOWED_HOSTS'})
+    $keys=@($result.prior.config.Keys|Where-Object{$_ -cne $profile.key})
+    $nextKeys=@($result.target.config.Keys|Where-Object{$_ -cne $profile.key})
     if(@(Compare-Object $keys $nextKeys).Count){throw 'MCP migration changed unrelated keys.'}
     foreach($key in $keys){if($result.prior.config[$key] -cne $result.target.config[$key]){throw 'MCP migration changed unrelated configuration.'}}
-    $next=[string]$result.target.config['MCP_ALLOWED_HOSTS']
-    if($next -cne (ConvertTo-MCPHosts @(if($next){$next.Split(',')})) -or $next -ceq [string]$result.prior.config['MCP_ALLOWED_HOSTS']){throw 'MCP host policy did not change or is not canonical.'}
+    $next=[string]$result.target.config[$profile.key]
+    if($next -cne (ConvertTo-NetworkHosts $Role @(if($next){$next.Split(',')})) -or $next -ceq [string]$result.prior.config[$profile.key]){throw 'Network host policy did not change or is not canonical.'}
     if($Pending.configuration['previous_after']){
         $before=$Pending.configuration.previous_before;$after=$Pending.configuration.previous_after
         if(-not $before){throw 'Missing prior-code binding.'}
@@ -86,7 +110,7 @@ function Read-MCPChange([hashtable]$Layout,[string]$Role,[System.Collections.IDi
     return $result
 }
 function Write-MCPConfiguration([hashtable]$Layout,[string]$Role,[byte[]]$Bytes){
-    if($Role -cnotin @('runtime','toolhub')){throw 'Invalid MCP configuration role.'}
+    $null=Get-NetworkHostProfile $Role
     $path=Join-Path $Layout.config_root ('services/'+$Role+'.json');Assert-ReleasePhysicalPath $Layout.config_root $path
     $temporary=$path+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
     try{[IO.File]::WriteAllBytes($temporary,$Bytes);[IO.File]::Move($temporary,$path,$true)}
@@ -122,11 +146,11 @@ function Restore-PendingMCPConfiguration([hashtable]$Layout,[string]$Role,[strin
     if($catalog.services[$Role].pending.id -cne $pending.id){throw 'MCP recovery identity changed.'}
     $catalog.services[$Role].pending=$null;$catalog.generation++
     Write-PlatformJson (Join-Path $Layout.release_root 'current.json') $catalog
-    return @{operation=$pending.id;outcome='restored_prior';role=$Role;kind='mcp_configuration';current=$pending.prior.id;non_target_unchanged=(Test-ReleaseSnapshotsEqual $pending.non_target $after);non_target_unchanged_during_recovery=(Test-ReleaseSnapshotsEqual $before $after);readiness='verified'}
+    return @{operation=$pending.id;outcome='restored_prior';role=$Role;kind=(Get-NetworkHostProfile $Role).kind;current=$pending.prior.id;non_target_unchanged=(Test-ReleaseSnapshotsEqual $pending.non_target $after);non_target_unchanged_during_recovery=(Test-ReleaseSnapshotsEqual $before $after);readiness='verified'}
 }
 function Set-ServiceMCPHosts([hashtable]$Layout,[string]$Role,[string[]]$Hosts,[string]$Scripts,[IO.FileStream]$Lock,[int]$TimeoutSeconds=30,[scriptblock]$Checkpoint={param($point)}){
-    if($Role -cnotin @('runtime','toolhub')){throw 'MCP policy is owned by runtime or toolhub.'}
-    $next=ConvertTo-MCPHosts $Hosts
+    $profile=Get-NetworkHostProfile $Role
+    $next=ConvertTo-NetworkHosts $Role $Hosts
     Assert-NoPendingOwnerMigration $Layout
     $catalog=Read-ReleaseCatalog $Layout;Assert-NoPendingRelease $catalog
     if($catalog.format -ne 2){throw 'MCP configuration needs a versioned deployment.'}
@@ -136,7 +160,7 @@ function Set-ServiceMCPHosts([hashtable]$Layout,[string]$Role,[string[]]$Hosts,[
     $bytes=[IO.File]::ReadAllBytes((Join-Path $Layout.config_root ('services/'+$Role+'.json')))
     if((Get-BytesHash $bytes) -cne $prior.config_sha256){throw 'MCP configuration changed during preparation.'}
     $config=[Text.Encoding]::UTF8.GetString($bytes)|ConvertFrom-Json -AsHashtable
-    if([string]$config['MCP_ALLOWED_HOSTS'] -ceq $next){throw 'MCP policy is already selected.'}
+    if([string]$config[$profile.key] -ceq $next){throw 'Host policy is already selected.'}
     # Managed ingress and producers must be stopped for this maintenance window.
     # The operator must also exclude unmanaged direct API clients, as for backup.
     Assert-MCPIngressStopped $Layout
@@ -146,14 +170,14 @@ function Set-ServiceMCPHosts([hashtable]$Layout,[string]$Role,[string[]]$Hosts,[
     $snapshot=Get-ReleaseProcessSnapshot $Layout
     if(@($snapshot|Where-Object role -eq $Role).Count -ne 1){throw 'Start exactly one managed target service before configuring it.'}
     Wait-ReleaseReady $Layout $Role 1 $prior $TimeoutSeconds
-    $targetConfig=$config.Clone();$targetConfig.MCP_ALLOWED_HOSTS=$next
+    $targetConfig=$config.Clone();$targetConfig[$profile.key]=$next
     $targetBytes=[Text.Encoding]::UTF8.GetBytes((ConvertTo-Json -InputObject $targetConfig -Depth 12))
     $target=$prior.Clone();$target.config_sha256=Get-BytesHash $targetBytes
     $id=[guid]::NewGuid().ToString('N');$directory=Get-MCPChangeDirectory $Layout $id
     New-ProtectedDirectory $directory
     [IO.File]::WriteAllBytes((Join-Path $directory 'prior.dpapi'),(Protect-RecoveryBytes $bytes))
     [IO.File]::WriteAllBytes((Join-Path $directory 'target.dpapi'),(Protect-RecoveryBytes $targetBytes))
-    $pending=@{id=$id;action='configure-mcp-hosts';phase='prepared';prior=$prior;target=$target;replicas=1;non_target=@($snapshot|Where-Object role -ne $Role);configuration=@{format=1;scope='mcp-hosts';role=$Role};started_at=[datetime]::UtcNow.ToString('o')}
+    $pending=@{id=$id;action=$profile.action;phase='prepared';prior=$prior;target=$target;replicas=1;non_target=@($snapshot|Where-Object role -ne $Role);configuration=@{format=1;scope=$profile.scope;role=$Role};started_at=[datetime]::UtcNow.ToString('o')}
     $previous=$catalog.services[$Role]['previous']
     if($previous -and $previous['config_sha256'] -ceq $prior.config_sha256){
         Assert-CompatibleRelease (Read-ReleaseDescriptor $Layout $previous -Verify) $descriptor
@@ -183,7 +207,7 @@ function Set-ServiceMCPHosts([hashtable]$Layout,[string]$Role,[string[]]$Hosts,[
         }
         $catalog.services[$Role].current=$target;$catalog.services[$Role].pending=$null;$catalog.generation++
         Write-PlatformJson (Join-Path $Layout.release_root 'current.json') $catalog; & $Checkpoint 'committed'
-        return @{operation=$id;outcome='committed';role=$Role;kind='mcp_configuration';current=$target.id;allowed_hosts=$next;non_target_unchanged=$true;readiness='verified'}
+        return @{operation=$id;outcome='committed';role=$Role;kind=$profile.kind;current=$target.id;allowed_hosts=$next;non_target_unchanged=$true;readiness='verified'}
     }catch{
         $failure=$_;$observed=Read-ReleaseCatalog $Layout
         if($observed.services[$Role]['pending']){$null=Restore-PendingMCPConfiguration $Layout $Role $Scripts $Lock $TimeoutSeconds}

@@ -1,4 +1,4 @@
-param([string]$CrashRoot='',[string]$CrashPoint='',[ValidateSet('runtime','toolhub')][string]$Role='runtime')
+param([string]$CrashRoot='',[string]$CrashPoint='',[ValidateSet('runtime','toolhub','sources')][string]$Role='runtime')
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -9,13 +9,20 @@ $fixtureScripts=Join-Path $PSScriptRoot 'fixtures/mcp-config'
 # still runs against these actual registered-layout process records.
 $script:extraRoot=$null
 function Get-MCPManagedRoots([hashtable]$Layout){return ,@( $Layout; if($script:extraRoot){$script:extraRoot} )}
+function Test-HostValues([string]$Service,[string[]]$Hosts){
+    if($Service -cne 'sources'){return ,$Hosts}
+    return ,@($Hosts|ForEach-Object{if($_ -ceq '127.0.0.1:8101'){'example.com'}elseif($_ -ceq '127.0.0.1:8098'){'example.org'}else{throw 'Unknown synthetic host mapping.'}})
+}
+function Set-TestHosts([hashtable]$Target,[string]$Service,[string[]]$Hosts,[string]$Scripts,[IO.FileStream]$Lock,[int]$TimeoutSeconds=30,[scriptblock]$Checkpoint={param($point)}){
+    Set-ServiceMCPHosts $Target $Service (Test-HostValues $Service $Hosts) $Scripts $Lock $TimeoutSeconds $Checkpoint
+}
 if($CrashRoot){
     if(-not(Test-PathWithin $CrashRoot 'D:\workspace\agent-platform\local\evidence')){throw 'Invalid fault fixture root.'}
     $layout=Get-PlatformLayout $repo (Join-Path $CrashRoot 'layout.json');$lock=Enter-PlatformMaintenance $layout.state_root
     try{
         $checkpoint={param($point) if($point -ceq $CrashPoint){[Environment]::Exit(197)}}
         if($CrashPoint -in @('reverting','prior_configuration_written','recovery_ready')){Restore-PendingMCPConfiguration $layout $Role $fixtureScripts $lock 4 $checkpoint|Out-Null}
-        else{Set-ServiceMCPHosts $layout $Role @('127.0.0.1:8101','127.0.0.1:8098') $fixtureScripts $lock 4 $checkpoint|Out-Null}
+        else{Set-TestHosts $layout $Role @('127.0.0.1:8101','127.0.0.1:8098') $fixtureScripts $lock 4 $checkpoint|Out-Null}
     }finally{$lock.Dispose()}
     throw 'MCP fault checkpoint not reached.'
 }
@@ -31,7 +38,9 @@ function Reject([scriptblock]$Action,[string]$Pattern,[string]$Name){$message=''
 function Assert-Hosts([string]$Service,[string]$Expected){
     $catalog=Read-ReleaseCatalog $layout;$config=Read-ReleaseJson (Join-Path $layout.config_root ('services/'+$Service+'.json'))
     Wait-ReleaseReady $layout $Service 1 $catalog.services[$Service].current 4
-    $reply=Invoke-RestMethod ('http://'+$config.LISTEN+'/fixture/mcp-hosts') -Headers @{Authorization=('Bearer '+$config.SERVICE_TOKEN)} -NoProxy -TimeoutSec 3
+    $suffix=if($Service -ceq 'sources'){'source-hosts'}else{'mcp-hosts'}
+    if($Service -ceq 'sources'){$Expected=ConvertTo-SourceHosts (Test-HostValues $Service $Expected.Split(','))}
+    $reply=Invoke-RestMethod ('http://'+$config.LISTEN+'/fixture/'+$suffix) -Headers @{Authorization=('Bearer '+$config.SERVICE_TOKEN)} -NoProxy -TimeoutSec 3
     if($reply.hosts -cne $Expected){throw 'Actual process loaded different MCP policy.'}
     $null=Get-BoundRuntimeConfiguration $layout $catalog
 }
@@ -54,10 +63,11 @@ try{
     $null=Invoke-ReleaseFixtureSQL $layout $db ('CREATE TABLE runs(id text,status text); GRANT SELECT ON runs TO '+$access.created_roles[0])
     $catalog=@{format=2;generation=1;services=@{}}
     $marker=Join-Path $proof 'unready.marker'
-    foreach($service in @('runtime','toolhub')){
+    foreach($service in @('runtime','toolhub','sources')){
         $config=Read-ReleaseJson (Join-Path $layout.config_root 'services/runtime.json')
         $listener=[Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback,0);$listener.Start();$port=$listener.LocalEndpoint.Port;$listener.Stop()
         $config.LISTEN='127.0.0.1:'+$port;$config.MCP_ALLOWED_HOSTS='127.0.0.1:8101';$config.unready_mcp_marker=$marker
+        if($service -ceq 'sources'){$config.SOURCE_ALLOWED_HOSTS='example.com'}
         Write-PlatformJson (Join-Path $layout.config_root ('services/'+$service+'.json')) $config
         $relative='bundles/'+$service+'/current.exe';$path=Resolve-ReleasePath $layout.release_root $relative;New-Item -ItemType Directory -Path (Split-Path -Parent $path) -Force|Out-Null;Copy-Item -LiteralPath $binary -Destination $path
         $reference=New-ReleaseDescriptor $layout $service @{binary=$relative} @{http='synthetic-v1';data='none';engines=@();tools=@()} @{kind='synthetic';dirty=$false}
@@ -67,33 +77,38 @@ try{
     }
     Write-PlatformJson (Join-Path $layout.release_root 'current.json') $catalog
     $lock=Enter-PlatformMaintenance $layout.state_root
-    foreach($service in @('runtime','toolhub')){& (Join-Path $fixtureScripts 'Start-Local.ps1') -LayoutPath $layout.layout_path -Service $service -MaintenanceLock $lock;Assert-Hosts $service '127.0.0.1:8101'}
+    foreach($service in @('runtime','toolhub','sources')){& (Join-Path $fixtureScripts 'Start-Local.ps1') -LayoutPath $layout.layout_path -Service $service -MaintenanceLock $lock;Assert-Hosts $service '127.0.0.1:8101'}
     foreach($bad in @('https://example.com','*.test:443','host:0','host:99999','host:80/path','HOST:10','host:080','host.:10')){Reject {ConvertTo-MCPHosts @($bad)} 'MCP' ('reject_'+$bad)}
     Check ((ConvertTo-MCPHosts @('host:80','[::1]:80')) -ceq '[::1]:80,host:80') 'explicit_default_ports_preserved'
-    foreach($service in @('runtime','toolhub')){
+    foreach($bad in @('https://example.com','*.example.com','example.com:443','127.0.0.1','[::1]','localhost','host.local','EXAMPLE.COM','example.com.','a..com','-a.com','a-.com','example.com/path','user@example.com')){Reject {ConvertTo-SourceHosts @($bad)} 'Sources' ('source_reject_'+$bad)}
+    Reject {ConvertTo-SourceHosts @()} 'Sources' 'empty_sources_policy_rejected_without_default_fallback'
+    Reject {ConvertTo-SourceHosts @('example.com','example.com')} 'Duplicate' 'duplicate_source_host_rejected'
+    Check ((ConvertTo-SourceHosts @('example.org','example.com')) -ceq 'example.com,example.org') 'source_hosts_canonical'
+    foreach($service in @('runtime','toolhub','sources')){
+        $hostKey=(Get-NetworkHostProfile $service).key
         $others=Get-ReleaseProcessSnapshot $layout $service
         $entries=Read-PlatformProcesses $layout;$live=@($entries|Where-Object role -eq $service)[0]
         $savedLaunch=[IO.File]::ReadAllBytes($live.launch_config);$savedProcesses=[IO.File]::ReadAllBytes((Join-Path $layout.state_root 'processes.json'))
-        $drift=Read-ReleaseJson $live.launch_config;$drift.MCP_ALLOWED_HOSTS='127.0.0.1:1';Write-PlatformJson $live.launch_config $drift
+        $drift=Read-ReleaseJson $live.launch_config;$drift[$hostKey]='127.0.0.1:1';Write-PlatformJson $live.launch_config $drift
         $live.launch_config_sha256=(Get-FileHash -LiteralPath $live.launch_config).Hash.ToLowerInvariant();Write-PlatformJson (Join-Path $layout.state_root 'processes.json') $entries
-        Reject {Set-ServiceMCPHosts $layout $service @('127.0.0.1:8098') $fixtureScripts $lock 4} 'configuration differs' ($service+'_live_launch_drift_refused')
+        Reject {Set-TestHosts $layout $service @('127.0.0.1:8098') $fixtureScripts $lock 4} 'configuration differs' ($service+'_live_launch_drift_refused')
         [IO.File]::WriteAllBytes($live.launch_config,$savedLaunch);[IO.File]::WriteAllBytes((Join-Path $layout.state_root 'processes.json'),$savedProcesses)
         $runtimeConfig=Read-ReleaseJson (Join-Path $layout.config_root 'services/runtime.json');$runtimeConfig.DATABASE_URL+='&dbname=postgres'
         Reject {Assert-MCPExecutionIdle $layout $runtimeConfig} 'explicit local PostgreSQL' ($service+'_query_database_override_refused')
         $script:extraRoot=@{state_root=(Join-Path $proof 'other-run');release_root=$layout.release_root}
         $foreign=$live.Clone();$foreign.role='worker';Write-PlatformJson (Join-Path $script:extraRoot.state_root 'processes.json') @($foreign)
-        Reject {Set-ServiceMCPHosts $layout $service @('127.0.0.1:8098') $fixtureScripts $lock 4} 'every registered layout' ($service+'_cross_layout_ingress_refused')
+        Reject {Set-TestHosts $layout $service @('127.0.0.1:8098') $fixtureScripts $lock 4} 'every registered layout' ($service+'_cross_layout_ingress_refused')
         $script:extraRoot=$null
         $null=Invoke-ReleaseFixtureSQL $layout $db "INSERT INTO runs VALUES('active','queued')"
-        Reject {Set-ServiceMCPHosts $layout $service @('127.0.0.1:8098') $fixtureScripts $lock 4} 'Execution work is active' ($service+'_active_runs_denied')
+        Reject {Set-TestHosts $layout $service @('127.0.0.1:8098') $fixtureScripts $lock 4} 'Execution work is active' ($service+'_active_runs_denied')
         $null=Invoke-ReleaseFixtureSQL $layout $db 'DELETE FROM runs'
-        $null=Set-ServiceMCPHosts $layout $service @('127.0.0.1:8101','127.0.0.1:8098') $fixtureScripts $lock 4
+        $null=Set-TestHosts $layout $service @('127.0.0.1:8101','127.0.0.1:8098') $fixtureScripts $lock 4
         Assert-Hosts $service '127.0.0.1:8098,127.0.0.1:8101'
         $current=Read-ReleaseCatalog $layout
         Check ($current.services[$service].current.config_sha256 -ceq $current.services[$service].previous.config_sha256) ($service+'_previous_code_binding_preserved')
-        $null=Set-ServiceMCPHosts $layout $service @('127.0.0.1:8101') $fixtureScripts $lock 4
+        $null=Set-TestHosts $layout $service @('127.0.0.1:8101') $fixtureScripts $lock 4
         [IO.File]::WriteAllText($marker,'synthetic failure')
-        Reject {Set-ServiceMCPHosts $layout $service @('127.0.0.1:8101','127.0.0.1:8098') $fixtureScripts $lock 1} 'ready' ($service+'_readiness_failure_restores_prior')
+        Reject {Set-TestHosts $layout $service @('127.0.0.1:8101','127.0.0.1:8098') $fixtureScripts $lock 1} 'ready' ($service+'_readiness_failure_restores_prior')
         Remove-Item -LiteralPath $marker;Assert-Hosts $service '127.0.0.1:8101'
         $lock.Dispose();$lock=$null
         foreach($point in @('prepared','configuration_replaced','started','committed','prior_configuration_written')){
@@ -103,7 +118,7 @@ try{
             if($point -eq 'committed'){
                 Assert-Hosts $service '127.0.0.1:8098,127.0.0.1:8101'
                 Reject {Invoke-ReleaseChange $layout $service recover $null $fixtureScripts $lock 4} 'No pending' ($service+'_committed_not_rewound')
-                $null=Set-ServiceMCPHosts $layout $service @('127.0.0.1:8101') $fixtureScripts $lock 4
+                $null=Set-TestHosts $layout $service @('127.0.0.1:8101') $fixtureScripts $lock 4
             }else{$null=Invoke-ReleaseChange $layout $service recover $null $fixtureScripts $lock 4}
             Assert-Hosts $service '127.0.0.1:8101'
             Check (Test-ReleaseSnapshotsEqual $others (Get-ReleaseProcessSnapshot $layout $service)) ($service+'_crash_'+$point+'_non_target_preserved')
@@ -112,7 +127,7 @@ try{
         Crash $service 'started';$lock=Enter-PlatformMaintenance $layout.state_root
         $entries=Read-PlatformProcesses $layout;$live=@($entries|Where-Object role -eq $service)[0]
         $savedLaunch=[IO.File]::ReadAllBytes($live.launch_config);$savedProcesses=[IO.File]::ReadAllBytes((Join-Path $layout.state_root 'processes.json'))
-        $drift=Read-ReleaseJson $live.launch_config;$drift.MCP_ALLOWED_HOSTS='127.0.0.1:1';Write-PlatformJson $live.launch_config $drift
+        $drift=Read-ReleaseJson $live.launch_config;$drift[$hostKey]='127.0.0.1:1';Write-PlatformJson $live.launch_config $drift
         $live.launch_config_sha256=(Get-FileHash -LiteralPath $live.launch_config).Hash.ToLowerInvariant();Write-PlatformJson (Join-Path $layout.state_root 'processes.json') $entries
         Reject {Invoke-ReleaseChange $layout $service recover $null $fixtureScripts $lock 4} 'configuration differs' ($service+'_recovery_third_launch_refused')
         [IO.File]::WriteAllBytes($live.launch_config,$savedLaunch);[IO.File]::WriteAllBytes((Join-Path $layout.state_root 'processes.json'),$savedProcesses)
@@ -129,7 +144,7 @@ try{
         # Missing source key must not allow an injected live launch key.
         $catalog=Read-ReleaseCatalog $layout;$path=Join-Path $layout.config_root ('services/'+$service+'.json')
         $savedConfig=[IO.File]::ReadAllBytes($path);$savedCatalog=[IO.File]::ReadAllBytes((Join-Path $layout.release_root 'current.json'))
-        $absent=Read-ReleaseJson $path;$null=$absent.Remove('MCP_ALLOWED_HOSTS');Write-PlatformJson $path $absent
+        $absent=Read-ReleaseJson $path;$null=$absent.Remove($hostKey);Write-PlatformJson $path $absent
         $catalog.services[$service].current.config_sha256=(Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant()
         $entries=Read-PlatformProcesses $layout;$live=@($entries|Where-Object role -eq $service)[0];$savedProcesses=[IO.File]::ReadAllBytes((Join-Path $layout.state_root 'processes.json'))
         $live.source_config_sha256=$catalog.services[$service].current.config_sha256;Write-PlatformJson (Join-Path $layout.state_root 'processes.json') $entries;Write-PlatformJson (Join-Path $layout.release_root 'current.json') $catalog
@@ -141,7 +156,7 @@ try{
 finally{
     $safe=$true
     if($child){try{if(-not $child.HasExited){$child.Kill();if(-not $child.WaitForExit(10000)){throw 'Child still alive'}};$child.Dispose()}catch{$safe=$false}}
-    if($safe){try{if(-not $lock){$lock=Enter-PlatformMaintenance $layout.state_root};foreach($service in @('runtime','toolhub')){& (Join-Path $fixtureScripts 'Stop-Local.ps1') -LayoutPath $layout.layout_path -Service $service -MaintenanceLock $lock}}catch{$safe=$false;$result.cleanup_failure='Synthetic process cleanup failed'}finally{if($lock){$lock.Dispose()}}}
+    if($safe){try{if(-not $lock){$lock=Enter-PlatformMaintenance $layout.state_root};foreach($service in @('runtime','toolhub','sources')){& (Join-Path $fixtureScripts 'Stop-Local.ps1') -LayoutPath $layout.layout_path -Service $service -MaintenanceLock $lock}}catch{$safe=$false;$result.cleanup_failure='Synthetic process cleanup failed'}finally{if($lock){$lock.Dispose()}}}
     if($safe -and $access){Remove-ReleaseAccessFixture $layout $access}
     if($safe -and $started){& (Join-Path $layout.postgres_bin 'pg_ctl.exe') -D $cluster stop -m fast -w *> (Join-Path $proof 'pg-stop.log');if($LASTEXITCODE){$safe=$false}}
     $result.cleanup_complete=$safe;$result.checks=@($checks.ToArray());if(-not $safe){$result.passed=$false};Write-PlatformJson (Join-Path $proof 'result.json') $result

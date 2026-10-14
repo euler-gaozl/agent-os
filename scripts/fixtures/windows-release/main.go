@@ -37,7 +37,7 @@ func main() {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			return
 		}
-		if strings.Contains(config["MCP_ALLOWED_HOSTS"], ":8098") && config["unready_mcp_marker"] != "" {
+		if (strings.Contains(config["MCP_ALLOWED_HOSTS"], ":8098") || strings.Contains(config["SOURCE_ALLOWED_HOSTS"], "example.org")) && config["unready_mcp_marker"] != "" {
 			if _, err := os.Stat(config["unready_mcp_marker"]); err == nil {
 				w.WriteHeader(http.StatusServiceUnavailable)
 				return
@@ -64,6 +64,13 @@ func main() {
 			return
 		}
 		_ = json.NewEncoder(w).Encode(map[string]string{"hosts": config["MCP_ALLOWED_HOSTS"]})
+	})
+	mux.HandleFunc("/fixture/source-hosts", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+config["SERVICE_TOKEN"] {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]string{"hosts": config["SOURCE_ALLOWED_HOSTS"]})
 	})
 	address := config["LISTEN"]
 	if address == "" {

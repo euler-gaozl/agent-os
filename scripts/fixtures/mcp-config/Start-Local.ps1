@@ -2,7 +2,7 @@ param([string]$LayoutPath,[string]$Service,[IO.FileStream]$MaintenanceLock,[stri
 # Test-only lifecycle for synthetic HTTP processes on ephemeral ports. The
 # production Start-Local cross-layout exclusion remains enabled and unchanged.
 $layout=Get-Content -LiteralPath $LayoutPath -Raw|ConvertFrom-Json -AsHashtable
-if(-not(Test-PathWithin $layout.state_root 'D:\workspace\agent-platform\local\evidence') -or $Service -cnotin @('runtime','toolhub')){throw 'Invalid isolated configuration fixture.'}
+if(-not(Test-PathWithin $layout.state_root 'D:\workspace\agent-platform\local\evidence') -or $Service -cnotin @('runtime','toolhub','sources')){throw 'Invalid isolated configuration fixture.'}
 $release=Get-PlatformRelease $layout $Service $PendingOperation -Verify
 $bytes=[IO.File]::ReadAllBytes((Join-Path $layout.config_root ('services/'+$Service+'.json')))
 if((Get-BytesHash $bytes) -cne $release.reference.config_sha256){throw 'Fixture config/release mismatch.'}
