@@ -101,7 +101,9 @@ function Get-BoundRuntimeConfiguration([hashtable]$Layout,[System.Collections.ID
         $hash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
         $bound=$deployment.current
         if($deployment['pending'] -and $deployment.pending['configuration']){
-            if($deployment.pending.configuration.format -ne 1 -or $deployment.pending.configuration.scope -cne 'runtime-default'){throw 'Unknown pending Runtime configuration operation.'}
+            $configurationKnown=$deployment.pending.configuration.scope -ceq 'runtime-default' -and $deployment.pending.action -ceq 'configure-default'
+            $configurationKnown=$configurationKnown -or ($deployment.pending.configuration.scope -ceq 'mcp-hosts' -and $deployment.pending.action -ceq 'configure-mcp-hosts' -and $deployment.pending.configuration.role -ceq 'runtime')
+            if($deployment.pending.configuration.format -ne 1 -or -not $configurationKnown){throw 'Unknown pending Runtime configuration operation.'}
             if($deployment.pending.phase -in @('configuration_written','started','ready')){$bound=$deployment.pending.target}
             elseif($deployment.pending.phase -notin @('prepared','stopped','reverting','recovery_ready')){throw 'Unknown Runtime configuration phase.'}
         }
@@ -124,7 +126,7 @@ function Get-BoundRuntimeConfiguration([hashtable]$Layout,[System.Collections.ID
         # whose tasks will be queried. No credentials are returned or logged.
         $launch=Read-ReleaseJson $entry.launch_config
         try{
-            foreach($key in @('DEFAULT_RUN_ENGINE','DATABASE_URL','LISTEN')){
+            foreach($key in @('DEFAULT_RUN_ENGINE','DATABASE_URL','LISTEN','MCP_ALLOWED_HOSTS')){
                 if([string]$launch[$key] -cne [string]$config[$key]){throw 'Live Runtime execution configuration differs from the registered configuration.'}
             }
         }finally{$launch=$null}

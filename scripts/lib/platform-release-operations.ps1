@@ -1,6 +1,7 @@
 # Requires paths, releases and processes. The catalog is the transaction journal;
 # evidence files are observations and never decide which version is committed.
 . (Join-Path $PSScriptRoot 'platform-engine-configuration.ps1')
+. (Join-Path $PSScriptRoot 'platform-mcp-configuration.ps1')
 function Get-ReleaseProcessSnapshot([hashtable]$Layout,[string]$ExcludeRole='',[switch]$AllowStopped){
     $result=@()
     foreach($entry in (Read-PlatformProcesses $Layout)){
@@ -75,6 +76,7 @@ function Restore-PendingRelease([hashtable]$Layout,[string]$Role,[string]$Script
     $catalog=Read-ReleaseCatalog $Layout;$pending=$catalog.services[$Role]['pending']
     if(-not $pending){throw 'No pending release to recover.'}
     if($pending['configuration']){
+        if($pending.action -ceq 'configure-mcp-hosts'){return Restore-PendingMCPConfiguration $Layout $Role $Scripts $Lock $TimeoutSeconds $Checkpoint}
         if($Role -cne 'runtime'){throw 'Unknown configuration migration role.'}
         return Restore-PendingEngineConfiguration $Layout $Scripts $Lock $TimeoutSeconds $Checkpoint
     }
