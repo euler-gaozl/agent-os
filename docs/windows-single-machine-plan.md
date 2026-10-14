@@ -2,9 +2,13 @@
 
 更新：2026-10-14。用户最新优先级：先完整规划，在现有 Windows 电脑上完成可以日常使用的单机版，再推进服务器阶段。本文件是执行顺序和验收范围的权威；历史测试证据继续保留，不因修改规划而变成新版本的通过结果。
 
-最新要求：取消输入/输出人为上限，使用模型原生能力。实际官方元数据为Flash总窗口1048576、最大输出393216；[实施与验收范围](architecture/model-native-limits.md)已记录，尚未部署。
+最新要求：取消输入/输出人为上限，使用模型原生能力。实际官方元数据为Flash总窗口1048576、最大输出393216；[实施与验收范围](architecture/model-native-limits.md)已记录。Registry/Runtime/Worker/Console 已安装，Futures 业务入口仍待对齐，不代表输入输出调整已全部交付。
 
-当前收尾：正式服务仍正常，原生长度候选尚未安装。Runtime 已修复默认引擎切为 native 后历史 Agent 新任务的兼容：全旧配置树仍使用 budget-v3，混合原生/旧配置树拒绝。独立评审发现重新验证展开后的提示词会误拒绝历史配置；新增真实 Snapshot 绑定提示词的回归先复现失败，再改为仅校验模型协议范围。修复后真实隔离 PostgreSQL 46 项零跳过及 vet/build 通过，见 `ops/native-legacy.path` 的 `result-review.json`；原失败留在 `native-legacy-prompt-regression-3fca4e05638f44e2b30c96603eade37c`。
+**当前实际状态（本次进度核对后）：**标准升级前备份已在隔离集群实际还原，44 个关系指纹/结构权限、10 个账号登录、3 条凭证解密及 6 份来源归档验证通过，隔离集群已停止。四个服务各完成更新→回退→重新更新，共 12 次真实切换；全部提交、就绪检查及非目标实例不变检查通过。Runtime 默认已通过标准配置事务切到 `dsh-source-639ed015-native-v4`；既有旧 Agent 仍按冻结配置回落 budget-v3，尚未发布原生模型能力的研究 Agent 新版本，也未执行原生版本真实研究。当前 12 个正式实例、核心健康检查正常，pending 为 0；Windows 隔离代码执行仍未配置。证据见 `ops/native-activation.path` 及 [本次安装记录](native-model-release-20261014.md)。本轮无付费调用、无 Actions。
+
+下一步按现有范围收尾：Futures 输入/输出链路对齐 → 同一真实研究任务的成稿质量验收 → 剩余权限/完整页面/故障及生命周期验收 → 最后一次统一 CI。P0/P1 已关闭，其余阶段的余项保留，不以此次安装替代完整交付。
+
+以下为安装前的实现与检查记录。Runtime 已修复默认引擎切为 native 后历史 Agent 新任务的兼容：全旧配置树仍使用 budget-v3，混合原生/旧配置树拒绝。独立评审发现重新验证展开后的提示词会误拒绝历史配置；新增真实 Snapshot 绑定提示词的回归先复现失败，再改为仅校验模型协议范围。修复后真实隔离 PostgreSQL 46 项零跳过及 vet/build 通过，见 `ops/native-legacy.path` 的 `result-review.json`；原失败留在 `native-legacy-prompt-regression-3fca4e05638f44e2b30c96603eade37c`。
 Registry 增加鉴权的模型配置协议声明，Console 保存前探测已绑定 Registry，旧版/错误响应时不转发保存；Registry 37 项、Console 30 项零跳过，vet、独立二进制构建及无配置 CLI 声明检查通过，见 `ops/native-management.path`。Runtime `7d19261`、Registry `755b8de`、Console `00bc628` 已推送功能分支；正式安装未变。发布器已接入协议绑定与回退保护，41 项模型管理检查和 53 项 native 默认切换故障检查通过，详见 [Windows 原生模型发布检查](native-model-release-20261014.md)。Futures 业务端容量尚需对齐。不能据此算原生长度正式交付；本轮零付费调用、零 Actions。
 整体仍只有 P0/P1 完整关闭；P2/P2.5/P3/P4 的已完成部分保留各自证据，P5 研究质量仍未通过。下一步不新增功能：完成这次安装与回退保护，验收同一真实研究任务，再补剩余权限/页面/故障和最后一次统一 CI。
 

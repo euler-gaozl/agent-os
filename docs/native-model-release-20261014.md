@@ -1,6 +1,17 @@
 # 原生模型能力的 Windows 发布检查
 
-当前为安装候选，正式默认仍为 budget-v3。此文件记录可重复检查的边界，不代表真实研究已经验收。
+当前四个服务已正式安装，默认已切为 native-v4。既有旧 Agent 配置仍走 budget-v3。此文件记录可重复检查与实际安装的边界，不代表真实研究已经验收。
+
+## 正式安装与实际回退
+
+本次通过标准维护入口安装：Registry `755b8de85531f0b9620a98beaf1e3a9dccc9d6b0`、Runtime `7d1926162dd8b6e8296963d9b486e7b26fa9c475`、Worker `ff9a2f07f397bf0b408256e8a71644b3d2976376`、Console `00bc6280d13e5b1bb57276b0dedef90ea2226c68`。发布集 `11a632f5be3a4d968ccd469590571a02` 从干净、固定源码构建，保留四份 Harness 及 Node。
+
+- 升级前标准备份实际还原至隔离 PostgreSQL：44 关系指纹/结构权限、10 个账号登录、3 条凭证解密及 6 份来源归档验证通过；未启动 Worker 或调用供应商，隔离集群确认停止。还原报告 `local/restore-checks/f10b99db44364e86aed4f30d3a148649/result.json`。
+- 依序对 Registry、Runtime、Worker、Console 执行更新→回退→重新更新，12 次均 `committed`、`readiness=verified`、`non_target_unchanged=true`。Console 回退前单独停止 Registry，回退后重新启动，保留独立操作日志。
+- 标准 `set-engine -Engine native` 配置事务提交成功，默认 `dsh-source-639ed015-native-v4`，非目标实例不变。随后 doctor 核心检查通过，12 个正式实例，pending 为 0；隔离代码执行未配置的状态仍明确显示。
+- 原始安装/配置事务、版本及 doctor 报告集中于 `ops/native-activation.path` 指向的 `local/evidence/native-activation-66a146b7b1a144588b4d16750787f5ba`。
+
+本次零付费调用、零 Actions。尚未发布研究 Agent 的原生能力新 revision，也未以该新版本执行真实研究；Futures 业务端的旧输入和回包边界仍待对齐。完整 P2–P5 余项不因本次成功安装关闭。
 
 ## 服务与历史兼容
 
@@ -22,4 +33,4 @@
 
 第一次模型管理外层 runner 误读 `pg_ctl status` 遗留退出码，虽然内部 30 项通过仍报告失败；该记录保留。修正 runner 并扩展检查后重新执行。独立评审指出的 Registry-only 跳过检查、旧 Console 迟到提交窗口及原始元数据数组展开均已修复，本轮后续复审以实际结论为准。
 
-上述本机增量无付费模型请求、无 Actions。完整正式包安装、最新备份实际恢复、服务升级回退，以及同一真实期货任务的成稿质量仍需后续证据；Futures 业务端原有输入/回复容量也尚需对齐原生执行链，不能把 Console 的大消息验证外推为业务端已经完成。
+上述检查均无付费模型请求、无 Actions。完整正式包安装、备份实际恢复和服务升级回退已补齐本页前述证据；同一真实期货任务的成稿质量与 Futures 业务端输入/回复容量仍待完成，不能把 Console 的大消息验证外推为业务端已经完成。
