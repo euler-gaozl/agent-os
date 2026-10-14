@@ -18,7 +18,16 @@ function Test-HostValues([string]$Service,[string[]]$Hosts){
     return ,@($Hosts|ForEach-Object{if($_ -ceq '127.0.0.1:8101'){'example.com'}elseif($_ -ceq '127.0.0.1:8098'){'example.org'}else{throw 'Unknown synthetic host mapping.'}})
 }
 function Set-TestHosts([hashtable]$Target,[string]$Service,[string[]]$Hosts,[string]$Scripts,[IO.FileStream]$Lock,[int]$TimeoutSeconds=30,[scriptblock]$Checkpoint={param($point)}){
-    Set-ServiceMCPHosts $Target $Service (Test-HostValues $Service $Hosts) $Scripts $Lock $TimeoutSeconds $Checkpoint -Policy $Policy
+    $receiptFixtureLayout=$Target;$receiptFixtureService=$Service;$receiptFixtureCheckpoint=$Checkpoint
+    $guardedCheckpoint={param($point)
+        # The lightweight HTTP fixture startup omits production's source-engine
+        # checks. Exercise its real configuration binding at stable journal phases.
+        if($receiptFixtureService -ceq 'runtime' -and $point -in @('prepared','stopped','configuration_written','started','ready','committed')){
+            $null=Get-BoundRuntimeConfiguration $receiptFixtureLayout (Read-ReleaseCatalog $receiptFixtureLayout)
+        }
+        & $receiptFixtureCheckpoint $point
+    }
+    Set-ServiceMCPHosts $Target $Service (Test-HostValues $Service $Hosts) $Scripts $Lock $TimeoutSeconds $guardedCheckpoint -Policy $Policy
 }
 if($CrashRoot){
     if(-not(Test-PathWithin $CrashRoot 'D:\workspace\agent-platform\local\evidence')){throw 'Invalid fault fixture root.'}
@@ -91,6 +100,11 @@ try{
     Reject {ConvertTo-SourceHosts @('example.com','example.com')} 'Duplicate' 'duplicate_source_host_rejected'
     Check ((ConvertTo-SourceHosts @('example.org','example.com')) -ceq 'example.com,example.org') 'source_hosts_canonical'
     if($Policy -ceq 'receipt-exports'){
+        Check ((Get-ReceiptProjectionProbeURI @{}) -ceq 'http://127.0.0.1:8094/v1/receipt-projections') 'receipt_probe_matches_runtime_default_listener'
+        Check ((Get-ReceiptProjectionProbeURI @{LISTEN=''}) -ceq 'http://127.0.0.1:8094/v1/receipt-projections') 'receipt_probe_empty_listener_matches_runtime_default'
+        Check ((Get-ReceiptProjectionProbeURI @{LISTEN='127.0.0.1:18094'}) -ceq 'http://127.0.0.1:18094/v1/receipt-projections') 'receipt_probe_explicit_local_listener'
+        foreach($bad in @('https://example.com','example.com:8094','127.0.0.1:0','127.0.0.1:65536','127.0.0.1:8094/path')){Reject {Get-ReceiptProjectionProbeURI @{LISTEN=$bad}} 'Receipt projection' 'receipt_probe_invalid_listener_rejected'}
+        Reject {Get-ReceiptProjectionProbeURI @{LISTEN=8094}} 'must be text' 'receipt_probe_nontext_listener_rejected'
         foreach($bad in @('{}','null','[{"app":"x"}]','[{"app":"x","id":"y","tool":"z","input_path":[],"output_path":["x"]}]')){Reject {ConvertTo-ReceiptExports $bad} 'receipt|Receipt' 'invalid_receipt_projection_denied'}
         Check ((ConvertTo-ReceiptExports '[]') -ceq '[]') 'empty_receipt_policy_is_closed'
         $priorConfigHash=(Get-FileHash -LiteralPath (Join-Path $layout.config_root 'services/runtime.json')).Hash

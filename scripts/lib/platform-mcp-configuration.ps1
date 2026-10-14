@@ -39,9 +39,18 @@ function ConvertTo-ReceiptExports([string]$Value){
     }
     return ConvertTo-Json -InputObject $rules -Depth 8 -Compress
 }
+function Get-ReceiptProjectionProbeURI([System.Collections.IDictionary]$Configuration){
+    if($Configuration.Contains('LISTEN') -and $Configuration['LISTEN'] -isnot [string]){throw 'Receipt projection listener must be text.'}
+    # Match servicehost's default when LISTEN is absent or empty. The probe
+    # always uses loopback and never forwards a service credential remotely.
+    $listen=if($Configuration['LISTEN']){$Configuration['LISTEN']}else{'127.0.0.1:8094'}
+    if($listen -cnotmatch '^127\.0\.0\.1:([0-9]{1,5})$'){throw 'Receipt projection verification needs the managed loopback Runtime.'}
+    $port=[int]$Matches[1]
+    if($port -lt 1 -or $port -gt 65535){throw 'Receipt projection listener port is invalid.'}
+    return 'http://127.0.0.1:'+$port+'/v1/receipt-projections'
+}
 function Assert-ReceiptProjectionConfiguration([hashtable]$Layout,[System.Collections.IDictionary]$Configuration){
-    if([string]$Configuration.LISTEN -cnotmatch '^127\.0\.0\.1:[0-9]{1,5}$'){throw 'Receipt projection verification needs the managed loopback Runtime.'}
-    $uri='http://'+$Configuration.LISTEN+'/v1/receipt-projections'
+    $uri=Get-ReceiptProjectionProbeURI $Configuration
     try{$reply=Invoke-RestMethod $uri -Headers @{Authorization=('Bearer '+$Configuration.SERVICE_TOKEN)} -NoProxy -TimeoutSec 5}
     catch{throw 'Runtime does not expose the required receipt projection protocol; install the supporting Runtime first.'}
     $expected=Get-BytesHash ([Text.Encoding]::UTF8.GetBytes([string]$Configuration['APP_RECEIPT_EXPORTS']))
