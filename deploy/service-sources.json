@@ -26,7 +26,7 @@
       "repository": "agent-os-toolhub"
     },
     "storage": {
-      "commit": "f1efbf98e0f6ee0a41c17ac8a54960208a1c322d",
+      "commit": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c",
       "repository": "agent-os-storage"
     },
     "sources": {
@@ -34,7 +34,7 @@
       "repository": "agent-os-sources"
     },
     "knowledge": {
-      "commit": "09e3b29b368a33fa88affc133092ba3bd63b7a20",
+      "commit": "ed54550f15e115956fc30e08e0e8121b976ee796",
       "repository": "agent-os-knowledge"
     },
     "indexer": {
