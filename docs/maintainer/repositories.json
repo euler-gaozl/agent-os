@@ -1,0 +1,564 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-10-14",
+  "project_id": "project:agent-platform",
+  "source_baseline": "4b8074cf658b4a715fd69ae6207c219a838f033b",
+  "integration_handoff_branch": "feat/end-to-end-delivery",
+  "integration_checkout_note": "主仓从交接分支读取本文件及后续交接提交；source_baseline 是文档前的代码基线，不是包含本文件的自引用提交。其余仓可固定 source_head_at_audit 作审查，部署使用 integration_pins 或核对 installed。",
+  "evidence": "原电脑 ops/maintainer-handoff.path 指向的 repositories.json；deploy/service-sources.json；local/releases/current.json 及固定 manifest",
+  "repositories": [
+    {
+      "id": "repo:agent-os",
+      "name": "agent-os",
+      "url": "https://github.com/euler-gaozl/agent-os",
+      "clone_url": "https://github.com/euler-gaozl/agent-os.git",
+      "branch": "feat/end-to-end-delivery",
+      "source_head_at_audit": "4b8074cf658b4a715fd69ae6207c219a838f033b",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [],
+      "integration_pins": [],
+      "installed": []
+    },
+    {
+      "id": "repo:agent-os-console",
+      "name": "agent-os-console",
+      "url": "https://github.com/euler-gaozl/agent-os-console",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-console.git",
+      "branch": "feat/model-native-limits",
+      "source_head_at_audit": "00bc6280d13e5b1bb57276b0dedef90ea2226c68",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "control"
+      ],
+      "integration_pins": [
+        {
+          "role": "control",
+          "commit": "00bc6280d13e5b1bb57276b0dedef90ea2226c68",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "control",
+          "commit": "00bc6280d13e5b1bb57276b0dedef90ea2226c68",
+          "manifest": "descriptors/control-af4f3ac649224d4d9c7f0446d7e004f1.json",
+          "sdk": {
+            "version": "v0.1.0-rc.3",
+            "module_sum": "h1:1Vxtuif+Fn5+vm8aN+WmK8Idf8rid2je9xfkoEfuQeA=",
+            "zip_sha256": "9fe7df5df1558314b03a0f0107f9a6444b94f51ca192ef71705bb1602de879c0",
+            "commit": "bbbfe34b65ac44c1823b1029349b454aef26ce21",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "observed_at": "2026-10-14",
+          "observation": "固定发布 manifest；并不保证接手时仍在线"
+        }
+      ]
+    },
+    {
+      "id": "repo:agent-os-futures",
+      "name": "agent-os-futures",
+      "url": "https://github.com/euler-gaozl/agent-os-futures",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-futures.git",
+      "branch": "feat/native-task-transport",
+      "source_head_at_audit": "f40a8f8ae8c9ca6cfadef7af67b7f9953d4f24bc",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "futures"
+      ],
+      "integration_pins": [
+        {
+          "role": "futures",
+          "commit": "f40a8f8ae8c9ca6cfadef7af67b7f9953d4f24bc",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "futures",
+          "commit": "f40a8f8ae8c9ca6cfadef7af67b7f9953d4f24bc",
+          "manifest": "descriptors/futures-6b38726600c547be9a19ca329164ff3e.json",
+          "sdk": {
+            "version": "v0.1.0-rc.2",
+            "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
+            "zip_sha256": "6381fef8a276eb62f52329142549d933a6630c0235bd3a50c7ebb4d922b8c3b4",
+            "commit": "f45ca168dee81f864533a8f77f8c203960caad1a",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "observed_at": "2026-10-14",
+          "observation": "固定发布 manifest；并不保证接手时仍在线"
+        }
+      ]
+    },
+    {
+      "id": "repo:agent-os-harness",
+      "name": "agent-os-harness",
+      "url": "https://github.com/euler-gaozl/agent-os-harness",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-harness.git",
+      "branch": "feat/source-owned-harness",
+      "source_head_at_audit": "a8a18e41de719901dbef4513faf898af95822d7a",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [],
+      "integration_pins": [],
+      "installed": []
+    },
+    {
+      "id": "repo:agent-os-indexer",
+      "name": "agent-os-indexer",
+      "url": "https://github.com/euler-gaozl/agent-os-indexer",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-indexer.git",
+      "branch": "feat/independent-service",
+      "source_head_at_audit": "30ed978324aa34a2275a0e27a10a65e85f9e28f9",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "indexer"
+      ],
+      "integration_pins": [
+        {
+          "role": "indexer",
+          "commit": "ccbfbd206f13e10619898ddb52b84e5c1109c7f8",
+          "owner_modules": [
+            {
+              "protocol": "knowledge-indexing-v1",
+              "version": "v0.1.0-rc.1",
+              "module": "github.com/euler-gaozl/agent-os-knowledge",
+              "module_sum": "h1:HZnGpJI81snXYP0mLiI+Wim+IGDrKXnONVhCsqsHG8M=",
+              "commit": "e26584df4f1df22da6f3ee9101933dae8f48d164",
+              "go_mod_sum": "h1:lviyaS6yKk3K9HbzBQp4QEzIbZDhgdWymiUEa12/pZc=",
+              "package": "indexing"
+            }
+          ]
+        }
+      ],
+      "installed": [
+        {
+          "role": "indexer",
+          "commit": "ccbfbd206f13e10619898ddb52b84e5c1109c7f8",
+          "manifest": "descriptors/indexer-595bc54d1df446389563894b69ff3921.json",
+          "sdk": {
+            "version": "v0.1.0-rc.2",
+            "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
+            "zip_sha256": "6381fef8a276eb62f52329142549d933a6630c0235bd3a50c7ebb4d922b8c3b4",
+            "commit": "f45ca168dee81f864533a8f77f8c203960caad1a",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [
+            {
+              "protocol": "knowledge-indexing-v1",
+              "version": "v0.1.0-rc.1",
+              "module": "github.com/euler-gaozl/agent-os-knowledge",
+              "module_sum": "h1:HZnGpJI81snXYP0mLiI+Wim+IGDrKXnONVhCsqsHG8M=",
+              "commit": "e26584df4f1df22da6f3ee9101933dae8f48d164",
+              "go_mod_sum": "h1:lviyaS6yKk3K9HbzBQp4QEzIbZDhgdWymiUEa12/pZc=",
+              "package": "indexing"
+            }
+          ],
+          "observed_at": "2026-10-14",
+          "observation": "固定发布 manifest；并不保证接手时仍在线"
+        }
+      ]
+    },
+    {
+      "id": "repo:agent-os-knowledge",
+      "name": "agent-os-knowledge",
+      "url": "https://github.com/euler-gaozl/agent-os-knowledge",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-knowledge.git",
+      "branch": "feat/independent-service",
+      "source_head_at_audit": "ed54550f15e115956fc30e08e0e8121b976ee796",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "knowledge"
+      ],
+      "integration_pins": [
+        {
+          "role": "knowledge",
+          "commit": "ed54550f15e115956fc30e08e0e8121b976ee796",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "knowledge",
+          "commit": "ed54550f15e115956fc30e08e0e8121b976ee796",
+          "manifest": "descriptors/knowledge-2e2adfc94eb24d4ba1e9c927035d32f6.json",
+          "sdk": {
+            "version": "v0.1.0-rc.2",
+            "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
+            "zip_sha256": "6381fef8a276eb62f52329142549d933a6630c0235bd3a50c7ebb4d922b8c3b4",
+            "commit": "f45ca168dee81f864533a8f77f8c203960caad1a",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "observed_at": "2026-10-14",
+          "observation": "固定发布 manifest；并不保证接手时仍在线"
+        }
+      ]
+    },
+    {
+      "id": "repo:agent-os-registry",
+      "name": "agent-os-registry",
+      "url": "https://github.com/euler-gaozl/agent-os-registry",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-registry.git",
+      "branch": "feat/model-native-limits",
+      "source_head_at_audit": "755b8de85531f0b9620a98beaf1e3a9dccc9d6b0",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "registry"
+      ],
+      "integration_pins": [
+        {
+          "role": "registry",
+          "commit": "755b8de85531f0b9620a98beaf1e3a9dccc9d6b0",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "registry",
+          "commit": "755b8de85531f0b9620a98beaf1e3a9dccc9d6b0",
+          "manifest": "descriptors/registry-aa9af928de2f4d2eb0ae7d30d1dc1c1b.json",
+          "sdk": {
+            "version": "v0.1.0-rc.3",
+            "module_sum": "h1:1Vxtuif+Fn5+vm8aN+WmK8Idf8rid2je9xfkoEfuQeA=",
+            "zip_sha256": "9fe7df5df1558314b03a0f0107f9a6444b94f51ca192ef71705bb1602de879c0",
+            "commit": "bbbfe34b65ac44c1823b1029349b454aef26ce21",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "observed_at": "2026-10-14",
+          "observation": "固定发布 manifest；并不保证接手时仍在线"
+        }
+      ]
+    },
+    {
+      "id": "repo:agent-os-runtime",
+      "name": "agent-os-runtime",
+      "url": "https://github.com/euler-gaozl/agent-os-runtime",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-runtime.git",
+      "branch": "feat/model-native-limits",
+      "source_head_at_audit": "e6c8b935e5e0a00e6bfab14aa099eb8aaf0436d9",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "runtime"
+      ],
+      "integration_pins": [
+        {
+          "role": "runtime",
+          "commit": "e6c8b935e5e0a00e6bfab14aa099eb8aaf0436d9",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "runtime",
+          "commit": "e6c8b935e5e0a00e6bfab14aa099eb8aaf0436d9",
+          "manifest": "descriptors/runtime-1fe2275d5b6f419eaa1c102c8b348909.json",
+          "sdk": {
+            "version": "v0.1.0-rc.3",
+            "module_sum": "h1:1Vxtuif+Fn5+vm8aN+WmK8Idf8rid2je9xfkoEfuQeA=",
+            "zip_sha256": "9fe7df5df1558314b03a0f0107f9a6444b94f51ca192ef71705bb1602de879c0",
+            "commit": "bbbfe34b65ac44c1823b1029349b454aef26ce21",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "observed_at": "2026-10-14",
+          "observation": "固定发布 manifest；并不保证接手时仍在线"
+        }
+      ]
+    },
+    {
+      "id": "repo:agent-os-sandbox",
+      "name": "agent-os-sandbox",
+      "url": "https://github.com/euler-gaozl/agent-os-sandbox",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-sandbox.git",
+      "branch": "feat/independent-service",
+      "source_head_at_audit": "b7a2cdfa7fdb1fe04d89d268e261b99db777ab98",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "sandbox"
+      ],
+      "integration_pins": [
+        {
+          "role": "sandbox",
+          "commit": "9348b8e6ead28da5e1585ee69e469e4b10620d08",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "sandbox",
+          "commit": "9348b8e6ead28da5e1585ee69e469e4b10620d08",
+          "manifest": "descriptors/sandbox-d3942e50051c4e10b0533fb62c43e2ea.json",
+          "sdk": {
+            "version": "v0.1.0-rc.2",
+            "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
+            "zip_sha256": "6381fef8a276eb62f52329142549d933a6630c0235bd3a50c7ebb4d922b8c3b4",
+            "commit": "f45ca168dee81f864533a8f77f8c203960caad1a",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "observed_at": "2026-10-14",
+          "observation": "固定发布 manifest；并不保证接手时仍在线"
+        }
+      ]
+    },
+    {
+      "id": "repo:agent-os-sdk",
+      "name": "agent-os-sdk",
+      "url": "https://github.com/euler-gaozl/agent-os-sdk",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-sdk.git",
+      "branch": "feat/model-native-limits",
+      "source_head_at_audit": "bbbfe34b65ac44c1823b1029349b454aef26ce21",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [],
+      "integration_pins": [],
+      "installed": []
+    },
+    {
+      "id": "repo:agent-os-sources",
+      "name": "agent-os-sources",
+      "url": "https://github.com/euler-gaozl/agent-os-sources",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-sources.git",
+      "branch": "feat/independent-service",
+      "source_head_at_audit": "76511f1738bfbb5d791ad8f804bd54ae23380c03",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "sources"
+      ],
+      "integration_pins": [
+        {
+          "role": "sources",
+          "commit": "29fe0860d424a6f263ed9b274673590d0d8694c2",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "sources",
+          "commit": "29fe0860d424a6f263ed9b274673590d0d8694c2",
+          "manifest": "descriptors/sources-9097b5984dcb4f37a76ad198a9bf4a44.json",
+          "sdk": {
+            "version": "v0.1.0-rc.2",
+            "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
+            "zip_sha256": "6381fef8a276eb62f52329142549d933a6630c0235bd3a50c7ebb4d922b8c3b4",
+            "commit": "f45ca168dee81f864533a8f77f8c203960caad1a",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "observed_at": "2026-10-14",
+          "observation": "固定发布 manifest；并不保证接手时仍在线"
+        }
+      ]
+    },
+    {
+      "id": "repo:agent-os-storage",
+      "name": "agent-os-storage",
+      "url": "https://github.com/euler-gaozl/agent-os-storage",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-storage.git",
+      "branch": "feat/independent-service",
+      "source_head_at_audit": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "storage"
+      ],
+      "integration_pins": [
+        {
+          "role": "storage",
+          "commit": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "storage",
+          "commit": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c",
+          "manifest": "descriptors/storage-8ae0873dbfd645a5bfb74e57888acbe8.json",
+          "sdk": {
+            "version": "v0.1.0-rc.2",
+            "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
+            "zip_sha256": "6381fef8a276eb62f52329142549d933a6630c0235bd3a50c7ebb4d922b8c3b4",
+            "commit": "f45ca168dee81f864533a8f77f8c203960caad1a",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "observed_at": "2026-10-14",
+          "observation": "固定发布 manifest；并不保证接手时仍在线"
+        }
+      ]
+    },
+    {
+      "id": "repo:agent-os-telemetry",
+      "name": "agent-os-telemetry",
+      "url": "https://github.com/euler-gaozl/agent-os-telemetry",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-telemetry.git",
+      "branch": "feat/independent-service",
+      "source_head_at_audit": "cf73e7f16307fa1a41f82c026067308b1dd8ce23",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "telemetry"
+      ],
+      "integration_pins": [
+        {
+          "role": "telemetry",
+          "commit": "c2a02e27fcc0ef517347dcaaaabe11fbcc671e81",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "telemetry",
+          "commit": "fcaca2e96927c4fd2139b681a471dd83a7612932",
+          "manifest": "descriptors/telemetry-8bc472b6d7204b3e9f30c0b600cf22c0.json",
+          "sdk": {
+            "version": "v0.1.0-rc.2",
+            "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
+            "zip_sha256": "6381fef8a276eb62f52329142549d933a6630c0235bd3a50c7ebb4d922b8c3b4",
+            "commit": "f45ca168dee81f864533a8f77f8c203960caad1a",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "observed_at": "2026-10-14",
+          "observation": "固定发布 manifest；并不保证接手时仍在线"
+        }
+      ]
+    },
+    {
+      "id": "repo:agent-os-toolhub",
+      "name": "agent-os-toolhub",
+      "url": "https://github.com/euler-gaozl/agent-os-toolhub",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-toolhub.git",
+      "branch": "feat/independent-service",
+      "source_head_at_audit": "448f449db9f18a0810fdc6c111582c2e51048776",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "toolhub"
+      ],
+      "integration_pins": [
+        {
+          "role": "toolhub",
+          "commit": "98f8fecc5a139b3f1b0e4d76f4a11c9d8e0c0d07",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "toolhub",
+          "commit": "98f8fecc5a139b3f1b0e4d76f4a11c9d8e0c0d07",
+          "manifest": "descriptors/toolhub-a97a7b478b044b6c9db04726ca5ecac1.json",
+          "sdk": {
+            "version": "v0.1.0-rc.2",
+            "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
+            "zip_sha256": "6381fef8a276eb62f52329142549d933a6630c0235bd3a50c7ebb4d922b8c3b4",
+            "commit": "f45ca168dee81f864533a8f77f8c203960caad1a",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "observed_at": "2026-10-14",
+          "observation": "固定发布 manifest；并不保证接手时仍在线"
+        }
+      ]
+    },
+    {
+      "id": "repo:agent-os-worker",
+      "name": "agent-os-worker",
+      "url": "https://github.com/euler-gaozl/agent-os-worker",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-worker.git",
+      "branch": "feat/model-native-limits",
+      "source_head_at_audit": "ff9a2f07f397bf0b408256e8a71644b3d2976376",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "worker"
+      ],
+      "integration_pins": [
+        {
+          "role": "worker",
+          "commit": "ff9a2f07f397bf0b408256e8a71644b3d2976376",
+          "owner_modules": [
+            {
+              "module": "github.com/euler-gaozl/agent-os-runtime",
+              "version": "v0.1.0-rc.5",
+              "commit": "4ce51328924af8a5d457b2a05bf0d24307c30418",
+              "module_sum": "h1:fHtgETrjthSbteb3VIseJw7tHnPJp1GMD7IZ3BEVd7A=",
+              "go_mod_sum": "h1:o0IFAQIKPHQPkk/nfwhBhLon9OkNV7IbYTJw2ty1X9g=",
+              "protocol": "runtime-execution-v1",
+              "package": "execution"
+            }
+          ]
+        }
+      ],
+      "installed": [
+        {
+          "role": "worker",
+          "commit": "ff9a2f07f397bf0b408256e8a71644b3d2976376",
+          "manifest": "descriptors/worker-05539cd2b8d44718b1c944c39f77420e.json",
+          "sdk": {
+            "version": "v0.1.0-rc.3",
+            "module_sum": "h1:1Vxtuif+Fn5+vm8aN+WmK8Idf8rid2je9xfkoEfuQeA=",
+            "zip_sha256": "9fe7df5df1558314b03a0f0107f9a6444b94f51ca192ef71705bb1602de879c0",
+            "commit": "bbbfe34b65ac44c1823b1029349b454aef26ce21",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [
+            {
+              "module": "github.com/euler-gaozl/agent-os-runtime",
+              "version": "v0.1.0-rc.5",
+              "commit": "4ce51328924af8a5d457b2a05bf0d24307c30418",
+              "module_sum": "h1:fHtgETrjthSbteb3VIseJw7tHnPJp1GMD7IZ3BEVd7A=",
+              "go_mod_sum": "h1:o0IFAQIKPHQPkk/nfwhBhLon9OkNV7IbYTJw2ty1X9g=",
+              "protocol": "runtime-execution-v1",
+              "package": "execution"
+            }
+          ],
+          "observed_at": "2026-10-14",
+          "observation": "固定发布 manifest；并不保证接手时仍在线"
+        }
+      ]
+    }
+  ]
+}

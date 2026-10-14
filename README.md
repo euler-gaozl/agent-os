@@ -2,6 +2,8 @@
 
 面向多个业务的 Agent 平台。DeepSeek Harness（DSH）负责 Agent 执行循环与上下文压缩；Go 服务负责持久化调度、工具与资料管理；React / TypeScript 提供统一中台和独立的期货研究工作台。
 
+**维护者交接入口：[HANDOFF.md](HANDOFF.md)。** [项目群知识库](docs/maintainer/README.md) 包含完整目标、未完成任务、15 仓版本清单、原电脑/新电脑接手方法及可机读本体映射。交接分支为 `feat/end-to-end-delivery`；项目整体尚未完成，源码、集成 pin 与实际安装版本分别记录。下文保留历史增量状态，接手先读知识库的带日期快照再核对现场。
+
 ## 当前可用的两个入口
 
 - 能力中台：<http://127.0.0.1:8090>。管理自定义 Agent、提示词、Skill、MCP、知识库、工作记忆和运行记录；Agent 编辑器右侧试运行，在“发布”页设置业务入口。

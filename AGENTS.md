@@ -1,5 +1,9 @@
 # Agent OS 工作约定
 
+## 2026-10-14 维护者交接
+
+接手先读 `HANDOFF.md` 和 `docs/maintainer/README.md`，其中保留完整 Goal、P0–P5/W01–W14、当前失败、后续待办、15 仓分支/源码/安装差异及本体映射。用户要求交接完成后暂停原聊天 Goal，由朋友的 Codex 继续；接手聊天建立等价完整目标，不能缩减验收范围。交接快照不替代实际代码、发布 manifest 和原始证据，后续更新按事实修订。当前全原生能力 Agent 树的新任务使用固定源码 DSH native-v4，全 legacy 树仍回落 budget-v3，混合树拒绝；下方“默认官方核心包”等旧描述为历史基线。原电脑私有配置/资料和权限不会随 GitHub 克隆转移。
+
 ## 项目状态
 
 先读 README.md、docs/architecture/contracts-v0.5.md、harness/README.md、docs/validation-v0.5.md 和 docs/production-readiness.md；v0.4 执行恢复契约和 v0.1 独立评审保留为历史基线。

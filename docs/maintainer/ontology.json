@@ -1,0 +1,2180 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-10-14",
+  "purpose": "项目群维护定位与交接；不是运行时知识图谱、授权系统或自动验收",
+  "authority": "代码/固定发布/真实运行与原始证据优先；本文件为人工维护快照",
+  "node_types": [
+    "project",
+    "repository",
+    "data_domain",
+    "service",
+    "engine",
+    "resource_definition",
+    "state_class",
+    "phase",
+    "acceptance",
+    "capability",
+    "task",
+    "evidence_document",
+    "observed_run",
+    "constraint",
+    "deferred_scope"
+  ],
+  "relation_types": {
+    "part_of": "属于项目或阶段",
+    "implements": "源码实现该服务/执行器",
+    "owns": "拥有逻辑数据域的迁移和权威",
+    "participates_in": "通过固定协议参与同一原子域",
+    "consumes_fixed_protocol": "编译/运行消费固定 Owner 协议",
+    "depends_on": "依赖其接口或完成结果",
+    "uses": "使用固定实现",
+    "persists_in": "权威内容落入逻辑域",
+    "registers": "登记管理该资源定义",
+    "binds": "Agent 绑定资源固定版本",
+    "derived_from": "临时投影/缓存源于持久状态",
+    "tracks": "纳入目标范围",
+    "constrained_by": "受要求或验收约束",
+    "supports": "服务支持能力，不等于所有验收通过",
+    "affects": "待办可能涉及的 Owner",
+    "documented_by": "存在范围限定的说明/证据索引，不表示整体通过",
+    "documents_failure_of": "记录能力的失败样本",
+    "addresses": "待办处理该观测问题"
+  },
+  "query_examples": [
+    {
+      "question": "研究为何没有最终结果，改哪里？",
+      "start": "task:research-completion",
+      "follow": [
+        "affects",
+        "addresses",
+        "constrained_by"
+      ]
+    },
+    {
+      "question": "Worker 能否直接升级 Runtime 依赖？",
+      "start": "service:worker",
+      "follow": [
+        "consumes_fixed_protocol",
+        "participates_in"
+      ]
+    },
+    {
+      "question": "模型 Compact 会不会丢证据？",
+      "start": "capability:storage-lifecycle",
+      "follow": [
+        "constrained_by",
+        "documented_by"
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "project:agent-platform",
+      "type": "project",
+      "label": "Agent Platform Windows 单机交付",
+      "status": "not_completed",
+      "doc": "objective.md"
+    },
+    {
+      "id": "repo:agent-os",
+      "type": "repository",
+      "label": "agent-os",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os"
+      }
+    },
+    {
+      "id": "repo:agent-os-console",
+      "type": "repository",
+      "label": "agent-os-console",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-console"
+      }
+    },
+    {
+      "id": "repo:agent-os-futures",
+      "type": "repository",
+      "label": "agent-os-futures",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-futures"
+      }
+    },
+    {
+      "id": "repo:agent-os-harness",
+      "type": "repository",
+      "label": "agent-os-harness",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-harness"
+      }
+    },
+    {
+      "id": "repo:agent-os-indexer",
+      "type": "repository",
+      "label": "agent-os-indexer",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-indexer"
+      }
+    },
+    {
+      "id": "repo:agent-os-knowledge",
+      "type": "repository",
+      "label": "agent-os-knowledge",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-knowledge"
+      }
+    },
+    {
+      "id": "repo:agent-os-registry",
+      "type": "repository",
+      "label": "agent-os-registry",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-registry"
+      }
+    },
+    {
+      "id": "repo:agent-os-runtime",
+      "type": "repository",
+      "label": "agent-os-runtime",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-runtime"
+      }
+    },
+    {
+      "id": "repo:agent-os-sandbox",
+      "type": "repository",
+      "label": "agent-os-sandbox",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-sandbox"
+      }
+    },
+    {
+      "id": "repo:agent-os-sdk",
+      "type": "repository",
+      "label": "agent-os-sdk",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-sdk"
+      }
+    },
+    {
+      "id": "repo:agent-os-sources",
+      "type": "repository",
+      "label": "agent-os-sources",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-sources"
+      }
+    },
+    {
+      "id": "repo:agent-os-storage",
+      "type": "repository",
+      "label": "agent-os-storage",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-storage"
+      }
+    },
+    {
+      "id": "repo:agent-os-telemetry",
+      "type": "repository",
+      "label": "agent-os-telemetry",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-telemetry"
+      }
+    },
+    {
+      "id": "repo:agent-os-toolhub",
+      "type": "repository",
+      "label": "agent-os-toolhub",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-toolhub"
+      }
+    },
+    {
+      "id": "repo:agent-os-worker",
+      "type": "repository",
+      "label": "agent-os-worker",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-worker"
+      }
+    },
+    {
+      "id": "domain:registry",
+      "type": "data_domain",
+      "label": "registry",
+      "doc": "architecture.md",
+      "note": "逻辑所有权，不表示本机有独立物理数据库"
+    },
+    {
+      "id": "domain:execution",
+      "type": "data_domain",
+      "label": "execution",
+      "doc": "architecture.md",
+      "note": "逻辑所有权，不表示本机有独立物理数据库"
+    },
+    {
+      "id": "domain:toolhub",
+      "type": "data_domain",
+      "label": "toolhub",
+      "doc": "architecture.md",
+      "note": "逻辑所有权，不表示本机有独立物理数据库"
+    },
+    {
+      "id": "domain:knowledge",
+      "type": "data_domain",
+      "label": "knowledge",
+      "doc": "architecture.md",
+      "note": "逻辑所有权，不表示本机有独立物理数据库"
+    },
+    {
+      "id": "domain:storage",
+      "type": "data_domain",
+      "label": "storage",
+      "doc": "architecture.md",
+      "note": "逻辑所有权，不表示本机有独立物理数据库"
+    },
+    {
+      "id": "domain:sources",
+      "type": "data_domain",
+      "label": "sources",
+      "doc": "architecture.md",
+      "note": "逻辑所有权，不表示本机有独立物理数据库"
+    },
+    {
+      "id": "domain:sandbox",
+      "type": "data_domain",
+      "label": "sandbox",
+      "doc": "architecture.md",
+      "note": "逻辑所有权，不表示本机有独立物理数据库"
+    },
+    {
+      "id": "domain:telemetry",
+      "type": "data_domain",
+      "label": "telemetry",
+      "doc": "architecture.md",
+      "note": "逻辑所有权，不表示本机有独立物理数据库"
+    },
+    {
+      "id": "service:control",
+      "type": "service",
+      "label": "Console 中台",
+      "role": "control",
+      "default_local_port": 8090,
+      "doc": "architecture.md",
+      "deployment_status": "observed_running_at_handoff"
+    },
+    {
+      "id": "service:futures",
+      "type": "service",
+      "label": "Futures 业务端",
+      "role": "futures",
+      "default_local_port": 8098,
+      "doc": "architecture.md",
+      "deployment_status": "observed_running_at_handoff"
+    },
+    {
+      "id": "service:registry",
+      "type": "service",
+      "label": "Registry",
+      "role": "registry",
+      "default_local_port": 8096,
+      "doc": "architecture.md",
+      "deployment_status": "observed_running_at_handoff"
+    },
+    {
+      "id": "service:runtime",
+      "type": "service",
+      "label": "Runtime",
+      "role": "runtime",
+      "default_local_port": 8094,
+      "doc": "architecture.md",
+      "deployment_status": "observed_running_at_handoff"
+    },
+    {
+      "id": "service:worker",
+      "type": "service",
+      "label": "Worker",
+      "role": "worker",
+      "default_local_port": 8099,
+      "doc": "architecture.md",
+      "deployment_status": "observed_running_at_handoff"
+    },
+    {
+      "id": "service:toolhub",
+      "type": "service",
+      "label": "ToolHub",
+      "role": "toolhub",
+      "default_local_port": 8091,
+      "doc": "architecture.md",
+      "deployment_status": "observed_running_at_handoff"
+    },
+    {
+      "id": "service:knowledge",
+      "type": "service",
+      "label": "Knowledge",
+      "role": "knowledge",
+      "default_local_port": 8095,
+      "doc": "architecture.md",
+      "deployment_status": "observed_running_at_handoff"
+    },
+    {
+      "id": "service:indexer",
+      "type": "service",
+      "label": "Indexer",
+      "role": "indexer",
+      "default_local_port": 8097,
+      "doc": "architecture.md",
+      "deployment_status": "observed_running_at_handoff"
+    },
+    {
+      "id": "service:storage",
+      "type": "service",
+      "label": "Storage",
+      "role": "storage",
+      "default_local_port": 8092,
+      "doc": "architecture.md",
+      "deployment_status": "observed_running_at_handoff"
+    },
+    {
+      "id": "service:sources",
+      "type": "service",
+      "label": "Sources",
+      "role": "sources",
+      "default_local_port": 8101,
+      "doc": "architecture.md",
+      "deployment_status": "observed_running_at_handoff"
+    },
+    {
+      "id": "service:sandbox",
+      "type": "service",
+      "label": "Sandbox",
+      "role": "sandbox",
+      "default_local_port": 8093,
+      "doc": "architecture.md",
+      "deployment_status": "api_only_backend_unconfigured"
+    },
+    {
+      "id": "service:telemetry",
+      "type": "service",
+      "label": "Telemetry",
+      "role": "telemetry",
+      "default_local_port": 8100,
+      "doc": "architecture.md",
+      "deployment_status": "zero_instances"
+    },
+    {
+      "id": "engine:dsh",
+      "type": "engine",
+      "label": "固定官方 DSH 源码",
+      "doc": "architecture.md",
+      "upstream_commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+      "note": "准确引擎 ID 和包哈希由每个运行快照决定"
+    },
+    {
+      "id": "resource:agent",
+      "type": "resource_definition",
+      "label": "自定义 Agent",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "resource:prompt",
+      "type": "resource_definition",
+      "label": "提示词",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "resource:skill",
+      "type": "resource_definition",
+      "label": "Skill",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "resource:mcp",
+      "type": "resource_definition",
+      "label": "MCP",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "resource:knowledge-base",
+      "type": "resource_definition",
+      "label": "知识库",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "state:model-context",
+      "type": "state_class",
+      "label": "模型上下文",
+      "lifecycle": "ephemeral_projection",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "state:working-state",
+      "type": "state_class",
+      "label": "结构化工作状态",
+      "lifecycle": "durable_versioned",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "state:receipts",
+      "type": "state_class",
+      "label": "意图与回执",
+      "lifecycle": "durable_replay_authority",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "state:source-material",
+      "type": "state_class",
+      "label": "原文与附件",
+      "lifecycle": "durable_immutable",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "state:artifacts",
+      "type": "state_class",
+      "label": "长输出与产物",
+      "lifecycle": "durable_immutable",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "state:notes",
+      "type": "state_class",
+      "label": "Agent 笔记",
+      "lifecycle": "durable_versioned",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "state:cache",
+      "type": "state_class",
+      "label": "驻留缓存",
+      "lifecycle": "rebuildable",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "phase:P0",
+      "type": "phase",
+      "label": "恢复基线",
+      "status": "passed_at_scope",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "phase:P1",
+      "type": "phase",
+      "label": "Windows 运维与迁移",
+      "status": "passed_at_scope",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "phase:P2",
+      "type": "phase",
+      "label": "独立服务与旧覆盖退役",
+      "status": "partial",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "phase:P2.5",
+      "type": "phase",
+      "label": "源码 DSH 与存储",
+      "status": "partial",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "phase:P3",
+      "type": "phase",
+      "label": "中台和业务端",
+      "status": "partial",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "phase:P4",
+      "type": "phase",
+      "label": "故障与资源验收",
+      "status": "partial",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "phase:P5",
+      "type": "phase",
+      "label": "真实研究交付",
+      "status": "failed",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W01",
+      "type": "acceptance",
+      "label": "本机启停",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W02",
+      "type": "acceptance",
+      "label": "独立升级与回滚",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W03",
+      "type": "acceptance",
+      "label": "自定义 Agent 配置试运行",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W04",
+      "type": "acceptance",
+      "label": "ToolHub 校验验活启停",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W05",
+      "type": "acceptance",
+      "label": "上传索引检索回读",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W06",
+      "type": "acceptance",
+      "label": "官方 DeepSeek 真实业务",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W07",
+      "type": "acceptance",
+      "label": "双 Worker 中断接管",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W08",
+      "type": "acceptance",
+      "label": "Compact 与证据恢复",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W09",
+      "type": "acceptance",
+      "label": "笔记生命周期",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W10",
+      "type": "acceptance",
+      "label": "网络模型工具异常与未知效果",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W11",
+      "type": "acceptance",
+      "label": "备份实际隔离恢复",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W12",
+      "type": "acceptance",
+      "label": "安全与资源",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W13",
+      "type": "acceptance",
+      "label": "全部页面与窄屏状态",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W14",
+      "type": "acceptance",
+      "label": "源码 Harness 持久化内存兼容",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "capability:agent-config",
+      "type": "capability",
+      "label": "Agent 固定资源配置",
+      "status": "partial",
+      "doc": "current-state.md"
+    },
+    {
+      "id": "capability:toolhub",
+      "type": "capability",
+      "label": "Skill/MCP 校验验活",
+      "status": "partial",
+      "doc": "current-state.md"
+    },
+    {
+      "id": "capability:knowledge",
+      "type": "capability",
+      "label": "资料采集检索回读",
+      "status": "partial",
+      "doc": "current-state.md"
+    },
+    {
+      "id": "capability:execution",
+      "type": "capability",
+      "label": "可恢复多实例执行",
+      "status": "partial",
+      "doc": "current-state.md"
+    },
+    {
+      "id": "capability:storage-lifecycle",
+      "type": "capability",
+      "label": "运行时存储生命周期",
+      "status": "partial",
+      "doc": "current-state.md"
+    },
+    {
+      "id": "capability:research",
+      "type": "capability",
+      "label": "事实研究报告",
+      "status": "partial",
+      "doc": "current-state.md"
+    },
+    {
+      "id": "capability:operations",
+      "type": "capability",
+      "label": "独立发布与恢复",
+      "status": "partial",
+      "doc": "current-state.md"
+    },
+    {
+      "id": "capability:ui",
+      "type": "capability",
+      "label": "中台与业务 UI",
+      "status": "partial",
+      "doc": "current-state.md"
+    },
+    {
+      "id": "task:research-completion",
+      "type": "task",
+      "label": "研究稳定成稿",
+      "status": "open",
+      "doc": "backlog.md",
+      "scope": "原目标余项"
+    },
+    {
+      "id": "task:research-quality",
+      "type": "task",
+      "label": "报告实质证据质量",
+      "status": "open",
+      "doc": "backlog.md",
+      "scope": "原目标余项"
+    },
+    {
+      "id": "task:continuation-ui",
+      "type": "task",
+      "label": "继续任务与完整 UI",
+      "status": "open",
+      "doc": "backlog.md",
+      "scope": "原目标余项"
+    },
+    {
+      "id": "task:service-retirement",
+      "type": "task",
+      "label": "旧覆盖与权限退役",
+      "status": "open",
+      "doc": "backlog.md",
+      "scope": "原目标余项"
+    },
+    {
+      "id": "task:storage-lifecycle",
+      "type": "task",
+      "label": "存储生命周期余项",
+      "status": "open",
+      "doc": "backlog.md",
+      "scope": "原目标余项"
+    },
+    {
+      "id": "task:faults-and-resources",
+      "type": "task",
+      "label": "剩余故障与全平台资源",
+      "status": "open",
+      "doc": "backlog.md",
+      "scope": "原目标余项"
+    },
+    {
+      "id": "task:latest-recovery",
+      "type": "task",
+      "label": "最新备份实际恢复",
+      "status": "open",
+      "doc": "backlog.md",
+      "scope": "原目标余项"
+    },
+    {
+      "id": "task:final-ci",
+      "type": "task",
+      "label": "一次统一验收与交付",
+      "status": "open",
+      "doc": "backlog.md",
+      "scope": "原目标余项"
+    },
+    {
+      "id": "task:fresh-windows-bootstrap",
+      "type": "task",
+      "label": "新 Windows 完整初始化",
+      "status": "open",
+      "doc": "backlog.md",
+      "scope": "仅新电脑额外前提，原 P1 的当时验收不因此抹去"
+    },
+    {
+      "id": "evidence:drafts",
+      "type": "evidence_document",
+      "label": "失败草稿显示实际验收",
+      "doc": "../research-draft-visibility-20261014.md",
+      "scope": "已通过草稿显示，不代表研究质量通过",
+      "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
+      "verification": "original_maintainer_record_not_new_retest"
+    },
+    {
+      "id": "evidence:capture",
+      "type": "evidence_document",
+      "label": "真实网页采集与恢复",
+      "doc": "../console-capture-acceptance-20261014.md",
+      "scope": "文档所列范围",
+      "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
+      "verification": "original_maintainer_record_not_new_retest"
+    },
+    {
+      "id": "evidence:source-engine",
+      "type": "evidence_document",
+      "label": "真实源码执行器激活",
+      "doc": "../source-engine-activation-20261013.md",
+      "scope": "版本限定",
+      "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
+      "verification": "original_maintainer_record_not_new_retest"
+    },
+    {
+      "id": "evidence:resident",
+      "type": "evidence_document",
+      "label": "驻留联合测量",
+      "doc": "../resident-joint-acceptance-20261013.md",
+      "scope": "真实进程/数据库与合成模型，不是全平台上界",
+      "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
+      "verification": "original_maintainer_record_not_new_retest"
+    },
+    {
+      "id": "evidence:retirement",
+      "type": "evidence_document",
+      "label": "旧覆盖移交矩阵",
+      "doc": "../p2-linux-cutover.md",
+      "scope": "含未关闭项，不是通过证书",
+      "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
+      "verification": "original_maintainer_record_not_new_retest"
+    },
+    {
+      "id": "evidence:ui",
+      "type": "evidence_document",
+      "label": "页面历史验证",
+      "doc": "../ui-validation-v0.6.md",
+      "scope": "历史页面与样本范围，不能覆盖最新全矩阵",
+      "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
+      "verification": "original_maintainer_record_not_new_retest"
+    },
+    {
+      "id": "evidence:recovery",
+      "type": "evidence_document",
+      "label": "Windows 发布与恢复",
+      "doc": "../windows-release-recovery-20261012.md",
+      "scope": "当时状态，最新完整状态仍需恢复验证",
+      "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
+      "verification": "original_maintainer_record_not_new_retest"
+    },
+    {
+      "id": "run:research-20261014",
+      "type": "observed_run",
+      "label": "豆粕固定资料研究失败",
+      "status": "failed",
+      "task_id": "4bdf967d35ab0b92ae43c38dc87a5947",
+      "doc": "current-state.md"
+    },
+    {
+      "id": "constraint:secrets",
+      "type": "constraint",
+      "label": "密钥和私人资料不进入公开仓或模型上下文",
+      "doc": "objective.md"
+    },
+    {
+      "id": "constraint:cost",
+      "type": "constraint",
+      "label": "有界付费调用与最终一次 CI",
+      "doc": "objective.md"
+    },
+    {
+      "id": "constraint:research",
+      "type": "constraint",
+      "label": "事实研究，人负责预测和交易判断",
+      "doc": "objective.md"
+    },
+    {
+      "id": "deferred:ha",
+      "type": "deferred_scope",
+      "label": "跨机器 HA 与主备数据库",
+      "status": "deferred",
+      "doc": "objective.md"
+    },
+    {
+      "id": "deferred:capacity",
+      "type": "deferred_scope",
+      "label": "百万文档千万块全平台容量",
+      "status": "deferred",
+      "doc": "objective.md"
+    },
+    {
+      "id": "deferred:commodities",
+      "type": "deferred_scope",
+      "label": "全品种资料覆盖",
+      "status": "deferred",
+      "doc": "objective.md"
+    }
+  ],
+  "edges": [
+    {
+      "from": "repo:agent-os",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-console",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-futures",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-harness",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-indexer",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-knowledge",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-registry",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-runtime",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-sandbox",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-sdk",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-sources",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-storage",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-telemetry",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-toolhub",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-worker",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-console",
+      "relation": "implements",
+      "to": "service:control"
+    },
+    {
+      "from": "repo:agent-os-futures",
+      "relation": "implements",
+      "to": "service:futures"
+    },
+    {
+      "from": "repo:agent-os-registry",
+      "relation": "implements",
+      "to": "service:registry"
+    },
+    {
+      "from": "service:registry",
+      "relation": "owns",
+      "to": "domain:registry"
+    },
+    {
+      "from": "repo:agent-os-runtime",
+      "relation": "implements",
+      "to": "service:runtime"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "owns",
+      "to": "domain:execution"
+    },
+    {
+      "from": "repo:agent-os-worker",
+      "relation": "implements",
+      "to": "service:worker"
+    },
+    {
+      "from": "service:worker",
+      "relation": "participates_in",
+      "to": "domain:execution"
+    },
+    {
+      "from": "repo:agent-os-toolhub",
+      "relation": "implements",
+      "to": "service:toolhub"
+    },
+    {
+      "from": "service:toolhub",
+      "relation": "owns",
+      "to": "domain:toolhub"
+    },
+    {
+      "from": "repo:agent-os-knowledge",
+      "relation": "implements",
+      "to": "service:knowledge"
+    },
+    {
+      "from": "service:knowledge",
+      "relation": "owns",
+      "to": "domain:knowledge"
+    },
+    {
+      "from": "repo:agent-os-indexer",
+      "relation": "implements",
+      "to": "service:indexer"
+    },
+    {
+      "from": "service:indexer",
+      "relation": "participates_in",
+      "to": "domain:knowledge"
+    },
+    {
+      "from": "repo:agent-os-storage",
+      "relation": "implements",
+      "to": "service:storage"
+    },
+    {
+      "from": "service:storage",
+      "relation": "owns",
+      "to": "domain:storage"
+    },
+    {
+      "from": "repo:agent-os-sources",
+      "relation": "implements",
+      "to": "service:sources"
+    },
+    {
+      "from": "service:sources",
+      "relation": "owns",
+      "to": "domain:sources"
+    },
+    {
+      "from": "repo:agent-os-sandbox",
+      "relation": "implements",
+      "to": "service:sandbox"
+    },
+    {
+      "from": "service:sandbox",
+      "relation": "owns",
+      "to": "domain:sandbox"
+    },
+    {
+      "from": "repo:agent-os-telemetry",
+      "relation": "implements",
+      "to": "service:telemetry"
+    },
+    {
+      "from": "service:telemetry",
+      "relation": "owns",
+      "to": "domain:telemetry"
+    },
+    {
+      "from": "service:worker",
+      "relation": "consumes_fixed_protocol",
+      "to": "service:runtime",
+      "note": "runtime-execution-v1，v0.1.0-rc.5；包 pin 见 repositories.json"
+    },
+    {
+      "from": "service:indexer",
+      "relation": "consumes_fixed_protocol",
+      "to": "service:knowledge",
+      "note": "knowledge-indexing-v1，v0.1.0-rc.1；包 pin 见 repositories.json"
+    },
+    {
+      "from": "service:control",
+      "relation": "depends_on",
+      "to": "service:registry"
+    },
+    {
+      "from": "service:control",
+      "relation": "depends_on",
+      "to": "service:runtime"
+    },
+    {
+      "from": "service:control",
+      "relation": "depends_on",
+      "to": "service:knowledge"
+    },
+    {
+      "from": "service:control",
+      "relation": "depends_on",
+      "to": "service:toolhub"
+    },
+    {
+      "from": "service:futures",
+      "relation": "depends_on",
+      "to": "service:registry"
+    },
+    {
+      "from": "service:futures",
+      "relation": "depends_on",
+      "to": "service:runtime"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "depends_on",
+      "to": "service:storage"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "depends_on",
+      "to": "service:toolhub"
+    },
+    {
+      "from": "service:sandbox",
+      "relation": "depends_on",
+      "to": "service:runtime"
+    },
+    {
+      "from": "service:telemetry",
+      "relation": "depends_on",
+      "to": "service:runtime"
+    },
+    {
+      "from": "repo:agent-os-harness",
+      "relation": "implements",
+      "to": "engine:dsh"
+    },
+    {
+      "from": "service:worker",
+      "relation": "uses",
+      "to": "engine:dsh"
+    },
+    {
+      "from": "engine:dsh",
+      "relation": "persists_in",
+      "to": "domain:execution"
+    },
+    {
+      "from": "service:registry",
+      "relation": "registers",
+      "to": "resource:agent"
+    },
+    {
+      "from": "service:registry",
+      "relation": "registers",
+      "to": "resource:prompt"
+    },
+    {
+      "from": "service:toolhub",
+      "relation": "registers",
+      "to": "resource:skill"
+    },
+    {
+      "from": "service:toolhub",
+      "relation": "registers",
+      "to": "resource:mcp"
+    },
+    {
+      "from": "service:registry",
+      "relation": "registers",
+      "to": "resource:knowledge-base"
+    },
+    {
+      "from": "resource:agent",
+      "relation": "binds",
+      "to": "resource:prompt",
+      "note": "固定具体版本；登记不自动等于执行权限"
+    },
+    {
+      "from": "resource:agent",
+      "relation": "binds",
+      "to": "resource:skill",
+      "note": "固定具体版本；登记不自动等于执行权限"
+    },
+    {
+      "from": "resource:agent",
+      "relation": "binds",
+      "to": "resource:mcp",
+      "note": "固定具体版本；登记不自动等于执行权限"
+    },
+    {
+      "from": "resource:agent",
+      "relation": "binds",
+      "to": "resource:knowledge-base",
+      "note": "固定具体版本；登记不自动等于执行权限"
+    },
+    {
+      "from": "state:model-context",
+      "relation": "derived_from",
+      "to": "domain:execution"
+    },
+    {
+      "from": "state:working-state",
+      "relation": "persists_in",
+      "to": "domain:execution"
+    },
+    {
+      "from": "state:receipts",
+      "relation": "persists_in",
+      "to": "domain:execution"
+    },
+    {
+      "from": "state:source-material",
+      "relation": "persists_in",
+      "to": "domain:knowledge"
+    },
+    {
+      "from": "state:artifacts",
+      "relation": "persists_in",
+      "to": "domain:storage"
+    },
+    {
+      "from": "state:notes",
+      "relation": "persists_in",
+      "to": "domain:execution"
+    },
+    {
+      "from": "state:cache",
+      "relation": "derived_from",
+      "to": "domain:execution"
+    },
+    {
+      "from": "state:source-material",
+      "relation": "persists_in",
+      "to": "domain:sources",
+      "note": "采集回执与原响应；导入资料与引用以具体 Owner 协议为准"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "phase:P0"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "phase:P1"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "phase:P2"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "phase:P2.5"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "phase:P3"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "phase:P4"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "phase:P5"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W01"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W02"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W03"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W04"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W05"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W06"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W07"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W08"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W09"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W10"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W11"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W12"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W13"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W14"
+    },
+    {
+      "from": "service:registry",
+      "relation": "supports",
+      "to": "capability:agent-config"
+    },
+    {
+      "from": "service:control",
+      "relation": "supports",
+      "to": "capability:agent-config"
+    },
+    {
+      "from": "capability:agent-config",
+      "relation": "constrained_by",
+      "to": "acceptance:W03"
+    },
+    {
+      "from": "service:toolhub",
+      "relation": "supports",
+      "to": "capability:toolhub"
+    },
+    {
+      "from": "service:control",
+      "relation": "supports",
+      "to": "capability:toolhub"
+    },
+    {
+      "from": "capability:toolhub",
+      "relation": "constrained_by",
+      "to": "acceptance:W04"
+    },
+    {
+      "from": "service:sources",
+      "relation": "supports",
+      "to": "capability:knowledge"
+    },
+    {
+      "from": "service:knowledge",
+      "relation": "supports",
+      "to": "capability:knowledge"
+    },
+    {
+      "from": "service:indexer",
+      "relation": "supports",
+      "to": "capability:knowledge"
+    },
+    {
+      "from": "service:storage",
+      "relation": "supports",
+      "to": "capability:knowledge"
+    },
+    {
+      "from": "service:control",
+      "relation": "supports",
+      "to": "capability:knowledge"
+    },
+    {
+      "from": "capability:knowledge",
+      "relation": "constrained_by",
+      "to": "acceptance:W05"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "supports",
+      "to": "capability:execution"
+    },
+    {
+      "from": "service:worker",
+      "relation": "supports",
+      "to": "capability:execution"
+    },
+    {
+      "from": "capability:execution",
+      "relation": "constrained_by",
+      "to": "acceptance:W07"
+    },
+    {
+      "from": "capability:execution",
+      "relation": "constrained_by",
+      "to": "acceptance:W10"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "supports",
+      "to": "capability:storage-lifecycle"
+    },
+    {
+      "from": "service:worker",
+      "relation": "supports",
+      "to": "capability:storage-lifecycle"
+    },
+    {
+      "from": "service:storage",
+      "relation": "supports",
+      "to": "capability:storage-lifecycle"
+    },
+    {
+      "from": "capability:storage-lifecycle",
+      "relation": "constrained_by",
+      "to": "acceptance:W08"
+    },
+    {
+      "from": "capability:storage-lifecycle",
+      "relation": "constrained_by",
+      "to": "acceptance:W09"
+    },
+    {
+      "from": "capability:storage-lifecycle",
+      "relation": "constrained_by",
+      "to": "acceptance:W14"
+    },
+    {
+      "from": "service:futures",
+      "relation": "supports",
+      "to": "capability:research"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "supports",
+      "to": "capability:research"
+    },
+    {
+      "from": "service:worker",
+      "relation": "supports",
+      "to": "capability:research"
+    },
+    {
+      "from": "service:knowledge",
+      "relation": "supports",
+      "to": "capability:research"
+    },
+    {
+      "from": "service:sources",
+      "relation": "supports",
+      "to": "capability:research"
+    },
+    {
+      "from": "capability:research",
+      "relation": "constrained_by",
+      "to": "acceptance:W06"
+    },
+    {
+      "from": "service:control",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:registry",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:worker",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:knowledge",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:indexer",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:storage",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:sources",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:sandbox",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:telemetry",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:toolhub",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:futures",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "capability:operations",
+      "relation": "constrained_by",
+      "to": "acceptance:W01"
+    },
+    {
+      "from": "capability:operations",
+      "relation": "constrained_by",
+      "to": "acceptance:W02"
+    },
+    {
+      "from": "capability:operations",
+      "relation": "constrained_by",
+      "to": "acceptance:W11"
+    },
+    {
+      "from": "service:control",
+      "relation": "supports",
+      "to": "capability:ui"
+    },
+    {
+      "from": "service:futures",
+      "relation": "supports",
+      "to": "capability:ui"
+    },
+    {
+      "from": "capability:ui",
+      "relation": "constrained_by",
+      "to": "acceptance:W13"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "part_of",
+      "to": "phase:P5"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "affects",
+      "to": "service:worker"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "constrained_by",
+      "to": "acceptance:W06"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "part_of",
+      "to": "phase:P5"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "affects",
+      "to": "service:knowledge"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "affects",
+      "to": "service:sources"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "constrained_by",
+      "to": "acceptance:W06"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "part_of",
+      "to": "phase:P3"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "affects",
+      "to": "service:control"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "constrained_by",
+      "to": "acceptance:W03"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "constrained_by",
+      "to": "acceptance:W13"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "part_of",
+      "to": "phase:P2"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:control"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:registry"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:worker"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:toolhub"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:knowledge"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:indexer"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:storage"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:sources"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:sandbox"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:telemetry"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "constrained_by",
+      "to": "acceptance:W02"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "constrained_by",
+      "to": "acceptance:W12"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "part_of",
+      "to": "phase:P2.5"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "affects",
+      "to": "service:worker"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "affects",
+      "to": "service:storage"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "constrained_by",
+      "to": "acceptance:W08"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "constrained_by",
+      "to": "acceptance:W09"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "constrained_by",
+      "to": "acceptance:W14"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "part_of",
+      "to": "phase:P4"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "affects",
+      "to": "service:worker"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "affects",
+      "to": "service:storage"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "affects",
+      "to": "service:sandbox"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "affects",
+      "to": "service:telemetry"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "affects",
+      "to": "service:knowledge"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "constrained_by",
+      "to": "acceptance:W07"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "constrained_by",
+      "to": "acceptance:W08"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "constrained_by",
+      "to": "acceptance:W10"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "constrained_by",
+      "to": "acceptance:W12"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "constrained_by",
+      "to": "acceptance:W14"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "part_of",
+      "to": "phase:P4"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:control"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:registry"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:worker"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:toolhub"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:knowledge"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:indexer"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:storage"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:sources"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:sandbox"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:telemetry"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "constrained_by",
+      "to": "acceptance:W11"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "part_of",
+      "to": "phase:P4"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:control"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:registry"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:worker"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:toolhub"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:knowledge"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:indexer"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:storage"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:sources"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:sandbox"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:telemetry"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W01"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W02"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W03"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W04"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W05"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W06"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W07"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W08"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W09"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W10"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W11"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W12"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W13"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W14"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "part_of",
+      "to": "phase:P1"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:control"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:registry"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:worker"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:toolhub"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:knowledge"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:indexer"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:storage"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:sources"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:sandbox"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:telemetry"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "constrained_by",
+      "to": "acceptance:W01"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "constrained_by",
+      "to": "acceptance:W02"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "affects",
+      "to": "repo:agent-os",
+      "note": "packs 与实际 Registry 资源版本须分别核对"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "affects",
+      "to": "repo:agent-os"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "affects",
+      "to": "engine:dsh"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "depends_on",
+      "to": "task:research-completion"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "depends_on",
+      "to": "task:research-quality"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "depends_on",
+      "to": "task:latest-recovery"
+    },
+    {
+      "from": "capability:research",
+      "relation": "documented_by",
+      "to": "evidence:drafts"
+    },
+    {
+      "from": "capability:knowledge",
+      "relation": "documented_by",
+      "to": "evidence:capture"
+    },
+    {
+      "from": "capability:execution",
+      "relation": "documented_by",
+      "to": "evidence:source-engine"
+    },
+    {
+      "from": "capability:storage-lifecycle",
+      "relation": "documented_by",
+      "to": "evidence:resident"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "documented_by",
+      "to": "evidence:retirement"
+    },
+    {
+      "from": "capability:ui",
+      "relation": "documented_by",
+      "to": "evidence:ui"
+    },
+    {
+      "from": "phase:P1",
+      "relation": "documented_by",
+      "to": "evidence:recovery"
+    },
+    {
+      "from": "run:research-20261014",
+      "relation": "documents_failure_of",
+      "to": "capability:research"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "addresses",
+      "to": "run:research-20261014"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "addresses",
+      "to": "run:research-20261014"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "constraint:secrets"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "constraint:cost"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "constraint:research"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "deferred:ha"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "deferred:capacity"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "deferred:commodities"
+    }
+  ]
+}
