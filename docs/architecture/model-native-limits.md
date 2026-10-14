@@ -20,7 +20,19 @@ deepseek-model-metadata.json；没有凭证。官方[请求协议](https://api-d
 6. 传输/内存队列、权限、并发和超时保护保留；验证其能容纳模型范围。验收能力解析和快照、长输入/输出、压缩、旧引擎恢复、新协议强杀接管、中台配置与实际请求一致，最后小额官方验证。
 
 1M元数据不代表本机1M性能已验收。研究输出格式单独修复，不能降低资料检查标准。
-状态：已评估并开始实现。SDK的`feat/model-native-limits`已增加可选能力契约，nil保留历史策略；具体模型/端点/协议与能力观测绑定，32条本地测试、零跳过及vet通过。首次全包测试因选择错误的离线模块缓存失败，改用既有D盘缓存后通过；原失败记录保留。证据在`ops/native-sdk.path`所指目录。Registry解析、新Harness、Runtime/Worker、Console和部署未完成，正式程序仍为budget-v3。
+状态：SDK `v0.1.0-rc.3` 固定至 `bbbfe34`，nil保留历史策略；32条本地测试、零跳过及vet通过。
+Registry `756813a` 已发布 `feat/model-native-limits`：服务端解析官方能力并冻结新版本，清除旧总token预算；
+实际隔离PostgreSQL共35条通过、零跳过，vet/build通过。独立评审发现的重复JSON字段、大小写别名覆盖已修复复验；
+供应商使用合成夹具，没有付费模型调用。能力获取失败不发布，旧版本不重查，其他供应商未实现时明确拒绝。
+证据为`ops/native-sdk.path`及`ops/native-registry.path`。
+
+Harness `a8a18e41de` 的 native-v4 候选已完成真实 Node/DSH 的17条合成协议检查及历史50条回归，全部零跳过，
+含4.5MB输入/5.25MB输出、压缩后重试和进程强杀重放。旧v3重建内核摘要不变；native重复构建manifest相同。
+大文本实际撞到旧resident容量后，增加了仅native构建生效的容量变换；不把字节夹具当作1M真实token性能证明。
+证据为`ops/native-harness.path`。Runtime/Worker、Console及发布门禁尚未接齐；正式程序仍为budget-v3，
+新要求尚未安装。原SDK离线缓存选择失败、Harness两次初始失败记录保留。
+独立只读评审核对了新内核/runner/构建脚本及200个manifest输入摘要，未发现候选提交阻断；
+该结论不覆盖真实Worker、数据库恢复或生产内存峰值。
 
 ## 独立评审处理
 
