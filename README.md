@@ -9,7 +9,7 @@
 
 当前正在进行 **v0.6 端到端交付**。Windows 新根任务已使用固定源码构建的 DSH，历史任务保留原包与引擎。真实 DeepSeek 的知识库回读、结构化工作状态、来源回执与笔记落盘已联调，并经过完整备份还原，见[源码执行器激活验收](docs/source-engine-activation-20261013.md)。父子 Agent、MCP/Skill 和业务入口的其他历史成果见[交付账本](docs/delivery-v0.6.md)。完整内存边界、UI 和真实研究验收仍在进行；没有接入全品种基本面数据库，不把单篇联调当作研究覆盖率。
 
-**2026-10-14 当前进度**：Knowledge 新采集导入程序与兼容读取版已按顺序正式安装，真实服务程序的发布失败恢复、重复导入和旧版本回退拦截通过本机测试，原有五份来源附件及备份恢复已核对。Sources 已完成本域迁移与独立升级，新采集协议入口可用，正式旧版回退和重新升级通过；见[Sources 迁移与恢复记录](docs/sources-owner-migration-20261014.md)。Console 的采集预览/保存流程尚未完成，“新采集 → 入库 → 研究”的真实完整流程还未交付。已有真实模型研究结果仍存在时间分类和事实表述问题，研究质量验收未通过。Knowledge 证据见[采集入库及恢复记录](docs/capture-import-bridge-20261014.md)，整体剩余项见[单机交付计划](docs/windows-single-machine-plan.md)。
+**2026-10-14 当前进度**：Console 网页采集、原文预览和保存已安装。一份真实国家统计局网页已在浏览器完成采集、入库、下载及检索；重复保存不新增文件，包含新资料的完整备份已实际隔离恢复，见[中台采集与恢复验收](docs/console-capture-acceptance-20261014.md)。Sources/Knowledge 独立迁移、发布兼容及旧资料恢复见[Sources 记录](docs/sources-owner-migration-20261014.md)和[Knowledge 记录](docs/capture-import-bridge-20261014.md)。这不等于“采集 → 入库 → 研究报告”全部完成：已有真实模型报告仍存在时间分类和事实表述问题，研究质量验收未通过。其余页面、服务退役和故障缺口见[单机交付计划](docs/windows-single-machine-plan.md)。
 
 ## 源码仓库与交付状态
 

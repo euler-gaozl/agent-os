@@ -1,6 +1,6 @@
 # 新采集入库：服务候选与发布门槛
 
-后续状态：Sources `29fe086` 已完成本域迁移和正式独立发布，捕获协议入口已可用，见 [Sources 迁移与恢复](sources-owner-migration-20261014.md)。Console 采集表单和实际新来源端到端验收仍未完成；下方 Sources 未迁移的描述保留其历史含义。
+后续状态：Sources `29fe086` 已完成本域迁移和正式独立发布，捕获协议入口已可用，见 [Sources 迁移与恢复](sources-owner-migration-20261014.md)。Console `1b4b4e4` 已正式安装，一份真实网页通过采集、保存、原文下载、检索及实际备份恢复，见[中台采集验收](console-capture-acceptance-20261014.md)；研究报告语义仍未通过。下方早期未迁移/未配置描述保留其历史含义。
 
 2026-10-14。本文件按增量记录 Sources 资料进入 Knowledge 的实现和验收。最新 Knowledge writer 已正式部署；Sources 迁移和 Console 表单仍未完成，不能称真实新来源端到端交付。下面旧候选段落保留其当时状态。
 
