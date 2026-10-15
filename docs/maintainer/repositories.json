@@ -669,6 +669,64 @@
       "integration_pins_changed": false,
       "pushed": false,
       "github_actions_triggered": false
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "file": "macos-research-verification-and-ui-20261015.md",
+      "status": "provider_failed_ui_installed_browser_pending",
+      "scope": "One new same-input synthetic research task failed on first provider HTTP 503 with no report; frozen Agent 4/Skill 3, native-v4 engine and existing 12-step/12-model-attempt budget verified, reviewer criteria fixed before submission and excluded from input, three old tasks unchanged. Reviewed read-failure UI installed as a matching Futures BFF/Web package; nine other instances unchanged. No browser or Windows acceptance.",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-futures",
+          "source_commit": "b805fa9e09ad8c1ecf3feb4ae7c74e77a41029ed",
+          "installed_at_research_verification": true,
+          "source_role": "Existing installed BFF and matching Web package used for the new failed task; no provider-loop change."
+        },
+        {
+          "repository_id": "repo:agent-os-futures",
+          "source_commit": "f5e7bd21b8f3fcf20bc69c84aee2eede7bf5d2c4",
+          "installed_after_research_verification": true,
+          "source_role": "Read-failure UI and matching complete BFF/Web archive installed after the failed task; Go source and binary unchanged."
+        }
+      ],
+      "new_task": {
+        "task_id": "cfdb8e0a8232bf786a194264cb0bb584",
+        "agent_revision": 4,
+        "skill_revision": 3,
+        "status": "failed",
+        "http_status": 503,
+        "model_attempts": 1,
+        "unknown_usage_attempts": 1,
+        "content_quality_evaluated": false
+      },
+      "ui": {
+        "status": "installed_browser_pending",
+        "code_commit": "f5e7bd21b8f3fcf20bc69c84aee2eede7bf5d2c4",
+        "installed": true,
+        "installed_at": "2026-10-15T02:22:25.368Z",
+        "package_manifest_sha256": "e97f4d39fd42b72e9e1ee026b434866b49340d464a61ddb732caf7fc9369cb23",
+        "binary_sha256": "18b4be2c7a04b77dc6d547e833412b58ea1261110bda1c3e12e7e51570c71ca2",
+        "web_tree_sha256": "8effbad604254df4930d1c444d6098e690729f7f88d1cfae6b1a53cddd4db1e5",
+        "web_tests": {
+          "passed": 23,
+          "failed": 0,
+          "skipped": 0
+        },
+        "typescript": "passed",
+        "web_build": "passed",
+        "package_offline_go_web_build": "passed",
+        "nontarget_unchanged": true,
+        "nontarget_count": 9,
+        "console_restarted": false,
+        "browser_executed": false,
+        "evidence": "local/evidence/mac-bff-package-20261015-task-read-state"
+      },
+      "main_method_base_commit": "24fe19c2d1c3ff217ae988f8a9b7a884911d4c7c",
+      "integration_pins_changed": false,
+      "old_tasks_changed": false,
+      "pushed": false,
+      "github_actions_triggered": false
     }
   ]
 }

@@ -26,6 +26,8 @@
 
 只推进 P2 的 Runtime Owner 笔记/本地工具回执移交，并新增模型账本故障覆盖；未启动独立 Runtime/Worker/Node/Storage，归档是内存夹具。P2.5、Compact、W09 完整生命周期、W12/W14 全平台资源与目标环境验收继续开放；旧主仓测试与工作流保留。研究质量、完整 UI、服务/权限退役及最终统一 CI 状态不变。
 
+[第四次同题验证](macos-research-verification-and-ui-20261015.md)在原 Agent 4/Skill 3、固定 native-v4 引擎及 12 步/12 次模型尝试预算下首请求 503、无稿，usage 未知 1、费用 null。独立判据预先固定且未进入输入，旧三任务不变；研究完成/质量无新通过结论，本轮不再发模型。详情读取 UI 已完成组件/状态测试与匹配包安装，真实浏览器及完整阶段、W01–W14 继续按原范围推进。
+
 以下原 Windows 失败及资源 revision 为历史定位线索；Mac 最新证据以以上各增量及链接为准，不变更历史任务。
 
 ## 1. task:research-completion — 先让研究稳定成稿
