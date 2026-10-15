@@ -97,3 +97,9 @@ P0/P1/P2/P2.5/P3/P4/P5 与 W01–W14 全范围和既有状态不变；旧测试/
 [本次记录](macos-continuation-preview-20261015.md)增加 Runtime control 专用 GET 预览，固定 read_only=true/action_available=false；对严格保留 native HTTP503 回执、全族未决状态、冻结配置/归档元数据和原预算作一致快照分类。Owner 7 顶层（6 新增、1 既有 peer）及 17 子项通过、零 fail/skip；已独立安装本机 Runtime 包并只读观察既存 Mac 任务，九个非目标实例保持。
 
 同帧候选不是执行许可，也不证明供应商已恢复、归档字节当前可读或研究可成稿。旧 failed /resume 与当前 Console 按钮未被此 GET 加上守卫，仍须执行时锁内重验、幂等动作回执/丢回复核对、受控自动接续与完整 UI。P0/P1/P2/P2.5/P3/P4/P5、W01–W14 及全部旧范围保持；研究质量、服务/权限退役、生命周期/持续资源、Windows 专项和最终统一 CI 继续按原计划。
+
+## Mac native 新模型尝试修订守卫（2026-10-15）
+
+[本次记录](macos-native-attempt-revision-20261015.md)修复native冻结旧intent在正常规则更新后仍能取得新attempt的窗口。Owner旧码2 fail/2 pass、修复4 pass；相邻32顶层38子场景race通过，零skip。Worker固定精确execution模块，独立旧/新Worker与官方Node、合成TLS模型3场景通过，首轮JSON键序断言失败保留。成功缓存/冻结回复继续重放，原失败账单和未知usage保留。两个常驻Worker已实际替换，Runtime HTTP与其余七实例保持原版本；观察中的标量计数相同不代表整库不可变。
+
+该 guard 不是完整 continuation action：还需写动作事务内重验、幂等回执与丢回复回读、受控自动接续、配置变更后的新任务承接与 UI。P0/P1/P2/P2.5/P3/P4/P5、W01–W14 全范围及旧状态保持；研究质量、服务/权限退役、生命周期/持续资源、Windows 专项和最终统一 CI 按原计划继续。

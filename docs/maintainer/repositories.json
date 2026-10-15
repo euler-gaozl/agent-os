@@ -1124,6 +1124,213 @@
           "result": "Actual libpq connection attempt selected a missing default port 5432 socket because PGDATABASE did not expand the URI; did not connect to target 55432. Zero completed summaries is not zero connection attempts. V3 split fixed connection parameters into child environment while preserving readonly/public and exact pins."
         }
       ]
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "record": "macos-native-attempt-revision-20261015.md",
+      "status": "native_revision_guard_two_workers_installed_continuation_open",
+      "scope": "Native BeginModel admission guard rejects a new stale-revision attempt while preserving completed receipts and frozen history. Owner and actual old/new Worker plus fixed official Node/synthetic TLS fixtures verified; both own-Mac Workers updated. Runtime HTTP remains 879c5034; continuation action/UI, real provider/business and Windows acceptance remain open.",
+      "source_versions": {
+        "runtime_core_execution_commit": "1f6c4c29c62bac3ad6d674b7797a7410f373bf00",
+        "runtime_tests_commit": "5017de09c37f50da270b1873c2dcf73439330653",
+        "worker_source_commit": "94d605910e0c3da011bb1213b516150ecb5fe1ba",
+        "worker_runtime_module_version": "v0.1.0-rc.5.0.20261015080014-1f6c4c29c62b",
+        "worker_runtime_module_sum": "h1:Ht2GnqP3SC9BPodtn85eJ+vm6ZfZjc46g/1mQM8cGhg=",
+        "runtime_http_installed_commit": "879c5034ad556e37f1c987312eb4124b3c4806b6",
+        "runtime_http_reinstalled": false
+      },
+      "runtime_owner": {
+        "core_commit": "1f6c4c29c62bac3ad6d674b7797a7410f373bf00",
+        "guard_sha256": "24ca3d033e23723bb23f4113be56fc0b79757bbd56e8b2b1310de0fec2cf042f",
+        "test_sha256": "2df2cbaa6fd3289fbbd18a3b06cb4b0dcca8343f0e40529faac3f7b6a98fadd4",
+        "tests": {
+          "red": {
+            "top_pass": 2,
+            "top_fail": 2,
+            "sub_pass": 0,
+            "skip": 0,
+            "exit_code": 1,
+            "package_elapsed_seconds": 1.089,
+            "stdout_sha256": "555dd0be6ab5397ab7e59bfaa53c59f5432f27cfe240961c374bdfbbb18ec8b9"
+          },
+          "green": {
+            "top_pass": 4,
+            "top_fail": 0,
+            "sub_pass": 0,
+            "skip": 0,
+            "exit_code": 0,
+            "package_elapsed_seconds": 2.09,
+            "stdout_sha256": "4e65695d9d92f37d7f8f3c9f3947547864f51d1cb251c87a516187a4ddf2fe46"
+          },
+          "regression": {
+            "top_pass": 32,
+            "top_fail": 0,
+            "sub_pass": 38,
+            "skip": 0,
+            "exit_code": 0,
+            "package_elapsed_seconds": 34,
+            "stdout_sha256": "1dd9d27d66ac223e885918f7da6eaba578e2349d810997cff9903ef953d97866"
+          }
+        },
+        "vet_exit": 0,
+        "build_exit": 0,
+        "original_instances_unchanged": 10,
+        "cleanup": {
+          "fixture_databases": 0,
+          "fixture_roles": 0,
+          "fixture_connections": 0
+        },
+        "provider_calls": 0,
+        "scope": "Owner real isolated PG and execution APIs with synthetic callbacks/memory archives, no actual Worker/Node/provider execution"
+      },
+      "worker_fixture": {
+        "runs": {
+          "worker-fixture": {
+            "exit_code": 1,
+            "top_pass": 0,
+            "top_fail": 1,
+            "sub_pass": 1,
+            "sub_fail": 2,
+            "skip": 0,
+            "package_elapsed_seconds": 4.146,
+            "stdout_sha256": "246d389378cab82682cd450ec656c14ae63244cd217aa8397c6193b08b630559"
+          },
+          "worker-fixture-v2": {
+            "exit_code": 0,
+            "top_pass": 1,
+            "top_fail": 0,
+            "sub_pass": 3,
+            "sub_fail": 0,
+            "skip": 0,
+            "package_elapsed_seconds": 4.917,
+            "stdout_sha256": "1b006354a12c723ee1cacc04bdb7bff224d4a796c6ff01b902a2cbed4f0e33b6"
+          }
+        },
+        "test_driver_race": true,
+        "worker_binaries_race": false,
+        "fixture_source_sha256": "13988cc825980dcee7d82d409e1a9c69cd5a816f23cd15dbf5be1d2d4ab33079",
+        "harness_manifest_sha256": "d76588bae0edd1d7f13cdb4d01423ac8fc14da240fba682bcec4a1fb08f8ba7f",
+        "original_instances_unchanged": 10,
+        "fixture_pids_remaining": 0,
+        "fixture_databases_roles_connections_remaining": {
+          "fixture_databases": 0,
+          "fixture_roles": 0,
+          "fixture_connections": 0
+        },
+        "model_http_scope": "Synthetic loopback TLS only; actual independent Worker binaries and fixed official Node runner, real Runtime HTTP and PG, archive fixture.",
+        "real_provider_calls": 0,
+        "cases": [
+          {
+            "name": "old_pin_stale",
+            "synthetic_http_requests": 2,
+            "model_attempts": 2,
+            "unknown_usage_attempts": 2,
+            "status": "failed"
+          },
+          {
+            "name": "new_pin_stale",
+            "synthetic_http_requests": 1,
+            "model_attempts": 1,
+            "unknown_usage_attempts": 1,
+            "status": "failed"
+          },
+          {
+            "name": "new_pin_same_revision",
+            "synthetic_http_requests": 2,
+            "model_attempts": 2,
+            "unknown_usage_attempts": 1,
+            "status": "completed"
+          }
+        ],
+        "request_equality": "Complete canonical JSON values agree with original frozen intent and every call/attempt; raw wire hashes are preserved and differ for replay requests."
+      },
+      "worker_installation": {
+        "installed": true,
+        "at": "2026-10-15T08:38:46.658Z",
+        "package_manifest_sha256": "384952564182170e6d12ff4bebf6bc4967d133413f2916a73cabf347f9ac1766",
+        "worker_binary_sha256": "7ec002f581b5dfd785db3fcfc6228595bd2f6c23e400ace7cc39f722452353f8",
+        "changed_instances": [
+          "worker",
+          "worker-2"
+        ],
+        "non_target_instances_unchanged": 8,
+        "all_configuration_hashes_unchanged": true,
+        "fixed_harness_unchanged": true,
+        "old_workers_exit_confirmed": true,
+        "final_observed_at": "2026-10-15T08:40:20.497Z",
+        "total_live_instances": 10,
+        "new_workers_authenticated_ready_status": 200,
+        "read_only_sql_transactions": 8,
+        "authenticated_ready_gets": 8,
+        "observed_scalar_counts": {
+          "runs": 4,
+          "nonterminal": 0,
+          "calls": 21,
+          "model_attempts": 11,
+          "exchanges": 70,
+          "archives": 70
+        },
+        "whole_row_immutability_proven": false,
+        "whole_database_immutability_proven": false,
+        "migrations_executed": false,
+        "release_package": false,
+        "provider_calls": 0,
+        "task_mutations": 0,
+        "scope": "Scalar observations and process checks are separate, not an atomic admission lock or full-row comparison; normal instance heartbeats remain possible. A later root live observation confirmed both new workers and eight unchanged peers."
+      },
+      "execution_action_added": false,
+      "ui_integrated": false,
+      "real_provider_calls": 0,
+      "browser_executed": false,
+      "windows_acceptance": false,
+      "integration_deployment_pins_changed": false,
+      "retained_failures": [
+        {
+          "stage": "worker-offline-vendor-first",
+          "result": "Initial verify/vendor failed because locked testify 1.3.0 go.mod metadata was absent; later fixed-graph metadata preparation and offline verify/vendor/build succeeded. Fixed metadata was actually fetched via goproxy.cn; not a wholly offline or checksum-database-verified flow."
+        },
+        {
+          "stage": "worker-build-preflight-first",
+          "result": "Incorrect root LICENSE assumption stopped before package creation or build; corrected exact source inventory and retained failure."
+        },
+        {
+          "stage": "worker-fixture-first",
+          "result": "One subcase passed and two failed due to raw JSON key-order equality assertion. V2 compares complete canonical JSON against frozen exchange and calls/attempts, retaining raw wire hashes; production source, module pin and binaries unchanged."
+        }
+      ],
+      "file": "macos-native-attempt-revision-20261015.md",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-runtime",
+          "source_commit": "5017de09c37f50da270b1873c2dcf73439330653",
+          "core_execution_commit": "1f6c4c29c62bac3ad6d674b7797a7410f373bf00",
+          "source_status": "committed_local",
+          "installed": false,
+          "source_role": "Core admission guard plus Owner and actual Worker fixture tests/README; execution core consumed by Worker. Runtime HTTP remains its separately recorded 879c5034 installation."
+        },
+        {
+          "repository_id": "repo:agent-os-worker",
+          "source_commit": "94d605910e0c3da011bb1213b516150ecb5fe1ba",
+          "source_base_commit": "ff9a2f07f397bf0b408256e8a71644b3d2976376",
+          "source_status": "committed_local",
+          "installed": true,
+          "installed_instances": 2,
+          "runtime_execution_dependency": "v0.1.0-rc.5.0.20261015080014-1f6c4c29c62b",
+          "source_role": "Explicit immutable execution module pin, matching go.sum/vendor and README; two own-Mac Worker processes actually updated."
+        }
+      ],
+      "worker_baseline": {
+        "source_commit": "ff9a2f07f397bf0b408256e8a71644b3d2976376",
+        "runtime_dependency": "v0.1.0-rc.5"
+      },
+      "installed_services_changed": true,
+      "installed_roles_changed": [
+        "worker",
+        "worker-2"
+      ],
+      "pushed": false,
+      "github_actions_triggered": false
     }
   ]
 }

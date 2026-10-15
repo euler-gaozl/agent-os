@@ -99,3 +99,5 @@ Worker 固定 Runtime execution 包、Indexer 固定 Knowledge indexing 包，�
 [Console 原生引擎与恢复边界观测](macos-console-native-and-state-recovery-20261015.md)补齐 UI 对 Runtime 已支持的固定四引擎判定，没有新增协议或执行器。source-state 恢复仍由 Runtime 预览和 POST 事务内重新核验，通用 failed /resume 是另一入口；Console 不成为状态权威。Owner 测试中的合成模型、内存 archive、回调丢回复与官方 Node/真实 Storage/网络故障分别记载；旧快照、预算、固定 DSH、Worker 编译 pin、跨库归属及部署 pins 均保持。
 
 [只读接续预览观测](macos-continuation-preview-20261015.md)由 Runtime 在单个有界 REPEATABLE READ READ ONLY 事务中读取本域冻结配置、族状态、调用/尝试与归档确认元数据。不会保留预算、写回执/事件、调用 Registry/Storage/供应商或改变旧快照。最后失败帧重试仍计同一逻辑轮次；全部状态的家族尝试仍受原冻结上限约束。assessment/observed_at 不构成许可，未来动作须重新加锁核验；旧 /resume 语义、固定 DSH、Worker 编译协议、跨库归属与部署 pins 不变。
+
+[native 新尝试修订守卫](macos-native-attempt-revision-20261015.md)位于 Runtime 所有的 execution 事务域，由 Worker 的固定编译依赖实际运行。BeginModel 在运行行锁内、completed cache 返回后、预算与新 attempt 写入前比较 exchange 冻结修订与当前规则；不改变旧请求、回执、成功缓存或既有 DSH 交换协议。已准入的在途调用仍留存账单/结果，不能把新准入守卫扩大为撤回 HTTP 的保证。Runtime HTTP 安装版本与 Worker 内嵌模块分别记载；数据权威、跨库边界、官方 DSH 决策循环和 Compact 保持，后续接续写动作仍需独立设计与验收。
