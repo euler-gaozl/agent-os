@@ -82,3 +82,7 @@ Owner 更新和回滚要求双向完整合约相等，原工具/引擎守卫仍�
 ## Mac Telemetry/Runtime Owner 局部移交（2026-10-15）
 
 [本次记录](maintainer/macos-telemetry-owner-20261015.md)补充 exporter 并发、部分拒绝、超限确认与 Runtime outbox HTTP 权威协议的局部覆盖。旧表格和历史 live/组合结论保留；本机使用真实隔离 PostgreSQL、HTTP 夹具和 NOLOGIN/SET ROLE，不等于独立登录、真实 Langfuse 或跨 Owner 组合。Runtime receive 失败场景只验证顺序 API 独立性，不声明持续循环活性。旧测试/工作流继续保留，P2/P2.5 与完整 W01–W14 不关闭。
+
+## Mac 原生笔记与未知外部效果局部移交（2026-10-15）
+
+[本次记录](maintainer/macos-native-notes-and-unknown-20261015.md)增加 Runtime Owner 自然生命周期与同根并发冲突，以及独立 Runtime/Worker/Node/Storage 的效果提交后 TCP 丢回包、取消保留未知、显式核对和后续新任务。Owner 为真实隔离 PG/NOLOGIN SET ROLE/内存 archive；进程层为二库三 LOGIN 角色、固定官方 Harness 和协议夹具，清理及十个非目标实例不变均独立记录。前者 2 顶层/2 子场景、后者 1 顶层通过且零 skip；仅 Go 测试驱动使用 race，服务普通构建不冒充 race。初版 resolver 夹具失败保留。旧矩阵、旧测试/工作流与 P2/P2.5、完整 W01–W14 继续保留，不由该样本关闭服务/权限退役、全平台资源或 Linux/Windows 验收。

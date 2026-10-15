@@ -93,3 +93,5 @@ Worker 固定 Runtime execution 包、Indexer 固定 Knowledge indexing 包，�
 [第四次同题研究及 UI 记录](macos-research-verification-and-ui-20261015.md)保留既有服务数据权威、固定 DSH/native 协议与部署 pins。供应商 503 无稿只构成该次执行失败，不证明成稿方法或业务质量；新观测不覆盖原 Windows 或旧 Mac 证据。
 
 [Mac Telemetry/Runtime Owner 记录](macos-telemetry-owner-20261015.md)保持 Runtime outbox 与 Telemetry inbox/export 的数据权威；仅确认读取边界修复及各 Owner 测试移交，没有新增循环、跨库访问、旧协议/快照或部署组合变化。
+
+[原生笔记与未知效果观测](macos-native-notes-and-unknown-20261015.md)保持 Runtime 对笔记版本、有效/撤回状态、冻结回执与核对审计的权威。Owner 测试的自然过期只改变当前读视图，不重写历史回执；独立进程测试在合成效果已 fsync 后真实断开 TCP，以明确证据调用 control reconcile，不能当作平台会自动判断外部效果。内存 archive 与真实 Storage manifest/part/ref 两层证据分别记录；固定官方 DSH 决策循环、Compact、快照、编译协议、跨库边界和集成 pins 均不变，未新增统一 TTL 或自动删除永久资料。

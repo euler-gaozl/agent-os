@@ -79,3 +79,9 @@ Owner：Harness/Runtime/Worker/Storage。已有驻留事件释放、工作状态
 `task:fresh-windows-bootstrap`：仅在以后明确要初始化新 Windows 时适用，不是朋友 Mac 开工的前提。当前 Windows 操作链主要服务已有 catalog；Linux provision 不能直接当新 Windows 的一键初始化。未来重建时仍须检查受保护身份、Owner 迁移和固定发布登记。朋友当前先按 [Mac 环境说明](environment.md) 做独立开发与验证，不照搬原用户的密钥或执行旧 `Start -Migrate`。
 
 [Mac Telemetry/Runtime Owner 增量](macos-telemetry-owner-20261015.md)补本域事务/投递协议覆盖与确认回包边界，不代表真实 Langfuse、持续循环、独立登录或完整组合通过。服务退役、最终统一 CI、七阶段和 W01–W14 均保持原范围。
+
+## Mac 原生笔记与未知效果增量（2026-10-15）
+
+[本次记录](macos-native-notes-and-unknown-20261015.md)推进 W09 的自然过期、冻结回执、续订/撤回和两类并发 head 冲突，以及 W10/W14 的独立 native-v4 未知效果保留、取消后显式核对、同 Worker 后续任务及 Node 退出/Storage 留存。Owner 笔记 2 顶层与 2 子场景通过（race，10.533 秒，零 skip）；独立进程 1 项通过（仅测试驱动 race，5.417 秒，零 skip）。前者是内存 archive/合成回执/本地回调丢返回，后者是真实服务/Node/Storage 与受控外部效果，不能合并成全平台生命周期或资源验收。首轮 ToolHub resolver 夹具遗漏导致提交 403 的失败继续留存。
+
+P0/P1/P2/P2.5/P3/P4/P5 与 W01–W14 全范围和既有状态不变；旧测试/权限退役、长历史 Compact、永久资料生命周期、持续资源上界、完整 UI、研究完成与内容质量、最终统一 CI 均继续按原计划。没有自动核对未知效果或重新执行原未知任务的授权机制变化；Windows DPAPI、受管发布、原库恢复仍待目标环境复验。

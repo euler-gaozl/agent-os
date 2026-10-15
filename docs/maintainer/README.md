@@ -62,3 +62,5 @@
 本次没有重新运行平台测试，没有模型付费调用，没有触发 CI；静态交接审查不能代替原目标的剩余验收。检查证据保存在原电脑 `ops/maintainer-handoff.path` 指向的目录。
 
 [Telemetry/Runtime Owner 局部移交](macos-telemetry-owner-20261015.md)记录有界确认缺陷 red-green、隔离 PostgreSQL/HTTP 夹具及保留的真实后端验收；未部署服务，旧覆盖与完整目标继续保留。
+
+[原生笔记与未知外部效果增量](macos-native-notes-and-unknown-20261015.md)分别记录 Owner 自然过期/撤回/并发冲突与实际 native-v4 进程的 TCP 丢回包、取消和显式核对。两层范围不同，首轮夹具失败保留；真实供应商、业务、完整生命周期/资源及目标环境验收仍开放。

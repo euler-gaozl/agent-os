@@ -79,6 +79,53 @@
           "record": "macos-telemetry-owner-20261015.md",
           "status": "passed_limited_owner_coverage_not_deployed",
           "scope": "Mac isolated PostgreSQL Owner coverage: Telemetry exporter receipt red-green and Runtime outbox protocol; HTTP fixtures; only the five new exporter tests and two Runtime tests use NOLOGIN SET ROLE application pools, not separate login or real Langfuse, continuous-loop liveness or cross-service composition. No installed service, source protocol or deployment pin change."
+        },
+        {
+          "observed_at": "2026-10-15",
+          "timezone": "Asia/Shanghai",
+          "os_version": "15.3",
+          "os_build": "24D2059",
+          "cpu_architecture": "arm64",
+          "record": "macos-native-notes-and-unknown-20261015.md",
+          "status": "passed_two_limited_fixture_layers_not_deployed",
+          "scope": "Two separate Mac fixture layers: Runtime note lifecycle/real PostgreSQL Owner coverage, and native process external-effect reply-loss/cancel/explicit reconcile with real Storage. No production change, installed service replacement, deployment pin change, real provider, Windows or full resource/business acceptance.",
+          "notes_owner": {
+            "scope": "Owner in-process native protocol with real isolated PostgreSQL; NOLOGIN SET ROLE pools, synthetic NativeReceipt and per-task memory archive; post-commit callback return loss, not network or official DSH process",
+            "tests": {
+              "top_level_passed": 2,
+              "subtests_passed": 2,
+              "failed": 0,
+              "skipped": 0,
+              "race": true,
+              "package_elapsed_seconds": 10.533,
+              "exit_code": 0
+            },
+            "test_source_sha256": "5413703e61005d17fb75c36d5ee17d0261b83016234471f1a69015f2a37e590c",
+            "source_base_commit": "ff3fa220df331f698c99b260005cc222d0dcdb1c",
+            "source_commit": "c02e12307e214b59dc02e18ca807a3c1ae762023"
+          },
+          "native_process": {
+            "scope": "Independent Runtime/Worker/Storage with fixed official native-v4 Node, two fresh databases and three LOGIN roles; Registry/ToolHub/model/MCP protocol fixtures, fsynced synthetic external effect and actual TCP reply loss, controlled explicit operator reconciliation",
+            "tests": {
+              "top_level_passed": 1,
+              "failed": 0,
+              "skipped": 0,
+              "race_test_driver_only": true,
+              "service_binaries_race": false,
+              "package_elapsed_seconds": 5.417,
+              "exit_code": 0
+            },
+            "test_source_sha256": "317ca63f5c5a31dcba4dea44348efe49a55912d1bc45e37eca7d40ecda453ef7",
+            "integration_source_base_commit": "9f3c3785869927796e57a59059b3df840dbf13bf",
+            "effects": 1,
+            "model_fixture_requests": 2,
+            "synthetic_accounted_tokens_per_run": 1900,
+            "real_provider_calls": 0,
+            "unknown_model_usage_attempts": 0,
+            "cost_estimate": null,
+            "archive_manifests": 12,
+            "archive_bytes": 15829
+          }
         }
       ]
     },
