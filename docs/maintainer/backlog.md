@@ -85,3 +85,9 @@ Owner：Harness/Runtime/Worker/Storage。已有驻留事件释放、工作状态
 [本次记录](macos-native-notes-and-unknown-20261015.md)推进 W09 的自然过期、冻结回执、续订/撤回和两类并发 head 冲突，以及 W10/W14 的独立 native-v4 未知效果保留、取消后显式核对、同 Worker 后续任务及 Node 退出/Storage 留存。Owner 笔记 2 顶层与 2 子场景通过（race，10.533 秒，零 skip）；独立进程 1 项通过（仅测试驱动 race，5.417 秒，零 skip）。前者是内存 archive/合成回执/本地回调丢返回，后者是真实服务/Node/Storage 与受控外部效果，不能合并成全平台生命周期或资源验收。首轮 ToolHub resolver 夹具遗漏导致提交 403 的失败继续留存。
 
 P0/P1/P2/P2.5/P3/P4/P5 与 W01–W14 全范围和既有状态不变；旧测试/权限退役、长历史 Compact、永久资料生命周期、持续资源上界、完整 UI、研究完成与内容质量、最终统一 CI 均继续按原计划。没有自动核对未知效果或重新执行原未知任务的授权机制变化；Windows DPAPI、受管发布、原库恢复仍待目标环境复验。
+
+## Mac Console 原生面板与受限恢复增量（2026-10-15）
+
+[本次记录](macos-console-native-and-state-recovery-20261015.md)修复 budget-v3/native-v4 工作状态面板与归档清单识别，27 项 Web 检查和 TypeScript 通过，匹配 Console BFF/Web 包已安装；只更新 control，九个非目标实例保持。Runtime 新增 3 个顶层/4 个子场景的 Owner PostgreSQL/HTTP 恢复验证，零 fail/skip。回执丢失由回调夹具实现，归档为内存；既有 source-state 受限恢复协议、failed 通用 /resume 和自动 continuation 状态不变。
+
+它不等于浏览器真实流程、官方 Node 端到端恢复、供应商失败后续写或研究质量通过。P0/P1/P2/P2.5/P3/P4/P5、W01–W14 全范围与既有状态保留；完整 UI、旧覆盖/权限退役、存储生命周期、持续资源、研究交付、Windows 专项及最终统一 CI 继续按原计划。

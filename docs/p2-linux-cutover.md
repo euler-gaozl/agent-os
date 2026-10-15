@@ -86,3 +86,7 @@ Owner 更新和回滚要求双向完整合约相等，原工具/引擎守卫仍�
 ## Mac 原生笔记与未知外部效果局部移交（2026-10-15）
 
 [本次记录](maintainer/macos-native-notes-and-unknown-20261015.md)增加 Runtime Owner 自然生命周期与同根并发冲突，以及独立 Runtime/Worker/Node/Storage 的效果提交后 TCP 丢回包、取消保留未知、显式核对和后续新任务。Owner 为真实隔离 PG/NOLOGIN SET ROLE/内存 archive；进程层为二库三 LOGIN 角色、固定官方 Harness 和协议夹具，清理及十个非目标实例不变均独立记录。前者 2 顶层/2 子场景、后者 1 顶层通过且零 skip；仅 Go 测试驱动使用 race，服务普通构建不冒充 race。初版 resolver 夹具失败保留。旧矩阵、旧测试/工作流与 P2/P2.5、完整 W01–W14 继续保留，不由该样本关闭服务/权限退役、全平台资源或 Linux/Windows 验收。
+
+## Mac Console 与 native SourceState Owner 局部移交（2026-10-15）
+
+[本次记录](maintainer/macos-console-native-and-state-recovery-20261015.md)将固定四引擎工作状态显示与 Runtime Owner 受限恢复分别验明：UI 为 SSR/直接回调与本机完整包；Runtime 为真实隔离 PG/HTTP、NOLOGIN SET ROLE、内存归档及正常 API 可达状态。3 顶层/4 子场景通过不等于官方 Node/Storage 恢复、真实浏览器或通用 continuation。归档普通丢确认仅自然 failed/not_waiting，不将未到达的 archive_unconfirmed 分支计为通过。旧矩阵、测试/工作流、权限退役和 P2/P2.5、完整 W01–W14 仍保留，Linux/Windows 验收不由本机包更新替代。

@@ -64,3 +64,5 @@
 [Telemetry/Runtime Owner 局部移交](macos-telemetry-owner-20261015.md)记录有界确认缺陷 red-green、隔离 PostgreSQL/HTTP 夹具及保留的真实后端验收；未部署服务，旧覆盖与完整目标继续保留。
 
 [原生笔记与未知外部效果增量](macos-native-notes-and-unknown-20261015.md)分别记录 Owner 自然过期/撤回/并发冲突与实际 native-v4 进程的 TCP 丢回包、取消和显式核对。两层范围不同，首轮夹具失败保留；真实供应商、业务、完整生命周期/资源及目标环境验收仍开放。
+
+[Console 原生引擎面板与工作状态恢复边界](macos-console-native-and-state-recovery-20261015.md)记录固定四引擎显示修复、匹配本机 Console 包，以及单独的 Runtime Owner 恢复/拒绝验证。组件检查与 HTTP 夹具各自限界，浏览器、官方 Node 恢复和完整 continuation 仍待验收。

@@ -1146,6 +1146,52 @@
         "archive_manifests": 12,
         "archive_bytes": 15829
       }
+    },
+    {
+      "id": "evidence:macos-console-native-and-state-recovery-20261015",
+      "type": "evidence_document",
+      "label": "Mac Console 原生引擎面板与工作状态恢复边界",
+      "doc": "macos-console-native-and-state-recovery-20261015.md",
+      "status": "console_package_installed_owner_recovery_fixture_passed_browser_pending",
+      "scope": "Console exact fixed-engine evidence UI corrected and matching local BFF/Web package installed; Runtime native source-state recovery covered separately with Owner PostgreSQL/HTTP fixtures. No browser, official Node recovery, general failed-run continuation, real provider or Windows acceptance.",
+      "verification": "executed_on_maintainer_mac_with_independent_review",
+      "evidence_environment_id": "environment:maintainer-macos",
+      "console_ui": {
+        "source_base_commit": "a2bca748d1bd6f0de0e52e1e0a59070e790d5fbc",
+        "source_commit": "58c511f3f2a29ca5a99a121e2197e74e5272ac90",
+        "web_tests": {
+          "passed": 27,
+          "failed": 0,
+          "skipped": 0
+        },
+        "typescript_exit": 0,
+        "author_red": {
+          "passed": 2,
+          "failed": 3,
+          "skipped": 0
+        },
+        "author_focused": {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0
+        },
+        "scope": "SSR initial rendering and direct archive-download callback; actual Console uses the components. No browser, DOM/fetch recovery-response interaction or automatic continuation claim."
+      },
+      "runtime_owner": {
+        "source_base_commit": "c02e12307e214b59dc02e18ca807a3c1ae762023",
+        "source_commit": "606fbc8a0e785d013f39e2cadcfca2fb1fb268f3",
+        "test_source_sha256": "cfc3899decd622b0b74d85efc2dfc0e8c3a1878a07af19fc74dd3438f9091c0e",
+        "tests": {
+          "top_level_passed": 3,
+          "subtests_passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "race": true,
+          "package_elapsed_seconds": 2.427,
+          "exit_code": 0
+        },
+        "scope": "In-process Owner with real PostgreSQL and SourceState HTTP policy, NOLOGIN SET ROLE application pools, synthetic model receipt, memory archive and callback-level reply loss; no SQL-fabricated run state, actual TCP loss, Worker retry loop, official Node or Storage process. Archive lost-ack naturally failed/not_waiting; archive_unconfirmed diagnostic and external-tool unknown not added."
+      }
     }
   ],
   "edges": [
@@ -2876,6 +2922,56 @@
       "from": "acceptance:W14",
       "relation": "documented_by",
       "to": "evidence:macos-native-notes-and-unknown-20261015"
+    },
+    {
+      "from": "evidence:macos-console-native-and-state-recovery-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "service:control",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
+    },
+    {
+      "from": "engine:dsh",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
+    },
+    {
+      "from": "acceptance:W10",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
+    },
+    {
+      "from": "acceptance:W13",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
+    },
+    {
+      "from": "acceptance:W14",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
     }
   ],
   "environment_policy": {

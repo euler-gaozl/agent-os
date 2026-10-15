@@ -880,6 +880,109 @@
       "production_code_changed": false,
       "pushed": false,
       "github_actions_triggered": false
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "file": "macos-console-native-and-state-recovery-20261015.md",
+      "status": "console_package_installed_owner_recovery_fixture_passed_browser_pending",
+      "scope": "Console exact fixed-engine evidence UI corrected and matching local BFF/Web package installed; Runtime native source-state recovery covered separately with Owner PostgreSQL/HTTP fixtures. No browser, official Node recovery, general failed-run continuation, real provider or Windows acceptance.",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-console",
+          "source_commit": "58c511f3f2a29ca5a99a121e2197e74e5272ac90",
+          "source_base_commit": "a2bca748d1bd6f0de0e52e1e0a59070e790d5fbc",
+          "source_status": "committed_local",
+          "installed": true,
+          "source_role": "Exact four source-engine evidence UI, production component extraction and tests."
+        },
+        {
+          "repository_id": "repo:agent-os-runtime",
+          "source_commit": "606fbc8a0e785d013f39e2cadcfca2fb1fb268f3",
+          "source_base_commit": "c02e12307e214b59dc02e18ca807a3c1ae762023",
+          "source_status": "committed_local",
+          "installed": false,
+          "source_role": "Native SourceState Owner recovery tests and documentation only; production protocol and installed Runtime unchanged."
+        }
+      ],
+      "console_ui": {
+        "source_base_commit": "a2bca748d1bd6f0de0e52e1e0a59070e790d5fbc",
+        "source_commit": "58c511f3f2a29ca5a99a121e2197e74e5272ac90",
+        "web_tests": {
+          "passed": 27,
+          "failed": 0,
+          "skipped": 0
+        },
+        "typescript_exit": 0,
+        "author_red": {
+          "passed": 2,
+          "failed": 3,
+          "skipped": 0
+        },
+        "author_focused": {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0
+        },
+        "scope": "SSR initial rendering and direct archive-download callback; actual Console uses the components. No browser, DOM/fetch recovery-response interaction or automatic continuation claim."
+      },
+      "runtime_owner": {
+        "source_base_commit": "c02e12307e214b59dc02e18ca807a3c1ae762023",
+        "source_commit": "606fbc8a0e785d013f39e2cadcfca2fb1fb268f3",
+        "test_source_sha256": "cfc3899decd622b0b74d85efc2dfc0e8c3a1878a07af19fc74dd3438f9091c0e",
+        "tests": {
+          "top_level_passed": 3,
+          "subtests_passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "race": true,
+          "package_elapsed_seconds": 2.427,
+          "exit_code": 0
+        },
+        "scope": "In-process Owner with real PostgreSQL and SourceState HTTP policy, NOLOGIN SET ROLE application pools, synthetic model receipt, memory archive and callback-level reply loss; no SQL-fabricated run state, actual TCP loss, Worker retry loop, official Node or Storage process. Archive lost-ack naturally failed/not_waiting; archive_unconfirmed diagnostic and external-tool unknown not added."
+      },
+      "console_package": {
+        "label": "20261015-console-native",
+        "installed": true,
+        "installed_at": "2026-10-15T06:33:13.746Z",
+        "source_commit": "58c511f3f2a29ca5a99a121e2197e74e5272ac90",
+        "manifest_sha256": "3a95458362ff8145e36b4a3a63e03027f3b8703fbc1946265c11e9539d56798a",
+        "binary_sha256": "490336bf86cbe97ded80798657e7f839b17cea532e682ac244a27bb80e6a6a17",
+        "web_tree_sha256": "1544e521bf1d8b2d0417556e81e69e6fa29045a2a3c9f4f4849dae5e5b1bc9a1",
+        "non_target_instances_unchanged": 9,
+        "readiness_verified": true,
+        "observed_terminal_task_ids_and_statuses_unchanged": true,
+        "browser_executed": false,
+        "scope": "Matching local Console BFF/Web development package; control-only. Readiness and bounded observed task set, not browser or managed Windows release.",
+        "only_configuration_change": "control.WEB_DIR",
+        "installed_instances_alive": 10
+      },
+      "runtime_fixture_cleanup": {
+        "passed": true,
+        "runtime_fixture_databases_remaining": 0,
+        "runtime_fixture_roles_remaining": 0,
+        "runtime_fixture_connections_remaining": 0,
+        "scope": "Root read-only own test-cluster catalogue and connections; reviewer does not reconnect after cleanup."
+      },
+      "failed_attempts": [
+        {
+          "kind": "author_build",
+          "result": "pnpm run build rejected external node_modules symlink; original failure retained, direct locked TypeScript/Vite checks subsequently passed."
+        },
+        {
+          "kind": "console_install_first",
+          "result": "process-ownership-mismatch after SIGTERM; stop unconfirmed and automatic rollback incomplete. Explicit original-process absence check and original-package recovery succeeded before independent attempt2 installation. Exact transient process state not observed."
+        }
+      ],
+      "real_provider_calls": 0,
+      "browser_executed": false,
+      "installed_services_changed": true,
+      "installed_roles_changed": [
+        "control"
+      ],
+      "integration_pins_changed": false,
+      "pushed": false,
+      "github_actions_triggered": false
     }
   ]
 }

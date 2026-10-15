@@ -126,6 +126,52 @@
             "archive_manifests": 12,
             "archive_bytes": 15829
           }
+        },
+        {
+          "observed_at": "2026-10-15",
+          "timezone": "Asia/Shanghai",
+          "os_version": "15.3",
+          "os_build": "24D2059",
+          "cpu_architecture": "arm64",
+          "record": "macos-console-native-and-state-recovery-20261015.md",
+          "status": "console_package_installed_owner_recovery_fixture_passed_browser_pending",
+          "scope": "Console exact fixed-engine evidence UI corrected and matching local BFF/Web package installed; Runtime native source-state recovery covered separately with Owner PostgreSQL/HTTP fixtures. No browser, official Node recovery, general failed-run continuation, real provider or Windows acceptance.",
+          "console_ui": {
+            "source_base_commit": "a2bca748d1bd6f0de0e52e1e0a59070e790d5fbc",
+            "source_commit": "58c511f3f2a29ca5a99a121e2197e74e5272ac90",
+            "web_tests": {
+              "passed": 27,
+              "failed": 0,
+              "skipped": 0
+            },
+            "typescript_exit": 0,
+            "author_red": {
+              "passed": 2,
+              "failed": 3,
+              "skipped": 0
+            },
+            "author_focused": {
+              "passed": 7,
+              "failed": 0,
+              "skipped": 0
+            },
+            "scope": "SSR initial rendering and direct archive-download callback; actual Console uses the components. No browser, DOM/fetch recovery-response interaction or automatic continuation claim."
+          },
+          "runtime_owner": {
+            "source_base_commit": "c02e12307e214b59dc02e18ca807a3c1ae762023",
+            "source_commit": "606fbc8a0e785d013f39e2cadcfca2fb1fb268f3",
+            "test_source_sha256": "cfc3899decd622b0b74d85efc2dfc0e8c3a1878a07af19fc74dd3438f9091c0e",
+            "tests": {
+              "top_level_passed": 3,
+              "subtests_passed": 4,
+              "failed": 0,
+              "skipped": 0,
+              "race": true,
+              "package_elapsed_seconds": 2.427,
+              "exit_code": 0
+            },
+            "scope": "In-process Owner with real PostgreSQL and SourceState HTTP policy, NOLOGIN SET ROLE application pools, synthetic model receipt, memory archive and callback-level reply loss; no SQL-fabricated run state, actual TCP loss, Worker retry loop, official Node or Storage process. Archive lost-ack naturally failed/not_waiting; archive_unconfirmed diagnostic and external-tool unknown not added."
+          }
         }
       ]
     },
