@@ -10,9 +10,9 @@
       "os": "macOS",
       "role": "isolated_development",
       "root_hint": "~/workspace/agent-platform",
-      "root_status": "recommended_not_observed",
-      "cpu_architecture": "detect_on_host",
-      "provisioning_status": "not_verified",
+      "root_status": "observed_new_workspace_2026-10-15",
+      "cpu_architecture": "arm64",
+      "provisioning_status": "isolated_development_tools_and_test_database_verified_not_product_acceptance",
       "data_policy": "fresh_local_config_databases_tasks_and_evidence",
       "allowed_scope": [
         "read_public_source",
@@ -22,7 +22,17 @@
         "document_platform_gaps"
       ],
       "inherits_owner_installation": false,
-      "inherits_owner_credentials": false
+      "inherits_owner_credentials": false,
+      "observations": [
+        {
+          "observed_at": "2026-10-15",
+          "timezone": "Asia/Shanghai",
+          "os_version": "15.3",
+          "os_build": "24D2059",
+          "source_audit": "macos-source-audit-20261015.json",
+          "record": "macos-development-20261015.md"
+        }
+      ]
     },
     {
       "id": "environment:owner-windows",

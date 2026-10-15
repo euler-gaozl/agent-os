@@ -45,6 +45,10 @@
 
 新维护者首次接手先核对远端、干净工作区及本机环境，然后建立自己的完整 Goal。旧聊天的 Goal、权限、内存、后台工具会话和 Windows 用户加密上下文不会随着 Git 仓库转移。
 
+## Mac 接手进展（2026-10-15）
+
+已在独立Mac核对15仓并开展首轮研究修复与夹具验证，见[Mac增量记录](macos-development-20261015.md)和[源码核对](macos-source-audit-20261015.json)。这不覆盖下面的原交接检查或current-state.md中的Windows历史。
+
 ## 本次交接检查
 
 15 仓开发分支与远端核对、Actions 禁用状态、知识库相对链接、JSON 实体/关系及本地提交可解析性已检查；新增文件与暂存差异经 gitleaks 扫描未发现秘密值。独立评估 Agent 做了文档和相关源码的静态审查，指出知识库定义归 Registry、legacy 引擎兼容分支及 Telemetry claim/ack 调用方向三处问题，已修正。仓库节点的 `inventory` 用 `file` 和 `repository_id` 连接版本清单，不冒充 JSON Pointer。

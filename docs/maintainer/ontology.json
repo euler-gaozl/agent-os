@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "as_of": "2026-10-14",
+  "as_of": "2026-10-15",
   "purpose": "项目群维护定位与交接；不是运行时知识图谱、授权系统或自动验收",
   "authority": "代码/固定发布/真实运行与原始证据优先；本文件为人工维护快照",
   "node_types": [
@@ -972,6 +972,15 @@
         "file": "environments.json",
         "environment_id": "environment:future-linux"
       }
+    },
+    {
+      "id": "evidence:macos-development-20261015",
+      "type": "evidence_document",
+      "label": "Mac源码核对与首轮研究修复",
+      "doc": "macos-development-20261015.md",
+      "scope": "Independent Mac source audit, synthetic regression and native process/database fixtures; not Windows or business acceptance",
+      "verification": "executed_on_maintainer_mac_with_independent_review",
+      "evidence_environment_id": "environment:maintainer-macos"
     }
   ],
   "edges": [
@@ -2382,6 +2391,31 @@
       "from": "run:research-20261014",
       "relation": "observed_in",
       "to": "environment:owner-windows"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "documented_by",
+      "to": "evidence:macos-development-20261015"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "documented_by",
+      "to": "evidence:macos-development-20261015"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "documented_by",
+      "to": "evidence:macos-development-20261015"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:macos-development-20261015"
+    },
+    {
+      "from": "acceptance:W14",
+      "relation": "documented_by",
+      "to": "evidence:macos-development-20261015"
     }
   ],
   "environment_policy": {

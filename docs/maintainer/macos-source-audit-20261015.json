@@ -1,0 +1,268 @@
+{
+  "environment_id": "environment:maintainer-macos",
+  "observed_at": "2026-10-14T16:36:24.612Z",
+  "os": "macOS 15.3 (24D2059)",
+  "cpu": "arm64",
+  "repositories": [
+    {
+      "name": "agent-os",
+      "remote": "https://github.com/euler-gaozl/agent-os.git",
+      "source_branch": "feat/end-to-end-delivery",
+      "source_remote_head": "f426218e61d42293395f73e26256f77421ac7bd8",
+      "audit_head": "4b8074cf658b4a715fd69ae6207c219a838f033b",
+      "working_branch": "codex/macos-research-quality",
+      "working_base": "f426218e61d42293395f73e26256f77421ac7bd8",
+      "integration_pins": [],
+      "clean_before": true
+    },
+    {
+      "name": "agent-os-console",
+      "remote": "https://github.com/euler-gaozl/agent-os-console.git",
+      "source_branch": "feat/model-native-limits",
+      "source_remote_head": "00bc6280d13e5b1bb57276b0dedef90ea2226c68",
+      "audit_head": "00bc6280d13e5b1bb57276b0dedef90ea2226c68",
+      "working_branch": "codex/macos-research-quality",
+      "working_base": "00bc6280d13e5b1bb57276b0dedef90ea2226c68",
+      "integration_pins": [
+        {
+          "role": "control",
+          "commit": "00bc6280d13e5b1bb57276b0dedef90ea2226c68",
+          "owner_modules": []
+        }
+      ],
+      "clean_before": true
+    },
+    {
+      "name": "agent-os-futures",
+      "remote": "https://github.com/euler-gaozl/agent-os-futures.git",
+      "source_branch": "feat/native-task-transport",
+      "source_remote_head": "f40a8f8ae8c9ca6cfadef7af67b7f9953d4f24bc",
+      "audit_head": "f40a8f8ae8c9ca6cfadef7af67b7f9953d4f24bc",
+      "working_branch": "codex/macos-research-quality",
+      "working_base": "f40a8f8ae8c9ca6cfadef7af67b7f9953d4f24bc",
+      "integration_pins": [
+        {
+          "role": "futures",
+          "commit": "f40a8f8ae8c9ca6cfadef7af67b7f9953d4f24bc",
+          "owner_modules": []
+        }
+      ],
+      "clean_before": true
+    },
+    {
+      "name": "agent-os-harness",
+      "remote": "https://github.com/euler-gaozl/agent-os-harness.git",
+      "source_branch": "feat/source-owned-harness",
+      "source_remote_head": "a8a18e41de719901dbef4513faf898af95822d7a",
+      "audit_head": "a8a18e41de719901dbef4513faf898af95822d7a",
+      "working_branch": "codex/macos-research-quality",
+      "working_base": "a8a18e41de719901dbef4513faf898af95822d7a",
+      "integration_pins": [],
+      "clean_before": true
+    },
+    {
+      "name": "agent-os-indexer",
+      "remote": "https://github.com/euler-gaozl/agent-os-indexer.git",
+      "source_branch": "feat/independent-service",
+      "source_remote_head": "30ed978324aa34a2275a0e27a10a65e85f9e28f9",
+      "audit_head": "30ed978324aa34a2275a0e27a10a65e85f9e28f9",
+      "working_branch": "codex/macos-research-quality",
+      "working_base": "30ed978324aa34a2275a0e27a10a65e85f9e28f9",
+      "integration_pins": [
+        {
+          "role": "indexer",
+          "commit": "ccbfbd206f13e10619898ddb52b84e5c1109c7f8",
+          "owner_modules": [
+            {
+              "protocol": "knowledge-indexing-v1",
+              "version": "v0.1.0-rc.1",
+              "module": "github.com/euler-gaozl/agent-os-knowledge",
+              "module_sum": "h1:HZnGpJI81snXYP0mLiI+Wim+IGDrKXnONVhCsqsHG8M=",
+              "commit": "e26584df4f1df22da6f3ee9101933dae8f48d164",
+              "go_mod_sum": "h1:lviyaS6yKk3K9HbzBQp4QEzIbZDhgdWymiUEa12/pZc=",
+              "package": "indexing"
+            }
+          ]
+        }
+      ],
+      "clean_before": true
+    },
+    {
+      "name": "agent-os-knowledge",
+      "remote": "https://github.com/euler-gaozl/agent-os-knowledge.git",
+      "source_branch": "feat/independent-service",
+      "source_remote_head": "ed54550f15e115956fc30e08e0e8121b976ee796",
+      "audit_head": "ed54550f15e115956fc30e08e0e8121b976ee796",
+      "working_branch": "codex/macos-research-quality",
+      "working_base": "ed54550f15e115956fc30e08e0e8121b976ee796",
+      "integration_pins": [
+        {
+          "role": "knowledge",
+          "commit": "ed54550f15e115956fc30e08e0e8121b976ee796",
+          "owner_modules": []
+        }
+      ],
+      "clean_before": true
+    },
+    {
+      "name": "agent-os-registry",
+      "remote": "https://github.com/euler-gaozl/agent-os-registry.git",
+      "source_branch": "feat/model-native-limits",
+      "source_remote_head": "755b8de85531f0b9620a98beaf1e3a9dccc9d6b0",
+      "audit_head": "755b8de85531f0b9620a98beaf1e3a9dccc9d6b0",
+      "working_branch": "codex/macos-research-quality",
+      "working_base": "755b8de85531f0b9620a98beaf1e3a9dccc9d6b0",
+      "integration_pins": [
+        {
+          "role": "registry",
+          "commit": "755b8de85531f0b9620a98beaf1e3a9dccc9d6b0",
+          "owner_modules": []
+        }
+      ],
+      "clean_before": true
+    },
+    {
+      "name": "agent-os-runtime",
+      "remote": "https://github.com/euler-gaozl/agent-os-runtime.git",
+      "source_branch": "feat/model-native-limits",
+      "source_remote_head": "e6c8b935e5e0a00e6bfab14aa099eb8aaf0436d9",
+      "audit_head": "e6c8b935e5e0a00e6bfab14aa099eb8aaf0436d9",
+      "working_branch": "codex/macos-research-quality",
+      "working_base": "e6c8b935e5e0a00e6bfab14aa099eb8aaf0436d9",
+      "integration_pins": [
+        {
+          "role": "runtime",
+          "commit": "e6c8b935e5e0a00e6bfab14aa099eb8aaf0436d9",
+          "owner_modules": []
+        }
+      ],
+      "clean_before": true
+    },
+    {
+      "name": "agent-os-sandbox",
+      "remote": "https://github.com/euler-gaozl/agent-os-sandbox.git",
+      "source_branch": "feat/independent-service",
+      "source_remote_head": "b7a2cdfa7fdb1fe04d89d268e261b99db777ab98",
+      "audit_head": "b7a2cdfa7fdb1fe04d89d268e261b99db777ab98",
+      "working_branch": "codex/macos-research-quality",
+      "working_base": "b7a2cdfa7fdb1fe04d89d268e261b99db777ab98",
+      "integration_pins": [
+        {
+          "role": "sandbox",
+          "commit": "9348b8e6ead28da5e1585ee69e469e4b10620d08",
+          "owner_modules": []
+        }
+      ],
+      "clean_before": true
+    },
+    {
+      "name": "agent-os-sdk",
+      "remote": "https://github.com/euler-gaozl/agent-os-sdk.git",
+      "source_branch": "feat/model-native-limits",
+      "source_remote_head": "bbbfe34b65ac44c1823b1029349b454aef26ce21",
+      "audit_head": "bbbfe34b65ac44c1823b1029349b454aef26ce21",
+      "working_branch": "codex/macos-research-quality",
+      "working_base": "bbbfe34b65ac44c1823b1029349b454aef26ce21",
+      "integration_pins": [],
+      "clean_before": true
+    },
+    {
+      "name": "agent-os-sources",
+      "remote": "https://github.com/euler-gaozl/agent-os-sources.git",
+      "source_branch": "feat/independent-service",
+      "source_remote_head": "76511f1738bfbb5d791ad8f804bd54ae23380c03",
+      "audit_head": "76511f1738bfbb5d791ad8f804bd54ae23380c03",
+      "working_branch": "codex/macos-research-quality",
+      "working_base": "76511f1738bfbb5d791ad8f804bd54ae23380c03",
+      "integration_pins": [
+        {
+          "role": "sources",
+          "commit": "29fe0860d424a6f263ed9b274673590d0d8694c2",
+          "owner_modules": []
+        }
+      ],
+      "clean_before": true
+    },
+    {
+      "name": "agent-os-storage",
+      "remote": "https://github.com/euler-gaozl/agent-os-storage.git",
+      "source_branch": "feat/independent-service",
+      "source_remote_head": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c",
+      "audit_head": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c",
+      "working_branch": "codex/macos-research-quality",
+      "working_base": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c",
+      "integration_pins": [
+        {
+          "role": "storage",
+          "commit": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c",
+          "owner_modules": []
+        }
+      ],
+      "clean_before": true
+    },
+    {
+      "name": "agent-os-telemetry",
+      "remote": "https://github.com/euler-gaozl/agent-os-telemetry.git",
+      "source_branch": "feat/independent-service",
+      "source_remote_head": "cf73e7f16307fa1a41f82c026067308b1dd8ce23",
+      "audit_head": "cf73e7f16307fa1a41f82c026067308b1dd8ce23",
+      "working_branch": "codex/macos-research-quality",
+      "working_base": "cf73e7f16307fa1a41f82c026067308b1dd8ce23",
+      "integration_pins": [
+        {
+          "role": "telemetry",
+          "commit": "c2a02e27fcc0ef517347dcaaaabe11fbcc671e81",
+          "owner_modules": []
+        }
+      ],
+      "clean_before": true
+    },
+    {
+      "name": "agent-os-toolhub",
+      "remote": "https://github.com/euler-gaozl/agent-os-toolhub.git",
+      "source_branch": "feat/independent-service",
+      "source_remote_head": "448f449db9f18a0810fdc6c111582c2e51048776",
+      "audit_head": "448f449db9f18a0810fdc6c111582c2e51048776",
+      "working_branch": "codex/macos-research-quality",
+      "working_base": "448f449db9f18a0810fdc6c111582c2e51048776",
+      "integration_pins": [
+        {
+          "role": "toolhub",
+          "commit": "98f8fecc5a139b3f1b0e4d76f4a11c9d8e0c0d07",
+          "owner_modules": []
+        }
+      ],
+      "clean_before": true
+    },
+    {
+      "name": "agent-os-worker",
+      "remote": "https://github.com/euler-gaozl/agent-os-worker.git",
+      "source_branch": "feat/model-native-limits",
+      "source_remote_head": "ff9a2f07f397bf0b408256e8a71644b3d2976376",
+      "audit_head": "ff9a2f07f397bf0b408256e8a71644b3d2976376",
+      "working_branch": "codex/macos-research-quality",
+      "working_base": "ff9a2f07f397bf0b408256e8a71644b3d2976376",
+      "integration_pins": [
+        {
+          "role": "worker",
+          "commit": "ff9a2f07f397bf0b408256e8a71644b3d2976376",
+          "owner_modules": [
+            {
+              "module": "github.com/euler-gaozl/agent-os-runtime",
+              "version": "v0.1.0-rc.5",
+              "commit": "4ce51328924af8a5d457b2a05bf0d24307c30418",
+              "module_sum": "h1:fHtgETrjthSbteb3VIseJw7tHnPJp1GMD7IZ3BEVd7A=",
+              "go_mod_sum": "h1:o0IFAQIKPHQPkk/nfwhBhLon9OkNV7IbYTJw2ty1X9g=",
+              "protocol": "runtime-execution-v1",
+              "package": "execution"
+            }
+          ]
+        }
+      ],
+      "clean_before": true
+    }
+  ],
+  "observed_local_date": "2026-10-15",
+  "timezone": "Asia/Shanghai",
+  "scope": "Source acquisition and clean working branches only; not a compatible deployment or Windows installation record."
+}

@@ -579,5 +579,13 @@
     "source_metadata_scope": "portable_source_knowledge",
     "installed_metadata_scope": "owner_windows_history_only",
     "updated_at": "2026-10-15"
-  }
+  },
+  "development_observations": [
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "file": "macos-source-audit-20261015.json",
+      "scope": "New Mac checkout audit; historical source_head_at_audit, integration_pins and owner-windows installed records remain unchanged."
+    }
+  ]
 }
