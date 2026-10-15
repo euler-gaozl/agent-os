@@ -643,6 +643,32 @@
       "integration_increment": "The commit containing this observation records the one-line Skill clarification and Storage ENOSPC acceptance fixture; no self-referential commit ID.",
       "pushed": false,
       "github_actions_triggered": false
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "file": "macos-runtime-enospc-20261015.md",
+      "status": "passed_limited_owner_transaction_scope",
+      "scope": "Runtime Owner in-process transaction test with real isolated PostgreSQL ENOSPC; NOLOGIN SET ROLE pools, in-memory archive and synthetic native receipts; no independent Runtime/Worker/Node/Storage process, real provider, Compact, complete note lifecycle, Windows or host-disk exhaustion.",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-runtime",
+          "executed_base_commit": "e6c8b935e5e0a00e6bfab14aa099eb8aaf0436d9",
+          "executed_source_state": "Base commit plus exactly one reviewed untracked test",
+          "test_path": "runtime/disk_full_darwin_test.go",
+          "test_sha256": "985da500f2d93462f564536fdfaf8597b897feb704f914f8f6e15ac6f52aece5",
+          "commit_at_documentation": "c4d1785dbbb0445f57f1bd5f5b2de079ee9c43fe",
+          "commit_scope": "Later source archival commit; not a rerun of the committed tree",
+          "production_code_changed": false,
+          "installed_runtime_changed": false
+        }
+      ],
+      "controller_base_commit": "94ab2dc976c491aff9dbd8ff8fd1bee37750252f",
+      "executed_controller_sha256": "c84fcb0335d642df59ebc6bc98df139f839c64229cae24b75091298a0be97ac9",
+      "integration_increment": "The commit containing this observation archives the reviewed controller and documentation; no self-referential commit ID.",
+      "integration_pins_changed": false,
+      "pushed": false,
+      "github_actions_triggered": false
     }
   ]
 }

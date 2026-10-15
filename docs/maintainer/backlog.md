@@ -20,6 +20,12 @@
 
 [Storage 有界卷 ENOSPC](../storage-enospc-macos-20261015.md)实际验证 artifact/reference 原子性、同 PGDATA 恢复和重试前留存；只推进 P2 的 Storage 故障覆盖移交。Runtime 笔记/调用回执 ENOSPC、P2.5 生命周期及完整故障资源要求仍开放，旧覆盖继续保留。前两次 Mac 成稿结果与旧 Windows 历史均不覆盖。
 
+## Mac Runtime Owner 故障增量（2026-10-15）
+
+[独立记录](macos-runtime-enospc-20261015.md)：1 项真实故障测试通过（1.21 秒，非 race，零 skip）。note_save 的 INSERT documents 与 EndModel 的 UPDATE calls 分别得到 53100，并有各自新日志窗口内同后端 PID 的目标 SQL。释放唯一填充文件后重启相同 PGDATA；任何重试前，10 张 Owner 表完整行摘要和两运行 usage 不变。失败笔记无文档/回执/审计/事件，未完成模型保持 inflight、一次 unknown usage 与预算预留。自然租约到期后 fence 提高，旧 owner 被拒，已完成回执重放不重复合成结果；同 operation 笔记重试幂等。
+
+只推进 P2 的 Runtime Owner 笔记/本地工具回执移交，并新增模型账本故障覆盖；未启动独立 Runtime/Worker/Node/Storage，归档是内存夹具。P2.5、Compact、W09 完整生命周期、W12/W14 全平台资源与目标环境验收继续开放；旧主仓测试与工作流保留。研究质量、完整 UI、服务/权限退役及最终统一 CI 状态不变。
+
 以下原 Windows 失败及资源 revision 为历史定位线索；Mac 最新证据以以上各增量及链接为准，不变更历史任务。
 
 ## 1. task:research-completion — 先让研究稳定成稿

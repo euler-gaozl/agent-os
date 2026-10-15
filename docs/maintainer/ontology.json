@@ -1068,6 +1068,16 @@
       "environment_id": "environment:maintainer-macos",
       "observed_at": "2026-10-15",
       "scope": "New Agent revision 4 and Skill revision 3; frozen request checked, two older tasks unchanged. No automatic retry, no new content-quality result."
+    },
+    {
+      "id": "evidence:runtime-owner-enospc-macos-20261015",
+      "type": "evidence_document",
+      "label": "Mac Runtime Owner笔记与模型账本有界卷ENOSPC",
+      "doc": "../runtime-enospc-macos-20261015.md",
+      "status": "passed_limited_owner_transaction_scope",
+      "scope": "Runtime Owner in-process transaction test with real isolated PostgreSQL ENOSPC; NOLOGIN SET ROLE pools, in-memory archive and synthetic native receipts; no independent Runtime/Worker/Node/Storage process, real provider, Compact, complete note lifecycle, Windows or host-disk exhaustion.",
+      "verification": "executed_on_maintainer_mac_with_independent_review",
+      "evidence_environment_id": "environment:maintainer-macos"
     }
   ],
   "edges": [
@@ -2678,6 +2688,26 @@
       "from": "task:faults-and-resources",
       "relation": "documented_by",
       "to": "evidence:storage-enospc-macos-20261015"
+    },
+    {
+      "from": "evidence:runtime-owner-enospc-macos-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "documented_by",
+      "to": "evidence:runtime-owner-enospc-macos-20261015"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:runtime-owner-enospc-macos-20261015"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "documented_by",
+      "to": "evidence:runtime-owner-enospc-macos-20261015"
     }
   ],
   "environment_policy": {

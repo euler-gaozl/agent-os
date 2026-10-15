@@ -51,6 +51,8 @@
 
 随后[完整 BFF/Web 包、Storage ENOSPC 与第三次研究记录](macos-package-enospc-and-answer-contract-20261015.md)追加匹配产物实际安装、仍未执行的浏览器验收，以及供应商 HTTP 503 导致无成稿且 usage 未知的新任务。独立 [Storage ENOSPC 验收](../storage-enospc-macos-20261015.md)仅推进 P2 的产物/引用故障覆盖，完整阶段和 W01–W14 范围继续保留。
 
+最新 [Runtime Owner ENOSPC 增量](macos-runtime-enospc-20261015.md)：1 项真实故障测试通过（1.21 秒，非 race，零 skip）。仅推进 P2 自有事务故障覆盖；内存归档与合成回执不代表独立 Worker/Storage 联调，完整阶段、W01–W14 和旧覆盖仍保留。
+
 ## 本次交接检查
 
 15 仓开发分支与远端核对、Actions 禁用状态、知识库相对链接、JSON 实体/关系及本地提交可解析性已检查；新增文件与暂存差异经 gitleaks 扫描未发现秘密值。独立评估 Agent 做了文档和相关源码的静态审查，指出知识库定义归 Registry、legacy 引擎兼容分支及 Telemetry claim/ack 调用方向三处问题，已修正。仓库节点的 `inventory` 用 `file` 和 `repository_id` 连接版本清单，不冒充 JSON Pointer。

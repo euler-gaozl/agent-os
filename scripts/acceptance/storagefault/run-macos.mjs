@@ -8,22 +8,29 @@ import crypto from 'node:crypto';
 import {spawn} from 'node:child_process';
 
 if(process.platform!=='darwin'||process.arch!=='arm64')throw Error('This fixture is for the reviewed Mac arm64 environment');
-if(process.argv.length!==4||process.argv[2]!=='--run-reviewed-fixture')throw Error('Usage: node run-macos.mjs --run-reviewed-fixture /absolute/agent-platform');
+const runtimeScenario=process.argv.length===5&&process.argv[4]==='--runtime';
+if((process.argv.length!==4&&!runtimeScenario)||process.argv[2]!=='--run-reviewed-fixture')throw Error('Usage: node run-macos.mjs --run-reviewed-fixture /absolute/agent-platform [--runtime]');
 const platform=process.argv[3];
 if(!path.isAbsolute(platform)||platform===path.parse(platform).root||path.resolve(platform)!==platform||!/^[A-Za-z0-9_./-]+$/.test(platform)||fs.realpathSync(platform)!==platform)throw Error('Explicit physical workspace path without whitespace required');
 const nonce=crypto.randomBytes(16).toString('hex');
-const root=`${platform}/local/data/storage-enospc-${nonce}`;
-const evidence=`${platform}/local/evidence/storage-enospc-${nonce}`;
+const scenario=runtimeScenario?'runtime':'storage';
+const root=`${platform}/local/data/${scenario}-enospc-${nonce}`;
+const evidence=`${platform}/local/evidence/${scenario}-enospc-${nonce}`;
 const mount=`${root}/volume`,image=`${root}/volume.dmg`,pgdata=`${mount}/pgdata`,marker=`${mount}/.agentos-enospc`;
 const pgbin=`${platform}/local/toolchains/postgresql-18.6/bin`;
 const storage=`${platform}/local/mac-dev-stack/bin/storage`,migrator=`${platform}/local/mac-dev-stack/bin/storage-migrate`;
 const go=`${platform}/local/toolchains/go1.27.2/bin/go`;
-const testSource=fileURLToPath(new URL('./storage_enospc_test.go',import.meta.url));
+const runtimeRepo=`${platform}/repos/agent-os-runtime`;
+const runtimeBaseCommit='c4d1785dbbb0445f57f1bd5f5b2de079ee9c43fe';
+// Set only to the independently reviewed, complete new Owner test bytes.
+const runtimeTestSHA256='985da500f2d93462f564536fdfaf8597b897feb704f914f8f6e15ac6f52aece5';
+const runtimeTestPath='runtime/disk_full_darwin_test.go';
+const testSource=runtimeScenario?`${runtimeRepo}/${runtimeTestPath}`:fileURLToPath(new URL('./storage_enospc_test.go',import.meta.url));
 const cap=512*1024*1024;
 const secrets=[];const secret=()=>{const s=crypto.randomBytes(32).toString('hex');secrets.push(s);return s};
 const adminPass=secret(),appPass=secret(),serviceToken=secret(),writerToken=secret(),readerToken=secret();
 const clean={PATH:'/usr/bin:/bin:/usr/sbin:/sbin',LANG:'C',LC_ALL:'C'};
-let device='',volumeDev,storageChild,storageClosed,interrupted=false,cleaning=false;
+let device='',volumeDev,storageChild,storageClosed,runtimeTestChild,interrupted=false,cleaning=false;
 let attachmentAttempted=false,pgStartAttempted=false,rootCreated=false,evidenceCreated=false;
 const active=new Set();const checks=[],evidenceErrors=[];
 const scrub=s=>secrets.reduce((v,k)=>v.replaceAll(k,'<fixture-secret>'),String(s)).replace(/postgres(?:ql)?:\/\/[^\s"']+/g,'<fixture-dsn>');
@@ -39,6 +46,7 @@ const totalTimer=setTimeout(interrupt,240000);
 async function run(label,binary,args,{timeout=30000,input,env=clean,record=true,allowFailure=false,cwd=root}={}){
   if(interrupted&&!cleaning)throw Error('Fixture interrupted');
   const child=spawn(binary,args,{env,cwd,detached:true,stdio:['pipe','pipe','pipe']});active.add(child);
+  if(runtimeScenario&&label==='test')runtimeTestChild=child;
   let out='',err='',limitError=false,timedOut=false;
   const append=(which,b)=>{if(out.length+err.length+b.length>8*1024*1024){limitError=true;killCommand(child);return}if(which==='out')out+=b;else err+=b};
   child.stdout.on('data',b=>append('out',b));child.stderr.on('data',b=>append('err',b));
@@ -118,17 +126,37 @@ async function stopStorage(){
 }
 
 let failure;
-const cleanup={storage_stopped:false,postgres_stopped:false,image_detached:false,fixture_removed:false};
+const cleanup={...(runtimeScenario?{runtime_test_stopped:false}:{storage_stopped:false}),postgres_stopped:false,image_detached:false,fixture_removed:false};
+const processStopped=()=>runtimeScenario?cleanup.runtime_test_stopped:cleanup.storage_stopped;
 try{
   if(fs.realpathSync(`${platform}/local/data`)!==`${platform}/local/data`)throw Error('Data parent must be physical');
   if(fs.realpathSync(`${platform}/local/evidence`)!==`${platform}/local/evidence`)throw Error('Evidence parent must be physical');
   const host=fs.statfsSync(`${platform}/local/data`);if(host.bavail*host.bsize<2*1024*1024*1024)throw Error('At least 2 GiB host free space required before bounded image creation');
   fs.mkdirSync(evidence,{mode:0o700});evidenceCreated=true;
   fs.mkdirSync(root,{mode:0o700});rootCreated=true;fs.writeFileSync(`${root}/.fixture-owner`,nonce,{mode:0o600,flag:'wx'});
-  if(sha(storage)!=='ea1fe73fb69859180d6c0bba35cc7f932d0a3818e591809d7e7d0f8556dd1131'||sha(migrator)!=='5acbc82e170e29352ae6a53076961afbc61d07e1471395c206190e4ef12e7412')throw Error('Fixed Storage build hashes changed');
+  if(!runtimeScenario&&(sha(storage)!=='ea1fe73fb69859180d6c0bba35cc7f932d0a3818e591809d7e7d0f8556dd1131'||sha(migrator)!=='5acbc82e170e29352ae6a53076961afbc61d07e1471395c206190e4ef12e7412'))throw Error('Fixed Storage build hashes changed');
   const version=await run('postgres-version',`${pgbin}/postgres`,['--version']);if(!/^postgres \(PostgreSQL\) 18\.6\s*$/.test(version.out))throw Error('PostgreSQL version changed');
-  save('inputs.json',{os:process.platform,arch:process.arch,storage_sha256:sha(storage),migrator_sha256:sha(migrator),test_sha256:sha(testSource),controller_sha256:sha(new URL(import.meta.url)),host_free_bytes:host.bavail*host.bsize,image_limit_bytes:cap,real_provider_calls:0});
-  await run('compile',go,['test','-mod=vendor','-c','-o',`${evidence}/storage-enospc.test`,testSource],{timeout:60000,cwd:`${platform}/repos/agent-os-storage`,env:{...clean,GOWORK:'off',GOTOOLCHAIN:'local',GOPROXY:'off',GOCACHE:`${platform}/local/cache/go-build`,GOMODCACHE:`${platform}/local/cache/go-mod`},});
+  if(runtimeScenario&&(fs.realpathSync(runtimeRepo)!==runtimeRepo||fs.realpathSync(testSource)!==testSource||!fs.lstatSync(testSource).isFile()))throw Error('Physical Runtime source and ordinary test required');
+  const inputs={os:process.platform,arch:process.arch,test_sha256:sha(testSource),controller_sha256:sha(new URL(import.meta.url)),host_free_bytes:host.bavail*host.bsize,image_limit_bytes:cap,real_provider_calls:0};
+  if(runtimeScenario){
+    if(!/^[a-f0-9]{64}$/.test(runtimeTestSHA256)||sha(testSource)!==runtimeTestSHA256)throw Error('Reviewed Runtime test hash missing or changed');
+    const head=await run('runtime-source-head','/opt/homebrew/bin/git',['-C',runtimeRepo,'rev-parse','HEAD'],{record:false});
+    const state=await run('runtime-source-status','/opt/homebrew/bin/git',['-C',runtimeRepo,'status','--porcelain=v1','--untracked-files=all'],{record:false});
+    if(head.out.trim()!==runtimeBaseCommit||state.out.trim()!=='')throw Error('Runtime must be the fixed committed test version with a clean worktree');
+    const goVersion=await run('runtime-go-version',go,['version']);
+    if(goVersion.out.trim()!=='go version go1.27.2 darwin/arm64')throw Error('Runtime Go toolchain changed');
+    Object.assign(inputs,{scenario:'runtime-owner-notes-and-model-ledger',runtime_source_base_commit:runtimeBaseCommit,source_state:'fixed clean committed Runtime source and reviewed Owner test',test_path:runtimeTestPath,go_path:go,go_version:goVersion.out.trim(),go_mod_sha256:sha(`${runtimeRepo}/go.mod`),vendor_modules_sha256:sha(`${runtimeRepo}/vendor/modules.txt`),scope:'Runtime Owner in-process transaction test; synthetic native receipts, no Worker/Harness/Storage or real provider'});
+  }else Object.assign(inputs,{storage_sha256:sha(storage),migrator_sha256:sha(migrator)});
+  save('inputs.json',inputs);
+  const testBinary=`${evidence}/${scenario}-enospc.test`;
+  await run('compile',go,['test','-mod=vendor','-c','-o',testBinary,runtimeScenario?'./runtime':testSource],{timeout:60000,cwd:runtimeScenario?runtimeRepo:`${platform}/repos/agent-os-storage`,env:{...clean,GOWORK:'off',GOTOOLCHAIN:'local',GOPROXY:'off',GOCACHE:`${platform}/local/cache/go-build`,GOMODCACHE:`${platform}/local/cache/go-mod`},});
+  if(runtimeScenario){
+    if(sha(testSource)!==runtimeTestSHA256)throw Error('Runtime test changed during compilation');
+    const head=await run('runtime-source-head-after-compile','/opt/homebrew/bin/git',['-C',runtimeRepo,'rev-parse','HEAD'],{record:false});
+    const state=await run('runtime-source-status-after-compile','/opt/homebrew/bin/git',['-C',runtimeRepo,'status','--porcelain=v1','--untracked-files=all'],{record:false});
+    if(head.out.trim()!==runtimeBaseCommit||state.out.trim()!=='')throw Error('Runtime source changed during compilation');
+    save('build.json',{runtime_source_base_commit:runtimeBaseCommit,test_sha256:runtimeTestSHA256,controller_sha256:sha(new URL(import.meta.url)),go_path:go,test_binary_sha256:sha(testBinary),scope:inputs.scope});
+  }
   ownRoot();fs.mkdirSync(mount,{mode:0o700});
   const beforeImage=fs.statfsSync(`${platform}/local/data`);if(beforeImage.bavail*beforeImage.bsize<2*1024*1024*1024)throw Error('Host free space fell below 2 GiB before image creation');
   // 511 MiB leaves room for the UDIF trailer inside the 512 MiB file bound.
@@ -142,7 +170,7 @@ try{
   if(!/^\/dev\/disk\d+(s\d+)?$/.test(device))throw Error('Unexpected fixture device identity');
   volumeDev=fs.statSync(mount).dev;fs.writeFileSync(marker,nonce,{mode:0o600,flag:'wx'});ownVolume();await mountedImage();
   save('volume.json',{image,device,mount,volume_device:volumeDev,image_file_bytes:im.size,volume_capacity_bytes:fs.statfsSync(mount).blocks*fs.statfsSync(mount).bsize});
-  const pgPort=await port();let storagePort=await port();while(storagePort===pgPort)storagePort=await port();
+  const pgPort=await port();let storagePort;if(!runtimeScenario){storagePort=await port();while(storagePort===pgPort)storagePort=await port();}
   fs.writeFileSync(`${root}/admin-password`,adminPass,{mode:0o600,flag:'wx'});
   await run('initdb',`${pgbin}/initdb`,['-D',pgdata,'--no-locale','--encoding=UTF8','-U','enospc_admin','--auth=scram-sha-256','--pwfile',`${root}/admin-password`]);
   ownVolume();
@@ -150,6 +178,7 @@ try{
   fs.appendFileSync(`${pgdata}/postgresql.conf`,`\nlisten_addresses='127.0.0.1'\nport=${pgPort}\nunix_socket_directories=''\nshared_buffers='16MB'\nmax_connections=12\nmax_wal_size='64MB'\nmin_wal_size='32MB'\nlog_statement='none'\nlog_error_verbosity='verbose'\nlog_parameter_max_length_on_error=0\n`);
   const pgLog=`${root}/postgres.log`;pgStartAttempted=true;await run('postgres-start',`${pgbin}/pg_ctl`,['-D',pgdata,'-l',pgLog,'start','-w','-t','15']);await checkPG();
   const pgEnv={...clean,PGHOST:'127.0.0.1',PGPORT:String(pgPort),PGUSER:'enospc_admin',PGPASSWORD:adminPass,PGDATABASE:'postgres',PGSSLMODE:'disable'};
+  if(!runtimeScenario){
   await run('database-create',`${pgbin}/psql`,['-X','-q','--set','ON_ERROR_STOP=1'],{env:pgEnv,input:`CREATE ROLE enospc_storage LOGIN PASSWORD '${appPass}';\nCREATE DATABASE enospc_storage TEMPLATE template0;\n`});
   const dsn=(user,pass,db)=>`postgres://${user}:${pass}@127.0.0.1:${pgPort}/${db}?sslmode=disable`;
   const adminURL=dsn('enospc_admin',adminPass,'postgres'),databaseURL=dsn('enospc_admin',adminPass,'enospc_storage');
@@ -165,18 +194,26 @@ try{
   fs.writeFileSync(`${root}/fixture.json`,JSON.stringify({Root:root,Mount:mount,Image:image,Marker:marker,Nonce:nonce,PGData:pgdata,PGBin:pgbin,PGLog:pgLog,Evidence:evidence,AdminURL:adminURL,DatabaseURL:databaseURL,StorageURL:storageURL,WriterToken:writerToken,ReaderToken:readerToken,VolumeDev:volumeDev,Port:pgPort}),{mode:0o600,flag:'wx'});
   save('processes.json',{storage_pid:storageChild.pid,postgres_pid:await checkPG(),pgdata,pg_port:pgPort,storage_port:storagePort});
   await run('test',`${evidence}/storage-enospc.test`,['-test.v','-test.timeout=115s'],{timeout:125000,env:{...clean,STORAGE_ENOSPC_FIXTURE:`${root}/fixture.json`,STORAGE_ENOSPC_WORKSPACE:platform}});
+  }else{
+    const adminURL=`postgres://enospc_admin:${adminPass}@127.0.0.1:${pgPort}/postgres?sslmode=disable`;
+    fs.writeFileSync(`${root}/fixture.json`,JSON.stringify({Root:root,Mount:mount,Image:image,Marker:marker,Nonce:nonce,PGData:pgdata,PGBin:pgbin,PGLog:pgLog,Evidence:evidence,AdminURL:adminURL,VolumeDev:volumeDev,Port:pgPort}),{mode:0o600,flag:'wx'});
+    save('processes.json',{postgres_pid:await checkPG(),pgdata,pg_port:pgPort,storage_started:false,runtime_service_started:false,scope:'Only the newly created cluster and fixed Owner test process; no existing configuration or database URL'});
+    await run('test',testBinary,['-test.v','-test.run','^TestRuntimeDiskFullPreservesNotesAndModelReceipts$','-test.timeout=150s'],{timeout:170000,env:{...clean,RUNTIME_ENOSPC_FIXTURE:`${root}/fixture.json`,RUNTIME_ENOSPC_WORKSPACE:platform}});
+  }
 }catch(error){failure=scrub(error.message)}finally{
   clearTimeout(totalTimer);cleaning=true;
   if(evidenceCreated){
-    try{await stopStorage();cleanup.storage_stopped=true}catch(e){cleanup.storage_error=scrub(e.message)}
+    if(runtimeScenario){
+      try{if(runtimeTestChild?.pid&&!pidAbsent(runtimeTestChild.pid))throw Error('Runtime test process absence is unconfirmed');cleanup.runtime_test_stopped=true}catch(e){cleanup.runtime_test_error=scrub(e.message)}
+    }else try{await stopStorage();cleanup.storage_stopped=true}catch(e){cleanup.storage_error=scrub(e.message)}
     try{if(pgStartAttempted){const pid=await checkPG(true);if(pid)await run('postgres-stop',`${pgbin}/pg_ctl`,['-D',pgdata,'stop','-m','immediate','-w','-t','10']);if(await checkPG(true))throw Error('Fixture PostgreSQL is still active')}cleanup.postgres_stopped=true}catch(e){cleanup.postgres_error=scrub(e.message)}
-    for(const name of ['postgres.log','storage.log']){
+    for(const name of runtimeScenario?['postgres.log']:['postgres.log','storage.log']){
       try{if(fs.existsSync(`${root}/${name}`))fs.writeFileSync(`${evidence}/${name}`,scrub(fs.readFileSync(`${root}/${name}`,'utf8')),{mode:0o600})}
       catch(e){evidenceErrors.push(`${name}: ${scrub(e.message)}`)}
     }
     try{
       if(attachmentAttempted&&await mountedImage()){
-        if(!cleanup.storage_stopped||!cleanup.postgres_stopped)throw Error('Refusing detach while fixture processes are unconfirmed');
+        if(!processStopped()||!cleanup.postgres_stopped)throw Error('Refusing detach while fixture processes are unconfirmed');
         ownRoot();if(pgStartAttempted)ownVolume();const detached=await run('image-detach','/usr/bin/hdiutil',['detach',device],{allowFailure:true});
         if(detached.code!==0){if(!await mountedImage())throw Error('Attachment changed during detach');ownRoot();if(pgStartAttempted)ownVolume();await run('image-detach-force','/usr/bin/hdiutil',['detach',device,'-force'])}
         if(await mountedImage())throw Error('Fixture image remains attached');
@@ -185,9 +222,9 @@ try{
       if(fs.existsSync(mount)&&fs.statSync(mount).dev!==fs.statSync(root).dev)throw Error('Private mountpoint still belongs to a different device');
       cleanup.image_detached=true;
     }catch(e){cleanup.detach_error=scrub(e.message)}
-    try{if(cleanup.storage_stopped&&cleanup.postgres_stopped&&cleanup.image_detached){if(rootCreated){ownRoot();fs.rmSync(root,{recursive:true})}cleanup.fixture_removed=true}}catch(e){cleanup.remove_error=scrub(e.message)}
-    let success=!failure&&evidenceErrors.length===0&&cleanup.storage_stopped&&cleanup.postgres_stopped&&cleanup.image_detached&&cleanup.fixture_removed;
-    try{save('cleanup.json',{...cleanup,passed:success,interrupted,failure:failure??null,evidence_errors:evidenceErrors,scope:'Only this newly created image, postmaster and Storage process; existing clusters and volumes untouched'})}
+    try{if(processStopped()&&cleanup.postgres_stopped&&cleanup.image_detached){if(rootCreated){ownRoot();fs.rmSync(root,{recursive:true})}cleanup.fixture_removed=true}}catch(e){cleanup.remove_error=scrub(e.message)}
+    let success=!failure&&evidenceErrors.length===0&&processStopped()&&cleanup.postgres_stopped&&cleanup.image_detached&&cleanup.fixture_removed;
+    try{save('cleanup.json',{...cleanup,passed:success,interrupted,failure:failure??null,evidence_errors:evidenceErrors,scope:runtimeScenario?'Only this newly created image, postmaster and Runtime Owner test; no Storage or existing clusters/volumes':'Only this newly created image, postmaster and Storage process; existing clusters and volumes untouched'})}
     catch(e){evidenceErrors.push(`cleanup.json: ${scrub(e.message)}`);success=false}
     console.log(JSON.stringify({passed:success,evidence,failure:failure??null,evidence_errors:evidenceErrors,cleanup}));if(!success)process.exitCode=1;
   }else{console.error(failure??'Fixture setup failed before evidence directory');process.exitCode=1}
