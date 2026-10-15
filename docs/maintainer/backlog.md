@@ -103,3 +103,9 @@ P0/P1/P2/P2.5/P3/P4/P5 与 W01–W14 全范围和既有状态不变；旧测试/
 [本次记录](macos-native-attempt-revision-20261015.md)修复native冻结旧intent在正常规则更新后仍能取得新attempt的窗口。Owner旧码2 fail/2 pass、修复4 pass；相邻32顶层38子场景race通过，零skip。Worker固定精确execution模块，独立旧/新Worker与官方Node、合成TLS模型3场景通过，首轮JSON键序断言失败保留。成功缓存/冻结回复继续重放，原失败账单和未知usage保留。两个常驻Worker已实际替换，Runtime HTTP与其余七实例保持原版本；观察中的标量计数相同不代表整库不可变。
 
 该 guard 不是完整 continuation action：还需写动作事务内重验、幂等回执与丢回复回读、受控自动接续、配置变更后的新任务承接与 UI。P0/P1/P2/P2.5/P3/P4/P5、W01–W14 全范围及旧状态保持；研究质量、服务/权限退役、生命周期/持续资源、Windows 专项和最终统一 CI 按原计划继续。
+
+## Mac 显式接续动作与Console恢复源码（2026-10-15）
+
+[本次记录](macos-continuation-action-20261015.md)推进受限native失败任务的手动同任务接续：事务内重新核验、幂等接受/拒绝回执、失联后按原ID回读/重发及Console持久化待确认请求已实现源码。Focused19顶层/42子项通过（新增Owner7/11）；广泛Runtime112/195通过并保留27显式skip，另一次独立Worker/官方Node/合成TLS验证1/3通过；Console Web36项及Go/TypeScript/构建通过。
+
+本轮没有常驻库迁移或Runtime/Console部署，现装组合不变；组件/客户端检查不能代替真实hook、多标签和浏览器流程。PG COMMIT网络回包丢失、独立SQL账号登录、其他opt-in故障、Futures业务流、真实供应商成稿及自动策略仍开放。新永久回执也纳入生命周期工作。P0/P1/P2/P2.5/P3/P4/P5与W01–W14的完整范围和旧状态保持；研究质量、服务权限退役、持续资源、Windows专项及最终统一CI继续按原计划。

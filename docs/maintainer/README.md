@@ -70,3 +70,5 @@
 [失败任务只读接续预览](macos-continuation-preview-20261015.md)记录 Runtime 新增 control GET 契约、Owner 测试、本机 Runtime 包及既存 Mac 失败任务的只读观察。candidate 不代表执行许可；旧 /resume、前端接入和完整续跑仍开放，未重试供应商或改变旧任务。
 
 [native 模型新尝试规则修订守卫](macos-native-attempt-revision-20261015.md)记录旧冻结intent在约束更新后错误准入的修复、Owner red-green、旧/新Worker的3场景实测及两个本机Worker实际更新。Runtime HTTP安装、execution模块与测试源码分别记录；完整接续动作及UI仍开放。
+
+[显式接续动作与Console回执恢复](macos-continuation-action-20261015.md)记录Runtime长期幂等回执、原生旧恢复入口的源码变更、Console待确认请求流程及分层实测。新源码尚未迁移或部署到常驻环境；浏览器、多标签、真实供应商/业务和完整自动接续仍待验收。

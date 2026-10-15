@@ -1433,6 +1433,172 @@
         "task_mutations": 0,
         "scope": "Scalar observations and process checks are separate, not an atomic admission lock or full-row comparison; normal instance heartbeats remain possible. A later root live observation confirmed both new workers and eight unchanged peers."
       }
+    },
+    {
+      "id": "evidence:macos-continuation-action-20261015",
+      "type": "evidence_document",
+      "label": "Mac 显式接续动作与Console回执恢复源码",
+      "doc": "macos-continuation-action-20261015.md",
+      "status": "explicit_continuation_source_tested_not_installed",
+      "scope": "Explicit manual continuation action, durable Owner receipt and Console recovery-pointer source implemented and locally committed. Isolated Owner and independent Worker/official Node/synthetic TLS plus Console source checks passed with explicit skips/limits. No live schema migration, service deployment, mounted/browser flow, real provider/business or Windows acceptance.",
+      "verification": "source_committed_and_isolated_execution_evidence_independently_reviewed_not_installed",
+      "evidence_environment_id": "environment:maintainer-macos",
+      "source_versions": {
+        "runtime_source_commit": "dbf99dca784c849f0386da1c3de219aa10142a8e",
+        "console_source_commit": "8e8186c07467897410f5a94973c7c4d36d99490e",
+        "runtime_installed_commit": "879c5034ad556e37f1c987312eb4124b3c4806b6",
+        "console_installed_commit": "58c511f3f2a29ca5a99a121e2197e74e5272ac90",
+        "worker_installed_commit": "94d605910e0c3da011bb1213b516150ecb5fe1ba",
+        "worker_execution_commit": "1f6c4c29c62bac3ad6d674b7797a7410f373bf00",
+        "worker_runtime_module": "v0.1.0-rc.5.0.20261015080014-1f6c4c29c62b",
+        "worker_pin_changed": false,
+        "harness_manifest_sha256": "d76588bae0edd1d7f13cdb4d01423ac8fc14da240fba682bcec4a1fb08f8ba7f"
+      },
+      "contract": {
+        "context_protocol": "failed-run-continuation-action-context-v1",
+        "receipt_protocol": "failed-run-continuation-receipt-v1",
+        "authorized_identity": "named control",
+        "manual_action_source_implemented": true,
+        "console_source_implemented": true,
+        "native_legacy_resume_source_rejected": true,
+        "preview_v1_unchanged": true,
+        "execution_protocol_unchanged": true,
+        "receipt_owner_table": "run_continuation_receipts",
+        "receipt_retention": "Permanent Owner decision history, no TTL; Runtime SELECT/INSERT, no new Worker grant"
+      },
+      "runtime_tests": {
+        "focused": {
+          "top_pass": 19,
+          "sub_pass": 42,
+          "top_skip": 0,
+          "sub_skip": 0,
+          "fail": 0,
+          "exit_code": 0,
+          "launcher_elapsed_ms": 13459,
+          "stdout_sha256": "2700b81fa0eb862b31d66a68d37af7b812e8787b5efb4ce8c01b131d4ccba9bc",
+          "new_owner_top_level": 7,
+          "new_owner_subtests": 11,
+          "pure_http_top_level": 2,
+          "pure_http_subtests": 14,
+          "preview_top_level": 6,
+          "preview_subtests": 17,
+          "native_guard_top_level": 4,
+          "package_seconds": 11.375,
+          "race": true
+        },
+        "broad_regression": {
+          "top_pass": 112,
+          "sub_pass": 195,
+          "top_skip": 14,
+          "sub_skip": 13,
+          "fail": 0,
+          "exit_code": 0,
+          "launcher_elapsed_ms": 104943,
+          "stdout_sha256": "93ece91b944de5d5472cfa5284095ed24b9f6bc2358069a9fce8fe361fac552a",
+          "package_seconds": 104.443,
+          "skipped_tests": [
+            "TestRuntimeDiskFullPreservesNotesAndModelReceipts",
+            "TestWorkerBinaryCompatibilityAfterCommittedEffect",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/serialized_overflow",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/rejection_kill",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/compaction_kill",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/usage_pressure",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/usage_control",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/irreducible",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/summary_overflow",
+            "TestIndependentWorkerEvidencePastFourMiBRecallsOmittedSourceAfterProcessInterruption",
+            "TestIndependentNativeWorkerRevisionGuard",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/large",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/completion_kill",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/rejection_kill",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/compaction_kill",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/cancel",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/partial",
+            "TestIndependentSourceWorkerRecoversCommittedStateAfterCompactionAndLostReply",
+            "TestIndependentSourceWorkerSurvivesLostStateHTTPReplyWithoutProcessDeath",
+            "TestIndependentSourceWorkerExhaustedReplyRetriesRequireSafeOperatorRecovery",
+            "TestIndependentResidentWorkerRecoversCommittedStateAfterCompactionAndLostReply",
+            "TestIndependentResidentWorkerSurvivesLostStateHTTPReplyWithoutProcessDeath",
+            "TestIndependentResidentWorkerExhaustedReplyRetriesRequireSafeOperatorRecovery",
+            "TestIndependentBudgetWorkerRecoversCommittedStateAfterCompactionAndLostReply",
+            "TestIndependentBudgetWorkerSurvivesLostStateHTTPReplyWithoutProcessDeath",
+            "TestIndependentBudgetWorkerExhaustedReplyRetriesRequireSafeOperatorRecovery",
+            "TestIndependentSourceWorkerUpgradesV1AcrossCommittedStateInterruption"
+          ],
+          "scope": "Top-level passes can include grouping tests whose opt-in leaves skip; 27 explicit skip events are retained. The independent revision Worker run is covered separately, not relabelled in this invocation."
+        },
+        "source_set_sha256": "bcfc25c2d9a029abc2f0a3761a575b6099817208402f95b2e525b9e5b9a17e1c",
+        "internal_runstate_race_exit": 0,
+        "vet_exit": 0,
+        "build_exit": 0,
+        "permissions": "Isolated real PG with NOLOGIN/SET ROLE; not credential-authenticated login acceptance",
+        "reply_loss": "External HTTP connection dropped after Handler committed; PostgreSQL COMMIT response loss not injected"
+      },
+      "worker_tests": {
+        "top_pass": 1,
+        "sub_pass": 3,
+        "top_skip": 0,
+        "sub_skip": 0,
+        "fail": 0,
+        "exit_code": 0,
+        "launcher_elapsed_ms": 5489,
+        "stdout_sha256": "c5ce744fb8c2869358e90ad0fab2fc243ebf0cc107301938633b0267c2d72404",
+        "package_seconds": 4.779,
+        "race_test_driver": true,
+        "worker_binary_race_build": false,
+        "cases": [
+          {
+            "name": "old_pin_stale",
+            "revise": true,
+            "sends": 2,
+            "attempts": 2,
+            "unknown_usage_attempts": 2,
+            "status": "failed",
+            "complete_canonical_frozen_binding": true
+          },
+          {
+            "name": "new_pin_stale",
+            "revise": true,
+            "sends": 1,
+            "attempts": 1,
+            "unknown_usage_attempts": 1,
+            "status": "failed",
+            "complete_canonical_frozen_binding": true
+          },
+          {
+            "name": "new_pin_same_revision",
+            "revise": false,
+            "sends": 2,
+            "attempts": 2,
+            "unknown_usage_attempts": 1,
+            "status": "completed",
+            "complete_canonical_frozen_binding": true
+          }
+        ],
+        "source_actor": "Explicit action at R1, then optional Constraints R2 before second Worker Claim",
+        "scope": "Actual separate old/new Worker binaries and pinned official Node adaptation; real isolated Runtime HTTP/PG, synthetic loopback TLS model and archive fixture. Complete canonical bodies bind frozen exchanges/calls/attempts; raw wire hashes may differ.",
+        "actual_provider_calls": 0
+      },
+      "console_tests": {
+        "go_race_exit": 0,
+        "vet_exit": 0,
+        "build_exit": 0,
+        "web_tests_passed": 36,
+        "new_continuation_web_tests": 9,
+        "web_failed": 0,
+        "web_skipped": 0,
+        "tsc_exit": 0,
+        "vite_exit": 0,
+        "vite_nonfatal_warnings": [
+          "lucide-react use client directives",
+          "chunks over 500 kB"
+        ],
+        "scope": "MemoryStorage/fake fetch, static render and upstream proxy fixtures; no mounted React hook/click/unmount, real cross-tab StorageEvents or browser acceptance."
+      },
+      "live_schema_migration_executed": false,
+      "installed_services_changed": false,
+      "browser_executed": false,
+      "actual_provider_calls": 0
     }
   ],
   "edges": [
@@ -3268,6 +3434,46 @@
       "from": "acceptance:W10",
       "relation": "documented_by",
       "to": "evidence:macos-native-attempt-revision-20261015"
+    },
+    {
+      "from": "evidence:macos-continuation-action-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-action-20261015"
+    },
+    {
+      "from": "service:control",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-action-20261015"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-action-20261015"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-action-20261015"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-action-20261015"
+    },
+    {
+      "from": "acceptance:W10",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-action-20261015"
+    },
+    {
+      "from": "acceptance:W13",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-action-20261015"
     }
   ],
   "environment_policy": {
