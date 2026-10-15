@@ -14,7 +14,13 @@
 
 完成任务草稿与 Console 业务入口已修复，Go/Web 测试、构建及独立静态评审通过；真实浏览器流程未执行，未关闭 W03/W13。真实 Runtime/Worker/Storage 加新 PostgreSQL 的[归档提交后丢确认测试](../native-storage-reply-loss-20261015.md)已通过，含重启后回读、自然租约接管及实际保留引用；不覆盖 ENOSPC、数据库重启或全平台资源上界。
 
-以下原 Windows 失败及资源 revision 为历史定位线索；Mac 最新证据以本节及链接为准，不变更历史任务。
+## Mac 完整包与故障增量（2026-10-15）
+
+[第三轮记录](macos-package-enospc-and-answer-contract-20261015.md)：Futures `b805fa9e` 与 Console `a2bca748` 的匹配 BFF/Web 包已安装，鉴权就绪和明确业务入口通过；真实浏览器流程仍未执行，完整 W03/W04/W05/W13 不关闭。逐问答复规则和因果边界最小修订通过既有 Go 回归与独立静态审查。新研究任务首请求收到供应商 HTTP 503，failed、无稿、unknown usage 1；433,491 为保守记账而非已确认实耗，不能据此形成新内容质量结论，不自动重跑。
+
+[Storage 有界卷 ENOSPC](../storage-enospc-macos-20261015.md)实际验证 artifact/reference 原子性、同 PGDATA 恢复和重试前留存；只推进 P2 的 Storage 故障覆盖移交。Runtime 笔记/调用回执 ENOSPC、P2.5 生命周期及完整故障资源要求仍开放，旧覆盖继续保留。前两次 Mac 成稿结果与旧 Windows 历史均不覆盖。
+
+以下原 Windows 失败及资源 revision 为历史定位线索；Mac 最新证据以以上各增量及链接为准，不变更历史任务。
 
 ## 1. task:research-completion — 先让研究稳定成稿
 

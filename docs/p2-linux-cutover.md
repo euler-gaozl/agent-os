@@ -24,9 +24,9 @@
 
 | 旧场景/位置 | 目标归属 | 新覆盖及执行状态 |
 | --- | --- | --- |
-| 真实 ENOSPC 后笔记、回执、产物恢复；internal/platform/disk_full_test.go、storage-faults.yml | 集成真实 Runtime/Storage 故障测试 | 待迁移；旧工作流保留 |
+| 真实 ENOSPC 后笔记、回执、产物恢复；internal/platform/disk_full_test.go、storage-faults.yml | 集成真实 Runtime/Storage 故障测试 | Storage artifact/reference 子集在独立 Mac 有界卷实际通过，见[ENOSPC 与同库恢复](storage-enospc-macos-20261015.md)；Runtime 笔记/调用回执及其他原范围仍待迁移，旧工作流保留 |
 | 超过 4 MiB 历史、摘要遗漏来源、中断后证据回查；dsh_evidence_test.go | Runtime/Worker 真实进程与受控模型 | 已迁 Runtime `worker_evidence_test.go`，Windows 实际独立 Worker 被杀后接管通过；见下方证据。最终统一 Linux 验证待执行 |
-| Storage 丢归档确认、取消保留首批、末批失败；harness_archive_test.go | Runtime 协议与 Storage HTTP 夹具 | 已迁 Runtime `archive_retention_test.go`，五项本机通过，含上传中接管；Storage 是 HTTP 内存夹具；另在维护者 Mac 新增[真实 Storage 丢确认恢复](native-storage-reply-loss-20261015.md)，只补一个提交后丢确认、重启回读和引用保留场景。原五项不因此全部成为真实 Storage 测试；真实 ENOSPC 仍待迁移 |
+| Storage 丢归档确认、取消保留首批、末批失败；harness_archive_test.go | Runtime 协议与 Storage HTTP 夹具 | 已迁 Runtime `archive_retention_test.go`，五项本机通过，含上传中接管；Storage 是 HTTP 内存夹具；另在维护者 Mac 新增[真实 Storage 丢确认恢复](native-storage-reply-loss-20261015.md)，只补一个提交后丢确认、重启回读和引用保留场景。原五项不因此全部成为真实 Storage 测试；另有独立 Storage artifact/reference ENOSPC 证据，但 Runtime 笔记/回执 ENOSPC 仍待迁移 |
 | 真实 Langfuse 接收、回读和重投；telemetry_live_test.go | Telemetry live CI | 已迁 Telemetry `telemetry/live_test.go`，提交 `0df5f8f`；实际 Owner CI 因额度取消，未通过最终验证；旧覆盖保留 |
 | Docker 沙箱隔离、broker 强杀；sandbox_integration_test.go | Sandbox 真实 Docker CI | 已迁 Sandbox `docker_integration_test.go` 和手动/reusable `isolation.yml`；本机三项授权/真实受限账号检查通过，Linux 测试交叉编译通过。实际 Docker 尚未执行 |
 | 旧 Storage 笔记授权退役；cmd/migrate-services/retire_test.go | Runtime 历史升级测试 | 已迁 Runtime 显式 `retire-access` 与真实登录/撤权回滚测试，Windows 23 项通过；见[审计与候选](runtime-access-retirement-20261013.md)。正式撤权待启动/发布/回退守卫；旧覆盖及回滚所需授权仍保留 |
@@ -70,3 +70,7 @@
 Owner 更新和回滚要求双向完整合约相等，原工具/引擎守卫仍保留。未知合约的 legacy 与 Owner 之间均不自动切换；旧 legacy→legacy 测试继续保留。历史 Windows 更新回滚不受这个 Linux CLI 增量影响。
 
 新增十二角色独立 unit 验收检查非目标容器身份/启动时间/重启数及配置摘要不变、原知识资料回读、错误 Owner 在替换前拒绝，并检查 Knowledge 从 1 扩到 2 再回到 1。这里的 rollback 是同镜像副本数量回滚，不能写成不同版本二进制回滚。原不同版本回滚覆盖暂未退役；Linux 发布进程被强杀后的 pending 恢复尚未提供。本段新增元数据/协议拒绝单测已通过，容器结果另记。
+
+## 维护者 Mac 的限定移交增量（2026-10-15）
+
+[Storage ENOSPC](storage-enospc-macos-20261015.md)只补 P2 的独立 Storage 产物/引用事务故障切片：真实磁盘错误、同 PGDATA 重启、重试前留存与幂等已观察；没有 Harness、Compact、笔记或 Runtime 回执场景。P2.5、W08/W09/W12/W14、旧工作流及最终 Linux/Windows 验收继续保留。匹配业务包安装及供应商失败另见[Mac 增量](maintainer/macos-package-enospc-and-answer-contract-20261015.md)，不将本机辅助包当作受管发布验收。

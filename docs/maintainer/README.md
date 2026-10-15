@@ -49,6 +49,8 @@
 
 已在独立 Mac 核对 15 仓，见[首轮环境与源码记录](macos-development-20261015.md)和[源码核对](macos-source-audit-20261015.json)。后续[真实供应商合成研究、页面与 Storage 增量](macos-research-and-storage-20261015.md)记录两次新任务、格式修复和仍未通过的回答质量，以及本地 UI 代码验证、真实 Storage 丢确认恢复。各记录按时间保留；不覆盖下面的原交接检查或 current-state.md 中的 Windows 历史。
 
+随后[完整 BFF/Web 包、Storage ENOSPC 与第三次研究记录](macos-package-enospc-and-answer-contract-20261015.md)追加匹配产物实际安装、仍未执行的浏览器验收，以及供应商 HTTP 503 导致无成稿且 usage 未知的新任务。独立 [Storage ENOSPC 验收](../storage-enospc-macos-20261015.md)仅推进 P2 的产物/引用故障覆盖，完整阶段和 W01–W14 范围继续保留。
+
 ## 本次交接检查
 
 15 仓开发分支与远端核对、Actions 禁用状态、知识库相对链接、JSON 实体/关系及本地提交可解析性已检查；新增文件与暂存差异经 gitleaks 扫描未发现秘密值。独立评估 Agent 做了文档和相关源码的静态审查，指出知识库定义归 Registry、legacy 引擎兼容分支及 Telemetry claim/ack 调用方向三处问题，已修正。仓库节点的 `inventory` 用 `file` 和 `repository_id` 连接版本清单，不冒充 JSON Pointer。

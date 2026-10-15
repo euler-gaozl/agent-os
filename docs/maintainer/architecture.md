@@ -85,3 +85,5 @@ Worker 固定 Runtime execution 包、Indexer 固定 Knowledge indexing 包，�
 ## Mac 开发观测增量（2026-10-15）
 
 [独立 Mac 新记录](macos-research-and-storage-20261015.md)记录本机服务组合、代码候选及验证条件。数据所有权、固定 DSH 决策循环、历史协议和集成 pins 均未改变。Console 新增的可选 `FUTURES_PUBLIC_URL` 仅是用户浏览器的明确导航地址；它不同于服务内网地址，不转发中台身份，也不表示目标已部署。
+
+本 Mac 后续已按两个指定提交安装匹配的 BFF/Web 包，见[完整包与第三次研究记录](macos-package-enospc-and-answer-contract-20261015.md)。鉴权就绪与公开入口配置核对不等于浏览器验收；该新观测不修改上文 Windows 端口历史、服务数据权威或集成 pins。独立 [Storage ENOSPC](../storage-enospc-macos-20261015.md)只验证新有界卷上的 artifact/reference 事务和同库恢复，没有引入 Runtime 或其他数据域的跨库写入。

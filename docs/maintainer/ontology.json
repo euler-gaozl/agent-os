@@ -1029,6 +1029,45 @@
       "environment_id": "environment:maintainer-macos",
       "observed_at": "2026-10-15",
       "scope": "New synthetic task with real provider, not historical Windows task replay or real market acceptance"
+    },
+    {
+      "id": "evidence:macos-package-enospc-and-answer-contract-20261015",
+      "type": "evidence_document",
+      "label": "Mac匹配BFF/Web安装与第三次研究供应商失败",
+      "doc": "macos-package-enospc-and-answer-contract-20261015.md",
+      "scope": "Installed matching source/BFF/Web package; no browser acceptance. Third task failed before any draft on provider HTTP 503 with one unknown usage; no answer-quality conclusion.",
+      "verification": "executed_on_maintainer_mac_with_independent_review",
+      "evidence_environment_id": "environment:maintainer-macos"
+    },
+    {
+      "id": "evidence:storage-enospc-macos-20261015",
+      "type": "evidence_document",
+      "label": "Mac独立Storage有界卷真实ENOSPC与同库恢复",
+      "doc": "../storage-enospc-macos-20261015.md",
+      "scope": "Only P2 Storage artifact/reference fault-coverage transfer. Real bounded-volume PostgreSQL ENOSPC and same-PGDATA recovery; no Harness, Compact, notes, Runtime call receipts, Windows or whole-platform resource acceptance.",
+      "verification": "executed_on_maintainer_mac_with_independent_review",
+      "evidence_environment_id": "environment:maintainer-macos"
+    },
+    {
+      "id": "run:macos-synthetic-research-20261015-answer-contract",
+      "type": "observed_run",
+      "label": "Mac第三次合成研究：供应商忙碌失败、无成稿",
+      "status": "failed",
+      "quality_status": "not_evaluated_no_result",
+      "task_id": "9e2dc8348c639a093632e0e2914ae9ec",
+      "model_attempts": 1,
+      "max_model_attempts": 12,
+      "unknown_usage_attempts": 1,
+      "accounted_tokens": 433491,
+      "accounting_scope": "Conservative unknown-usage accounting, not provider-confirmed consumption or billing; cost null",
+      "provider_http_status": 503,
+      "provider_error_type": "service_unavailable_error",
+      "draft_count": 0,
+      "report_check_status": "unstructured",
+      "doc": "macos-package-enospc-and-answer-contract-20261015.md",
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "scope": "New Agent revision 4 and Skill revision 3; frozen request checked, two older tasks unchanged. No automatic retry, no new content-quality result."
     }
   ],
   "edges": [
@@ -2584,6 +2623,61 @@
       "from": "task:research-quality",
       "relation": "addresses",
       "to": "run:macos-synthetic-research-20261015-format-v5"
+    },
+    {
+      "from": "evidence:macos-package-enospc-and-answer-contract-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "evidence:storage-enospc-macos-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "run:macos-synthetic-research-20261015-answer-contract",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "run:macos-synthetic-research-20261015-answer-contract",
+      "relation": "documented_by",
+      "to": "evidence:macos-package-enospc-and-answer-contract-20261015"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "documented_by",
+      "to": "evidence:macos-package-enospc-and-answer-contract-20261015"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "documented_by",
+      "to": "evidence:macos-package-enospc-and-answer-contract-20261015"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "documented_by",
+      "to": "evidence:macos-package-enospc-and-answer-contract-20261015"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "addresses",
+      "to": "run:macos-synthetic-research-20261015-answer-contract"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "addresses",
+      "to": "run:macos-synthetic-research-20261015-answer-contract"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "documented_by",
+      "to": "evidence:storage-enospc-macos-20261015"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:storage-enospc-macos-20261015"
     }
   ],
   "environment_policy": {

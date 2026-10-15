@@ -615,6 +615,34 @@
       "integration_increment": "Method Skill, real Storage fixture, evidence and mappings are recorded by the Git commit containing this entry; no self-referential commit ID.",
       "pushed": false,
       "github_actions_triggered": false
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "file": "macos-package-enospc-and-answer-contract-20261015.md",
+      "scope": "Append-only Mac installation observation; historical Windows records, integration pins and compiled dependencies unchanged.",
+      "package_manifest_sha256": "c5d2d7dad6190974ac606e8b80a8ecee3325ffdd5cad56d6cc031eead3563586",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-futures",
+          "commit": "b805fa9e09ad8c1ecf3feb4ae7c74e77a41029ed",
+          "change": "Per-question answer instructions; includes earlier completed-draft Web fixes and v5 parser",
+          "mac_installation": "Matching BFF and Web installed in independent Mac development stack; browser acceptance not executed",
+          "binary_sha256": "18b4be2c7a04b77dc6d547e833412b58ea1261110bda1c3e12e7e51570c71ca2",
+          "web_tree_sha256": "16712d2e588bbd8f5bea119caee14df0028ef7e8864d038a1da9ea514d2229b9"
+        },
+        {
+          "repository_id": "repo:agent-os-console",
+          "commit": "a2bca748d1bd6f0de0e52e1e0a59070e790d5fbc",
+          "change": "Explicit public business browser URL",
+          "mac_installation": "Matching BFF and Web installed; authenticated public URL verified, browser acceptance not executed",
+          "binary_sha256": "490336bf86cbe97ded80798657e7f839b17cea532e682ac244a27bb80e6a6a17",
+          "web_tree_sha256": "ce9859b6b6f2b7ecda4c2b43636a463cd2b7ca77f45e44e6db766bc6ae947094"
+        }
+      ],
+      "integration_increment": "The commit containing this observation records the one-line Skill clarification and Storage ENOSPC acceptance fixture; no self-referential commit ID.",
+      "pushed": false,
+      "github_actions_triggered": false
     }
   ]
 }
