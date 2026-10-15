@@ -90,3 +90,7 @@ Owner 更新和回滚要求双向完整合约相等，原工具/引擎守卫仍�
 ## Mac Console 与 native SourceState Owner 局部移交（2026-10-15）
 
 [本次记录](maintainer/macos-console-native-and-state-recovery-20261015.md)将固定四引擎工作状态显示与 Runtime Owner 受限恢复分别验明：UI 为 SSR/直接回调与本机完整包；Runtime 为真实隔离 PG/HTTP、NOLOGIN SET ROLE、内存归档及正常 API 可达状态。3 顶层/4 子场景通过不等于官方 Node/Storage 恢复、真实浏览器或通用 continuation。归档普通丢确认仅自然 failed/not_waiting，不将未到达的 archive_unconfirmed 分支计为通过。旧矩阵、测试/工作流、权限退役和 P2/P2.5、完整 W01–W14 仍保留，Linux/Windows 验收不由本机包更新替代。
+
+## Mac Runtime 只读接续预览 Owner 增量（2026-10-15）
+
+[本次记录](maintainer/macos-continuation-preview-20261015.md)新增 control GET 的一致只读投影与 Owner 回归：7 顶层含 1 项既有 peer 权限检查、17 子项通过。正向 native503 与预算边界按正常 API 构造，负向损坏注入明确标记，外部调用/表行/usage 不变单独核对。真实 PG/HTTP 与内存归档不替代官方 Node、Storage、供应商或全平台资源验收；本机 Runtime 包更新不是 Windows 受管发布。旧测试/工作流和 P2/P2.5、完整 W01–W14 保持，新的只读契约不关闭执行动作或旧权限退役。

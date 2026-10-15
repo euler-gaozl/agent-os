@@ -983,6 +983,147 @@
       "integration_pins_changed": false,
       "pushed": false,
       "github_actions_triggered": false
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "file": "macos-continuation-preview-20261015.md",
+      "status": "readonly_preview_installed_owner_tested_continuation_open",
+      "scope": "Control-only read-only failed continuation preview v1 implemented and locally installed in Runtime; Owner PostgreSQL/HTTP fixtures plus read-only observations of existing Mac failures. No new execution action, generic resume guard, UI integration, provider retry or business/Windows acceptance.",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-runtime",
+          "source_commit": "879c5034ad556e37f1c987312eb4124b3c4806b6",
+          "source_base_commit": "606fbc8a0e785d013f39e2cadcfca2fb1fb268f3",
+          "source_status": "committed_local",
+          "installed": true,
+          "source_role": "Control-only read-only continuation preview v1, authorization, Owner tests and README; execution protocol and legacy resume unchanged."
+        }
+      ],
+      "api": {
+        "protocol": "failed-run-continuation-preview-v1",
+        "method": "GET",
+        "route": "/v1/runs/{id}/continuation",
+        "authorized_role": "control",
+        "read_only": true,
+        "action_available": false,
+        "positive_assessment": "same_run_candidate is an observation, never execution authorization",
+        "legacy_resume_changed": false,
+        "ui_integrated": false
+      },
+      "runtime_owner": {
+        "source_base_commit": "606fbc8a0e785d013f39e2cadcfca2fb1fb268f3",
+        "source_commit": "879c5034ad556e37f1c987312eb4124b3c4806b6",
+        "source_set_sha256": "2c49c04472b5b9a32f28959e7a1c91776b3839c480628a6c27cea75e5d45a313",
+        "tests": {
+          "top_level_passed": 7,
+          "new_top_level_tests": 6,
+          "existing_peer_policy_tests": 1,
+          "subtests_passed": 17,
+          "failed": 0,
+          "skipped": 0,
+          "race": true,
+          "package_elapsed_seconds": 4.327,
+          "exit_code": 0
+        },
+        "vet_exit": 0,
+        "build_exit": 0,
+        "scope": "Owner in-process real isolated PostgreSQL and servicehttp authorization, NOLOGIN SET ROLE pools, synthetic native receipt and memory archive. Positive paths use normal APIs; five corrupt-record negative fixtures are deliberate injections. Separate actor invokes old resume in consistency test; GET never performs that action. No official Node/independent Worker/Storage or provider."
+      },
+      "runtime_package": {
+        "installed": true,
+        "label": "20261015-continuation-preview",
+        "source_commit": "879c5034ad556e37f1c987312eb4124b3c4806b6",
+        "previous_installed_source": "e6c8b935e5e0a00e6bfab14aa099eb8aaf0436d9",
+        "installed_at": "2026-10-15T07:26:06.356Z",
+        "manifest_sha256": "1942749e2442092c5643cb3b0f8fe08c97b670d14af42d02c26951cb648cfca2",
+        "binary_sha256": "a6b12e3e5e4bb0091f58d2c2d6784583f9f533d0d9b570e3fff49662d4a22e38",
+        "installed_evidence_sha256": "859148cde017804ba0d029c50df548acd22f07cf5218d44431011f21fae7f142",
+        "non_target_instances_unchanged": 9,
+        "total_live_instances": 10,
+        "readiness_verified": true,
+        "runtime_configuration_unchanged": true,
+        "fixed_harness_unchanged": true,
+        "migration_executed": false,
+        "retirement_executed": false,
+        "healthcheck_executed": false,
+        "provider_calls": 0,
+        "tasks_submitted": 0,
+        "scope": "Only Runtime replaced. Startup can write normal instance registration/heartbeat; no whole-database write-free claim."
+      },
+      "installed_observation": {
+        "read_only": true,
+        "action_available": false,
+        "named_table_snapshots_equal": true,
+        "named_tables": 12,
+        "complete_task_lists_equal": true,
+        "terminal_tasks": 4,
+        "comparison_includes_instances": false,
+        "continuous_immutability_proven": false,
+        "preinstall_observed_at": "2026-10-15T07:25:50.728Z",
+        "postinstall_observed_at": "2026-10-15T07:26:30.050Z",
+        "tables_sha256": "cb618c38d0bd8933b658c3cbfc9e6c78ccbcecf982cd125906a6a3305a7136f6",
+        "tasks_sha256": "72d29da5eeab6c528ce5bf63b7e5cebba03536c9e724c4e007c339b576f2febf",
+        "observer_script_sha256": "e5824b1cbc4ab9a5988529c6d6b02769852f9eb685cee73468cb69ee9cbe25d1",
+        "preview_gets": 4,
+        "successful_phase_http_gets": 8,
+        "successful_phase_database_read_transactions": 4,
+        "provider_calls": 0,
+        "resumes_performed": 0,
+        "tasks_submitted": 0,
+        "assessments": [
+          {
+            "status": "completed",
+            "count": 2,
+            "assessment": "not_applicable",
+            "reason": "already_completed"
+          },
+          {
+            "status": "failed",
+            "count": 2,
+            "assessment": "same_run_candidate",
+            "reason": "retained_transient_model_failure",
+            "each_basis": {
+              "model_rounds": 1,
+              "max_steps": 12,
+              "family_model_attempts": 1,
+              "max_model_attempts": 12,
+              "retry_http_status": 503
+            }
+          }
+        ],
+        "scope": "Twelve named execution/notes table row digests and full terminal task metadata agree at observation endpoints across installation and GETs. HTTP and SQL snapshots are separate; no admission lock or continuous immutability proof. Excludes instances, app_runs, business_runs and all other tables; no live provider retry, Storage-byte validation, UI, business or Windows acceptance."
+      },
+      "fixture_cleanup": {
+        "passed": true,
+        "databases_remaining": 0,
+        "roles_remaining": 0,
+        "connections_remaining": 0,
+        "evidence_sha256": "e3b26da5faf274b8bf900a4c89c14a2df8e263355b4a6693e0715b444c0a782b"
+      },
+      "installed_services_changed": true,
+      "installed_roles_changed": [
+        "runtime"
+      ],
+      "integration_pins_changed": false,
+      "real_provider_calls": 0,
+      "browser_executed": false,
+      "pushed": false,
+      "github_actions_triggered": false,
+      "retained_failures": [
+        {
+          "stage": "root-source-metadata-verification",
+          "result": "Compared timestamp-bearing envelopes and stopped before write; corrected to the ten service objects. Owner tests themselves passed."
+        },
+        {
+          "stage": "observer-v1-configuration-guard",
+          "result": "Stopped before HTTP/SQL transactions because the strict guard omitted pinned search_path=public; no service configuration change."
+        },
+        {
+          "stage": "observer-v2-initial-database-summary",
+          "result": "Actual libpq connection attempt selected a missing default port 5432 socket because PGDATABASE did not expand the URI; did not connect to target 55432. Zero completed summaries is not zero connection attempts. V3 split fixed connection parameters into child environment while preserving readonly/public and exact pins."
+        }
+      ]
     }
   ]
 }

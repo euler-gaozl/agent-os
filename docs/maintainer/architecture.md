@@ -97,3 +97,5 @@ Worker 固定 Runtime execution 包、Indexer 固定 Knowledge indexing 包，�
 [原生笔记与未知效果观测](macos-native-notes-and-unknown-20261015.md)保持 Runtime 对笔记版本、有效/撤回状态、冻结回执与核对审计的权威。Owner 测试的自然过期只改变当前读视图，不重写历史回执；独立进程测试在合成效果已 fsync 后真实断开 TCP，以明确证据调用 control reconcile，不能当作平台会自动判断外部效果。内存 archive 与真实 Storage manifest/part/ref 两层证据分别记录；固定官方 DSH 决策循环、Compact、快照、编译协议、跨库边界和集成 pins 均不变，未新增统一 TTL 或自动删除永久资料。
 
 [Console 原生引擎与恢复边界观测](macos-console-native-and-state-recovery-20261015.md)补齐 UI 对 Runtime 已支持的固定四引擎判定，没有新增协议或执行器。source-state 恢复仍由 Runtime 预览和 POST 事务内重新核验，通用 failed /resume 是另一入口；Console 不成为状态权威。Owner 测试中的合成模型、内存 archive、回调丢回复与官方 Node/真实 Storage/网络故障分别记载；旧快照、预算、固定 DSH、Worker 编译 pin、跨库归属及部署 pins 均保持。
+
+[只读接续预览观测](macos-continuation-preview-20261015.md)由 Runtime 在单个有界 REPEATABLE READ READ ONLY 事务中读取本域冻结配置、族状态、调用/尝试与归档确认元数据。不会保留预算、写回执/事件、调用 Registry/Storage/供应商或改变旧快照。最后失败帧重试仍计同一逻辑轮次；全部状态的家族尝试仍受原冻结上限约束。assessment/observed_at 不构成许可，未来动作须重新加锁核验；旧 /resume 语义、固定 DSH、Worker 编译协议、跨库归属与部署 pins 不变。

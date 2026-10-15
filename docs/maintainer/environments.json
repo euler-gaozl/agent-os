@@ -172,6 +172,89 @@
             },
             "scope": "In-process Owner with real PostgreSQL and SourceState HTTP policy, NOLOGIN SET ROLE application pools, synthetic model receipt, memory archive and callback-level reply loss; no SQL-fabricated run state, actual TCP loss, Worker retry loop, official Node or Storage process. Archive lost-ack naturally failed/not_waiting; archive_unconfirmed diagnostic and external-tool unknown not added."
           }
+        },
+        {
+          "observed_at": "2026-10-15",
+          "timezone": "Asia/Shanghai",
+          "os_version": "15.3",
+          "os_build": "24D2059",
+          "cpu_architecture": "arm64",
+          "record": "macos-continuation-preview-20261015.md",
+          "status": "readonly_preview_installed_owner_tested_continuation_open",
+          "scope": "Control-only read-only failed continuation preview v1 implemented and locally installed in Runtime; Owner PostgreSQL/HTTP fixtures plus read-only observations of existing Mac failures. No new execution action, generic resume guard, UI integration, provider retry or business/Windows acceptance.",
+          "api": {
+            "protocol": "failed-run-continuation-preview-v1",
+            "method": "GET",
+            "route": "/v1/runs/{id}/continuation",
+            "authorized_role": "control",
+            "read_only": true,
+            "action_available": false,
+            "positive_assessment": "same_run_candidate is an observation, never execution authorization",
+            "legacy_resume_changed": false,
+            "ui_integrated": false
+          },
+          "runtime_owner": {
+            "source_base_commit": "606fbc8a0e785d013f39e2cadcfca2fb1fb268f3",
+            "source_commit": "879c5034ad556e37f1c987312eb4124b3c4806b6",
+            "source_set_sha256": "2c49c04472b5b9a32f28959e7a1c91776b3839c480628a6c27cea75e5d45a313",
+            "tests": {
+              "top_level_passed": 7,
+              "new_top_level_tests": 6,
+              "existing_peer_policy_tests": 1,
+              "subtests_passed": 17,
+              "failed": 0,
+              "skipped": 0,
+              "race": true,
+              "package_elapsed_seconds": 4.327,
+              "exit_code": 0
+            },
+            "vet_exit": 0,
+            "build_exit": 0,
+            "scope": "Owner in-process real isolated PostgreSQL and servicehttp authorization, NOLOGIN SET ROLE pools, synthetic native receipt and memory archive. Positive paths use normal APIs; five corrupt-record negative fixtures are deliberate injections. Separate actor invokes old resume in consistency test; GET never performs that action. No official Node/independent Worker/Storage or provider."
+          },
+          "installed_observation": {
+            "read_only": true,
+            "action_available": false,
+            "named_table_snapshots_equal": true,
+            "named_tables": 12,
+            "complete_task_lists_equal": true,
+            "terminal_tasks": 4,
+            "comparison_includes_instances": false,
+            "continuous_immutability_proven": false,
+            "preinstall_observed_at": "2026-10-15T07:25:50.728Z",
+            "postinstall_observed_at": "2026-10-15T07:26:30.050Z",
+            "tables_sha256": "cb618c38d0bd8933b658c3cbfc9e6c78ccbcecf982cd125906a6a3305a7136f6",
+            "tasks_sha256": "72d29da5eeab6c528ce5bf63b7e5cebba03536c9e724c4e007c339b576f2febf",
+            "observer_script_sha256": "e5824b1cbc4ab9a5988529c6d6b02769852f9eb685cee73468cb69ee9cbe25d1",
+            "preview_gets": 4,
+            "successful_phase_http_gets": 8,
+            "successful_phase_database_read_transactions": 4,
+            "provider_calls": 0,
+            "resumes_performed": 0,
+            "tasks_submitted": 0,
+            "assessments": [
+              {
+                "status": "completed",
+                "count": 2,
+                "assessment": "not_applicable",
+                "reason": "already_completed"
+              },
+              {
+                "status": "failed",
+                "count": 2,
+                "assessment": "same_run_candidate",
+                "reason": "retained_transient_model_failure",
+                "each_basis": {
+                  "model_rounds": 1,
+                  "max_steps": 12,
+                  "family_model_attempts": 1,
+                  "max_model_attempts": 12,
+                  "retry_http_status": 503
+                }
+              }
+            ],
+            "scope": "Twelve named execution/notes table row digests and full terminal task metadata agree at observation endpoints across installation and GETs. HTTP and SQL snapshots are separate; no admission lock or continuous immutability proof. Excludes instances, app_runs, business_runs and all other tables; no live provider retry, Storage-byte validation, UI, business or Windows acceptance."
+          }
         }
       ]
     },

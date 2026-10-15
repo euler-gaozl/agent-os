@@ -91,3 +91,9 @@ P0/P1/P2/P2.5/P3/P4/P5 与 W01–W14 全范围和既有状态不变；旧测试/
 [本次记录](macos-console-native-and-state-recovery-20261015.md)修复 budget-v3/native-v4 工作状态面板与归档清单识别，27 项 Web 检查和 TypeScript 通过，匹配 Console BFF/Web 包已安装；只更新 control，九个非目标实例保持。Runtime 新增 3 个顶层/4 个子场景的 Owner PostgreSQL/HTTP 恢复验证，零 fail/skip。回执丢失由回调夹具实现，归档为内存；既有 source-state 受限恢复协议、failed 通用 /resume 和自动 continuation 状态不变。
 
 它不等于浏览器真实流程、官方 Node 端到端恢复、供应商失败后续写或研究质量通过。P0/P1/P2/P2.5/P3/P4/P5、W01–W14 全范围与既有状态保留；完整 UI、旧覆盖/权限退役、存储生命周期、持续资源、研究交付、Windows 专项及最终统一 CI 继续按原计划。
+
+## Mac 失败任务只读接续预览（2026-10-15）
+
+[本次记录](macos-continuation-preview-20261015.md)增加 Runtime control 专用 GET 预览，固定 read_only=true/action_available=false；对严格保留 native HTTP503 回执、全族未决状态、冻结配置/归档元数据和原预算作一致快照分类。Owner 7 顶层（6 新增、1 既有 peer）及 17 子项通过、零 fail/skip；已独立安装本机 Runtime 包并只读观察既存 Mac 任务，九个非目标实例保持。
+
+同帧候选不是执行许可，也不证明供应商已恢复、归档字节当前可读或研究可成稿。旧 failed /resume 与当前 Console 按钮未被此 GET 加上守卫，仍须执行时锁内重验、幂等动作回执/丢回复核对、受控自动接续与完整 UI。P0/P1/P2/P2.5/P3/P4/P5、W01–W14 及全部旧范围保持；研究质量、服务/权限退役、生命周期/持续资源、Windows 专项和最终统一 CI 继续按原计划。
