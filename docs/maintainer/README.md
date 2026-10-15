@@ -60,3 +60,5 @@
 15 仓开发分支与远端核对、Actions 禁用状态、知识库相对链接、JSON 实体/关系及本地提交可解析性已检查；新增文件与暂存差异经 gitleaks 扫描未发现秘密值。独立评估 Agent 做了文档和相关源码的静态审查，指出知识库定义归 Registry、legacy 引擎兼容分支及 Telemetry claim/ack 调用方向三处问题，已修正。仓库节点的 `inventory` 用 `file` 和 `repository_id` 连接版本清单，不冒充 JSON Pointer。
 
 本次没有重新运行平台测试，没有模型付费调用，没有触发 CI；静态交接审查不能代替原目标的剩余验收。检查证据保存在原电脑 `ops/maintainer-handoff.path` 指向的目录。
+
+[Telemetry/Runtime Owner 局部移交](macos-telemetry-owner-20261015.md)记录有界确认缺陷 red-green、隔离 PostgreSQL/HTTP 夹具及保留的真实后端验收；未部署服务，旧覆盖与完整目标继续保留。

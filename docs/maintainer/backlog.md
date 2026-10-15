@@ -77,3 +77,5 @@ Owner：Harness/Runtime/Worker/Storage。已有驻留事件释放、工作状态
 ## 新环境额外缺口
 
 `task:fresh-windows-bootstrap`：仅在以后明确要初始化新 Windows 时适用，不是朋友 Mac 开工的前提。当前 Windows 操作链主要服务已有 catalog；Linux provision 不能直接当新 Windows 的一键初始化。未来重建时仍须检查受保护身份、Owner 迁移和固定发布登记。朋友当前先按 [Mac 环境说明](environment.md) 做独立开发与验证，不照搬原用户的密钥或执行旧 `Start -Migrate`。
+
+[Mac Telemetry/Runtime Owner 增量](macos-telemetry-owner-20261015.md)补本域事务/投递协议覆盖与确认回包边界，不代表真实 Langfuse、持续循环、独立登录或完整组合通过。服务退役、最终统一 CI、七阶段和 W01–W14 均保持原范围。

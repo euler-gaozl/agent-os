@@ -1089,6 +1089,16 @@
       "verification": "independent_read_only_terminal_and_frozen_request_review",
       "evidence_environment_id": "environment:maintainer-macos",
       "scope": "One new same-input synthetic research task failed on first provider HTTP 503 with no report; frozen Agent 4/Skill 3, native-v4 engine and existing 12-step/12-model-attempt budget verified, reviewer criteria fixed before submission and excluded from input, three old tasks unchanged. Reviewed read-failure UI installed as a matching Futures BFF/Web package; nine other instances unchanged. No browser or Windows acceptance."
+    },
+    {
+      "id": "evidence:macos-telemetry-owner-20261015",
+      "type": "evidence_document",
+      "label": "Mac Telemetry与Runtime Owner局部覆盖移交",
+      "doc": "macos-telemetry-owner-20261015.md",
+      "status": "passed_limited_owner_coverage_not_deployed",
+      "scope": "Mac isolated PostgreSQL Owner coverage: Telemetry exporter receipt red-green and Runtime outbox protocol; HTTP fixtures; only the five new exporter tests and two Runtime tests use NOLOGIN SET ROLE application pools, not separate login or real Langfuse, continuous-loop liveness or cross-service composition. No installed service, source protocol or deployment pin change.",
+      "verification": "executed_on_maintainer_mac_with_independent_review",
+      "evidence_environment_id": "environment:maintainer-macos"
     }
   ],
   "edges": [
@@ -2739,6 +2749,31 @@
       "from": "task:continuation-ui",
       "relation": "documented_by",
       "to": "evidence:macos-research-verification-and-ui-20261015"
+    },
+    {
+      "from": "evidence:macos-telemetry-owner-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "documented_by",
+      "to": "evidence:macos-telemetry-owner-20261015"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:macos-telemetry-owner-20261015"
+    },
+    {
+      "from": "service:telemetry",
+      "relation": "documented_by",
+      "to": "evidence:macos-telemetry-owner-20261015"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "documented_by",
+      "to": "evidence:macos-telemetry-owner-20261015"
     }
   ],
   "environment_policy": {

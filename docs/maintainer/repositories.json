@@ -727,6 +727,52 @@
       "old_tasks_changed": false,
       "pushed": false,
       "github_actions_triggered": false
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "file": "macos-telemetry-owner-20261015.md",
+      "status": "passed_limited_owner_coverage_not_deployed",
+      "scope": "Mac isolated PostgreSQL Owner coverage: Telemetry exporter receipt red-green and Runtime outbox protocol; HTTP fixtures; only the five new exporter tests and two Runtime tests use NOLOGIN SET ROLE application pools, not separate login or real Langfuse, continuous-loop liveness or cross-service composition. No installed service, source protocol or deployment pin change.",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-telemetry",
+          "source_commit": "6f9f539125431bebbf88ddbdbb6840f3dd426068",
+          "source_base_commit": "cf73e7f16307fa1a41f82c026067308b1dd8ce23",
+          "source_status": "committed_local",
+          "installed": false,
+          "source_role": "Bounded acknowledgement fix and exporter coverage; manual/reusable workflow only."
+        },
+        {
+          "repository_id": "repo:agent-os-runtime",
+          "source_commit": "ff3fa220df331f698c99b260005cc222d0dcdb1c",
+          "source_base_commit": "c4d1785dbbb0445f57f1bd5f5b2de079ee9c43fe",
+          "source_status": "committed_local",
+          "installed": false,
+          "source_role": "Outbox HTTP/lease test coverage only; production Runtime unchanged."
+        }
+      ],
+      "telemetry_tests": {
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "race": true,
+        "elapsed_seconds": 2.267,
+        "scope": "Five new exporter regressions use SET ROLE application pools; existing Inbox test uses the fixture owner pool and migration test explicitly checks role permissions. No live Langfuse or continuous background loop assertion"
+      },
+      "runtime_tests": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "race": true,
+        "elapsed_seconds": 31.795,
+        "evidence": "local/evidence/macos-telemetry-owner-20261015/runtime-green.jsonl"
+      },
+      "installed_services_changed": false,
+      "integration_pins_changed": false,
+      "old_tasks_changed": false,
+      "pushed": false,
+      "github_actions_triggered": false
     }
   ]
 }

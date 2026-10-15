@@ -91,3 +91,5 @@ Worker 固定 Runtime execution 包、Indexer 固定 Knowledge indexing 包，�
 本轮 [Runtime Owner ENOSPC](macos-runtime-enospc-20261015.md)仅在新隔离 PostgreSQL 上通过现有 Runtime Store、execution 协议及 Owner 迁移测试事务边界，结果为：1 项真实故障测试通过（1.21 秒，非 race，零 skip）。NOLOGIN/SET ROLE 不能替代独立账号登录；内存 archive 与合成 native 回执不能替代真实 Storage/Worker/DSH。无生产逻辑、旧快照、原协议、数据所有权或部署组合变化，也不新增决策循环。
 
 [第四次同题研究及 UI 记录](macos-research-verification-and-ui-20261015.md)保留既有服务数据权威、固定 DSH/native 协议与部署 pins。供应商 503 无稿只构成该次执行失败，不证明成稿方法或业务质量；新观测不覆盖原 Windows 或旧 Mac 证据。
+
+[Mac Telemetry/Runtime Owner 记录](macos-telemetry-owner-20261015.md)保持 Runtime outbox 与 Telemetry inbox/export 的数据权威；仅确认读取边界修复及各 Owner 测试移交，没有新增循环、跨库访问、旧协议/快照或部署组合变化。

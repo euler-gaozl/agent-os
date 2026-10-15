@@ -78,3 +78,7 @@ Owner 更新和回滚要求双向完整合约相等，原工具/引擎守卫仍�
 ## Runtime Owner 局部故障移交增量（2026-10-15）
 
 [Runtime Owner 记录](runtime-enospc-macos-20261015.md)：1 项真实故障测试通过（1.21 秒，非 race，零 skip）。note_save 的 INSERT documents 与 EndModel 的 UPDATE calls 分别得到 53100，并有各自新日志窗口内同后端 PID 的目标 SQL。释放唯一填充文件后重启相同 PGDATA；任何重试前，10 张 Owner 表完整行摘要和两运行 usage 不变。失败笔记无文档/回执/审计/事件，未完成模型保持 inflight、一次 unknown usage 与预算预留。自然租约到期后 fence 提高，旧 owner 被拒，已完成回执重放不重复合成结果；同 operation 笔记重试幂等。 模型账本不是旧磁盘测试既有覆盖，本轮属于新增断言。测试在 Go 进程内调用 Owner API，归档为内存夹具，角色为 NOLOGIN/SET ROLE；没有真实 Worker/Node 或 Runtime/Storage 同时故障。旧测试和 storage-faults.yml 不删除；完整 P2、P2.5、W08/W09/W12/W14、Linux/Windows 及权限退役验收仍开放。
+
+## Mac Telemetry/Runtime Owner 局部移交（2026-10-15）
+
+[本次记录](maintainer/macos-telemetry-owner-20261015.md)补充 exporter 并发、部分拒绝、超限确认与 Runtime outbox HTTP 权威协议的局部覆盖。旧表格和历史 live/组合结论保留；本机使用真实隔离 PostgreSQL、HTTP 夹具和 NOLOGIN/SET ROLE，不等于独立登录、真实 Langfuse 或跨 Owner 组合。Runtime receive 失败场景只验证顺序 API 独立性，不声明持续循环活性。旧测试/工作流继续保留，P2/P2.5 与完整 W01–W14 不关闭。

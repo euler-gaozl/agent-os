@@ -69,6 +69,16 @@
           "record": "macos-research-verification-and-ui-20261015.md",
           "status": "provider_failed_ui_installed_browser_pending",
           "scope": "One new same-input synthetic research task failed on first provider HTTP 503 with no report; frozen Agent 4/Skill 3, native-v4 engine and existing 12-step/12-model-attempt budget verified, reviewer criteria fixed before submission and excluded from input, three old tasks unchanged. Reviewed read-failure UI installed as a matching Futures BFF/Web package; nine other instances unchanged. No browser or Windows acceptance."
+        },
+        {
+          "observed_at": "2026-10-15",
+          "timezone": "Asia/Shanghai",
+          "os_version": "15.3",
+          "os_build": "24D2059",
+          "cpu_architecture": "arm64",
+          "record": "macos-telemetry-owner-20261015.md",
+          "status": "passed_limited_owner_coverage_not_deployed",
+          "scope": "Mac isolated PostgreSQL Owner coverage: Telemetry exporter receipt red-green and Runtime outbox protocol; HTTP fixtures; only the five new exporter tests and two Runtime tests use NOLOGIN SET ROLE application pools, not separate login or real Langfuse, continuous-loop liveness or cross-service composition. No installed service, source protocol or deployment pin change."
         }
       ]
     },
