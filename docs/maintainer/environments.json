@@ -31,6 +31,15 @@
           "os_build": "24D2059",
           "source_audit": "macos-source-audit-20261015.json",
           "record": "macos-development-20261015.md"
+        },
+        {
+          "observed_at": "2026-10-15",
+          "timezone": "Asia/Shanghai",
+          "os_version": "15.3",
+          "os_build": "24D2059",
+          "cpu_architecture": "arm64",
+          "record": "macos-research-and-storage-20261015.md",
+          "scope": "Fresh isolated development stack, two bounded real-provider tasks on synthetic sources, independent code and real Storage reply-loss verification; Windows and complete UI/business acceptance remain open."
         }
       ]
     },

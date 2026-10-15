@@ -81,3 +81,7 @@ Worker 固定 Runtime execution 包、Indexer 固定 Knowledge indexing 包，�
 ## 范围与非目标
 
 本机 PostgreSQL 词法检索可完成基础链路。Milvus/LightRAG/Embedding、Sandbox 执行、Langfuse 的适配实现、历史测试和当前实际配置要分开；未配置不得显示已可用。项目群知识库不是业务事实库，也不替代生产数据库。服务器 HA、百万文档千万分块和全品种资料覆盖保留后续目标，见 [完整目标](objective.md)。
+
+## Mac 开发观测增量（2026-10-15）
+
+[独立 Mac 新记录](macos-research-and-storage-20261015.md)记录本机服务组合、代码候选及验证条件。数据所有权、固定 DSH 决策循环、历史协议和集成 pins 均未改变。Console 新增的可选 `FUTURES_PUBLIC_URL` 仅是用户浏览器的明确导航地址；它不同于服务内网地址，不转发中台身份，也不表示目标已部署。

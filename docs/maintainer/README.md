@@ -47,7 +47,7 @@
 
 ## Mac 接手进展（2026-10-15）
 
-已在独立Mac核对15仓并开展首轮研究修复与夹具验证，见[Mac增量记录](macos-development-20261015.md)和[源码核对](macos-source-audit-20261015.json)。这不覆盖下面的原交接检查或current-state.md中的Windows历史。
+已在独立 Mac 核对 15 仓，见[首轮环境与源码记录](macos-development-20261015.md)和[源码核对](macos-source-audit-20261015.json)。后续[真实供应商合成研究、页面与 Storage 增量](macos-research-and-storage-20261015.md)记录两次新任务、格式修复和仍未通过的回答质量，以及本地 UI 代码验证、真实 Storage 丢确认恢复。各记录按时间保留；不覆盖下面的原交接检查或 current-state.md 中的 Windows 历史。
 
 ## 本次交接检查
 

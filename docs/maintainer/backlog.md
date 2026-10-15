@@ -8,6 +8,14 @@
 
 [Mac增量记录](macos-development-20261015.md)：15仓已核对，独立Go/Node/PostgreSQL已建立；候选成稿轮次策略和推断日期误报修复完成夹具及独立审查。研究完成、质量、全部原验收项仍开放，下一步在Mac登记新固定资源并做有界真实验证。历史私有任务未复现，Windows专项未执行。
 
+## Mac 后续增量（2026-10-15）
+
+[第二轮记录](macos-research-and-storage-20261015.md)：独立开发栈完成两次真实供应商的合成资料任务，分别 5/4 次模型请求，终态未知 usage 均为 0，最终稿与最后送检稿逐字一致。首轮格式失败；v5 检查器及方法修订后结构和引用改善，但库存方向仍未直接回答，部分缺口分层及日期关系解释不当，研究完成与质量任务仍开放。它们不是原 Windows 私有任务复现。
+
+完成任务草稿与 Console 业务入口已修复，Go/Web 测试、构建及独立静态评审通过；真实浏览器流程未执行，未关闭 W03/W13。真实 Runtime/Worker/Storage 加新 PostgreSQL 的[归档提交后丢确认测试](../native-storage-reply-loss-20261015.md)已通过，含重启后回读、自然租约接管及实际保留引用；不覆盖 ENOSPC、数据库重启或全平台资源上界。
+
+以下原 Windows 失败及资源 revision 为历史定位线索；Mac 最新证据以本节及链接为准，不变更历史任务。
+
 ## 1. task:research-completion — 先让研究稳定成稿
 
 Owner：Futures 业务协议/检查器和集成业务包；涉及 Runtime/Worker/Harness 的变更要遵守冻结重放协议。

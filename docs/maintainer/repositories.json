@@ -586,6 +586,35 @@
       "observed_at": "2026-10-15",
       "file": "macos-source-audit-20261015.json",
       "scope": "New Mac checkout audit; historical source_head_at_audit, integration_pins and owner-windows installed records remain unchanged."
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "file": "macos-research-and-storage-20261015.md",
+      "scope": "Local development commits and tested candidates only; no change to integration pins, fixed compiled dependencies or historical Windows installations.",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-futures",
+          "commit": "9dd0b031eddfde172516479afa63ebbd6e34ced9",
+          "change": "v5 bounded format diagnostics",
+          "mac_installation": "BFF installed for second synthetic research task; earlier Web bundle retained at observation"
+        },
+        {
+          "repository_id": "repo:agent-os-futures",
+          "commit": "2482bcbbee7f5535ad73d7a0dea3f9ff96293331",
+          "change": "Completed-task retained drafts and historical/current checker distinction",
+          "mac_installation": "Web candidate tested and built; not installed at observation"
+        },
+        {
+          "repository_id": "repo:agent-os-console",
+          "commit": "a2bca748d1bd6f0de0e52e1e0a59070e790d5fbc",
+          "change": "Explicit public business browser URL",
+          "mac_installation": "Go and Web candidate tested and built; not installed at observation"
+        }
+      ],
+      "integration_increment": "Method Skill, real Storage fixture, evidence and mappings are recorded by the Git commit containing this entry; no self-referential commit ID.",
+      "pushed": false,
+      "github_actions_triggered": false
     }
   ]
 }
