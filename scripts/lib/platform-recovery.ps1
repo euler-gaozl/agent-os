@@ -96,11 +96,54 @@ FROM pg_database d WHERE datname=current_database();
 '@
     return (Invoke-RecoverySQL $PostgresBin $Connection $sql).Trim()
 }
-function Get-DatabaseSchemaHash([string]$PostgresBin,[hashtable]$Connection){
+function Get-DatabaseSchemaText([string]$PostgresBin,[hashtable]$Connection){
     $schema=Invoke-PostgresTool -PostgresBin $PostgresBin -Tool pg_dump -Connection $Connection -Arguments @('-w','--schema-only','--create','-d',$Connection.database)
     # pg_dump 18 adds random psql restriction tokens; they are not schema state.
-    $normalized=($schema -split '\r?\n'|Where-Object{$_ -notmatch '^\\(un)?restrict '}) -join "`n"
-    return Get-BytesHash ([Text.Encoding]::UTF8.GetBytes($normalized))
+    return ($schema -split '\r?\n'|Where-Object{$_ -notmatch '^\\(un)?restrict '}) -join "`n"
+}
+function Get-DatabaseSchemaHash([string]$PostgresBin,[hashtable]$Connection){
+    return Get-BytesHash ([Text.Encoding]::UTF8.GetBytes((Get-DatabaseSchemaText $PostgresBin $Connection)))
+}
+function Test-RecoverySchemaText([string]$Schema,[string]$ExpectedHash,[string]$ConstraintDefinition=''){
+    $rawHash=Get-BytesHash ([Text.Encoding]::UTF8.GetBytes($Schema))
+    $result=@{matched=$false;raw_schema_sha256=$rawHash;captured_sha256=$ExpectedHash;comparison='exact-pg-dump-v1'}
+    if($ExpectedHash -cnotmatch '^[a-f0-9]{64}$'){throw 'Invalid captured schema digest.'}
+    if($rawHash -ceq $ExpectedHash){$result.matched=$true;return $result}
+    # PostgreSQL parses BETWEEN into a nested AND, then flattens that AND when
+    # parsing its own dump. This compatibility rule is ONLY for this exact known
+    # Owner constraint. Never sort SQL/ACLs, remove checks, or strip parentheses.
+    # Reconstructing the captured complete digest proves that every other byte
+    # (including ACLs, grantors, owners and constraint values) is still identical.
+    $flat="CHECK (((length(request_id) >= 1) AND (length(request_id) <= 128) AND (request_id ~ '^[A-Za-z0-9_-]+$'::text)))"
+    $nested="CHECK ((((length(request_id) >= 1) AND (length(request_id) <= 128)) AND (request_id ~ '^[A-Za-z0-9_-]+$'::text)))"
+    if($ConstraintDefinition -cne $flat){return $result}
+    $flatLine='    CONSTRAINT run_continuation_receipts_request_id_check '+$flat+','
+    $nestedLine='    CONSTRAINT run_continuation_receipts_request_id_check '+$nested+','
+    $lines=$Schema.Split("`n")
+    $indices=@(for($i=0;$i -lt $lines.Count;$i++){if($lines[$i] -ceq $flatLine){$i}})
+    if($indices.Count -ne 1){return $result}
+    $lines[$indices[0]]=$nestedLine
+    $reconstructedHash=Get-BytesHash ([Text.Encoding]::UTF8.GetBytes(($lines -join "`n")))
+    if($reconstructedHash -ceq $ExpectedHash){
+        $result.matched=$true;$result.comparison='continuation-request-id-and-shape-v1'
+        $result.reconstructed_sha256=$reconstructedHash
+    }
+    return $result
+}
+function Test-RecoveryDatabaseSchema([string]$PostgresBin,[hashtable]$Connection,[string]$ExpectedHash){
+    $schema=Get-DatabaseSchemaText $PostgresBin $Connection
+    $exact=Test-RecoverySchemaText $schema $ExpectedHash
+    if($exact.matched){return $exact}
+    # Authenticate the real catalog object before applying the literal dump-line
+    # rule; a similarly named object, function body or comment is not evidence.
+    $definitionSQL=@'
+SELECT pg_get_constraintdef(c.oid,false)
+FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid JOIN pg_namespace n ON n.oid=t.relnamespace
+WHERE n.nspname='public' AND t.relname='run_continuation_receipts' AND t.relkind='r'
+AND c.conname='run_continuation_receipts_request_id_check' AND c.contype='c';
+'@
+    $definition=(Invoke-RecoverySQL $PostgresBin $Connection $definitionSQL).TrimEnd("`r","`n")
+    return Test-RecoverySchemaText $schema $ExpectedHash $definition
 }
 function Assert-NoDatabaseClients([string]$PostgresBin,[hashtable]$Connection,[string[]]$Databases){
     $names=($Databases|ForEach-Object{"'"+$_.Replace("'","''")+"'"}) -join ','

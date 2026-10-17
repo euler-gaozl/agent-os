@@ -71,7 +71,8 @@ try {
         if(-not $dump.StartsWith($BackupDirectory+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){throw 'Dump path escapes backup root.'}
         $null=Invoke-PostgresTool -PostgresBin $PostgresBin -Tool pg_restore -Connection $connection -Arguments @('-w','--exit-on-error','--create','-d','postgres',$dump)
         if((Get-DatabaseMetadata $PostgresBin $target) -cne $database.metadata){throw 'Restored database ownership, permissions or settings differ.'}
-        if((Get-DatabaseSchemaHash $PostgresBin $target) -cne $database.schema_sha256){throw 'Restored schema or object permissions differ.'}
+        $schemaVerification=Test-RecoveryDatabaseSchema $PostgresBin $target $database.schema_sha256
+        if(-not $schemaVerification.matched){throw 'Restored schema or object permissions differ.'}
         $fingerprints=Get-DatabaseFingerprints $PostgresBin $target
         $expectedTables=@($database.tables)
         if($fingerprints.Count -ne $expectedTables.Count){throw 'Restored relation count differs.'}
@@ -79,7 +80,7 @@ try {
             foreach($key in @('schema','table','kind','rows','sha256')){if([string]$fingerprints[$i].$key -cne [string]$expectedTables[$i][$key]){throw ('Restored content differs: '+$expectedTables[$i].schema+'.'+$expectedTables[$i].table)}}
         }
         $archives=Test-RecoveredKnowledgeArchives $PostgresBin $target
-        $report.databases+=@{name=$database.name;relations=$fingerprints.Count;all_fingerprints_match=$true;metadata_match=$true;schema_and_acl_match=$true;source_archives=$archives}
+        $report.databases+=@{name=$database.name;relations=$fingerprints.Count;all_fingerprints_match=$true;metadata_match=$true;schema_and_acl_match=$true;schema_verification=$schemaVerification;source_archives=$archives}
         Write-Output ('Restored database with '+$fingerprints.Count+' matching table/sequence fingerprints.')
     }
     foreach($relative in $configs.Keys){

@@ -2,6 +2,22 @@
 
 本轮接通确定性交付候选的受管构建、配置、启动与回滚；不改变历史任务引擎，不把测试中的合成服务写成真实模型验收。完整单机 Goal、报告内容缺陷和其余平台验收继续保留。
 
+## 正式安装完成（最新）
+
+五个完整受管包从干净集成提交 `2d8408d` 构建，staged set `af7048243ec048f5ac2c2c651a0a1b64`。下表五个源码版本已实际安装：Runtime → 两个 Worker → Registry → Console → Futures 的更新均 committed、鉴权就绪通过、非目标实例不变。默认已通过受管配置事务切到 `dsh-source-639ed015-final-v5`；旧引擎任务及可恢复任务计数保持，final 任务仍为 0。doctor 核心探测、status 核心就绪均为 true；Sandbox 隔离执行仍未配置。
+
+安装前备份 `final-release-20261017-144403` 的完整隔离还原 `6c69c0155eea44eba3ec0ea241ec473a` 通过：45 张表/序列、数据库元数据/权限、10 个角色登录、3 项凭证解密、13 份来源归档及离线 Harness 重建通过。隔离库已停止，未启动 Worker 或调用供应商。原失败还原 `647d5aec2e784c7584cbbb0498ec5908` 保留。
+
+该失败只涉及 `run_continuation_receipts_request_id_check`：PostgreSQL 把原 BETWEEN 转成嵌套 AND，重新解析 dump 后合并 AND，故只差一行括号。新兼容分支先比原完整 SHA；不匹配时必须验证真实 catalog 对象、精确约束全文和唯一完整行，仅重构已确认括号，再要求整份 SHA 等于受保护 manifest。没有改变原算法、manifest、ACL、owner 或其他结构；新报告明确标记 `continuation-request-id-and-shape-v1`。旧迁移计划仍使用原精确摘要，后续新迁移若遇到该差异须显式处理，不能跳过或复用旧计划。
+
+`Test-RecoverySchema.ps1` 21 项通过：实际导出/还原、数据/元数据保持；边界、正则、AND/OR、NOT、ACL、授权选项、含 grantor 变化、owner、字段、其他约束、NOT VALID、重复匹配及错误表身份均拒绝。证据 `final-release-81cc547c587540d5a3cae53d775e9665/schema-test-626a2f680feb486cab85ede794365ad3`。初次合成夹具缺末尾逗号的失败保留；修正为实际约束位置后通过。独立静态评审未发现 P1/P2，未代跑数据库。
+
+正式页面已刷新：中台供给与库存 v19 的模型能力/交付方式可显示；切换原文交付后显示 draft 和 structuredContent.ready；无效工具名保存被拒绝，临时输入已丢弃。期货首页及原研究列表可显示。这不是完整页面、窄屏或真实业务验收，未提交新研究或调用付费模型。
+
+**接续重点：** 正式 Agent 仍为 v19、Skill v8，尚未绑定 final_output。先统一旧复制全文提示与新交付机制并发布固定资源，核对历史版本保持；离线修复 R2 内容缺陷后再做一次有界真实研究。原 107 项提示及事实错误保留。完整 UI、Console 业务入口 URL、权限退役、生命周期、故障/资源、升级后新状态备份和一次统一 CI 仍开放，不以服务安装代替完整交付。
+
+用户要求保留约 20–30% 额度，本轮按保留 30% 收紧，只处理交付缺口，不重复已通过的检查。查询时剩余 44%；用户明确要求继续交付，未授权暂停 Goal。私有证据入口仍为原 Windows `ops/final-release.path`，不得提交私有材料或移用为其他电脑状态。
+
 ## 固定组合
 
 | 服务 | 候选源码 |
