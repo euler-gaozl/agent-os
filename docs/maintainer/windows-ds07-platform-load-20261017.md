@@ -187,3 +187,10 @@
   - Runtime **23.1 MB**（最低 20.1 MB）；
   - PostgreSQL 总 **628 MB**（最低 594 MB）。
 - 这是 4 并发/40 轮的受控采样，不是 24 小时生产长稳或 10M 块规模；生产 RSS 上界仍未验收。
+
+## 网络分区代理尝试（2026-10-18，未通过）
+
+- 为避开管理员防火墙，启动本机 TCP 代理 `127.0.0.1:18094 -> 127.0.0.1:8094`，并把一个手工 Worker 的 `RUNTIME_URL` 指向代理。
+- 手工 Worker 只打印 `service started` 后退出；提交的任务保持 `queued`/step 0，未进入 claim，也没有形成可观测分区。
+- 已停止代理/手工 Worker，恢复受管 2 Worker；`core_ready=true`。
+- 结论：当前手工 Worker 启动方式不等价于受管 Worker，不能作为网络分区证据；需要测试布局或受管 Worker 的可配置 Runtime 端点。
