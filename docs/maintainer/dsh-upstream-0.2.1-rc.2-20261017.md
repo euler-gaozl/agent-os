@@ -50,12 +50,23 @@
 - 新引擎 40 轮：任务 `7ceb0cf2…` 在 `dsh-source-687f282e-budget-v3` 上 **completed step 41**（40 个 recall 回执）；证据 `local/evidence/ds06-80round-nokill-2026-10-17T14-47-34-495Z/`（文件名沿用旧脚本，内容为 40 轮 COMPACT40_OK）。这验证了新引擎的长历史路径，但不等于 guarded-v2/final 验收。
 - 受控 final 尝试：本地 MCP `127.0.0.1:8113/mcp` + ToolHub 计划配置把 8113 加入白名单后，connector `fixture-final` 注册成功；但创建 Agent 时 Registry 拒绝：`native model capabilities are not supported for this provider endpoint`。fixture 的 loopback endpoint 不能作为 native-capable provider，因此无法在不付费的情况下创建 final-capable 受控 Agent。
 - 清理：ToolHub 白名单已恢复为 `127.0.0.1:8101`，MCP 进程已停止；测试 connector `fixture-final` 仍留在 Registry（指向已停止的本地端点，未被任何 Agent 使用）。
+- **guarded-v2 已完成**：用户授权后，受控 Agent `ds02-guarded-controlled` 用真实 `deepseek-flash` + 本地 final MCP 跑了任务 `a4063a81…`；**completed step 2**，engine `dsh-source-687f282e-guarded-v7`，2 次 model 调用，`final_output_completed done=true`（sha256 `a0c9c14e…`），证据 `local/evidence/ds02-guarded-v2-controlled-2026-10-17T15-48-24-192Z/`。随后已移除 8113 白名单、停止本地 MCP、停用测试 connector。
 - 真实 final 尝试（用户已授权一次）：`published-supply-inventory` rev22 提交返回 400 `upstream request rejected`；用同一 spec 创建 rev23、新 id `ds02-final-real` 也 400。fixture Agent 仍可 201，Registry `deepseek_configured=true`；未收到模型/MCP 调用，因此没有付费请求。400 发生在 final Agent 的 model-capability/final-binding 校验路径，尚未定位到具体字段。
 - 安装后已生成 `ds08-final-20261017f` 并隔离恢复通过（46 关系、10 角色、5 凭据、2 Worker bundle、192 代/3,103 文件）；临时集群停止。
 
+## 当前状态（2026-10-17 后续）
+
+- 双版本已安装并验收：Runtime `runtime-cd1436ca…`、Worker `worker-806b411d…`，默认 `dsh-source-687f282e-guarded-v7`，2 Worker，`core_ready=true`。
+- 新引擎 budget-v3：单任务 `da77e711…` step 6；40 轮 `7ceb0cf2…` step 41。
+- 新引擎 guarded-v2 final：任务 `a4063a81…` **completed step 2**，真实 `deepseek-flash` + 本地 final MCP；`final_output_completed done=true`，证据 `local/evidence/ds02-guarded-v2-controlled-2026-10-17T15-48-24-192Z/`。
+- 旧引擎任务 `59a78329…` 仍用旧 `budget-v3` 完成。
+- 最新备份 `ds08-final-20261017h`：隔离恢复通过，203 代 / 3,103 文件 / 2 Worker bundle。
+- 测试清理：Runtime/ToolHub `MCP_ALLOWED_HOSTS` 恢复为 `127.0.0.1:8098,127.0.0.1:8101`；本地 MCP 已停止；测试 connector 已停用。
+
 ## 下一步
 
-1. 设计并实现双版本 Worker 打包（旧/新 engine 目录+manifest 列表）。
-2. 用新引擎跑 DS-01/02/03/05/06/07 的 replay/fixture 回归；确认旧任务仍用旧引擎。
-3. 切换默认 engine 前再做一次 DS-08 备份/隔离恢复。
-4. 任何新引擎激活都要新版本号，不能覆盖旧引擎产物。
+1. 旧实现退役：补齐未转移的唯一覆盖后再删除旧循环/旧能力。
+2. DS-06 真实 Compact 中断续跑、并发写者/RSS 上界。
+3. DS-07 网络分区/更长时间/任务级死锁/大数据慢查询组合。
+4. DS-09 最终集中 hosted CI；先确认唯一入口、范围、runner 预算，Actions 仍禁用。
+5. 真实 Langfuse 按用户意见延后；不把 mock 当验收。

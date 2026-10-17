@@ -67,3 +67,16 @@ Harness 提交 `c5d4e4e2d5` 实现上述行为；31 项本地 guarded 检查通�
 - 相关仓库分支已与远端同步：`agent-os`、`agent-os-futures` `d0e2efc`、`agent-os-runtime` `fb5a5c1`、`agent-os-worker` `76485b6`、`agent-os-console` `c6081ab`、`agent-os-harness` `c5d4e4e2d5`。
 - GitHub Git transport 间歇失败；提交通过 Git data API 上传，逐 blob/tree/commit/ref 校验 SHA，Actions 保持禁用；没有 force push。
 - Futures `d0e2efc`（安装 `futures-7ddefba00ef2477983e240fee1dfd75e`）已在新任务说明中要求：`final_output_commit` 返回 `selected:false`/`continue` 时必须继续修订并重新送检，不得以普通正文结束或自行声称预算耗尽。此提示不改变执行器语义，不能替代 guarded-v7 的循环修复。
+
+
+## 新引擎 guarded-v2 final 受控验收（2026-10-17 后续）
+
+- 用户授权一次真实 provider/MCP 验收。
+- 受控 Agent `ds02-guarded-controlled` rev1：真实 `deepseek-flash` + 本地 final MCP `fixture-final` rev2（`check_fixture` 返回 `structuredContent.ready=true`）。
+- 任务 `a4063a818472610b50cdce66e8f3d212`：**completed step 2**，engine `dsh-source-687f282e-guarded-v7`。
+  - 2 次 model 调用；
+  - 1 次候选工具回执；
+  - `final_output_completed` `done=true`，sha256 `a0c9c14e25324f190a241df4e599ce306298d92391c657d38644cc3120035da9`，selection_id `a4063a818472610b50cdce66e8f3d212/dsh/12`。
+- 证据：`local/evidence/ds02-guarded-v2-controlled-2026-10-17T15-48-24-192Z/`。
+- 这证明新引擎 guarded-v7 的 final receipt 路径可完成；不证明研究事实正确，也不是市场研究。
+- 结束后已把 Runtime/ToolHub 的 `MCP_ALLOWED_HOSTS` 恢复为 `127.0.0.1:8098,127.0.0.1:8101`，停止本地 MCP，并停用测试 connector；平台 2 Worker，`core_ready=true`。
