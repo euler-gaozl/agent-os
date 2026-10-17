@@ -26,6 +26,12 @@ func ModelRequest(config ModelConfig, messages []Message, tools []Tool) []byte {
 		defs = append(defs, map[string]any{"type": "function", "function": map[string]any{"name": t.Name, "description": t.Description, "parameters": t.InputSchema}})
 	}
 	body := map[string]any{"model": config.Model, "messages": messages, "stream": false}
+	if config.Thinking != "" {
+		body["thinking"] = map[string]string{"type": config.Thinking}
+	}
+	if config.ReasoningEffort != "" {
+		body["reasoning_effort"] = config.ReasoningEffort
+	}
 	if config.MaxTokens > 0 {
 		body["max_tokens"] = config.MaxTokens
 	}

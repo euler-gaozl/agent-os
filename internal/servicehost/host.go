@@ -118,8 +118,17 @@ func run(role, port string, build Build) error {
 		defer db.Close()
 	}
 	cfg := servicehttp.Config{Role: role, Token: token, AdminToken: Env("ADMIN_TOKEN", token), DevLocal: os.Getenv("DEV_LOCAL") == "1"}
+	cfg.Readiness = SchemaReadiness(role, db)
+	if cfg.Readiness != nil {
+		probeCtx, stop := context.WithTimeout(ctx, 5*time.Second)
+		err := cfg.Readiness(probeCtx)
+		stop()
+		if err != nil {
+			return errors.New("service schema or database permissions incompatible; run the selected service migration before starting")
+		}
+	}
 	defaultConcurrency := "16"
-	if role == "knowledge" || role == "toolhub" || role == "storage" {
+	if role == "knowledge" || role == "toolhub" || role == "storage" || role == "sources" {
 		defaultConcurrency = "4"
 	}
 	concurrency, err := strconv.Atoi(Env("HTTP_MAX_CONCURRENT", defaultConcurrency))

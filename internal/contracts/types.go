@@ -21,10 +21,12 @@ type Ref struct {
 	Revision int    `json:"revision"`
 }
 type ModelConfig struct {
-	MaxTokens int    `json:"max_tokens,omitempty"`
-	BaseURL   string `json:"base_url"`
-	Model     string `json:"model"`
-	KeyEnv    string `json:"key_env"`
+	Thinking        string `json:"thinking,omitempty"`
+	ReasoningEffort string `json:"reasoning_effort,omitempty"`
+	MaxTokens       int    `json:"max_tokens,omitempty"`
+	BaseURL         string `json:"base_url"`
+	Model           string `json:"model"`
+	KeyEnv          string `json:"key_env"`
 }
 type Tool struct {
 	Name        string          `json:"name"`
@@ -46,21 +48,23 @@ type Skill struct {
 	Files   []string `json:"files,omitempty"`
 }
 type Agent struct {
-	ContextTokens int         `json:"context_tokens"`
-	Constraints   []string    `json:"constraints,omitempty"`
-	Publication   Publication `json:"publication"`
-	Name          string      `json:"name"`
-	Prompt        string      `json:"prompt"`
-	Prompts       []Ref       `json:"prompts"`
-	Skills        []Ref       `json:"skills"`
-	Connectors    []Ref       `json:"connectors"`
-	Tools         []string    `json:"tools"`
-	Model         ModelConfig `json:"model"`
-	MaxSteps      int         `json:"max_steps"`
-	ContextBytes  int         `json:"context_bytes"`
-	MaxChildren   int         `json:"max_children"`
-	ChildAgents   []Ref       `json:"child_agents"`
-	Knowledge     []Ref       `json:"knowledge"`
+	MaxModelAttempts int         `json:"max_model_attempts,omitempty"`
+	ModelTokenBudget int         `json:"model_token_budget,omitempty"`
+	ContextTokens    int         `json:"context_tokens"`
+	Constraints      []string    `json:"constraints,omitempty"`
+	Publication      Publication `json:"publication"`
+	Name             string      `json:"name"`
+	Prompt           string      `json:"prompt"`
+	Prompts          []Ref       `json:"prompts"`
+	Skills           []Ref       `json:"skills"`
+	Connectors       []Ref       `json:"connectors"`
+	Tools            []string    `json:"tools"`
+	Model            ModelConfig `json:"model"`
+	MaxSteps         int         `json:"max_steps"`
+	ContextBytes     int         `json:"context_bytes"`
+	MaxChildren      int         `json:"max_children"`
+	ChildAgents      []Ref       `json:"child_agents"`
+	Knowledge        []Ref       `json:"knowledge"`
 }
 type Snapshot struct {
 	Agent      Agent                    `json:"agent"`
@@ -126,6 +130,7 @@ type Document struct {
 	Supersedes *string        `json:"supersedes,omitempty"`
 }
 type Resource struct {
+	Summary  bool            `json:"summary,omitempty"`
 	Kind     string          `json:"kind"`
 	ID       string          `json:"id"`
 	Revision int             `json:"revision"`
@@ -192,8 +197,17 @@ func (a *Agent) Validate() error {
 	if a.MaxSteps < 1 || a.MaxSteps > 100 || a.ContextBytes < 4096 || a.ContextBytes > 1000000 || a.MaxChildren < 0 || a.MaxChildren > 8 {
 		return errors.New("agent budget outside permitted range")
 	}
+	if a.MaxModelAttempts < 0 || a.MaxModelAttempts > 500 || a.ModelTokenBudget < 0 || a.ModelTokenBudget > 10000000 {
+		return errors.New("family model budget outside permitted range")
+	}
 	if a.Model.Model == "" || a.Model.BaseURL == "" {
 		return errors.New("model and base_url required")
+	}
+	if a.Model.MaxTokens < 0 || a.Model.MaxTokens > 32768 {
+		return errors.New("model max_tokens outside 0..32768")
+	}
+	if !Has([]string{"", "enabled", "disabled"}, a.Model.Thinking) || !Has([]string{"", "low", "high", "max"}, a.Model.ReasoningEffort) || (a.Model.Thinking == "disabled" && a.Model.ReasoningEffort != "") {
+		return errors.New("invalid model thinking mode or effort")
 	}
 	if len(a.Prompt) > a.ContextBytes/2 {
 		return errors.New("prompt exceeds pinned context budget")

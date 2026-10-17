@@ -1,9 +1,18 @@
 // Deterministic provider/MCP fixture. This is NOT a real model or research source.
 import http from 'node:http';
 const tool={name:'read',description:'Read controlled fixture',inputSchema:{type:'object',properties:{},additionalProperties:false}};
+const telemetry=new Set();
 http.createServer(async(req,res)=>{
  let text='';for await(const part of req){text+=part;if(text.length>2**20){res.writeHead(413).end();return}}
  const body=JSON.parse(text||'{}');res.setHeader('Content-Type','application/json');
+ if(req.url==='/telemetry-receipts'){res.end(JSON.stringify({accepted_unique_spans:telemetry.size,accepted_trace_ids:[...new Set([...telemetry].map(x=>x.split(':')[0]))]}));return}
+ if(req.url==='/api/public/otel/v1/traces'){
+  if(req.headers.authorization!=='Basic '+Buffer.from('ci-public:ci-secret').toString('base64')){res.writeHead(401).end('{}');return}
+  const spans=body.resourceSpans?.flatMap(x=>x.scopeSpans?.flatMap(y=>y.spans??[])??[])??[];
+  if(!spans.length||spans.some(s=>!/^\w{32}$/.test(s.traceId)||!/^\w{16}$/.test(s.spanId))){res.writeHead(400).end('{}');return}
+  for(const span of spans)telemetry.add(span.traceId+':'+span.spanId);
+  res.end('{}');return
+ }
  if(req.url==='/mcp'){
   if(body.method==='notifications/initialized'){res.writeHead(202).end();return}
   const result=body.method==='initialize'?{protocolVersion:'2025-11-25'}:body.method==='tools/list'?{tools:[tool]}:{content:[{type:'text',text:'Fixture MCP evidence.'}]};

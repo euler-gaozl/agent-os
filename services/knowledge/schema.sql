@@ -14,3 +14,6 @@ CREATE TABLE IF NOT EXISTS service_migrations(version integer PRIMARY KEY,instal
 ALTER TABLE knowledge_chunks ADD COLUMN IF NOT EXISTS search_vector tsvector;
 CREATE INDEX IF NOT EXISTS knowledge_chunks_search ON knowledge_chunks USING gin(search_vector);
 CREATE INDEX IF NOT EXISTS knowledge_chunks_search_pending ON knowledge_chunks(id) WHERE search_vector IS NULL;
+ALTER TABLE knowledge_files ADD COLUMN IF NOT EXISTS name_vector tsvector;
+CREATE INDEX IF NOT EXISTS knowledge_files_name_search ON knowledge_files USING gin(name_vector);
+CREATE INDEX IF NOT EXISTS knowledge_files_name_pending ON knowledge_files(id) WHERE name_vector IS NULL;

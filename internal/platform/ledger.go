@@ -67,6 +67,9 @@ func (s *Store) BeginModel(ctx context.Context, r Run, id string, request []byte
 			return "", response, tx.Commit(ctx)
 		}
 	}
+	if e = reserveModelBudget(ctx, tx, r.ID, request); e != nil {
+		return "", nil, e
+	}
 	attempt := ID()
 	_, e = tx.Exec(ctx, `INSERT INTO calls(id,run_id,kind,request_hash,request,status,attempt,fence) VALUES($1,$2,'model',$3,$4,'inflight',$5,$6)
  ON CONFLICT(id) DO UPDATE SET attempt=$5,fence=$6,status='inflight',updated_at=now()`, id, r.ID, Hash(request), request, attempt, r.Fence)

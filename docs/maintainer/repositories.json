@@ -1,0 +1,1550 @@
+{
+  "schema_version": 1,
+  "latest_recovery_audit": "windows-source-recovery-20261017.json",
+  "current_execution_record": "windows-final-ci-20261018.md",
+  "as_of": "2026-10-17T16:48:30Z",
+  "project_id": "project:agent-platform",
+  "source_baseline": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe",
+  "integration_handoff_branch": "feat/end-to-end-delivery",
+  "integration_checkout_note": "Integration source_baseline is the clean pre-handoff commit. Read latest main for these handoff documents; the handoff commit cannot contain its own SHA. Service heads, integration pins, installed releases are separate observations.",
+  "evidence": "原电脑 ops/maintainer-handoff.path 指向的 repositories.json；deploy/service-sources.json；local/releases/current.json 及固定 manifest",
+  "repositories": [
+    {
+      "id": "repo:agent-os",
+      "name": "agent-os",
+      "url": "https://github.com/euler-gaozl/agent-os",
+      "clone_url": "https://github.com/euler-gaozl/agent-os.git",
+      "branch": "feat/end-to-end-delivery",
+      "source_head_at_audit": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [],
+      "integration_pins": [],
+      "installed": [],
+      "remote_main_head_at_audit": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe"
+    },
+    {
+      "id": "repo:agent-os-console",
+      "name": "agent-os-console",
+      "url": "https://github.com/euler-gaozl/agent-os-console",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-console.git",
+      "branch": "feat/model-native-limits",
+      "source_head_at_audit": "4b0520f34ee03be79db9c6870aad464b91de3611",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "control"
+      ],
+      "integration_pins": [
+        {
+          "role": "control",
+          "commit": "4b0520f34ee03be79db9c6870aad464b91de3611",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "control",
+          "commit": "4b0520f34ee03be79db9c6870aad464b91de3611",
+          "manifest": "descriptors/control-94f118e7c5154f0e8041ea79830c62f9.json",
+          "sdk": {
+            "version": "v0.1.0-rc.4",
+            "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
+            "zip_sha256": "f3301da68a7b9493cf6e53ee7b5f909384096d92494ed70815fd1eaf4cd1ef8d",
+            "commit": "4022ca5e86168b1d5f748b72a8483cd7ff5a73e8",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T12:18:44Z",
+          "observation": "Actual owner Windows release catalog; parent-task link in run detail, browser verified."
+        }
+      ],
+      "remote_main_head_at_audit": "4b0520f34ee03be79db9c6870aad464b91de3611"
+    },
+    {
+      "id": "repo:agent-os-futures",
+      "name": "agent-os-futures",
+      "url": "https://github.com/euler-gaozl/agent-os-futures",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-futures.git",
+      "branch": "feat/native-task-transport",
+      "source_head_at_audit": "67f15271215f4aaf5c50bcd8edf651914d66bffd",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "futures"
+      ],
+      "integration_pins": [
+        {
+          "role": "futures",
+          "commit": "67f15271215f4aaf5c50bcd8edf651914d66bffd",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "futures",
+          "commit": "67f15271215f4aaf5c50bcd8edf651914d66bffd",
+          "manifest": "descriptors/futures-8d91333b485f4853b7012b8bff61451b.json",
+          "sdk": {
+            "version": "v0.1.0-rc.4",
+            "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
+            "zip_sha256": "f3301da68a7b9493cf6e53ee7b5f909384096d92494ed70815fd1eaf4cd1ef8d",
+            "commit": "4022ca5e86168b1d5f748b72a8483cd7ff5a73e8",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T13:40:24Z",
+          "observation": "Actual owner Windows release catalog; explicit source-task ID lookup added to the business record."
+        }
+      ],
+      "remote_main_head_at_audit": "67f15271215f4aaf5c50bcd8edf651914d66bffd"
+    },
+    {
+      "id": "repo:agent-os-harness",
+      "name": "agent-os-harness",
+      "url": "https://github.com/euler-gaozl/agent-os-harness",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-harness.git",
+      "branch": "feat/source-owned-harness",
+      "source_head_at_audit": "78ab3d97da42938dcd24784e334221828997e9cb",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [],
+      "integration_pins": [],
+      "installed": [],
+      "remote_main_head_at_audit": "19e0ceee82cd6f8776cbc5eb97d1a5aab0f7a210"
+    },
+    {
+      "id": "repo:agent-os-indexer",
+      "name": "agent-os-indexer",
+      "url": "https://github.com/euler-gaozl/agent-os-indexer",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-indexer.git",
+      "branch": "feat/independent-service",
+      "source_head_at_audit": "30ed978324aa34a2275a0e27a10a65e85f9e28f9",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "indexer"
+      ],
+      "integration_pins": [
+        {
+          "role": "indexer",
+          "commit": "ccbfbd206f13e10619898ddb52b84e5c1109c7f8",
+          "owner_modules": [
+            {
+              "protocol": "knowledge-indexing-v1",
+              "version": "v0.1.0-rc.1",
+              "module": "github.com/euler-gaozl/agent-os-knowledge",
+              "module_sum": "h1:HZnGpJI81snXYP0mLiI+Wim+IGDrKXnONVhCsqsHG8M=",
+              "commit": "e26584df4f1df22da6f3ee9101933dae8f48d164",
+              "go_mod_sum": "h1:lviyaS6yKk3K9HbzBQp4QEzIbZDhgdWymiUEa12/pZc=",
+              "package": "indexing"
+            }
+          ]
+        }
+      ],
+      "installed": [
+        {
+          "role": "indexer",
+          "commit": "ccbfbd206f13e10619898ddb52b84e5c1109c7f8",
+          "manifest": "descriptors/indexer-595bc54d1df446389563894b69ff3921.json",
+          "sdk": {
+            "version": "v0.1.0-rc.2",
+            "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
+            "zip_sha256": "6381fef8a276eb62f52329142549d933a6630c0235bd3a50c7ebb4d922b8c3b4",
+            "commit": "f45ca168dee81f864533a8f77f8c203960caad1a",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [
+            {
+              "protocol": "knowledge-indexing-v1",
+              "version": "v0.1.0-rc.1",
+              "module": "github.com/euler-gaozl/agent-os-knowledge",
+              "module_sum": "h1:HZnGpJI81snXYP0mLiI+Wim+IGDrKXnONVhCsqsHG8M=",
+              "commit": "e26584df4f1df22da6f3ee9101933dae8f48d164",
+              "go_mod_sum": "h1:lviyaS6yKk3K9HbzBQp4QEzIbZDhgdWymiUEa12/pZc=",
+              "package": "indexing"
+            }
+          ],
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
+        }
+      ],
+      "remote_main_head_at_audit": "30ed978324aa34a2275a0e27a10a65e85f9e28f9"
+    },
+    {
+      "id": "repo:agent-os-knowledge",
+      "name": "agent-os-knowledge",
+      "url": "https://github.com/euler-gaozl/agent-os-knowledge",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-knowledge.git",
+      "branch": "feat/independent-service",
+      "source_head_at_audit": "ed54550f15e115956fc30e08e0e8121b976ee796",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "knowledge"
+      ],
+      "integration_pins": [
+        {
+          "role": "knowledge",
+          "commit": "ed54550f15e115956fc30e08e0e8121b976ee796",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "knowledge",
+          "commit": "ed54550f15e115956fc30e08e0e8121b976ee796",
+          "manifest": "descriptors/knowledge-2e2adfc94eb24d4ba1e9c927035d32f6.json",
+          "sdk": {
+            "version": "v0.1.0-rc.2",
+            "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
+            "zip_sha256": "6381fef8a276eb62f52329142549d933a6630c0235bd3a50c7ebb4d922b8c3b4",
+            "commit": "f45ca168dee81f864533a8f77f8c203960caad1a",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
+        }
+      ],
+      "remote_main_head_at_audit": "ed54550f15e115956fc30e08e0e8121b976ee796"
+    },
+    {
+      "id": "repo:agent-os-registry",
+      "name": "agent-os-registry",
+      "url": "https://github.com/euler-gaozl/agent-os-registry",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-registry.git",
+      "branch": "feat/model-native-limits",
+      "source_head_at_audit": "2f7f8364e972a54d65414bcebb5f77738eced586",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "registry"
+      ],
+      "integration_pins": [
+        {
+          "role": "registry",
+          "commit": "2f7f8364e972a54d65414bcebb5f77738eced586",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "registry",
+          "commit": "2f7f8364e972a54d65414bcebb5f77738eced586",
+          "manifest": "descriptors/registry-e4cf19eb11dc4251abb4d9c7cf0bec72.json",
+          "sdk": {
+            "version": "v0.1.0-rc.4",
+            "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
+            "zip_sha256": "f3301da68a7b9493cf6e53ee7b5f909384096d92494ed70815fd1eaf4cd1ef8d",
+            "commit": "4022ca5e86168b1d5f748b72a8483cd7ff5a73e8",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
+        }
+      ],
+      "remote_main_head_at_audit": "2f7f8364e972a54d65414bcebb5f77738eced586"
+    },
+    {
+      "id": "repo:agent-os-runtime",
+      "name": "agent-os-runtime",
+      "url": "https://github.com/euler-gaozl/agent-os-runtime",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-runtime.git",
+      "branch": "feat/model-native-limits",
+      "source_head_at_audit": "69b9e62b23155596a5c1b36b488ad0e9b1d5941c",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "runtime"
+      ],
+      "integration_pins": [
+        {
+          "role": "runtime",
+          "commit": "55dc3cd747008d9f5d8f13e989a8ebbfe437fbab",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "runtime",
+          "commit": "69b9e62b23155596a5c1b36b488ad0e9b1d5941c",
+          "manifest": "descriptors/runtime-cd1436ca0bca41199ad2ad35b901af97.json",
+          "sdk": {
+            "version": "v0.1.0-rc.4",
+            "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
+            "zip_sha256": "f3301da68a7b9493cf6e53ee7b5f909384096d92494ed70815fd1eaf4cd1ef8d",
+            "commit": "4022ca5e86168b1d5f748b72a8483cd7ff5a73e8",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T14:40:00Z",
+          "observation": "Actual owner Windows release catalog; dual DSH engine registry installed; default guarded-v2."
+        }
+      ],
+      "remote_main_head_at_audit": "1e17aae52b40db9ecb7a637090e5859edf9cf9aa"
+    },
+    {
+      "id": "repo:agent-os-sandbox",
+      "name": "agent-os-sandbox",
+      "url": "https://github.com/euler-gaozl/agent-os-sandbox",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-sandbox.git",
+      "branch": "feat/independent-service",
+      "source_head_at_audit": "b7a2cdfa7fdb1fe04d89d268e261b99db777ab98",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "sandbox"
+      ],
+      "integration_pins": [
+        {
+          "role": "sandbox",
+          "commit": "9348b8e6ead28da5e1585ee69e469e4b10620d08",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "sandbox",
+          "commit": "9348b8e6ead28da5e1585ee69e469e4b10620d08",
+          "manifest": "descriptors/sandbox-d3942e50051c4e10b0533fb62c43e2ea.json",
+          "sdk": {
+            "version": "v0.1.0-rc.2",
+            "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
+            "zip_sha256": "6381fef8a276eb62f52329142549d933a6630c0235bd3a50c7ebb4d922b8c3b4",
+            "commit": "f45ca168dee81f864533a8f77f8c203960caad1a",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
+        }
+      ],
+      "remote_main_head_at_audit": "b7a2cdfa7fdb1fe04d89d268e261b99db777ab98"
+    },
+    {
+      "id": "repo:agent-os-sdk",
+      "name": "agent-os-sdk",
+      "url": "https://github.com/euler-gaozl/agent-os-sdk",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-sdk.git",
+      "branch": "feat/model-native-limits",
+      "source_head_at_audit": "4022ca5e86168b1d5f748b72a8483cd7ff5a73e8",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [],
+      "integration_pins": [],
+      "installed": [],
+      "remote_main_head_at_audit": "4022ca5e86168b1d5f748b72a8483cd7ff5a73e8"
+    },
+    {
+      "id": "repo:agent-os-sources",
+      "name": "agent-os-sources",
+      "url": "https://github.com/euler-gaozl/agent-os-sources",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-sources.git",
+      "branch": "feat/independent-service",
+      "source_head_at_audit": "76511f1738bfbb5d791ad8f804bd54ae23380c03",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "sources"
+      ],
+      "integration_pins": [
+        {
+          "role": "sources",
+          "commit": "29fe0860d424a6f263ed9b274673590d0d8694c2",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "sources",
+          "commit": "29fe0860d424a6f263ed9b274673590d0d8694c2",
+          "manifest": "descriptors/sources-9097b5984dcb4f37a76ad198a9bf4a44.json",
+          "sdk": {
+            "version": "v0.1.0-rc.2",
+            "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
+            "zip_sha256": "6381fef8a276eb62f52329142549d933a6630c0235bd3a50c7ebb4d922b8c3b4",
+            "commit": "f45ca168dee81f864533a8f77f8c203960caad1a",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
+        }
+      ],
+      "remote_main_head_at_audit": "76511f1738bfbb5d791ad8f804bd54ae23380c03"
+    },
+    {
+      "id": "repo:agent-os-storage",
+      "name": "agent-os-storage",
+      "url": "https://github.com/euler-gaozl/agent-os-storage",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-storage.git",
+      "branch": "feat/independent-service",
+      "source_head_at_audit": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "storage"
+      ],
+      "integration_pins": [
+        {
+          "role": "storage",
+          "commit": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "storage",
+          "commit": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c",
+          "manifest": "descriptors/storage-8ae0873dbfd645a5bfb74e57888acbe8.json",
+          "sdk": {
+            "version": "v0.1.0-rc.2",
+            "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
+            "zip_sha256": "6381fef8a276eb62f52329142549d933a6630c0235bd3a50c7ebb4d922b8c3b4",
+            "commit": "f45ca168dee81f864533a8f77f8c203960caad1a",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
+        }
+      ],
+      "remote_main_head_at_audit": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c"
+    },
+    {
+      "id": "repo:agent-os-telemetry",
+      "name": "agent-os-telemetry",
+      "url": "https://github.com/euler-gaozl/agent-os-telemetry",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-telemetry.git",
+      "branch": "feat/independent-service",
+      "source_head_at_audit": "6f9f539125431bebbf88ddbdbb6840f3dd426068",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "telemetry"
+      ],
+      "integration_pins": [
+        {
+          "role": "telemetry",
+          "commit": "c2a02e27fcc0ef517347dcaaaabe11fbcc671e81",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "telemetry",
+          "commit": "6f9f539125431bebbf88ddbdbb6840f3dd426068",
+          "manifest": "descriptors/telemetry-d243b05fc74b416aa4c164561e3099be.json",
+          "sdk": {
+            "version": "v0.1.0-rc.2",
+            "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
+            "zip_sha256": "6381fef8a276eb62f52329142549d933a6630c0235bd3a50c7ebb4d922b8c3b4",
+            "commit": "f45ca168dee81f864533a8f77f8c203960caad1a",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T09:59:03Z",
+          "observation": "Actual owner Windows release catalog; Telemetry telemetry-http-v1 installed with inbox present, zero instances."
+        }
+      ],
+      "remote_main_head_at_audit": "6f9f539125431bebbf88ddbdbb6840f3dd426068"
+    },
+    {
+      "id": "repo:agent-os-toolhub",
+      "name": "agent-os-toolhub",
+      "url": "https://github.com/euler-gaozl/agent-os-toolhub",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-toolhub.git",
+      "branch": "feat/independent-service",
+      "source_head_at_audit": "448f449db9f18a0810fdc6c111582c2e51048776",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "toolhub"
+      ],
+      "integration_pins": [
+        {
+          "role": "toolhub",
+          "commit": "98f8fecc5a139b3f1b0e4d76f4a11c9d8e0c0d07",
+          "owner_modules": []
+        }
+      ],
+      "installed": [
+        {
+          "role": "toolhub",
+          "commit": "98f8fecc5a139b3f1b0e4d76f4a11c9d8e0c0d07",
+          "manifest": "descriptors/toolhub-a97a7b478b044b6c9db04726ca5ecac1.json",
+          "sdk": {
+            "version": "v0.1.0-rc.2",
+            "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
+            "zip_sha256": "6381fef8a276eb62f52329142549d933a6630c0235bd3a50c7ebb4d922b8c3b4",
+            "commit": "f45ca168dee81f864533a8f77f8c203960caad1a",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [],
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
+        }
+      ],
+      "remote_main_head_at_audit": "448f449db9f18a0810fdc6c111582c2e51048776"
+    },
+    {
+      "id": "repo:agent-os-worker",
+      "name": "agent-os-worker",
+      "url": "https://github.com/euler-gaozl/agent-os-worker",
+      "clone_url": "https://github.com/euler-gaozl/agent-os-worker.git",
+      "branch": "feat/model-native-limits",
+      "source_head_at_audit": "64a31b9989dba5597fb85477c15cfe48a7240f27",
+      "remote_verified_at_audit": true,
+      "visibility": "public",
+      "actions_enabled_at_audit": false,
+      "working_tree_clean_before_handoff": true,
+      "roles": [
+        "worker"
+      ],
+      "integration_pins": [
+        {
+          "role": "worker",
+          "commit": "3e8eec3d125240e730cf393a11694d482a0e3cfe",
+          "owner_modules": [
+            {
+              "module": "github.com/euler-gaozl/agent-os-runtime",
+              "version": "v0.1.0-rc.5.0.20261017141655-69b9e62b2315",
+              "commit": "69b9e62b23155596a5c1b36b488ad0e9b1d5941c",
+              "module_sum": "h1:Zr1G1JTdgSdn3SImpnQK2G44QDLwv/G2hjYySFUA6Eg=",
+              "go_mod_sum": "h1:FGT+LijN16Y7wtJwBy2qB07OtfQXi+/4wuf2xG9bQQw=",
+              "protocol": "runtime-execution-v1",
+              "package": "execution"
+            }
+          ]
+        }
+      ],
+      "installed": [
+        {
+          "role": "worker",
+          "commit": "64a31b9989dba5597fb85477c15cfe48a7240f27",
+          "manifest": "descriptors/worker-806b411dd08049178458ef34702f34c5.json",
+          "sdk": {
+            "version": "v0.1.0-rc.4",
+            "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
+            "zip_sha256": "f3301da68a7b9493cf6e53ee7b5f909384096d92494ed70815fd1eaf4cd1ef8d",
+            "commit": "4022ca5e86168b1d5f748b72a8483cd7ff5a73e8",
+            "module": "github.com/euler-gaozl/agent-os-sdk"
+          },
+          "owner_modules": [
+            {
+              "module": "github.com/euler-gaozl/agent-os-runtime",
+              "version": "v0.1.0-rc.5.0.20261017141655-69b9e62b2315",
+              "commit": "69b9e62b23155596a5c1b36b488ad0e9b1d5941c",
+              "module_sum": "h1:Zr1G1JTdgSdn3SImpnQK2G44QDLwv/G2hjYySFUA6Eg=",
+              "go_mod_sum": "h1:FGT+LijN16Y7wtJwBy2qB07OtfQXi+/4wuf2xG9bQQw=",
+              "protocol": "runtime-execution-v1",
+              "package": "execution"
+            }
+          ],
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T14:40:00Z",
+          "observation": "Actual owner Windows release catalog; dual DSH engine bundle (old 639ed015 + new 687f282e) installed."
+        }
+      ],
+      "remote_main_head_at_audit": "64a31b9989dba5597fb85477c15cfe48a7240f27"
+    }
+  ],
+  "environment_policy": {
+    "file": "environments.json",
+    "default_execution_environment": "environment:owner-windows",
+    "source_metadata_scope": "portable_source_knowledge",
+    "installed_metadata_scope": "owner_windows_history_only",
+    "updated_at": "2026-10-17"
+  },
+  "development_observations": [
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "file": "macos-source-audit-20261015.json",
+      "scope": "New Mac checkout audit; historical source_head_at_audit, integration_pins and owner-windows installed records remain unchanged."
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "file": "macos-research-and-storage-20261015.md",
+      "scope": "Local development commits and tested candidates only; no change to integration pins, fixed compiled dependencies or historical Windows installations.",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-futures",
+          "commit": "9dd0b031eddfde172516479afa63ebbd6e34ced9",
+          "change": "v5 bounded format diagnostics",
+          "mac_installation": "BFF installed for second synthetic research task; earlier Web bundle retained at observation"
+        },
+        {
+          "repository_id": "repo:agent-os-futures",
+          "commit": "2482bcbbee7f5535ad73d7a0dea3f9ff96293331",
+          "change": "Completed-task retained drafts and historical/current checker distinction",
+          "mac_installation": "Web candidate tested and built; not installed at observation"
+        },
+        {
+          "repository_id": "repo:agent-os-console",
+          "commit": "a2bca748d1bd6f0de0e52e1e0a59070e790d5fbc",
+          "change": "Explicit public business browser URL",
+          "mac_installation": "Go and Web candidate tested and built; not installed at observation"
+        }
+      ],
+      "integration_increment": "Method Skill, real Storage fixture, evidence and mappings are recorded by the Git commit containing this entry; no self-referential commit ID.",
+      "pushed": false,
+      "github_actions_triggered": false
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "file": "macos-package-enospc-and-answer-contract-20261015.md",
+      "scope": "Append-only Mac installation observation; historical Windows records, integration pins and compiled dependencies unchanged.",
+      "package_manifest_sha256": "c5d2d7dad6190974ac606e8b80a8ecee3325ffdd5cad56d6cc031eead3563586",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-futures",
+          "commit": "b805fa9e09ad8c1ecf3feb4ae7c74e77a41029ed",
+          "change": "Per-question answer instructions; includes earlier completed-draft Web fixes and v5 parser",
+          "mac_installation": "Matching BFF and Web installed in independent Mac development stack; browser acceptance not executed",
+          "binary_sha256": "18b4be2c7a04b77dc6d547e833412b58ea1261110bda1c3e12e7e51570c71ca2",
+          "web_tree_sha256": "16712d2e588bbd8f5bea119caee14df0028ef7e8864d038a1da9ea514d2229b9"
+        },
+        {
+          "repository_id": "repo:agent-os-console",
+          "commit": "a2bca748d1bd6f0de0e52e1e0a59070e790d5fbc",
+          "change": "Explicit public business browser URL",
+          "mac_installation": "Matching BFF and Web installed; authenticated public URL verified, browser acceptance not executed",
+          "binary_sha256": "490336bf86cbe97ded80798657e7f839b17cea532e682ac244a27bb80e6a6a17",
+          "web_tree_sha256": "ce9859b6b6f2b7ecda4c2b43636a463cd2b7ca77f45e44e6db766bc6ae947094"
+        }
+      ],
+      "integration_increment": "The commit containing this observation records the one-line Skill clarification and Storage ENOSPC acceptance fixture; no self-referential commit ID.",
+      "pushed": false,
+      "github_actions_triggered": false
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "file": "macos-runtime-enospc-20261015.md",
+      "status": "passed_limited_owner_transaction_scope",
+      "scope": "Runtime Owner in-process transaction test with real isolated PostgreSQL ENOSPC; NOLOGIN SET ROLE pools, in-memory archive and synthetic native receipts; no independent Runtime/Worker/Node/Storage process, real provider, Compact, complete note lifecycle, Windows or host-disk exhaustion.",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-runtime",
+          "executed_base_commit": "e6c8b935e5e0a00e6bfab14aa099eb8aaf0436d9",
+          "executed_source_state": "Base commit plus exactly one reviewed untracked test",
+          "test_path": "runtime/disk_full_darwin_test.go",
+          "test_sha256": "985da500f2d93462f564536fdfaf8597b897feb704f914f8f6e15ac6f52aece5",
+          "commit_at_documentation": "c4d1785dbbb0445f57f1bd5f5b2de079ee9c43fe",
+          "commit_scope": "Later source archival commit; not a rerun of the committed tree",
+          "production_code_changed": false,
+          "installed_runtime_changed": false
+        }
+      ],
+      "controller_base_commit": "94ab2dc976c491aff9dbd8ff8fd1bee37750252f",
+      "executed_controller_sha256": "c84fcb0335d642df59ebc6bc98df139f839c64229cae24b75091298a0be97ac9",
+      "integration_increment": "The commit containing this observation archives the reviewed controller and documentation; no self-referential commit ID.",
+      "integration_pins_changed": false,
+      "pushed": false,
+      "github_actions_triggered": false
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "file": "macos-research-verification-and-ui-20261015.md",
+      "status": "provider_failed_ui_installed_browser_pending",
+      "scope": "One new same-input synthetic research task failed on first provider HTTP 503 with no report; frozen Agent 4/Skill 3, native-v4 engine and existing 12-step/12-model-attempt budget verified, reviewer criteria fixed before submission and excluded from input, three old tasks unchanged. Reviewed read-failure UI installed as a matching Futures BFF/Web package; nine other instances unchanged. No browser or Windows acceptance.",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-futures",
+          "source_commit": "b805fa9e09ad8c1ecf3feb4ae7c74e77a41029ed",
+          "installed_at_research_verification": true,
+          "source_role": "Existing installed BFF and matching Web package used for the new failed task; no provider-loop change."
+        },
+        {
+          "repository_id": "repo:agent-os-futures",
+          "source_commit": "f5e7bd21b8f3fcf20bc69c84aee2eede7bf5d2c4",
+          "installed_after_research_verification": true,
+          "source_role": "Read-failure UI and matching complete BFF/Web archive installed after the failed task; Go source and binary unchanged."
+        }
+      ],
+      "new_task": {
+        "task_id": "cfdb8e0a8232bf786a194264cb0bb584",
+        "agent_revision": 4,
+        "skill_revision": 3,
+        "status": "failed",
+        "http_status": 503,
+        "model_attempts": 1,
+        "unknown_usage_attempts": 1,
+        "content_quality_evaluated": false
+      },
+      "ui": {
+        "status": "installed_browser_pending",
+        "code_commit": "f5e7bd21b8f3fcf20bc69c84aee2eede7bf5d2c4",
+        "installed": true,
+        "installed_at": "2026-10-15T02:22:25.368Z",
+        "package_manifest_sha256": "e97f4d39fd42b72e9e1ee026b434866b49340d464a61ddb732caf7fc9369cb23",
+        "binary_sha256": "18b4be2c7a04b77dc6d547e833412b58ea1261110bda1c3e12e7e51570c71ca2",
+        "web_tree_sha256": "8effbad604254df4930d1c444d6098e690729f7f88d1cfae6b1a53cddd4db1e5",
+        "web_tests": {
+          "passed": 23,
+          "failed": 0,
+          "skipped": 0
+        },
+        "typescript": "passed",
+        "web_build": "passed",
+        "package_offline_go_web_build": "passed",
+        "nontarget_unchanged": true,
+        "nontarget_count": 9,
+        "console_restarted": false,
+        "browser_executed": false,
+        "evidence": "local/evidence/mac-bff-package-20261015-task-read-state"
+      },
+      "main_method_base_commit": "24fe19c2d1c3ff217ae988f8a9b7a884911d4c7c",
+      "integration_pins_changed": false,
+      "old_tasks_changed": false,
+      "pushed": false,
+      "github_actions_triggered": false
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "file": "macos-telemetry-owner-20261015.md",
+      "status": "passed_limited_owner_coverage_not_deployed",
+      "scope": "Mac isolated PostgreSQL Owner coverage: Telemetry exporter receipt red-green and Runtime outbox protocol; HTTP fixtures; only the five new exporter tests and two Runtime tests use NOLOGIN SET ROLE application pools, not separate login or real Langfuse, continuous-loop liveness or cross-service composition. No installed service, source protocol or deployment pin change.",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-telemetry",
+          "source_commit": "6f9f539125431bebbf88ddbdbb6840f3dd426068",
+          "source_base_commit": "cf73e7f16307fa1a41f82c026067308b1dd8ce23",
+          "source_status": "committed_local",
+          "installed": false,
+          "source_role": "Bounded acknowledgement fix and exporter coverage; manual/reusable workflow only."
+        },
+        {
+          "repository_id": "repo:agent-os-runtime",
+          "source_commit": "ff3fa220df331f698c99b260005cc222d0dcdb1c",
+          "source_base_commit": "c4d1785dbbb0445f57f1bd5f5b2de079ee9c43fe",
+          "source_status": "committed_local",
+          "installed": false,
+          "source_role": "Outbox HTTP/lease test coverage only; production Runtime unchanged."
+        }
+      ],
+      "telemetry_tests": {
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "race": true,
+        "elapsed_seconds": 2.267,
+        "scope": "Five new exporter regressions use SET ROLE application pools; existing Inbox test uses the fixture owner pool and migration test explicitly checks role permissions. No live Langfuse or continuous background loop assertion"
+      },
+      "runtime_tests": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "race": true,
+        "elapsed_seconds": 31.795,
+        "evidence": "local/evidence/macos-telemetry-owner-20261015/runtime-green.jsonl"
+      },
+      "installed_services_changed": false,
+      "integration_pins_changed": false,
+      "old_tasks_changed": false,
+      "pushed": false,
+      "github_actions_triggered": false
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "file": "macos-native-notes-and-unknown-20261015.md",
+      "status": "passed_two_limited_fixture_layers_not_deployed",
+      "scope": "Two separate Mac fixture layers: Runtime note lifecycle/real PostgreSQL Owner coverage, and native process external-effect reply-loss/cancel/explicit reconcile with real Storage. No production change, installed service replacement, deployment pin change, real provider, Windows or full resource/business acceptance.",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-runtime",
+          "source_commit": "c02e12307e214b59dc02e18ca807a3c1ae762023",
+          "source_base_commit": "ff3fa220df331f698c99b260005cc222d0dcdb1c",
+          "source_status": "committed_local",
+          "installed": false,
+          "source_role": "Note lifecycle tests and README only; isolated executed Runtime binary still built from ff3fa220."
+        }
+      ],
+      "integration_test_source": {
+        "repository_id": "repo:agent-os",
+        "source_base_commit": "9f3c3785869927796e57a59059b3df840dbf13bf",
+        "path": "scripts/acceptance/nativearchive/native_unknown_test.go",
+        "sha256": "317ca63f5c5a31dcba4dea44348efe49a55912d1bc45e37eca7d40ecda453ef7",
+        "source_role": "New integration acceptance test archived together with this observation; no self-referential commit claim."
+      },
+      "executed_binary_sources": [
+        {
+          "repository_id": "repo:agent-os-runtime",
+          "source_commit": "ff3fa220df331f698c99b260005cc222d0dcdb1c"
+        },
+        {
+          "repository_id": "repo:agent-os-worker",
+          "source_commit": "ff9a2f07f397bf0b408256e8a71644b3d2976376"
+        },
+        {
+          "repository_id": "repo:agent-os-storage",
+          "source_commit": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c"
+        },
+        {
+          "repository_id": "repo:agent-os-harness",
+          "source_commit": "a8a18e41de719901dbef4513faf898af95822d7a"
+        }
+      ],
+      "binary_sha256": {
+        "runtime": "699955ad81819e6fbf93bbc5b4cfbf7caf3401c6de0b9fc6f437443a2913719f",
+        "runtime-migrate": "e2795723b919c7be33908067f430246e008643c21e39b1e3cdc94c61e9dfdcec",
+        "worker": "4aa8fd00aa2081accdb27b7a53df53215ce2d5eeaa0e1d1fe9f316ecbc65af7e",
+        "storage": "a21a58510b74b0fd6b76e01aad34468630cf4ef65de0dc6cbb723c74b80433bc",
+        "storage-migrate": "98b5c0c54c64cb72cbd1f7ecbecf77554dbbedf9cfe5bfa866a520a9e94db56e"
+      },
+      "fixed_harness_manifest_sha256": "d76588bae0edd1d7f13cdb4d01423ac8fc14da240fba682bcec4a1fb08f8ba7f",
+      "notes_owner": {
+        "scope": "Owner in-process native protocol with real isolated PostgreSQL; NOLOGIN SET ROLE pools, synthetic NativeReceipt and per-task memory archive; post-commit callback return loss, not network or official DSH process",
+        "tests": {
+          "top_level_passed": 2,
+          "subtests_passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "race": true,
+          "package_elapsed_seconds": 10.533,
+          "exit_code": 0
+        },
+        "test_source_sha256": "5413703e61005d17fb75c36d5ee17d0261b83016234471f1a69015f2a37e590c",
+        "source_base_commit": "ff3fa220df331f698c99b260005cc222d0dcdb1c",
+        "source_commit": "c02e12307e214b59dc02e18ca807a3c1ae762023"
+      },
+      "native_process": {
+        "scope": "Independent Runtime/Worker/Storage with fixed official native-v4 Node, two fresh databases and three LOGIN roles; Registry/ToolHub/model/MCP protocol fixtures, fsynced synthetic external effect and actual TCP reply loss, controlled explicit operator reconciliation",
+        "tests": {
+          "top_level_passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "race_test_driver_only": true,
+          "service_binaries_race": false,
+          "package_elapsed_seconds": 5.417,
+          "exit_code": 0
+        },
+        "test_source_sha256": "317ca63f5c5a31dcba4dea44348efe49a55912d1bc45e37eca7d40ecda453ef7",
+        "integration_source_base_commit": "9f3c3785869927796e57a59059b3df840dbf13bf",
+        "effects": 1,
+        "model_fixture_requests": 2,
+        "synthetic_accounted_tokens_per_run": 1900,
+        "real_provider_calls": 0,
+        "unknown_model_usage_attempts": 0,
+        "cost_estimate": null,
+        "archive_manifests": 12,
+        "archive_bytes": 15829
+      },
+      "retained_failure": {
+        "attempt": "unknown-first",
+        "exit_code": 1,
+        "cause": "ToolHub fixture omitted SDK Connector resolver; HTTP 403 during submission before effect execution."
+      },
+      "cleanup": {
+        "temporary_databases_remaining": 0,
+        "temporary_login_roles_remaining": 0,
+        "temporary_connections_remaining": 0,
+        "temporary_config_files_remaining": 0,
+        "test_processes_remaining": 0,
+        "notes_fixture_databases_and_roles_remaining": 0
+      },
+      "installed_instances_unchanged": 10,
+      "installed_services_changed": false,
+      "integration_pins_changed": false,
+      "old_tasks_changed": false,
+      "production_code_changed": false,
+      "pushed": false,
+      "github_actions_triggered": false
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "file": "macos-console-native-and-state-recovery-20261015.md",
+      "status": "console_package_installed_owner_recovery_fixture_passed_browser_pending",
+      "scope": "Console exact fixed-engine evidence UI corrected and matching local BFF/Web package installed; Runtime native source-state recovery covered separately with Owner PostgreSQL/HTTP fixtures. No browser, official Node recovery, general failed-run continuation, real provider or Windows acceptance.",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-console",
+          "source_commit": "58c511f3f2a29ca5a99a121e2197e74e5272ac90",
+          "source_base_commit": "a2bca748d1bd6f0de0e52e1e0a59070e790d5fbc",
+          "source_status": "committed_local",
+          "installed": true,
+          "source_role": "Exact four source-engine evidence UI, production component extraction and tests."
+        },
+        {
+          "repository_id": "repo:agent-os-runtime",
+          "source_commit": "606fbc8a0e785d013f39e2cadcfca2fb1fb268f3",
+          "source_base_commit": "c02e12307e214b59dc02e18ca807a3c1ae762023",
+          "source_status": "committed_local",
+          "installed": false,
+          "source_role": "Native SourceState Owner recovery tests and documentation only; production protocol and installed Runtime unchanged."
+        }
+      ],
+      "console_ui": {
+        "source_base_commit": "a2bca748d1bd6f0de0e52e1e0a59070e790d5fbc",
+        "source_commit": "58c511f3f2a29ca5a99a121e2197e74e5272ac90",
+        "web_tests": {
+          "passed": 27,
+          "failed": 0,
+          "skipped": 0
+        },
+        "typescript_exit": 0,
+        "author_red": {
+          "passed": 2,
+          "failed": 3,
+          "skipped": 0
+        },
+        "author_focused": {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0
+        },
+        "scope": "SSR initial rendering and direct archive-download callback; actual Console uses the components. No browser, DOM/fetch recovery-response interaction or automatic continuation claim."
+      },
+      "runtime_owner": {
+        "source_base_commit": "c02e12307e214b59dc02e18ca807a3c1ae762023",
+        "source_commit": "606fbc8a0e785d013f39e2cadcfca2fb1fb268f3",
+        "test_source_sha256": "cfc3899decd622b0b74d85efc2dfc0e8c3a1878a07af19fc74dd3438f9091c0e",
+        "tests": {
+          "top_level_passed": 3,
+          "subtests_passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "race": true,
+          "package_elapsed_seconds": 2.427,
+          "exit_code": 0
+        },
+        "scope": "In-process Owner with real PostgreSQL and SourceState HTTP policy, NOLOGIN SET ROLE application pools, synthetic model receipt, memory archive and callback-level reply loss; no SQL-fabricated run state, actual TCP loss, Worker retry loop, official Node or Storage process. Archive lost-ack naturally failed/not_waiting; archive_unconfirmed diagnostic and external-tool unknown not added."
+      },
+      "console_package": {
+        "label": "20261015-console-native",
+        "installed": true,
+        "installed_at": "2026-10-15T06:33:13.746Z",
+        "source_commit": "58c511f3f2a29ca5a99a121e2197e74e5272ac90",
+        "manifest_sha256": "3a95458362ff8145e36b4a3a63e03027f3b8703fbc1946265c11e9539d56798a",
+        "binary_sha256": "490336bf86cbe97ded80798657e7f839b17cea532e682ac244a27bb80e6a6a17",
+        "web_tree_sha256": "1544e521bf1d8b2d0417556e81e69e6fa29045a2a3c9f4f4849dae5e5b1bc9a1",
+        "non_target_instances_unchanged": 9,
+        "readiness_verified": true,
+        "observed_terminal_task_ids_and_statuses_unchanged": true,
+        "browser_executed": false,
+        "scope": "Matching local Console BFF/Web development package; control-only. Readiness and bounded observed task set, not browser or managed Windows release.",
+        "only_configuration_change": "control.WEB_DIR",
+        "installed_instances_alive": 10
+      },
+      "runtime_fixture_cleanup": {
+        "passed": true,
+        "runtime_fixture_databases_remaining": 0,
+        "runtime_fixture_roles_remaining": 0,
+        "runtime_fixture_connections_remaining": 0,
+        "scope": "Root read-only own test-cluster catalogue and connections; reviewer does not reconnect after cleanup."
+      },
+      "failed_attempts": [
+        {
+          "kind": "author_build",
+          "result": "pnpm run build rejected external node_modules symlink; original failure retained, direct locked TypeScript/Vite checks subsequently passed."
+        },
+        {
+          "kind": "console_install_first",
+          "result": "process-ownership-mismatch after SIGTERM; stop unconfirmed and automatic rollback incomplete. Explicit original-process absence check and original-package recovery succeeded before independent attempt2 installation. Exact transient process state not observed."
+        }
+      ],
+      "real_provider_calls": 0,
+      "browser_executed": false,
+      "installed_services_changed": true,
+      "installed_roles_changed": [
+        "control"
+      ],
+      "integration_pins_changed": false,
+      "pushed": false,
+      "github_actions_triggered": false
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "file": "macos-continuation-preview-20261015.md",
+      "status": "readonly_preview_installed_owner_tested_continuation_open",
+      "scope": "Control-only read-only failed continuation preview v1 implemented and locally installed in Runtime; Owner PostgreSQL/HTTP fixtures plus read-only observations of existing Mac failures. No new execution action, generic resume guard, UI integration, provider retry or business/Windows acceptance.",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-runtime",
+          "source_commit": "879c5034ad556e37f1c987312eb4124b3c4806b6",
+          "source_base_commit": "606fbc8a0e785d013f39e2cadcfca2fb1fb268f3",
+          "source_status": "committed_local",
+          "installed": true,
+          "source_role": "Control-only read-only continuation preview v1, authorization, Owner tests and README; execution protocol and legacy resume unchanged."
+        }
+      ],
+      "api": {
+        "protocol": "failed-run-continuation-preview-v1",
+        "method": "GET",
+        "route": "/v1/runs/{id}/continuation",
+        "authorized_role": "control",
+        "read_only": true,
+        "action_available": false,
+        "positive_assessment": "same_run_candidate is an observation, never execution authorization",
+        "legacy_resume_changed": false,
+        "ui_integrated": false
+      },
+      "runtime_owner": {
+        "source_base_commit": "606fbc8a0e785d013f39e2cadcfca2fb1fb268f3",
+        "source_commit": "879c5034ad556e37f1c987312eb4124b3c4806b6",
+        "source_set_sha256": "2c49c04472b5b9a32f28959e7a1c91776b3839c480628a6c27cea75e5d45a313",
+        "tests": {
+          "top_level_passed": 7,
+          "new_top_level_tests": 6,
+          "existing_peer_policy_tests": 1,
+          "subtests_passed": 17,
+          "failed": 0,
+          "skipped": 0,
+          "race": true,
+          "package_elapsed_seconds": 4.327,
+          "exit_code": 0
+        },
+        "vet_exit": 0,
+        "build_exit": 0,
+        "scope": "Owner in-process real isolated PostgreSQL and servicehttp authorization, NOLOGIN SET ROLE pools, synthetic native receipt and memory archive. Positive paths use normal APIs; five corrupt-record negative fixtures are deliberate injections. Separate actor invokes old resume in consistency test; GET never performs that action. No official Node/independent Worker/Storage or provider."
+      },
+      "runtime_package": {
+        "installed": true,
+        "label": "20261015-continuation-preview",
+        "source_commit": "879c5034ad556e37f1c987312eb4124b3c4806b6",
+        "previous_installed_source": "e6c8b935e5e0a00e6bfab14aa099eb8aaf0436d9",
+        "installed_at": "2026-10-15T07:26:06.356Z",
+        "manifest_sha256": "1942749e2442092c5643cb3b0f8fe08c97b670d14af42d02c26951cb648cfca2",
+        "binary_sha256": "a6b12e3e5e4bb0091f58d2c2d6784583f9f533d0d9b570e3fff49662d4a22e38",
+        "installed_evidence_sha256": "859148cde017804ba0d029c50df548acd22f07cf5218d44431011f21fae7f142",
+        "non_target_instances_unchanged": 9,
+        "total_live_instances": 10,
+        "readiness_verified": true,
+        "runtime_configuration_unchanged": true,
+        "fixed_harness_unchanged": true,
+        "migration_executed": false,
+        "retirement_executed": false,
+        "healthcheck_executed": false,
+        "provider_calls": 0,
+        "tasks_submitted": 0,
+        "scope": "Only Runtime replaced. Startup can write normal instance registration/heartbeat; no whole-database write-free claim."
+      },
+      "installed_observation": {
+        "read_only": true,
+        "action_available": false,
+        "named_table_snapshots_equal": true,
+        "named_tables": 12,
+        "complete_task_lists_equal": true,
+        "terminal_tasks": 4,
+        "comparison_includes_instances": false,
+        "continuous_immutability_proven": false,
+        "preinstall_observed_at": "2026-10-15T07:25:50.728Z",
+        "postinstall_observed_at": "2026-10-15T07:26:30.050Z",
+        "tables_sha256": "cb618c38d0bd8933b658c3cbfc9e6c78ccbcecf982cd125906a6a3305a7136f6",
+        "tasks_sha256": "72d29da5eeab6c528ce5bf63b7e5cebba03536c9e724c4e007c339b576f2febf",
+        "observer_script_sha256": "e5824b1cbc4ab9a5988529c6d6b02769852f9eb685cee73468cb69ee9cbe25d1",
+        "preview_gets": 4,
+        "successful_phase_http_gets": 8,
+        "successful_phase_database_read_transactions": 4,
+        "provider_calls": 0,
+        "resumes_performed": 0,
+        "tasks_submitted": 0,
+        "assessments": [
+          {
+            "status": "completed",
+            "count": 2,
+            "assessment": "not_applicable",
+            "reason": "already_completed"
+          },
+          {
+            "status": "failed",
+            "count": 2,
+            "assessment": "same_run_candidate",
+            "reason": "retained_transient_model_failure",
+            "each_basis": {
+              "model_rounds": 1,
+              "max_steps": 12,
+              "family_model_attempts": 1,
+              "max_model_attempts": 12,
+              "retry_http_status": 503
+            }
+          }
+        ],
+        "scope": "Twelve named execution/notes table row digests and full terminal task metadata agree at observation endpoints across installation and GETs. HTTP and SQL snapshots are separate; no admission lock or continuous immutability proof. Excludes instances, app_runs, business_runs and all other tables; no live provider retry, Storage-byte validation, UI, business or Windows acceptance."
+      },
+      "fixture_cleanup": {
+        "passed": true,
+        "databases_remaining": 0,
+        "roles_remaining": 0,
+        "connections_remaining": 0,
+        "evidence_sha256": "e3b26da5faf274b8bf900a4c89c14a2df8e263355b4a6693e0715b444c0a782b"
+      },
+      "installed_services_changed": true,
+      "installed_roles_changed": [
+        "runtime"
+      ],
+      "integration_pins_changed": false,
+      "real_provider_calls": 0,
+      "browser_executed": false,
+      "pushed": false,
+      "github_actions_triggered": false,
+      "retained_failures": [
+        {
+          "stage": "root-source-metadata-verification",
+          "result": "Compared timestamp-bearing envelopes and stopped before write; corrected to the ten service objects. Owner tests themselves passed."
+        },
+        {
+          "stage": "observer-v1-configuration-guard",
+          "result": "Stopped before HTTP/SQL transactions because the strict guard omitted pinned search_path=public; no service configuration change."
+        },
+        {
+          "stage": "observer-v2-initial-database-summary",
+          "result": "Actual libpq connection attempt selected a missing default port 5432 socket because PGDATABASE did not expand the URI; did not connect to target 55432. Zero completed summaries is not zero connection attempts. V3 split fixed connection parameters into child environment while preserving readonly/public and exact pins."
+        }
+      ]
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "record": "macos-native-attempt-revision-20261015.md",
+      "status": "native_revision_guard_two_workers_installed_continuation_open",
+      "scope": "Native BeginModel admission guard rejects a new stale-revision attempt while preserving completed receipts and frozen history. Owner and actual old/new Worker plus fixed official Node/synthetic TLS fixtures verified; both own-Mac Workers updated. Runtime HTTP remains 879c5034; continuation action/UI, real provider/business and Windows acceptance remain open.",
+      "source_versions": {
+        "runtime_core_execution_commit": "1f6c4c29c62bac3ad6d674b7797a7410f373bf00",
+        "runtime_tests_commit": "5017de09c37f50da270b1873c2dcf73439330653",
+        "worker_source_commit": "94d605910e0c3da011bb1213b516150ecb5fe1ba",
+        "worker_runtime_module_version": "v0.1.0-rc.5.0.20261015080014-1f6c4c29c62b",
+        "worker_runtime_module_sum": "h1:Ht2GnqP3SC9BPodtn85eJ+vm6ZfZjc46g/1mQM8cGhg=",
+        "runtime_http_installed_commit": "879c5034ad556e37f1c987312eb4124b3c4806b6",
+        "runtime_http_reinstalled": false
+      },
+      "runtime_owner": {
+        "core_commit": "1f6c4c29c62bac3ad6d674b7797a7410f373bf00",
+        "guard_sha256": "24ca3d033e23723bb23f4113be56fc0b79757bbd56e8b2b1310de0fec2cf042f",
+        "test_sha256": "2df2cbaa6fd3289fbbd18a3b06cb4b0dcca8343f0e40529faac3f7b6a98fadd4",
+        "tests": {
+          "red": {
+            "top_pass": 2,
+            "top_fail": 2,
+            "sub_pass": 0,
+            "skip": 0,
+            "exit_code": 1,
+            "package_elapsed_seconds": 1.089,
+            "stdout_sha256": "555dd0be6ab5397ab7e59bfaa53c59f5432f27cfe240961c374bdfbbb18ec8b9"
+          },
+          "green": {
+            "top_pass": 4,
+            "top_fail": 0,
+            "sub_pass": 0,
+            "skip": 0,
+            "exit_code": 0,
+            "package_elapsed_seconds": 2.09,
+            "stdout_sha256": "4e65695d9d92f37d7f8f3c9f3947547864f51d1cb251c87a516187a4ddf2fe46"
+          },
+          "regression": {
+            "top_pass": 32,
+            "top_fail": 0,
+            "sub_pass": 38,
+            "skip": 0,
+            "exit_code": 0,
+            "package_elapsed_seconds": 34,
+            "stdout_sha256": "1dd9d27d66ac223e885918f7da6eaba578e2349d810997cff9903ef953d97866"
+          }
+        },
+        "vet_exit": 0,
+        "build_exit": 0,
+        "original_instances_unchanged": 10,
+        "cleanup": {
+          "fixture_databases": 0,
+          "fixture_roles": 0,
+          "fixture_connections": 0
+        },
+        "provider_calls": 0,
+        "scope": "Owner real isolated PG and execution APIs with synthetic callbacks/memory archives, no actual Worker/Node/provider execution"
+      },
+      "worker_fixture": {
+        "runs": {
+          "worker-fixture": {
+            "exit_code": 1,
+            "top_pass": 0,
+            "top_fail": 1,
+            "sub_pass": 1,
+            "sub_fail": 2,
+            "skip": 0,
+            "package_elapsed_seconds": 4.146,
+            "stdout_sha256": "246d389378cab82682cd450ec656c14ae63244cd217aa8397c6193b08b630559"
+          },
+          "worker-fixture-v2": {
+            "exit_code": 0,
+            "top_pass": 1,
+            "top_fail": 0,
+            "sub_pass": 3,
+            "sub_fail": 0,
+            "skip": 0,
+            "package_elapsed_seconds": 4.917,
+            "stdout_sha256": "1b006354a12c723ee1cacc04bdb7bff224d4a796c6ff01b902a2cbed4f0e33b6"
+          }
+        },
+        "test_driver_race": true,
+        "worker_binaries_race": false,
+        "fixture_source_sha256": "13988cc825980dcee7d82d409e1a9c69cd5a816f23cd15dbf5be1d2d4ab33079",
+        "harness_manifest_sha256": "d76588bae0edd1d7f13cdb4d01423ac8fc14da240fba682bcec4a1fb08f8ba7f",
+        "original_instances_unchanged": 10,
+        "fixture_pids_remaining": 0,
+        "fixture_databases_roles_connections_remaining": {
+          "fixture_databases": 0,
+          "fixture_roles": 0,
+          "fixture_connections": 0
+        },
+        "model_http_scope": "Synthetic loopback TLS only; actual independent Worker binaries and fixed official Node runner, real Runtime HTTP and PG, archive fixture.",
+        "real_provider_calls": 0,
+        "cases": [
+          {
+            "name": "old_pin_stale",
+            "synthetic_http_requests": 2,
+            "model_attempts": 2,
+            "unknown_usage_attempts": 2,
+            "status": "failed"
+          },
+          {
+            "name": "new_pin_stale",
+            "synthetic_http_requests": 1,
+            "model_attempts": 1,
+            "unknown_usage_attempts": 1,
+            "status": "failed"
+          },
+          {
+            "name": "new_pin_same_revision",
+            "synthetic_http_requests": 2,
+            "model_attempts": 2,
+            "unknown_usage_attempts": 1,
+            "status": "completed"
+          }
+        ],
+        "request_equality": "Complete canonical JSON values agree with original frozen intent and every call/attempt; raw wire hashes are preserved and differ for replay requests."
+      },
+      "worker_installation": {
+        "installed": true,
+        "at": "2026-10-15T08:38:46.658Z",
+        "package_manifest_sha256": "384952564182170e6d12ff4bebf6bc4967d133413f2916a73cabf347f9ac1766",
+        "worker_binary_sha256": "7ec002f581b5dfd785db3fcfc6228595bd2f6c23e400ace7cc39f722452353f8",
+        "changed_instances": [
+          "worker",
+          "worker-2"
+        ],
+        "non_target_instances_unchanged": 8,
+        "all_configuration_hashes_unchanged": true,
+        "fixed_harness_unchanged": true,
+        "old_workers_exit_confirmed": true,
+        "final_observed_at": "2026-10-15T08:40:20.497Z",
+        "total_live_instances": 10,
+        "new_workers_authenticated_ready_status": 200,
+        "read_only_sql_transactions": 8,
+        "authenticated_ready_gets": 8,
+        "observed_scalar_counts": {
+          "runs": 4,
+          "nonterminal": 0,
+          "calls": 21,
+          "model_attempts": 11,
+          "exchanges": 70,
+          "archives": 70
+        },
+        "whole_row_immutability_proven": false,
+        "whole_database_immutability_proven": false,
+        "migrations_executed": false,
+        "release_package": false,
+        "provider_calls": 0,
+        "task_mutations": 0,
+        "scope": "Scalar observations and process checks are separate, not an atomic admission lock or full-row comparison; normal instance heartbeats remain possible. A later root live observation confirmed both new workers and eight unchanged peers."
+      },
+      "execution_action_added": false,
+      "ui_integrated": false,
+      "real_provider_calls": 0,
+      "browser_executed": false,
+      "windows_acceptance": false,
+      "integration_deployment_pins_changed": false,
+      "retained_failures": [
+        {
+          "stage": "worker-offline-vendor-first",
+          "result": "Initial verify/vendor failed because locked testify 1.3.0 go.mod metadata was absent; later fixed-graph metadata preparation and offline verify/vendor/build succeeded. Fixed metadata was actually fetched via goproxy.cn; not a wholly offline or checksum-database-verified flow."
+        },
+        {
+          "stage": "worker-build-preflight-first",
+          "result": "Incorrect root LICENSE assumption stopped before package creation or build; corrected exact source inventory and retained failure."
+        },
+        {
+          "stage": "worker-fixture-first",
+          "result": "One subcase passed and two failed due to raw JSON key-order equality assertion. V2 compares complete canonical JSON against frozen exchange and calls/attempts, retaining raw wire hashes; production source, module pin and binaries unchanged."
+        }
+      ],
+      "file": "macos-native-attempt-revision-20261015.md",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-runtime",
+          "source_commit": "5017de09c37f50da270b1873c2dcf73439330653",
+          "core_execution_commit": "1f6c4c29c62bac3ad6d674b7797a7410f373bf00",
+          "source_status": "committed_local",
+          "installed": false,
+          "source_role": "Core admission guard plus Owner and actual Worker fixture tests/README; execution core consumed by Worker. Runtime HTTP remains its separately recorded 879c5034 installation."
+        },
+        {
+          "repository_id": "repo:agent-os-worker",
+          "source_commit": "94d605910e0c3da011bb1213b516150ecb5fe1ba",
+          "source_base_commit": "ff9a2f07f397bf0b408256e8a71644b3d2976376",
+          "source_status": "committed_local",
+          "installed": true,
+          "installed_instances": 2,
+          "runtime_execution_dependency": "v0.1.0-rc.5.0.20261015080014-1f6c4c29c62b",
+          "source_role": "Explicit immutable execution module pin, matching go.sum/vendor and README; two own-Mac Worker processes actually updated."
+        }
+      ],
+      "worker_baseline": {
+        "source_commit": "ff9a2f07f397bf0b408256e8a71644b3d2976376",
+        "runtime_dependency": "v0.1.0-rc.5"
+      },
+      "installed_services_changed": true,
+      "installed_roles_changed": [
+        "worker",
+        "worker-2"
+      ],
+      "pushed": false,
+      "github_actions_triggered": false
+    },
+    {
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "record": "macos-continuation-action-20261015.md",
+      "status": "explicit_continuation_source_tested_not_installed",
+      "scope": "Explicit manual continuation action, durable Owner receipt and Console recovery-pointer source implemented and locally committed. Isolated Owner and independent Worker/official Node/synthetic TLS plus Console source checks passed with explicit skips/limits. No live schema migration, service deployment, mounted/browser flow, real provider/business or Windows acceptance.",
+      "source_versions": {
+        "runtime_source_commit": "dbf99dca784c849f0386da1c3de219aa10142a8e",
+        "console_source_commit": "8e8186c07467897410f5a94973c7c4d36d99490e",
+        "runtime_installed_commit": "879c5034ad556e37f1c987312eb4124b3c4806b6",
+        "console_installed_commit": "58c511f3f2a29ca5a99a121e2197e74e5272ac90",
+        "worker_installed_commit": "94d605910e0c3da011bb1213b516150ecb5fe1ba",
+        "worker_execution_commit": "1f6c4c29c62bac3ad6d674b7797a7410f373bf00",
+        "worker_runtime_module": "v0.1.0-rc.5.0.20261015080014-1f6c4c29c62b",
+        "worker_pin_changed": false,
+        "harness_manifest_sha256": "d76588bae0edd1d7f13cdb4d01423ac8fc14da240fba682bcec4a1fb08f8ba7f"
+      },
+      "contract": {
+        "context_protocol": "failed-run-continuation-action-context-v1",
+        "receipt_protocol": "failed-run-continuation-receipt-v1",
+        "authorized_identity": "named control",
+        "manual_action_source_implemented": true,
+        "console_source_implemented": true,
+        "native_legacy_resume_source_rejected": true,
+        "preview_v1_unchanged": true,
+        "execution_protocol_unchanged": true,
+        "receipt_owner_table": "run_continuation_receipts",
+        "receipt_retention": "Permanent Owner decision history, no TTL; Runtime SELECT/INSERT, no new Worker grant"
+      },
+      "runtime_tests": {
+        "focused": {
+          "top_pass": 19,
+          "sub_pass": 42,
+          "top_skip": 0,
+          "sub_skip": 0,
+          "fail": 0,
+          "exit_code": 0,
+          "launcher_elapsed_ms": 13459,
+          "stdout_sha256": "2700b81fa0eb862b31d66a68d37af7b812e8787b5efb4ce8c01b131d4ccba9bc",
+          "new_owner_top_level": 7,
+          "new_owner_subtests": 11,
+          "pure_http_top_level": 2,
+          "pure_http_subtests": 14,
+          "preview_top_level": 6,
+          "preview_subtests": 17,
+          "native_guard_top_level": 4,
+          "package_seconds": 11.375,
+          "race": true
+        },
+        "broad_regression": {
+          "top_pass": 112,
+          "sub_pass": 195,
+          "top_skip": 14,
+          "sub_skip": 13,
+          "fail": 0,
+          "exit_code": 0,
+          "launcher_elapsed_ms": 104943,
+          "stdout_sha256": "93ece91b944de5d5472cfa5284095ed24b9f6bc2358069a9fce8fe361fac552a",
+          "package_seconds": 104.443,
+          "skipped_tests": [
+            "TestRuntimeDiskFullPreservesNotesAndModelReceipts",
+            "TestWorkerBinaryCompatibilityAfterCommittedEffect",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/serialized_overflow",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/rejection_kill",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/compaction_kill",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/usage_pressure",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/usage_control",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/irreducible",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/summary_overflow",
+            "TestIndependentWorkerEvidencePastFourMiBRecallsOmittedSourceAfterProcessInterruption",
+            "TestIndependentNativeWorkerRevisionGuard",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/large",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/completion_kill",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/rejection_kill",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/compaction_kill",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/cancel",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/partial",
+            "TestIndependentSourceWorkerRecoversCommittedStateAfterCompactionAndLostReply",
+            "TestIndependentSourceWorkerSurvivesLostStateHTTPReplyWithoutProcessDeath",
+            "TestIndependentSourceWorkerExhaustedReplyRetriesRequireSafeOperatorRecovery",
+            "TestIndependentResidentWorkerRecoversCommittedStateAfterCompactionAndLostReply",
+            "TestIndependentResidentWorkerSurvivesLostStateHTTPReplyWithoutProcessDeath",
+            "TestIndependentResidentWorkerExhaustedReplyRetriesRequireSafeOperatorRecovery",
+            "TestIndependentBudgetWorkerRecoversCommittedStateAfterCompactionAndLostReply",
+            "TestIndependentBudgetWorkerSurvivesLostStateHTTPReplyWithoutProcessDeath",
+            "TestIndependentBudgetWorkerExhaustedReplyRetriesRequireSafeOperatorRecovery",
+            "TestIndependentSourceWorkerUpgradesV1AcrossCommittedStateInterruption"
+          ],
+          "scope": "Top-level passes can include grouping tests whose opt-in leaves skip; 27 explicit skip events are retained. The independent revision Worker run is covered separately, not relabelled in this invocation."
+        },
+        "source_set_sha256": "bcfc25c2d9a029abc2f0a3761a575b6099817208402f95b2e525b9e5b9a17e1c",
+        "internal_runstate_race_exit": 0,
+        "vet_exit": 0,
+        "build_exit": 0,
+        "permissions": "Isolated real PG with NOLOGIN/SET ROLE; not credential-authenticated login acceptance",
+        "reply_loss": "External HTTP connection dropped after Handler committed; PostgreSQL COMMIT response loss not injected"
+      },
+      "worker_tests": {
+        "top_pass": 1,
+        "sub_pass": 3,
+        "top_skip": 0,
+        "sub_skip": 0,
+        "fail": 0,
+        "exit_code": 0,
+        "launcher_elapsed_ms": 5489,
+        "stdout_sha256": "c5ce744fb8c2869358e90ad0fab2fc243ebf0cc107301938633b0267c2d72404",
+        "package_seconds": 4.779,
+        "race_test_driver": true,
+        "worker_binary_race_build": false,
+        "cases": [
+          {
+            "name": "old_pin_stale",
+            "revise": true,
+            "sends": 2,
+            "attempts": 2,
+            "unknown_usage_attempts": 2,
+            "status": "failed",
+            "complete_canonical_frozen_binding": true
+          },
+          {
+            "name": "new_pin_stale",
+            "revise": true,
+            "sends": 1,
+            "attempts": 1,
+            "unknown_usage_attempts": 1,
+            "status": "failed",
+            "complete_canonical_frozen_binding": true
+          },
+          {
+            "name": "new_pin_same_revision",
+            "revise": false,
+            "sends": 2,
+            "attempts": 2,
+            "unknown_usage_attempts": 1,
+            "status": "completed",
+            "complete_canonical_frozen_binding": true
+          }
+        ],
+        "source_actor": "Explicit action at R1, then optional Constraints R2 before second Worker Claim",
+        "scope": "Actual separate old/new Worker binaries and pinned official Node adaptation; real isolated Runtime HTTP/PG, synthetic loopback TLS model and archive fixture. Complete canonical bodies bind frozen exchanges/calls/attempts; raw wire hashes may differ.",
+        "actual_provider_calls": 0
+      },
+      "console_tests": {
+        "go_race_exit": 0,
+        "vet_exit": 0,
+        "build_exit": 0,
+        "web_tests_passed": 36,
+        "new_continuation_web_tests": 9,
+        "web_failed": 0,
+        "web_skipped": 0,
+        "tsc_exit": 0,
+        "vite_exit": 0,
+        "vite_nonfatal_warnings": [
+          "lucide-react use client directives",
+          "chunks over 500 kB"
+        ],
+        "scope": "MemoryStorage/fake fetch, static render and upstream proxy fixtures; no mounted React hook/click/unmount, real cross-tab StorageEvents or browser acceptance."
+      },
+      "installed_services_changed": false,
+      "live_schema_migration_executed": false,
+      "live_task_mutations": 0,
+      "actual_provider_calls": 0,
+      "browser_executed": false,
+      "automatic_continuation_complete": false,
+      "windows_acceptance": false,
+      "fixture_cleanup": {
+        "prefix": "p2_runtime_",
+        "fixture_databases": 0,
+        "fixture_roles": 0,
+        "fixture_connections": 0,
+        "recorded_fixture_worker_pids_absent": 6
+      },
+      "baseline_service_objects_unchanged": 10,
+      "integration_deployment_pins_changed": false,
+      "pushed": false,
+      "github_actions_triggered": false,
+      "file": "macos-continuation-action-20261015.md",
+      "source_commits": [
+        {
+          "repository_id": "repo:agent-os-runtime",
+          "source_commit": "dbf99dca784c849f0386da1c3de219aa10142a8e",
+          "source_base_commit": "5017de09c37f50da270b1873c2dcf73439330653",
+          "source_status": "committed_local",
+          "installed": false,
+          "source_role": "New explicit control action, permanent receipt schema/readiness and Owner/Worker test actors; live HTTP remains prior 879c5034 package."
+        },
+        {
+          "repository_id": "repo:agent-os-console",
+          "source_commit": "8e8186c07467897410f5a94973c7c4d36d99490e",
+          "source_base_commit": "58c511f3f2a29ca5a99a121e2197e74e5272ac90",
+          "source_status": "committed_local",
+          "installed": false,
+          "source_role": "Console BFF and native continuation panel with durable client pointers; live BFF/Web remains prior 58c511f3 package."
+        }
+      ],
+      "worker_unchanged": true
+    }
+  ]
+}

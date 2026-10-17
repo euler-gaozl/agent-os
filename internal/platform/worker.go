@@ -69,7 +69,7 @@ func (w *Worker) execute(parent context.Context, r Run) {
 	var err error
 	if r.Engine == "legacy-go" {
 		err = w.drive(ctx, &r)
-	} else if r.Engine == "dsh-0.2.0-rc.2" {
+	} else if r.Engine == "dsh-0.2.0-rc.2" || r.Engine == EngineDSHEvidence {
 		err = w.driveDSH(ctx, &r)
 	} else {
 		err = errors.New("unsupported execution engine version")

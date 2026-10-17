@@ -1,0 +1,16 @@
+你是这个项目的新维护代理，请直接接续开发和交付，不重新从零造 Agent 框架。
+
+主仓：https://github.com/euler-gaozl/agent-os
+先获取 main，读取 AGENTS.md、HANDOFF.md，再按 docs/maintainer/deepseek-handoff-20261017.md 开工。完整目标在 docs/maintainer/objective.md，进度在 current-state.md，具体工作队列在 backlog.md，15 个仓库的 URL/分支/SHA/集成 pin/安装版本在 repositories.json，本体关系在 ontology.json。
+
+第一步确认你实际运行在哪台机器。原 Windows 工作区是 D:\workspace\agent-platform；若在另一台 Mac/Linux，使用自己的 ~/workspace/agent-platform 和独立 repos/local/ops；若在另一台 Windows，先选择实际存在的非 C 盘 workspace，并独立初始化，不继承原机状态。不要把原机 localhost、D 盘、数据库、DPAPI、凭证、备份或历史 Mac 安装当成你的环境。没有文件/终端/Git工具时先明确这一限制，不能声称已经执行。
+
+项目是 12 个可独立部署服务 + SDK + 固定 DSH 源码 Harness + 集成仓，共 15 仓。中台共用 Web，期货业务 Web 独立。主仓历史业务目录不是新开发 Owner。当前已安装 guarded-v6 和 Futures v7 引用诊断，源码都已同步 GitHub。官方 DeepSeek 使用原生上下文/输出能力，不人为降低 token 上限；任务步骤和传输边界另论。
+
+先完成交接文档中的 DS-01 非数值论据与真实原文绑定、DS-02 未就绪草稿提前结束，再执行一次有区别的 DS-03 真实研究验收。修复不能删证据换绿灯，不能把结构 ready 当事实正确，不能把未知效果当未执行，不能修改旧任务快照或旧引擎语义。来源说明/样本定义等新字段尚未实现，交接里的设计是候选方案，请先用源码确认最小正确实现。原失败任务第8/12次请求结束，不是预算耗尽。
+
+之后继续 DS-04 至 DS-09：完整中台/业务 UI、独立服务旧覆盖与权限退役、存储生命周期、故障与整平台资源、最终备份实际恢复、一次集中 CI。P0–P5/P2.5 和 W01–W14 完整范围不缩减；服务器/跨机HA/最终千万块规模是明确延后项。
+
+每次改动提供相应测试和证据，分清合成模型、真实供应商、源码、安装、页面与内容质量。不要重复未改变的全量测试、原样重跑付费研究或伪造独立评审。15仓 Actions 日常禁用，交付内容和本机验收完成后才集中执行一次 CI；不要因 push 开启自动 CI。API Key、配置秘密、数据库、原始私有资料不进 Git/日志/提示词。
+
+工作后及时更新 docs/maintainer 的当前状态、任务状态、repositories.json 和 ontology.json，提交并推送对应仓库，再同步主仓固定 pin。原 Codex 在本次交接后暂停，请你接续。若支持 Goal，建立 objective.md 所载完整等价目标；不支持也按同一任务清单持续推进，不能将部分修复说成整体交付。

@@ -13,6 +13,7 @@ import (
 	"github.com/euler-gaozl/agent-os/internal/servicehttp"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -193,6 +194,7 @@ func (s *Store) UploadKnowledge(ctx context.Context, ref Ref, name, source strin
 		return f, e
 	}
 	batch := &pgx.Batch{}
+	batch.Queue("UPDATE knowledge_files SET name_vector=to_tsvector('simple',$2) WHERE id=$1", f.ID, scopeToken(ref)+" "+SearchText(name))
 	for i, text := range chunks(content, kb.ChunkSize) {
 		batch.Queue("INSERT INTO knowledge_chunks(id,file_id,ordinal,content,search_vector) VALUES($1,$2,$3,$4,to_tsvector('simple',$5))", Hash([]byte(fmt.Sprint(f.ID, ":", i))), f.ID, i, text, scopeToken(ref)+" "+SearchText(text))
 	}
@@ -226,8 +228,8 @@ func (s *Store) Embed(ctx context.Context, kb KnowledgeBase, text []string, quer
 	}
 	var response struct {
 		Data []struct {
-			Index     int       `json:"index"`
-			Embedding []float64 `json:"embedding"`
+			Index     int        `json:"index"`
+			Embedding []*float64 `json:"embedding"`
 		} `json:"data"`
 	}
 	if e = json.Unmarshal(b, &response); e != nil {
@@ -241,7 +243,20 @@ func (s *Store) Embed(ctx context.Context, kb KnowledgeBase, text []string, quer
 		if item.Index < 0 || item.Index >= len(out) || out[item.Index] != nil || len(item.Embedding) != kb.Dimensions {
 			return nil, errors.New("embedding index/dimension mismatch")
 		}
-		out[item.Index] = item.Embedding
+		vector := make([]float64, len(item.Embedding))
+		norm := 0.0
+		for i, value := range item.Embedding {
+			if value == nil || math.IsNaN(*value) || math.IsInf(*value, 0) || math.Abs(*value) > math.MaxFloat32 {
+				return nil, errors.New("embedding contains a null or non-finite float32 value")
+			}
+			vector[i] = *value
+			indexed := float64(float32(*value))
+			norm += indexed * indexed
+		}
+		if norm == 0 {
+			return nil, errors.New("embedding is a zero vector")
+		}
+		out[item.Index] = vector
 	}
 	return out, nil
 }
@@ -282,7 +297,27 @@ func (s *Store) Retrieve(ctx context.Context, ref Ref, kb KnowledgeBase, query s
 		}
 		queryCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 		defer cancel()
-		rows, e := s.DB.Query(queryCtx, `SELECT c.id,c.content,d.source,d.id,f.name FROM knowledge_chunks c JOIN knowledge_files f ON f.id=c.file_id JOIN documents d ON d.id=f.document_id WHERE f.kb_id=$1 AND f.kb_revision=$2 AND f.status='ready' AND c.search_vector @@ plainto_tsquery('simple',$3) LIMIT 8`, ref.ID, ref.Revision, scopeToken(ref)+" "+strings.Join(terms, " "))
+		rows, e := s.DB.Query(queryCtx, localChunkQuery, ref.ID, ref.Revision, scopeToken(ref)+" "+strings.Join(terms, " "))
+		if e != nil {
+			return result, e
+		}
+		for rows.Next() {
+			var id, content, source, document, name string
+			if e = rows.Scan(&id, &content, &source, &document, &name); e != nil {
+				rows.Close()
+				return result, e
+			}
+			result.Hits = append(result.Hits, map[string]any{"chunk_id": id, "content": content, "source": source, "document_id": document, "title": name})
+		}
+		e = rows.Err()
+		rows.Close()
+		if e != nil || len(result.Hits) > 0 {
+			return result, e
+		}
+		// File names are searchable independently from chunk contents, including
+		// legacy uploads backfilled by the indexer. Return the first chunk as a
+		// preview; the caller can read the complete document using document_id.
+		rows, e = s.DB.Query(queryCtx, localNameQuery, ref.ID, ref.Revision, scopeToken(ref)+" "+strings.Join(terms, " "))
 		if e != nil {
 			return result, e
 		}
@@ -292,7 +327,7 @@ func (s *Store) Retrieve(ctx context.Context, ref Ref, kb KnowledgeBase, query s
 			if e = rows.Scan(&id, &content, &source, &document, &name); e != nil {
 				return result, e
 			}
-			result.Hits = append(result.Hits, map[string]any{"chunk_id": id, "content": content, "source": source, "document_id": document, "title": name})
+			result.Hits = append(result.Hits, map[string]any{"chunk_id": id, "content": content, "source": source, "document_id": document, "title": name, "matched_on": "file_name"})
 		}
 		return result, rows.Err()
 	}
@@ -315,8 +350,8 @@ func (s *Store) Retrieve(ctx context.Context, ref Ref, kb KnowledgeBase, query s
 		if response.Status != "success" {
 			return result, errors.New("LightRAG query failed")
 		}
-		result.Graph = response.Data
-		return result, nil
+		result.Graph, e = s.scopedGraph(ctx, ref, kb.Endpoint, response.Data)
+		return result, e
 	}
 	vectors, e := s.Embed(ctx, kb, []string{query}, true)
 	if e != nil {
@@ -490,6 +525,9 @@ func (s *Store) RunIndexer(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-tick.C:
+			if _, e := s.IndexNamesBatch(ctx); e != nil && ctx.Err() != nil {
+				return ctx.Err()
+			}
 			if _, e := s.IndexLocalBatch(ctx); e != nil && ctx.Err() != nil {
 				return ctx.Err()
 			}

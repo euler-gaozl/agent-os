@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/euler-gaozl/agent-os/internal/catalog"
 	"github.com/euler-gaozl/agent-os/internal/servicehttp"
 	"io"
 	"log/slog"
@@ -115,6 +116,7 @@ func (s *Server) Handler() http.Handler {
 		s.registryRoutes(mux)
 	case "runtime":
 		s.runtimeRoutes(mux)
+		s.documentRoutes(mux, "/v1")
 		s.toolRoutes(mux)
 	case "knowledge":
 		s.knowledgeRoutes(mux)
@@ -163,9 +165,12 @@ func (s *Server) controlRoutes(mux *http.ServeMux) {
 		jsonResponse(w, 200, map[string]any{"instances": out, "deepseek_configured": keyErr == nil, "local_mode": s.DevLocal, "version": "0.3.0"})
 		return nil
 	}))
-	mux.HandleFunc("/api/documents", func(w http.ResponseWriter, r *http.Request) { s.proxy(w, r, s.StorageURL+"/documents") })
+	mux.HandleFunc("/api/documents", func(w http.ResponseWriter, r *http.Request) { s.proxy(w, r, s.RuntimeURL+"/v1/documents") })
+	mux.HandleFunc("POST /api/notes/{kind}", func(w http.ResponseWriter, r *http.Request) {
+		s.proxy(w, r, s.RuntimeURL+"/v1/notes/"+url.PathEscape(r.PathValue("kind")))
+	})
 	mux.HandleFunc("GET /api/documents/{id}", func(w http.ResponseWriter, r *http.Request) {
-		s.proxy(w, r, s.StorageURL+"/documents/"+url.PathEscape(r.PathValue("id")))
+		s.proxy(w, r, s.RuntimeURL+"/v1/documents/"+url.PathEscape(r.PathValue("id")))
 	})
 	mux.HandleFunc("/api/artifacts/{hash}", func(w http.ResponseWriter, r *http.Request) {
 		s.proxy(w, r, s.StorageURL+"/artifacts/"+url.PathEscape(r.PathValue("hash")))
@@ -267,8 +272,52 @@ func (s *Server) toolRoutes(mux *http.ServeMux) {
 		return e
 	}))
 }
-func (s *Server) storageRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /documents/{id}", wrap(func(w http.ResponseWriter, r *http.Request) error {
+func (s *Server) documentRoutes(mux *http.ServeMux, prefix string) {
+	s.noteReadRoutes(mux, prefix)
+	for _, kind := range []string{"revise", "retire"} {
+		mux.HandleFunc("POST "+prefix+"/notes/"+kind, wrap(func(w http.ResponseWriter, r *http.Request) error {
+			// Decode the concrete shape to reject unrecognized actor/scope fields.
+			var requestID string
+			var input []byte
+			if kind == "revise" {
+				var v struct {
+					RequestID string `json:"request_id"`
+					NoteRevision
+				}
+				if e := decode(w, r, &v); e != nil {
+					return e
+				}
+				requestID = v.RequestID
+				input = JSON(v.NoteRevision)
+			} else {
+				var v struct {
+					RequestID string `json:"request_id"`
+					NoteRetirement
+				}
+				if e := decode(w, r, &v); e != nil {
+					return e
+				}
+				requestID = v.RequestID
+				input = JSON(v.NoteRetirement)
+			}
+			actor := servicehttp.Caller(r.Context())
+			if actor == "" {
+				actor = "authenticated-admin"
+			}
+			result, e := s.Store.AdminNoteMutation(r.Context(), requestID, kind, actor, input)
+			if e != nil {
+				var rejected *noteRejection
+				if errors.As(e, &rejected) {
+					jsonResponse(w, rejected.status, map[string]string{"error": rejected.Error(), "note_rejected_request_id": requestID})
+					return nil
+				}
+				return e
+			}
+			jsonResponse(w, 200, json.RawMessage(result))
+			return nil
+		}))
+	}
+	mux.HandleFunc("GET "+prefix+"/documents/{id}", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var d Document
 		var metadata []byte
 		e := s.Store.DB.QueryRow(r.Context(), "SELECT id,kind,title,content,source,metadata,supersedes,scope,valid_until FROM documents WHERE id=$1", r.PathValue("id")).Scan(&d.ID, &d.Kind, &d.Title, &d.Content, &d.Source, &metadata, &d.Supersedes, &d.Scope, &d.ValidUntil)
@@ -278,10 +327,17 @@ func (s *Server) storageRoutes(mux *http.ServeMux) {
 		if e = json.Unmarshal(metadata, &d.Metadata); e != nil {
 			return e
 		}
-		jsonResponse(w, 200, d)
+		state, e := noteLifecycle(r.Context(), s.Store.DB, d.ID)
+		if e != nil {
+			return e
+		}
+		jsonResponse(w, 200, struct {
+			Document
+			Lifecycle NoteLifecycle `json:"lifecycle"`
+		}{d, state})
 		return nil
 	}))
-	mux.HandleFunc("GET /documents", wrap(func(w http.ResponseWriter, r *http.Request) error {
+	mux.HandleFunc("GET "+prefix+"/documents", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		v, e := s.Store.Search(r.Context(), r.URL.Query().Get("q"), r.URL.Query().Get("kind"))
 		if e != nil {
 			return e
@@ -289,18 +345,24 @@ func (s *Server) storageRoutes(mux *http.ServeMux) {
 		jsonResponse(w, 200, v)
 		return nil
 	}))
-	mux.HandleFunc("POST /documents", wrap(func(w http.ResponseWriter, r *http.Request) error {
+	mux.HandleFunc("POST "+prefix+"/documents", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var d Document
 		if e := decode(w, r, &d); e != nil {
 			return e
 		}
-		v, e := s.Store.PutDocument(r.Context(), d)
+		actor := servicehttp.Caller(r.Context())
+		if actor == "" {
+			actor = "authenticated-admin"
+		}
+		v, e := s.Store.putAdminDocument(r.Context(), d, actor)
 		if e != nil {
 			return e
 		}
 		jsonResponse(w, 201, v)
 		return nil
 	}))
+}
+func (s *Server) storageRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /artifacts/{hash}", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		b, media, e := s.Store.Artifact(r.Context(), r.PathValue("hash"))
 		if e != nil {
@@ -399,6 +461,18 @@ func RegisterInstance(ctx context.Context, s *Store, id, role string) {
 }
 
 func (s *Server) registryRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /v1/catalog", wrap(func(w http.ResponseWriter, r *http.Request) error {
+		q, e := catalog.Parse(r.URL.Query())
+		if e != nil {
+			return e
+		}
+		page, e := s.Store.Catalog(r.Context(), q)
+		if e != nil {
+			return e
+		}
+		jsonResponse(w, 200, page)
+		return nil
+	}))
 	mux.HandleFunc("GET /v1/status", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		_, e := s.Store.Secret(r.Context(), "DEEPSEEK_API_KEY")
 		jsonResponse(w, 200, map[string]bool{"deepseek_configured": e == nil})
@@ -445,7 +519,7 @@ func (s *Server) registryRoutes(mux *http.ServeMux) {
 		return nil
 	}))
 	mux.HandleFunc("GET /v1/resources", wrap(func(w http.ResponseWriter, r *http.Request) error {
-		v, e := s.Store.Resources(r.Context())
+		v, e := s.Store.Resources(r.Context(), r.URL.Query().Get("after"))
 		if e != nil {
 			return e
 		}
@@ -555,6 +629,7 @@ func (s *Server) registryRoutes(mux *http.ServeMux) {
 
 }
 func (s *Server) runtimeRoutes(mux *http.ServeMux) {
+	s.telemetryDeliveryRoutes(mux)
 	mux.HandleFunc("GET /v1/status", wrap(func(w http.ResponseWriter, r *http.Request) error {
 		rows, e := s.Store.DB.Query(r.Context(), "SELECT id,role,hostname,pid,heartbeat_at,heartbeat_at>now()-interval '15 seconds' FROM instances ORDER BY role,id")
 		if e != nil {
@@ -660,6 +735,14 @@ func (s *Server) runtimeRoutes(mux *http.ServeMux) {
 			return e
 		}
 		jsonResponse(w, 200, v)
+		return nil
+	}))
+	mux.HandleFunc("GET /v1/runs/{id}/usage", wrap(func(w http.ResponseWriter, r *http.Request) error {
+		usage, e := s.Store.Usage(r.Context(), r.PathValue("id"))
+		if e != nil {
+			return e
+		}
+		jsonResponse(w, 200, usage)
 		return nil
 	}))
 	mux.HandleFunc("POST /v1/runs/{id}/cancel", wrap(func(w http.ResponseWriter, r *http.Request) error {

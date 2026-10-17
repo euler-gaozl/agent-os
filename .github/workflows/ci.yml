@@ -3,10 +3,17 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      documents:
+        description: 'Disposable capacity fixture document count, 1000..1000000 (ten chunks each)'
+        default: '10000'
+        required: true
 permissions:
   contents: read
 jobs:
   platform:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -34,11 +41,30 @@ jobs:
       - run: npm install -g pnpm@11.25.0
       - run: pnpm install --frozen-lockfile
         working-directory: harness
+      - name: Characterize pinned Harness durability and event retention interfaces
+        run: node --test harness/*.test.mjs
       - run: go vet ./...
+      - run: node scripts/check-secrets.mjs
+      - run: node --test scripts/*.test.mjs
+      - name: Prepare isolated sandbox daemon on disposable CI VM
+        run: |
+          docker run -d --name agentos-test-dind --privileged -p 127.0.0.1:12375:2375 -e DOCKER_TLS_CERTDIR= docker:28-dind --tls=false
+          for i in $(seq 1 60); do docker -H tcp://127.0.0.1:12375 info >/dev/null 2>&1 && break; sleep 1; done
+          docker -H tcp://127.0.0.1:12375 pull node:24-alpine
+          BASE=$(docker -H tcp://127.0.0.1:12375 image inspect node:24-alpine --format '{{index .RepoDigests 0}}')
+          docker -H tcp://127.0.0.1:12375 build -f deploy/sandbox-runtime.Dockerfile --build-arg NODE_BASE="$BASE" -t agentos-sandbox-runtime:ci .
+          IMAGE=$(docker -H tcp://127.0.0.1:12375 image inspect agentos-sandbox-runtime:ci --format '{{.Id}}')
+          echo "SANDBOX_IMAGE=$IMAGE" >> "$GITHUB_ENV"
+          echo 'DOCKER_HOST=tcp://127.0.0.1:12375' >> "$GITHUB_ENV"
+          echo 'TEST_DOCKER_SANDBOX=1' >> "$GITHUB_ENV"
       - run: go test -race -count=1 ./...
-      - run: pnpm install --frozen-lockfile && pnpm run build
+      - run: pnpm install --frozen-lockfile && pnpm test && pnpm run build
         working-directory: web
+      - name: Dispose isolated sandbox daemon
+        if: always()
+        run: env -u DOCKER_HOST docker rm -f agentos-test-dind
   services:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -51,6 +77,7 @@ jobs:
       COMPOSE_FILE: compose.yaml:deploy/compose.ci.yaml
     steps:
       - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '24'}
       - name: Validate and build independently deployable services
@@ -62,10 +89,27 @@ jobs:
         run: |
           docker compose up -d --wait postgres
           docker compose run --rm migrate
+          # Grant only the CI runner group read access to fixture configs.
+          # Container UID 10001 remains owner; no world-readable credentials.
+          sudo chgrp "$(id -g)" .state/services/*.json
+          sudo chmod g+r .state/services/*.json
+      - name: Isolate Storage database and remove cross-domain SQL dependencies
+        run: node scripts/ci-isolate-storage.mjs
       - name: Run bounded platform with replica pairs
         run: docker compose up -d --wait --wait-timeout 120
       - name: Real service contracts, authorization and crash recovery
         run: node scripts/smoke-services.mjs
+      - name: Build previous Knowledge release for real rollback validation
+        run: |
+          mkdir -p .state/previous-release
+          git archive a0d6c81 | tar -x -C .state/previous-release
+          docker build --target service --build-arg SERVICE=knowledge -t agent-os-knowledge:baseline .state/previous-release
+      - name: Independent schema upgrade, deployment, scale and rollback
+        run: node scripts/smoke-independent-release.mjs
+      - name: Every service runs as its own deployment unit with the shared Console
+        run: node scripts/smoke-service-units.mjs
+      - name: All platform services under aggregate 2 CPU and 4 GiB mixed workload
+        run: node scripts/smoke-platform-budget.mjs
       - name: Save sanitized service status
         if: always()
         run: |
@@ -81,3 +125,65 @@ jobs:
       - name: Dispose CI containers and test database
         if: always()
         run: docker compose --profile sandbox --profile telemetry down -v
+  capacity:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reserve disk for the ten-million-chunk fixture
+        run: |
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+          # These are preinstalled SDKs on this disposable hosted VM only.
+          # They are unused by the Go/PostgreSQL benchmark; never run locally.
+          sudo rm -rf -- /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/swift /opt/hostedtoolcache/CodeQL /opt/az
+          mkdir -p .state/capacity-evidence
+          df -Pk . | tee .state/capacity-evidence/disk-before.txt
+          FREE_KIB=$(df -Pk . | awk 'NR==2 {print $4}')
+          test "$FREE_KIB" -ge 31457280
+      - uses: actions/setup-go@v5
+        with: {go-version-file: go.mod}
+      - name: Build bounded benchmark client
+        run: CGO_ENABLED=0 go build -trimpath -o /tmp/capacity ./cmd/capacity
+      - name: Initialize isolated capacity database
+        run: |
+          mkdir -p .state/capacity-evidence
+          docker network create agentos-capacity
+          docker run -d --name capacity-db --network agentos-capacity --cpus=1.5 --memory=3g -e POSTGRES_DB=agentos_capacity -e POSTGRES_USER=agentos -e POSTGRES_PASSWORD=disposable-capacity-only postgres:18 -c shared_buffers=256MB -c work_mem=8MB -c maintenance_work_mem=256MB -c max_connections=16 -c max_wal_size=1GB -c wal_compression=on
+          for i in $(seq 1 60); do docker exec capacity-db pg_isready -U agentos -d agentos_capacity && break; sleep 1; done
+      - name: Load fixtures and measure real retrieval code
+        env:
+          DOCUMENTS: ${{ inputs.documents }}
+        run: |
+          (while true; do
+            # The sampler starts before the client. An absent container must
+            # not terminate the monitor under bash -e.
+            docker stats --no-stream --format '{{json .}}' capacity-db capacity-client 2>/dev/null >> .state/capacity-evidence/resources.jsonl || true
+            df -Pk . >> .state/capacity-evidence/disk-samples.txt
+            FREE_KIB=$(df -Pk . | awk 'NR==2 {print $4}')
+            if [ "$FREE_KIB" -lt 2097152 ]; then
+              echo 'Capacity client stopped before exhausting runner disk; not a passing capacity result.' > .state/capacity-evidence/disk-stop.txt
+              docker stop -t 5 capacity-client || true
+              break
+            fi
+            sleep 5
+          done) &
+          SAMPLER=$!
+          trap 'kill "$SAMPLER" 2>/dev/null || true' EXIT
+          docker run --name capacity-client --user "$(id -u):$(id -g)" --network agentos-capacity --cpus=0.5 --memory=512m --read-only --cap-drop=ALL --security-opt=no-new-privileges -v /tmp/capacity:/app/capacity:ro -v "$PWD/.state/capacity-evidence:/evidence" -e CAPACITY_DISPOSABLE=agentos-capacity-fixtures-only -e CAPACITY_DOCUMENTS="$DOCUMENTS" -e CAPACITY_DATABASE_URL=postgres://agentos:disposable-capacity-only@capacity-db:5432/agentos_capacity?sslmode=disable alpine:3.23 /app/capacity
+      - name: Verify resource observations and retain enforced limits
+        if: always()
+        run: |
+          docker inspect --format '{{json .HostConfig}}' capacity-db capacity-client > .state/capacity-evidence/container-limits.jsonl
+          test -s .state/capacity-evidence/resources.jsonl
+          test -s .state/capacity-evidence/disk-samples.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: knowledge-capacity-evidence
+          path: .state/capacity-evidence/
+      - name: Dispose fixture containers
+        if: always()
+        run: |
+          docker rm -f capacity-client capacity-db || true
+          docker network rm agentos-capacity || true

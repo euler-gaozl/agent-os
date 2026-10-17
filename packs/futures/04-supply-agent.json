@@ -16,12 +16,17 @@
       "knowledge_search",
       "note_save",
       "artifact_read",
-      "document_read"
+      "document_read",
+      "run_recall",
+      "note_revise",
+      "note_retire"
     ],
     "model": {
       "base_url": "https://api.deepseek.com",
       "model": "deepseek-flash",
-      "key_env": "DEEPSEEK_API_KEY"
+      "key_env": "DEEPSEEK_API_KEY",
+      "thinking": "disabled",
+      "max_tokens": 4096
     },
     "max_steps": 12,
     "context_bytes": 64000,
@@ -36,13 +41,17 @@
     "constraints": [
       "只呈现事实与资料变化，不给出价格预测或交易建议。",
       "原始数据、计划和第三方预测分开。",
-      "近月、远月和长期使用具体日历区间；缺失数据不得编造。"
+      "近月、远月和长期使用具体日历区间；缺失数据不得编造。",
+      "证据回查：摘要遗漏来源时，使用 run_recall 找回本任务及后代已提交的回执，再回读原文核验。has_more=false 只表示当前筛选下的回执页结束，不能证明资料覆盖完整或外部不存在其他证据。",
+      "笔记生命周期：有来源更正时使用 note_revise 并保留修改理由；只有用户要求或明确失效、撤回依据时使用 note_retire，不因压缩上下文或临时任务结束而撤回有用资料。模型只能修改本 Agent 的记录，全局共享记录只读。knowledge_search 的有效视图包含全局共享和本 Agent 的记录；空结果不代表外部资料不存在。"
     ],
     "publication": {
       "enabled": true,
       "app": "futures",
       "name": "供给与库存",
       "description": "梳理产量、开工、进口与库存，核对数据口径和变化。"
-    }
+    },
+    "max_model_attempts": 40,
+    "model_token_budget": 200000
   }
 }

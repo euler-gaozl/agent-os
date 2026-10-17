@@ -12,7 +12,7 @@ import (
 func main() {
 	servicehost.Main("runtime", "8094", func(ctx context.Context, p *pgxpool.Pool, c servicehttp.Config) (http.Handler, func(context.Context) error, error) {
 		client := servicehost.Client()
-		store := &platform.Store{DB: p, Remote: &client, CatalogURL: client.CatalogURL}
+		store := &platform.Store{DB: p, Remote: &client, CatalogURL: client.CatalogURL, StorageURL: servicehost.Env("STORAGE_URL", "http://127.0.0.1:8092")}
 		s := &platform.Server{Store: store, Role: "runtime", Token: c.Token, RegistryURL: servicehost.Env("REGISTRY_URL", "http://127.0.0.1:8096"), RuntimeURL: servicehost.Env("RUNTIME_URL", "http://127.0.0.1:8094"), KnowledgeURL: servicehost.Env("KNOWLEDGE_URL", "http://127.0.0.1:8095"), SandboxURL: servicehost.Env("SANDBOX_URL", "http://127.0.0.1:8093"), StorageURL: servicehost.Env("STORAGE_URL", "http://127.0.0.1:8092")}
 		return s.RuntimeHandler(c), nil, nil
 	})

@@ -1,0 +1,165 @@
+{
+  "as_of": "2026-10-17",
+  "environment": "environment:owner-windows",
+  "record": "windows-resumption-20261017.md",
+  "source_environment": "environment:maintainer-macos",
+  "installed_versions_changed": false,
+  "repositories": [
+    {
+      "name": "agent-os",
+      "url": "https://github.com/euler-gaozl/agent-os",
+      "branch": "feat/end-to-end-delivery",
+      "windows_before": "f426218e61d42293395f73e26256f77421ac7bd8",
+      "recovered_head": "5465cc2eb9132d73e3bad9fc055dd8199a2539b2",
+      "new_commits": 11,
+      "remote_recovered_head_verified": true,
+      "remote_verification_scope": "main, development branch and recovered Mac branch",
+      "main_verified_at_recovery": "5465cc2eb9132d73e3bad9fc055dd8199a2539b2"
+    },
+    {
+      "name": "agent-os-console",
+      "url": "https://github.com/euler-gaozl/agent-os-console",
+      "branch": "feat/model-native-limits",
+      "windows_before": "00bc6280d13e5b1bb57276b0dedef90ea2226c68",
+      "recovered_head": "8e8186c07467897410f5a94973c7c4d36d99490e",
+      "new_commits": 3,
+      "remote_recovered_head_verified": true,
+      "remote_verification_scope": "main, development branch and recovered Mac branch",
+      "main_verified_at_recovery": "8e8186c07467897410f5a94973c7c4d36d99490e"
+    },
+    {
+      "name": "agent-os-futures",
+      "url": "https://github.com/euler-gaozl/agent-os-futures",
+      "branch": "feat/native-task-transport",
+      "windows_before": "f40a8f8ae8c9ca6cfadef7af67b7f9953d4f24bc",
+      "recovered_head": "f5e7bd21b8f3fcf20bc69c84aee2eede7bf5d2c4",
+      "new_commits": 5,
+      "remote_recovered_head_verified": true,
+      "remote_verification_scope": "main, development branch and recovered Mac branch",
+      "main_verified_at_recovery": "f5e7bd21b8f3fcf20bc69c84aee2eede7bf5d2c4"
+    },
+    {
+      "name": "agent-os-harness",
+      "url": "https://github.com/euler-gaozl/agent-os-harness",
+      "branch": "feat/source-owned-harness",
+      "windows_before": "a8a18e41de719901dbef4513faf898af95822d7a",
+      "recovered_head": "a8a18e41de719901dbef4513faf898af95822d7a",
+      "new_commits": 0,
+      "remote_recovered_head_verified": false,
+      "remote_verification_scope": "unchanged source; no new push required"
+    },
+    {
+      "name": "agent-os-indexer",
+      "url": "https://github.com/euler-gaozl/agent-os-indexer",
+      "branch": "feat/independent-service",
+      "windows_before": "30ed978324aa34a2275a0e27a10a65e85f9e28f9",
+      "recovered_head": "30ed978324aa34a2275a0e27a10a65e85f9e28f9",
+      "new_commits": 0,
+      "remote_recovered_head_verified": false,
+      "remote_verification_scope": "unchanged source; no new push required"
+    },
+    {
+      "name": "agent-os-knowledge",
+      "url": "https://github.com/euler-gaozl/agent-os-knowledge",
+      "branch": "feat/independent-service",
+      "windows_before": "ed54550f15e115956fc30e08e0e8121b976ee796",
+      "recovered_head": "ed54550f15e115956fc30e08e0e8121b976ee796",
+      "new_commits": 0,
+      "remote_recovered_head_verified": false,
+      "remote_verification_scope": "unchanged source; no new push required"
+    },
+    {
+      "name": "agent-os-registry",
+      "url": "https://github.com/euler-gaozl/agent-os-registry",
+      "branch": "feat/model-native-limits",
+      "windows_before": "755b8de85531f0b9620a98beaf1e3a9dccc9d6b0",
+      "recovered_head": "755b8de85531f0b9620a98beaf1e3a9dccc9d6b0",
+      "new_commits": 0,
+      "remote_recovered_head_verified": false,
+      "remote_verification_scope": "unchanged source; no new push required"
+    },
+    {
+      "name": "agent-os-runtime",
+      "url": "https://github.com/euler-gaozl/agent-os-runtime",
+      "branch": "feat/model-native-limits",
+      "windows_before": "e6c8b935e5e0a00e6bfab14aa099eb8aaf0436d9",
+      "recovered_head": "dbf99dca784c849f0386da1c3de219aa10142a8e",
+      "new_commits": 8,
+      "remote_recovered_head_verified": true,
+      "remote_verification_scope": "main, development branch and recovered Mac branch",
+      "main_verified_at_recovery": "dbf99dca784c849f0386da1c3de219aa10142a8e"
+    },
+    {
+      "name": "agent-os-sandbox",
+      "url": "https://github.com/euler-gaozl/agent-os-sandbox",
+      "branch": "feat/independent-service",
+      "windows_before": "b7a2cdfa7fdb1fe04d89d268e261b99db777ab98",
+      "recovered_head": "b7a2cdfa7fdb1fe04d89d268e261b99db777ab98",
+      "new_commits": 0,
+      "remote_recovered_head_verified": false,
+      "remote_verification_scope": "unchanged source; no new push required"
+    },
+    {
+      "name": "agent-os-sdk",
+      "url": "https://github.com/euler-gaozl/agent-os-sdk",
+      "branch": "feat/model-native-limits",
+      "windows_before": "bbbfe34b65ac44c1823b1029349b454aef26ce21",
+      "recovered_head": "bbbfe34b65ac44c1823b1029349b454aef26ce21",
+      "new_commits": 0,
+      "remote_recovered_head_verified": false,
+      "remote_verification_scope": "unchanged source; no new push required"
+    },
+    {
+      "name": "agent-os-sources",
+      "url": "https://github.com/euler-gaozl/agent-os-sources",
+      "branch": "feat/independent-service",
+      "windows_before": "76511f1738bfbb5d791ad8f804bd54ae23380c03",
+      "recovered_head": "76511f1738bfbb5d791ad8f804bd54ae23380c03",
+      "new_commits": 0,
+      "remote_recovered_head_verified": false,
+      "remote_verification_scope": "unchanged source; no new push required"
+    },
+    {
+      "name": "agent-os-storage",
+      "url": "https://github.com/euler-gaozl/agent-os-storage",
+      "branch": "feat/independent-service",
+      "windows_before": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c",
+      "recovered_head": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c",
+      "new_commits": 0,
+      "remote_recovered_head_verified": false,
+      "remote_verification_scope": "unchanged source; no new push required"
+    },
+    {
+      "name": "agent-os-telemetry",
+      "url": "https://github.com/euler-gaozl/agent-os-telemetry",
+      "branch": "feat/independent-service",
+      "windows_before": "cf73e7f16307fa1a41f82c026067308b1dd8ce23",
+      "recovered_head": "6f9f539125431bebbf88ddbdbb6840f3dd426068",
+      "new_commits": 1,
+      "remote_recovered_head_verified": true,
+      "remote_verification_scope": "main, development branch and recovered Mac branch",
+      "main_verified_at_recovery": "6f9f539125431bebbf88ddbdbb6840f3dd426068"
+    },
+    {
+      "name": "agent-os-toolhub",
+      "url": "https://github.com/euler-gaozl/agent-os-toolhub",
+      "branch": "feat/independent-service",
+      "windows_before": "448f449db9f18a0810fdc6c111582c2e51048776",
+      "recovered_head": "448f449db9f18a0810fdc6c111582c2e51048776",
+      "new_commits": 0,
+      "remote_recovered_head_verified": false,
+      "remote_verification_scope": "unchanged source; no new push required"
+    },
+    {
+      "name": "agent-os-worker",
+      "url": "https://github.com/euler-gaozl/agent-os-worker",
+      "branch": "feat/model-native-limits",
+      "windows_before": "ff9a2f07f397bf0b408256e8a71644b3d2976376",
+      "recovered_head": "94d605910e0c3da011bb1213b516150ecb5fe1ba",
+      "new_commits": 1,
+      "remote_recovered_head_verified": true,
+      "remote_verification_scope": "main, development branch and recovered Mac branch",
+      "main_verified_at_recovery": "94d605910e0c3da011bb1213b516150ecb5fe1ba"
+    }
+  ]
+}

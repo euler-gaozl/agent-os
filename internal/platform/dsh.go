@@ -17,10 +17,12 @@ import (
 var errDSHWaiting = errors.New("DSH suspended for children")
 
 type harnessFrame struct {
-	ID     int             `json:"id"`
-	Method string          `json:"method"`
-	Params json.RawMessage `json:"params"`
-	Events json.RawMessage `json:"events"`
+	ID         int             `json:"id"`
+	Method     string          `json:"method"`
+	Params     json.RawMessage `json:"params"`
+	Events     json.RawMessage `json:"events"`
+	EventStart int             `json:"event_start"`
+	EventEnd   int             `json:"event_end"`
 }
 type harnessModel struct {
 	Messages  []Message `json:"messages"`
@@ -79,6 +81,9 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 		contextTokens = 32000
 	}
 	init := map[string]any{"type": "init", "run_id": r.ID, "task": r.Task, "system": SystemMessage(original).Content, "model": r.Snapshot.Agent.Model.Model, "context_tokens": contextTokens, "tools": defs}
+	if r.Engine == EngineDSHEvidence {
+		init["evidence_protocol"] = 1
+	}
 	if _, e = fmt.Fprintln(stdin, string(JSON(init))); e != nil {
 		return e
 	}
@@ -90,7 +95,7 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 		if e = json.Unmarshal(scanner.Bytes(), &f); e != nil {
 			return fmt.Errorf("DSH protocol: %w", e)
 		}
-		if f.Method == "failed" {
+		if f.Method == "failed" && r.Engine != EngineDSHEvidence {
 			return fmt.Errorf("DSH failed: %s", f.Params)
 		}
 		if f.ID != expected {
@@ -159,6 +164,11 @@ func (w *Worker) harnessExchange(ctx context.Context, r *Run, f harnessFrame) (a
 			return nil, false, errors.New("DSH replay diverged; refusing to repeat effects")
 		}
 		if response != nil {
+			if r.Engine == EngineDSHEvidence {
+				if e = tx.QueryRow(ctx, "SELECT manifest_hash FROM harness_archives WHERE run_id=$1 AND seq=$2 AND manifest_hash<>''", r.ID, f.ID).Scan(&r.State.HarnessArtifact); e != nil {
+					return nil, false, e
+				}
+			}
 			if f.Method == "model" {
 				r.State.PlanRevision = revision
 				r.Step++
@@ -241,12 +251,23 @@ func (w *Worker) harnessExchange(ctx context.Context, r *Run, f harnessFrame) (a
 		if e != nil {
 			return nil, false, e
 		}
+		if r.Engine == EngineDSHEvidence {
+			if e = stageHarnessArchive(ctx, tx, *r, f); e != nil {
+				return nil, false, e
+			}
+		}
 	}
 	if e = tx.Commit(ctx); e != nil {
 		return nil, false, e
 	}
-	// Preserve the complete DSH event log before another provider request or tool effect.
-	if len(f.Events) > 2 {
+	// Preserve newly emitted events before another provider request or tool effect.
+	if r.Engine == EngineDSHEvidence {
+		hash, err := s.commitHarnessArchive(ctx, *r, f.ID)
+		if err != nil {
+			return nil, false, err
+		}
+		r.State.HarnessArtifact = hash
+	} else if len(f.Events) > 2 {
 		hash, e := s.PutArtifact(ctx, f.Events, "application/json", "run:"+r.ID)
 		if e != nil {
 			return nil, false, e
@@ -257,6 +278,8 @@ func (w *Worker) harnessExchange(ctx context.Context, r *Run, f harnessFrame) (a
 	var value any
 	done := false
 	switch f.Method {
+	case "failed":
+		return nil, false, fmt.Errorf("DSH failed: %s", f.Params)
 	case "model":
 		r.Step++
 		if r.Step > r.Snapshot.Agent.MaxSteps {
@@ -268,6 +291,11 @@ func (w *Worker) harnessExchange(ctx context.Context, r *Run, f harnessFrame) (a
 		}
 		modelRun := *r
 		modelRun.Snapshot.Agent.Model.MaxTokens = m.MaxTokens
+		// Preserve old snapshots' behavior. Explicit operator caps apply to every
+		// new model exchange, including the harness compaction request.
+		if cap := r.Snapshot.Agent.Model.MaxTokens; cap > 0 && (m.MaxTokens == 0 || cap < m.MaxTokens) {
+			modelRun.Snapshot.Agent.Model.MaxTokens = cap
+		}
 		message, err := s.Complete(ctx, modelRun, op, m.Messages, m.Tools)
 		if err != nil {
 			return nil, false, err

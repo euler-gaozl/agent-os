@@ -1,5 +1,7 @@
 # v0.5 服务边界与恢复契约
 
+本文件保留 v0.5 的历史边界。当前 Storage、Sandbox、Telemetry 解耦及运行笔记所有权以 [独立部署契约](../independent-deployment.md) 为准。
+
 这是服务生产化的一个实施增量；生产上线验收以 `docs/production-readiness.md` 和 CI 原始记录为准。
 
 ## 所有权

@@ -1,0 +1,3774 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-10-17",
+  "purpose": "项目群维护定位与交接；不是运行时知识图谱、授权系统或自动验收",
+  "authority": "代码/固定发布/真实运行与原始证据优先；本文件为人工维护快照",
+  "node_types": [
+    "project",
+    "repository",
+    "data_domain",
+    "service",
+    "engine",
+    "resource_definition",
+    "state_class",
+    "phase",
+    "acceptance",
+    "capability",
+    "task",
+    "evidence_document",
+    "observed_run",
+    "constraint",
+    "deferred_scope",
+    "environment"
+  ],
+  "relation_types": {
+    "part_of": "属于项目或阶段",
+    "implements": "源码实现该服务/执行器",
+    "owns": "拥有逻辑数据域的迁移和权威",
+    "participates_in": "通过固定协议参与同一原子域",
+    "consumes_fixed_protocol": "编译/运行消费固定 Owner 协议",
+    "depends_on": "依赖其接口或完成结果",
+    "uses": "使用固定实现",
+    "persists_in": "权威内容落入逻辑域",
+    "registers": "登记管理该资源定义",
+    "binds": "Agent 绑定资源固定版本",
+    "derived_from": "临时投影/缓存源于持久状态",
+    "tracks": "纳入目标范围",
+    "constrained_by": "受要求或验收约束",
+    "supports": "服务支持能力，不等于所有验收通过",
+    "affects": "待办可能涉及的 Owner",
+    "documented_by": "存在范围限定的说明/证据索引，不表示整体通过",
+    "documents_failure_of": "记录能力的失败样本",
+    "addresses": "待办处理该观测问题",
+    "observed_in": "历史运行或服务状态的归属环境；不表示已授权访问",
+    "development_environment": "当前接手开发环境；配置数据独立",
+    "historical_deployment_environment": "历史部署记录归属，不是接手操作目标",
+    "future_target_environment": "后续交付环境；未验收"
+  },
+  "query_examples": [
+    {
+      "question": "研究为何没有最终结果，改哪里？",
+      "start": "task:research-completion",
+      "follow": [
+        "affects",
+        "addresses",
+        "constrained_by"
+      ]
+    },
+    {
+      "question": "Worker 能否直接升级 Runtime 依赖？",
+      "start": "service:worker",
+      "follow": [
+        "consumes_fixed_protocol",
+        "participates_in"
+      ]
+    },
+    {
+      "question": "模型 Compact 会不会丢证据？",
+      "start": "capability:storage-lifecycle",
+      "follow": [
+        "constrained_by",
+        "documented_by"
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "project:agent-platform",
+      "type": "project",
+      "label": "Agent Platform Windows 单机交付",
+      "status": "not_completed",
+      "doc": "deepseek-handoff-20261017.md",
+      "handoff": "DeepSeek; user requested original Codex Goal pause after handoff"
+    },
+    {
+      "id": "repo:agent-os",
+      "type": "repository",
+      "label": "agent-os",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os"
+      }
+    },
+    {
+      "id": "repo:agent-os-console",
+      "type": "repository",
+      "label": "agent-os-console",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-console"
+      }
+    },
+    {
+      "id": "repo:agent-os-futures",
+      "type": "repository",
+      "label": "agent-os-futures",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-futures"
+      }
+    },
+    {
+      "id": "repo:agent-os-harness",
+      "type": "repository",
+      "label": "agent-os-harness",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-harness"
+      }
+    },
+    {
+      "id": "repo:agent-os-indexer",
+      "type": "repository",
+      "label": "agent-os-indexer",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-indexer"
+      }
+    },
+    {
+      "id": "repo:agent-os-knowledge",
+      "type": "repository",
+      "label": "agent-os-knowledge",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-knowledge"
+      }
+    },
+    {
+      "id": "repo:agent-os-registry",
+      "type": "repository",
+      "label": "agent-os-registry",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-registry"
+      }
+    },
+    {
+      "id": "repo:agent-os-runtime",
+      "type": "repository",
+      "label": "agent-os-runtime",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-runtime"
+      }
+    },
+    {
+      "id": "repo:agent-os-sandbox",
+      "type": "repository",
+      "label": "agent-os-sandbox",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-sandbox"
+      }
+    },
+    {
+      "id": "repo:agent-os-sdk",
+      "type": "repository",
+      "label": "agent-os-sdk",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-sdk"
+      }
+    },
+    {
+      "id": "repo:agent-os-sources",
+      "type": "repository",
+      "label": "agent-os-sources",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-sources"
+      }
+    },
+    {
+      "id": "repo:agent-os-storage",
+      "type": "repository",
+      "label": "agent-os-storage",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-storage"
+      }
+    },
+    {
+      "id": "repo:agent-os-telemetry",
+      "type": "repository",
+      "label": "agent-os-telemetry",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-telemetry"
+      }
+    },
+    {
+      "id": "repo:agent-os-toolhub",
+      "type": "repository",
+      "label": "agent-os-toolhub",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-toolhub"
+      }
+    },
+    {
+      "id": "repo:agent-os-worker",
+      "type": "repository",
+      "label": "agent-os-worker",
+      "inventory": {
+        "file": "repositories.json",
+        "repository_id": "repo:agent-os-worker"
+      }
+    },
+    {
+      "id": "domain:registry",
+      "type": "data_domain",
+      "label": "registry",
+      "doc": "architecture.md",
+      "note": "逻辑所有权，不表示本机有独立物理数据库"
+    },
+    {
+      "id": "domain:execution",
+      "type": "data_domain",
+      "label": "execution",
+      "doc": "architecture.md",
+      "note": "逻辑所有权，不表示本机有独立物理数据库"
+    },
+    {
+      "id": "domain:toolhub",
+      "type": "data_domain",
+      "label": "toolhub",
+      "doc": "architecture.md",
+      "note": "逻辑所有权，不表示本机有独立物理数据库"
+    },
+    {
+      "id": "domain:knowledge",
+      "type": "data_domain",
+      "label": "knowledge",
+      "doc": "architecture.md",
+      "note": "逻辑所有权，不表示本机有独立物理数据库"
+    },
+    {
+      "id": "domain:storage",
+      "type": "data_domain",
+      "label": "storage",
+      "doc": "architecture.md",
+      "note": "逻辑所有权，不表示本机有独立物理数据库"
+    },
+    {
+      "id": "domain:sources",
+      "type": "data_domain",
+      "label": "sources",
+      "doc": "architecture.md",
+      "note": "逻辑所有权，不表示本机有独立物理数据库"
+    },
+    {
+      "id": "domain:sandbox",
+      "type": "data_domain",
+      "label": "sandbox",
+      "doc": "architecture.md",
+      "note": "逻辑所有权，不表示本机有独立物理数据库"
+    },
+    {
+      "id": "domain:telemetry",
+      "type": "data_domain",
+      "label": "telemetry",
+      "doc": "architecture.md",
+      "note": "逻辑所有权，不表示本机有独立物理数据库"
+    },
+    {
+      "id": "service:control",
+      "type": "service",
+      "label": "Console 中台",
+      "role": "control",
+      "doc": "architecture.md",
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8090,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
+    },
+    {
+      "id": "service:futures",
+      "type": "service",
+      "label": "Futures 业务端",
+      "role": "futures",
+      "doc": "architecture.md",
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8098,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
+    },
+    {
+      "id": "service:registry",
+      "type": "service",
+      "label": "Registry",
+      "role": "registry",
+      "doc": "architecture.md",
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8096,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
+    },
+    {
+      "id": "service:runtime",
+      "type": "service",
+      "label": "Runtime",
+      "role": "runtime",
+      "doc": "architecture.md",
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8094,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
+    },
+    {
+      "id": "service:worker",
+      "type": "service",
+      "label": "Worker",
+      "role": "worker",
+      "doc": "architecture.md",
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8099,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
+    },
+    {
+      "id": "service:toolhub",
+      "type": "service",
+      "label": "ToolHub",
+      "role": "toolhub",
+      "doc": "architecture.md",
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8091,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
+    },
+    {
+      "id": "service:knowledge",
+      "type": "service",
+      "label": "Knowledge",
+      "role": "knowledge",
+      "doc": "architecture.md",
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8095,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
+    },
+    {
+      "id": "service:indexer",
+      "type": "service",
+      "label": "Indexer",
+      "role": "indexer",
+      "doc": "architecture.md",
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8097,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
+    },
+    {
+      "id": "service:storage",
+      "type": "service",
+      "label": "Storage",
+      "role": "storage",
+      "doc": "architecture.md",
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8092,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
+    },
+    {
+      "id": "service:sources",
+      "type": "service",
+      "label": "Sources",
+      "role": "sources",
+      "doc": "architecture.md",
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8101,
+        "status": "observed_running_at_handoff",
+        "scope": "historical_owner_host_only"
+      }
+    },
+    {
+      "id": "service:sandbox",
+      "type": "service",
+      "label": "Sandbox",
+      "role": "sandbox",
+      "doc": "architecture.md",
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8093,
+        "status": "api_only_backend_unconfigured",
+        "scope": "historical_owner_host_only"
+      }
+    },
+    {
+      "id": "service:telemetry",
+      "type": "service",
+      "label": "Telemetry",
+      "role": "telemetry",
+      "doc": "architecture.md",
+      "deployment_observation": {
+        "environment_id": "environment:owner-windows",
+        "observed_at": "2026-10-14",
+        "port": 8100,
+        "status": "zero_instances",
+        "scope": "historical_owner_host_only"
+      }
+    },
+    {
+      "id": "engine:dsh",
+      "type": "engine",
+      "label": "固定官方 DSH 源码",
+      "doc": "architecture.md",
+      "upstream_commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+      "note": "准确引擎 ID 和包哈希由每个运行快照决定"
+    },
+    {
+      "id": "resource:agent",
+      "type": "resource_definition",
+      "label": "自定义 Agent",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "resource:prompt",
+      "type": "resource_definition",
+      "label": "提示词",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "resource:skill",
+      "type": "resource_definition",
+      "label": "Skill",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "resource:mcp",
+      "type": "resource_definition",
+      "label": "MCP",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "resource:knowledge-base",
+      "type": "resource_definition",
+      "label": "知识库",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "state:model-context",
+      "type": "state_class",
+      "label": "模型上下文",
+      "lifecycle": "ephemeral_projection",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "state:working-state",
+      "type": "state_class",
+      "label": "结构化工作状态",
+      "lifecycle": "durable_versioned",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "state:receipts",
+      "type": "state_class",
+      "label": "意图与回执",
+      "lifecycle": "durable_replay_authority",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "state:source-material",
+      "type": "state_class",
+      "label": "原文与附件",
+      "lifecycle": "durable_immutable",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "state:artifacts",
+      "type": "state_class",
+      "label": "长输出与产物",
+      "lifecycle": "durable_immutable",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "state:notes",
+      "type": "state_class",
+      "label": "Agent 笔记",
+      "lifecycle": "durable_versioned",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "state:cache",
+      "type": "state_class",
+      "label": "驻留缓存",
+      "lifecycle": "rebuildable",
+      "doc": "architecture.md"
+    },
+    {
+      "id": "phase:P0",
+      "type": "phase",
+      "label": "恢复基线",
+      "status": "passed_at_scope",
+      "doc": "../windows-single-machine-plan.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
+    },
+    {
+      "id": "phase:P1",
+      "type": "phase",
+      "label": "Windows 运维与迁移",
+      "status": "passed_at_scope",
+      "doc": "../windows-single-machine-plan.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
+    },
+    {
+      "id": "phase:P2",
+      "type": "phase",
+      "label": "独立服务与旧覆盖退役",
+      "status": "partial",
+      "doc": "../windows-single-machine-plan.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
+    },
+    {
+      "id": "phase:P2.5",
+      "type": "phase",
+      "label": "源码 DSH 与存储",
+      "status": "partial",
+      "doc": "../windows-single-machine-plan.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
+    },
+    {
+      "id": "phase:P3",
+      "type": "phase",
+      "label": "中台和业务端",
+      "status": "partial",
+      "doc": "../windows-single-machine-plan.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
+    },
+    {
+      "id": "phase:P4",
+      "type": "phase",
+      "label": "故障与资源验收",
+      "status": "partial",
+      "doc": "../windows-single-machine-plan.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
+    },
+    {
+      "id": "phase:P5",
+      "type": "phase",
+      "label": "真实研究交付",
+      "status": "failed",
+      "doc": "../windows-single-machine-plan.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
+    },
+    {
+      "id": "acceptance:W01",
+      "type": "acceptance",
+      "label": "本机启停",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W02",
+      "type": "acceptance",
+      "label": "独立升级与回滚",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W03",
+      "type": "acceptance",
+      "label": "自定义 Agent 配置试运行",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W04",
+      "type": "acceptance",
+      "label": "ToolHub 校验验活启停",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W05",
+      "type": "acceptance",
+      "label": "上传索引检索回读",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W06",
+      "type": "acceptance",
+      "label": "官方 DeepSeek 真实业务",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W07",
+      "type": "acceptance",
+      "label": "双 Worker 中断接管",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W08",
+      "type": "acceptance",
+      "label": "Compact 与证据恢复",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W09",
+      "type": "acceptance",
+      "label": "笔记生命周期",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W10",
+      "type": "acceptance",
+      "label": "网络模型工具异常与未知效果",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W11",
+      "type": "acceptance",
+      "label": "备份实际隔离恢复",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W12",
+      "type": "acceptance",
+      "label": "安全与资源",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W13",
+      "type": "acceptance",
+      "label": "全部页面与窄屏状态",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "acceptance:W14",
+      "type": "acceptance",
+      "label": "源码 Harness 持久化内存兼容",
+      "status": "see_versioned_evidence",
+      "doc": "../windows-single-machine-plan.md"
+    },
+    {
+      "id": "capability:agent-config",
+      "type": "capability",
+      "label": "Agent 固定资源配置",
+      "status": "partial",
+      "doc": "current-state.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
+    },
+    {
+      "id": "capability:toolhub",
+      "type": "capability",
+      "label": "Skill/MCP 校验验活",
+      "status": "partial",
+      "doc": "current-state.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
+    },
+    {
+      "id": "capability:knowledge",
+      "type": "capability",
+      "label": "资料采集检索回读",
+      "status": "partial",
+      "doc": "current-state.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
+    },
+    {
+      "id": "capability:execution",
+      "type": "capability",
+      "label": "可恢复多实例执行",
+      "status": "partial",
+      "doc": "current-state.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
+    },
+    {
+      "id": "capability:storage-lifecycle",
+      "type": "capability",
+      "label": "运行时存储生命周期",
+      "status": "partial",
+      "doc": "current-state.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
+    },
+    {
+      "id": "capability:research",
+      "type": "capability",
+      "label": "事实研究报告",
+      "status": "partial",
+      "doc": "current-state.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
+    },
+    {
+      "id": "capability:operations",
+      "type": "capability",
+      "label": "独立发布与恢复",
+      "status": "partial",
+      "doc": "current-state.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
+    },
+    {
+      "id": "capability:ui",
+      "type": "capability",
+      "label": "中台与业务 UI",
+      "status": "partial",
+      "doc": "current-state.md",
+      "status_scope": "original_goal_progress_not_mac_acceptance"
+    },
+    {
+      "id": "task:research-completion",
+      "type": "task",
+      "label": "研究稳定成稿",
+      "status": "open",
+      "doc": "backlog.md",
+      "scope": "原目标余项"
+    },
+    {
+      "id": "task:research-quality",
+      "type": "task",
+      "label": "报告实质证据质量",
+      "status": "accepted_owner_windows",
+      "doc": "windows-ds03-inventory-20261017.md",
+      "section": "DS-03",
+      "scope": "Real four-question inventory/regional/contract research on the owner Windows guarded-v7: original task a526d178…, two correction tasks, final report 18,925 bytes; independent content review ACCEPT. Covers three source documents; old broad supply/import/crush task remains failed."
+    },
+    {
+      "id": "task:continuation-ui",
+      "type": "task",
+      "label": "继续任务与完整 UI",
+      "status": "browser_matrix_passed_followups",
+      "doc": "windows-ds04-ui-browser-20261017.md",
+      "section": "DS-04",
+      "scope": "Chrome headless CDP browser matrix on the owner Windows: seven Console pages, Agent editor tabs, ToolHub, Knowledge search, run detail, services filter, mobile drawer; Futures home/records/failure/mobile. Console local business entry fixed and installed. Console run detail now links parent_id source tasks; Futures shows same-commodity history and accepts an explicit source-task ID (manual cross-check, not an automatic evidence chain). Follow-ups: v6 continuation assessment blocked despite coarse resumable count; automatic/persisted correction-task provenance; raw task JSON in run detail."
+    },
+    {
+      "id": "task:service-retirement",
+      "type": "task",
+      "label": "旧覆盖与权限退役",
+      "status": "formal_acl_retired_validation_open",
+      "doc": "windows-ds05-access-retirement-20261017.md",
+      "section": "DS-05",
+      "scope": "Formal owner Windows PostgreSQL Runtime ACL contraction executed: Telemetry inbox migrated, telemetry-http-v1 installed at 6f9f539 (zero managed instances), Worker reduced to worker-minimal-v1 grants, Telemetry execution events revoked. Post-retirement synthetic fixture completed note_save/run_recall and a killed-owner task was taken over by the second Worker. A temporary Telemetry instance with a local mock Langfuse exported 3992 events (125 POSTs, 73 runs) through Runtime claim/ack. On 2026-10-17 the owner confirmed no real credentials and declined local Langfuse deployment; real Langfuse/managed is an explicitly deferred separate deployment. Old implementation deletion and Linux remain."
+    },
+    {
+      "id": "task:storage-lifecycle",
+      "type": "task",
+      "label": "存储生命周期余项",
+      "status": "partial_notes_and_long_history",
+      "doc": "windows-ds06-storage-lifecycle-20261017.md",
+      "section": "DS-06",
+      "scope": "Real Runtime note revise/expire/stale-head conflict/retire verified; two simultaneous revisers produced 200/409 without a second branch. Source-Harness benchmark passed 128/512/2048/4096/8192 steps with compaction and journal replay; 8192 reached 90,119 events/100.2MB, 168.1MB max heap and 339.5MB max RSS. 32k/64k/1M 20-round tasks completed with and without step-8/10 kills; 32k also completed 40 and 80 rounds (steps 41/81) without a visible Compact, while model request bytes grew linearly to 56.8KB and 108.3KB. 8k/16k contexts failed. Compact-point success and token accounting remain unverified; 10M-chunk and service RSS bounds remain."
+    },
+    {
+      "id": "task:faults-and-resources",
+      "type": "task",
+      "label": "剩余故障与全平台资源",
+      "status": "short_burst_load_passed_continuous_open",
+      "doc": "windows-ds07-platform-load-20261017.md",
+      "section": "DS-07",
+      "scope": "Eight concurrent post-retirement synthetic fixture tasks completed 8/8; 30.1-minute soak 24/24; 8s lock recovered; 30s lock failed; 15s/30s cancel and kill-then-cancel produced cancelled; three terminated worker DB sessions still completed; a fast pg_ctl restart inside task d72c345f still completed; Runtime stop/start first failed tasks bd529d74/8f80b4f5/e4c57c1f at step 3 with 503, but after Worker 1802936 extended ToolHub 5xx operation-ID retry to ten attempts (~19s), task d5fbaf41 completed step 6 through the same stop/start. Two external transactions locking a runs row and a documents row in opposite order produced one 40P01 deadlock and pg_stat_database.deadlocks 0→1; task-level deadlock attempts did not reproduce. A small-data query-plan baseline showed events 0.100ms and calls 0.049ms index scans, while runs(status) used a Seq Scan at 0.349ms on about 166 rows. On a synthetic 1M-row table, events used an index scan at 0.562ms and runs(status) a parallel Seq Scan at 86.4ms, suggesting a possible future index; not production data. A 25s Runtime outage failed under the 19s retry (task 80c0eef4) but completed after Worker e45c9fb extended same-operation ToolHub retry to ~60s (task bc43eb95). A network-partition attempt via a local TCP proxy and ToolHub RUNTIME_URL was blocked by the configuration-drift guard, so no partition evidence exists. Longer outages, network partition, task-level recovery, task-level deadlock, large-data slow queries and memory trends remain; not production capacity."
+    },
+    {
+      "id": "task:latest-recovery",
+      "type": "task",
+      "label": "最新备份实际恢复",
+      "status": "current_snapshot_restore_passed",
+      "doc": "windows-ds08-restore-20261017.md",
+      "section": "DS-08",
+      "scope": "Latest backup ds08-final-20261017k (after network-partition recovery task cdcf5fe0) restored into a disposable random-port PostgreSQL cluster: 46 relations, 10 service logins, 5 sealed credential decryptions, 2 archived Worker bundles (52356bed/806b411d), complete release generation 213 with 3103 files; isolated cluster stopped, provider calls 0. Not server/HA, eight physical databases or external Milvus/LightRAG/Langfuse."
+    },
+    {
+      "id": "task:final-ci",
+      "type": "task",
+      "label": "一次统一验收与交付",
+      "status": "local_sweep_passed_hosted_ci_open",
+      "doc": "windows-local-acceptance-20261017.md",
+       "scope": "Hosted concentrated CI dispatched once on 13 service repos: 12 passed, agent-os-knowledge failed its Linux race assertion TestArchiveReaderRequirementRejectsIncompleteOrUnknownState (missing marker accepted). Actions were disabled again after the run. Not capacity/server/HA. See windows-final-ci-20261018.md."
+    },
+    {
+      "id": "task:fresh-windows-bootstrap",
+      "type": "task",
+      "label": "新 Windows 完整初始化",
+      "status": "conditional_future_new_windows_request",
+      "doc": "backlog.md",
+      "scope": "仅新电脑额外前提，原 P1 的当时验收不因此抹去"
+    },
+    {
+      "id": "evidence:drafts",
+      "type": "evidence_document",
+      "label": "失败草稿显示实际验收",
+      "doc": "../research-draft-visibility-20261014.md",
+      "scope": "已通过草稿显示，不代表研究质量通过",
+      "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
+      "verification": "original_maintainer_record_not_new_retest",
+      "evidence_environment_id": "environment:owner-windows",
+      "mac_usage": "公开说明可读；私有原始证据不可从路径访问或推定存在"
+    },
+    {
+      "id": "evidence:capture",
+      "type": "evidence_document",
+      "label": "真实网页采集与恢复",
+      "doc": "../console-capture-acceptance-20261014.md",
+      "scope": "文档所列范围",
+      "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
+      "verification": "original_maintainer_record_not_new_retest",
+      "evidence_environment_id": "environment:owner-windows",
+      "mac_usage": "公开说明可读；私有原始证据不可从路径访问或推定存在"
+    },
+    {
+      "id": "evidence:source-engine",
+      "type": "evidence_document",
+      "label": "真实源码执行器激活",
+      "doc": "../source-engine-activation-20261013.md",
+      "scope": "版本限定",
+      "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
+      "verification": "original_maintainer_record_not_new_retest",
+      "evidence_environment_id": "environment:owner-windows",
+      "mac_usage": "公开说明可读；私有原始证据不可从路径访问或推定存在"
+    },
+    {
+      "id": "evidence:resident",
+      "type": "evidence_document",
+      "label": "驻留联合测量",
+      "doc": "../resident-joint-acceptance-20261013.md",
+      "scope": "真实进程/数据库与合成模型，不是全平台上界",
+      "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
+      "verification": "original_maintainer_record_not_new_retest",
+      "evidence_environment_id": "environment:owner-windows",
+      "mac_usage": "公开说明可读；私有原始证据不可从路径访问或推定存在"
+    },
+    {
+      "id": "evidence:retirement",
+      "type": "evidence_document",
+      "label": "旧覆盖移交矩阵",
+      "doc": "../p2-linux-cutover.md",
+      "scope": "含未关闭项，不是通过证书",
+      "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
+      "verification": "original_maintainer_record_not_new_retest",
+      "evidence_environment_id": "environment:owner-windows",
+      "mac_usage": "公开说明可读；私有原始证据不可从路径访问或推定存在"
+    },
+    {
+      "id": "evidence:ui",
+      "type": "evidence_document",
+      "label": "页面历史验证",
+      "doc": "../ui-validation-v0.6.md",
+      "scope": "历史页面与样本范围，不能覆盖最新全矩阵",
+      "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
+      "verification": "original_maintainer_record_not_new_retest",
+      "evidence_environment_id": "environment:owner-windows",
+      "mac_usage": "公开说明可读；私有原始证据不可从路径访问或推定存在"
+    },
+    {
+      "id": "evidence:recovery",
+      "type": "evidence_document",
+      "label": "Windows 发布与恢复",
+      "doc": "../windows-release-recovery-20261012.md",
+      "scope": "当时状态，最新完整状态仍需恢复验证",
+      "raw_evidence": "原电脑私有路径，见各文档；未随 Git 公开",
+      "verification": "original_maintainer_record_not_new_retest",
+      "evidence_environment_id": "environment:owner-windows",
+      "mac_usage": "公开说明可读；私有原始证据不可从路径访问或推定存在"
+    },
+    {
+      "id": "run:research-20261014",
+      "type": "observed_run",
+      "label": "豆粕固定资料研究失败",
+      "status": "failed",
+      "task_id": "4bdf967d35ab0b92ae43c38dc87a5947",
+      "doc": "current-state-before-deepseek-20261017.md",
+      "environment_id": "environment:owner-windows",
+      "observed_at": "2026-10-14",
+      "mac_usage": "历史失败线索；在 Mac 建立新的复现任务，不恢复此 ID"
+    },
+    {
+      "id": "constraint:secrets",
+      "type": "constraint",
+      "label": "密钥和私人资料不进入公开仓或模型上下文",
+      "doc": "objective.md"
+    },
+    {
+      "id": "constraint:cost",
+      "type": "constraint",
+      "label": "有界付费调用与最终一次 CI",
+      "doc": "objective.md"
+    },
+    {
+      "id": "constraint:research",
+      "type": "constraint",
+      "label": "事实研究，人负责预测和交易判断",
+      "doc": "objective.md"
+    },
+    {
+      "id": "deferred:ha",
+      "type": "deferred_scope",
+      "label": "跨机器 HA 与主备数据库",
+      "status": "deferred",
+      "doc": "objective.md"
+    },
+    {
+      "id": "deferred:capacity",
+      "type": "deferred_scope",
+      "label": "百万文档千万块全平台容量",
+      "status": "deferred",
+      "doc": "objective.md"
+    },
+    {
+      "id": "deferred:commodities",
+      "type": "deferred_scope",
+      "label": "全品种资料覆盖",
+      "status": "deferred",
+      "doc": "objective.md"
+    },
+    {
+      "id": "environment:maintainer-macos",
+      "type": "environment",
+      "label": "朋友自己的 Mac",
+      "doc": "environment.md",
+      "inventory": {
+        "file": "environments.json",
+        "environment_id": "environment:maintainer-macos"
+      }
+    },
+    {
+      "id": "environment:owner-windows",
+      "type": "environment",
+      "label": "原所有者 Windows",
+      "doc": "environment.md",
+      "inventory": {
+        "file": "environments.json",
+        "environment_id": "environment:owner-windows"
+      }
+    },
+    {
+      "id": "environment:future-linux",
+      "type": "environment",
+      "label": "后续 Linux 服务器目标",
+      "doc": "environment.md",
+      "inventory": {
+        "file": "environments.json",
+        "environment_id": "environment:future-linux"
+      }
+    },
+    {
+      "id": "evidence:macos-development-20261015",
+      "type": "evidence_document",
+      "label": "Mac源码核对与首轮研究修复",
+      "doc": "macos-development-20261015.md",
+      "scope": "Independent Mac source audit, synthetic regression and native process/database fixtures; not Windows or business acceptance",
+      "verification": "executed_on_maintainer_mac_with_independent_review",
+      "evidence_environment_id": "environment:maintainer-macos"
+    },
+    {
+      "id": "evidence:macos-research-and-storage-20261015",
+      "type": "evidence_document",
+      "label": "Mac真实供应商合成研究、页面修复与Storage故障增量",
+      "doc": "macos-research-and-storage-20261015.md",
+      "scope": "Two bounded real-provider tasks with synthetic sources; report quality still fails. Code/static UI verification and one actual Storage fault scenario do not close broader acceptance.",
+      "verification": "executed_on_maintainer_mac_with_independent_review",
+      "evidence_environment_id": "environment:maintainer-macos"
+    },
+    {
+      "id": "evidence:native-storage-reply-loss-20261015",
+      "type": "evidence_document",
+      "label": "Mac真实Storage提交后丢确认与自然租约接管",
+      "doc": "../native-storage-reply-loss-20261015.md",
+      "scope": "Real Runtime/Worker/Storage processes and isolated PostgreSQL; Registry/ToolHub/provider fixtures. Not ENOSPC, database restart or whole-platform resources.",
+      "verification": "executed_on_maintainer_mac_with_independent_review",
+      "evidence_environment_id": "environment:maintainer-macos"
+    },
+    {
+      "id": "run:macos-synthetic-research-20261015-initial",
+      "type": "observed_run",
+      "label": "Mac合成研究首轮：执行完成、格式失败",
+      "status": "completed",
+      "quality_status": "not_passed",
+      "task_id": "06a124402c71426a0ec4525adfc2d93d",
+      "model_attempts": 5,
+      "unknown_usage_attempts": 0,
+      "report_check_status": "unstructured",
+      "doc": "macos-research-and-storage-20261015.md",
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "scope": "New synthetic task with real provider, not historical Windows task replay or real market acceptance"
+    },
+    {
+      "id": "run:macos-synthetic-research-20261015-format-v5",
+      "type": "observed_run",
+      "label": "Mac合成研究复验：格式通过、回答质量未通过",
+      "status": "completed",
+      "quality_status": "not_passed",
+      "task_id": "c74f59013af4a953454b7368b83b5105",
+      "model_attempts": 4,
+      "unknown_usage_attempts": 0,
+      "report_check_status": "needs_review",
+      "doc": "macos-research-and-storage-20261015.md",
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "scope": "New synthetic task with real provider, not historical Windows task replay or real market acceptance"
+    },
+    {
+      "id": "evidence:macos-package-enospc-and-answer-contract-20261015",
+      "type": "evidence_document",
+      "label": "Mac匹配BFF/Web安装与第三次研究供应商失败",
+      "doc": "macos-package-enospc-and-answer-contract-20261015.md",
+      "scope": "Installed matching source/BFF/Web package; no browser acceptance. Third task failed before any draft on provider HTTP 503 with one unknown usage; no answer-quality conclusion.",
+      "verification": "executed_on_maintainer_mac_with_independent_review",
+      "evidence_environment_id": "environment:maintainer-macos"
+    },
+    {
+      "id": "evidence:storage-enospc-macos-20261015",
+      "type": "evidence_document",
+      "label": "Mac独立Storage有界卷真实ENOSPC与同库恢复",
+      "doc": "../storage-enospc-macos-20261015.md",
+      "scope": "Only P2 Storage artifact/reference fault-coverage transfer. Real bounded-volume PostgreSQL ENOSPC and same-PGDATA recovery; no Harness, Compact, notes, Runtime call receipts, Windows or whole-platform resource acceptance.",
+      "verification": "executed_on_maintainer_mac_with_independent_review",
+      "evidence_environment_id": "environment:maintainer-macos"
+    },
+    {
+      "id": "run:macos-synthetic-research-20261015-answer-contract",
+      "type": "observed_run",
+      "label": "Mac第三次合成研究：供应商忙碌失败、无成稿",
+      "status": "failed",
+      "quality_status": "not_evaluated_no_result",
+      "task_id": "9e2dc8348c639a093632e0e2914ae9ec",
+      "model_attempts": 1,
+      "max_model_attempts": 12,
+      "unknown_usage_attempts": 1,
+      "accounted_tokens": 433491,
+      "accounting_scope": "Conservative unknown-usage accounting, not provider-confirmed consumption or billing; cost null",
+      "provider_http_status": 503,
+      "provider_error_type": "service_unavailable_error",
+      "draft_count": 0,
+      "report_check_status": "unstructured",
+      "doc": "macos-package-enospc-and-answer-contract-20261015.md",
+      "environment_id": "environment:maintainer-macos",
+      "observed_at": "2026-10-15",
+      "scope": "New Agent revision 4 and Skill revision 3; frozen request checked, two older tasks unchanged. No automatic retry, no new content-quality result."
+    },
+    {
+      "id": "evidence:runtime-owner-enospc-macos-20261015",
+      "type": "evidence_document",
+      "label": "Mac Runtime Owner笔记与模型账本有界卷ENOSPC",
+      "doc": "../runtime-enospc-macos-20261015.md",
+      "status": "passed_limited_owner_transaction_scope",
+      "scope": "Runtime Owner in-process transaction test with real isolated PostgreSQL ENOSPC; NOLOGIN SET ROLE pools, in-memory archive and synthetic native receipts; no independent Runtime/Worker/Node/Storage process, real provider, Compact, complete note lifecycle, Windows or host-disk exhaustion.",
+      "verification": "executed_on_maintainer_mac_with_independent_review",
+      "evidence_environment_id": "environment:maintainer-macos"
+    },
+    {
+      "id": "evidence:macos-research-verification-and-ui-20261015",
+      "type": "evidence_document",
+      "label": "Mac同题研究第四次供应商失败与UI增量",
+      "doc": "macos-research-verification-and-ui-20261015.md",
+      "status": "provider_failed_ui_installed_browser_pending",
+      "task_id": "cfdb8e0a8232bf786a194264cb0bb584",
+      "verification": "independent_read_only_terminal_and_frozen_request_review",
+      "evidence_environment_id": "environment:maintainer-macos",
+      "scope": "One new same-input synthetic research task failed on first provider HTTP 503 with no report; frozen Agent 4/Skill 3, native-v4 engine and existing 12-step/12-model-attempt budget verified, reviewer criteria fixed before submission and excluded from input, three old tasks unchanged. Reviewed read-failure UI installed as a matching Futures BFF/Web package; nine other instances unchanged. No browser or Windows acceptance."
+    },
+    {
+      "id": "evidence:macos-telemetry-owner-20261015",
+      "type": "evidence_document",
+      "label": "Mac Telemetry与Runtime Owner局部覆盖移交",
+      "doc": "macos-telemetry-owner-20261015.md",
+      "status": "passed_limited_owner_coverage_not_deployed",
+      "scope": "Mac isolated PostgreSQL Owner coverage: Telemetry exporter receipt red-green and Runtime outbox protocol; HTTP fixtures; only the five new exporter tests and two Runtime tests use NOLOGIN SET ROLE application pools, not separate login or real Langfuse, continuous-loop liveness or cross-service composition. No installed service, source protocol or deployment pin change.",
+      "verification": "executed_on_maintainer_mac_with_independent_review",
+      "evidence_environment_id": "environment:maintainer-macos"
+    },
+    {
+      "id": "evidence:macos-native-notes-and-unknown-20261015",
+      "type": "evidence_document",
+      "label": "Mac 原生笔记生命周期与未知外部效果局部验证",
+      "doc": "macos-native-notes-and-unknown-20261015.md",
+      "status": "passed_two_limited_fixture_layers_not_deployed",
+      "scope": "Two separate Mac fixture layers: Runtime note lifecycle/real PostgreSQL Owner coverage, and native process external-effect reply-loss/cancel/explicit reconcile with real Storage. No production change, installed service replacement, deployment pin change, real provider, Windows or full resource/business acceptance.",
+      "verification": "executed_on_maintainer_mac_with_independent_review",
+      "evidence_environment_id": "environment:maintainer-macos",
+      "notes_owner": {
+        "scope": "Owner in-process native protocol with real isolated PostgreSQL; NOLOGIN SET ROLE pools, synthetic NativeReceipt and per-task memory archive; post-commit callback return loss, not network or official DSH process",
+        "tests": {
+          "top_level_passed": 2,
+          "subtests_passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "race": true,
+          "package_elapsed_seconds": 10.533,
+          "exit_code": 0
+        },
+        "test_source_sha256": "5413703e61005d17fb75c36d5ee17d0261b83016234471f1a69015f2a37e590c",
+        "source_base_commit": "ff3fa220df331f698c99b260005cc222d0dcdb1c",
+        "source_commit": "c02e12307e214b59dc02e18ca807a3c1ae762023"
+      },
+      "native_process": {
+        "scope": "Independent Runtime/Worker/Storage with fixed official native-v4 Node, two fresh databases and three LOGIN roles; Registry/ToolHub/model/MCP protocol fixtures, fsynced synthetic external effect and actual TCP reply loss, controlled explicit operator reconciliation",
+        "tests": {
+          "top_level_passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "race_test_driver_only": true,
+          "service_binaries_race": false,
+          "package_elapsed_seconds": 5.417,
+          "exit_code": 0
+        },
+        "test_source_sha256": "317ca63f5c5a31dcba4dea44348efe49a55912d1bc45e37eca7d40ecda453ef7",
+        "integration_source_base_commit": "9f3c3785869927796e57a59059b3df840dbf13bf",
+        "effects": 1,
+        "model_fixture_requests": 2,
+        "synthetic_accounted_tokens_per_run": 1900,
+        "real_provider_calls": 0,
+        "unknown_model_usage_attempts": 0,
+        "cost_estimate": null,
+        "archive_manifests": 12,
+        "archive_bytes": 15829
+      }
+    },
+    {
+      "id": "evidence:macos-console-native-and-state-recovery-20261015",
+      "type": "evidence_document",
+      "label": "Mac Console 原生引擎面板与工作状态恢复边界",
+      "doc": "macos-console-native-and-state-recovery-20261015.md",
+      "status": "console_package_installed_owner_recovery_fixture_passed_browser_pending",
+      "scope": "Console exact fixed-engine evidence UI corrected and matching local BFF/Web package installed; Runtime native source-state recovery covered separately with Owner PostgreSQL/HTTP fixtures. No browser, official Node recovery, general failed-run continuation, real provider or Windows acceptance.",
+      "verification": "executed_on_maintainer_mac_with_independent_review",
+      "evidence_environment_id": "environment:maintainer-macos",
+      "console_ui": {
+        "source_base_commit": "a2bca748d1bd6f0de0e52e1e0a59070e790d5fbc",
+        "source_commit": "58c511f3f2a29ca5a99a121e2197e74e5272ac90",
+        "web_tests": {
+          "passed": 27,
+          "failed": 0,
+          "skipped": 0
+        },
+        "typescript_exit": 0,
+        "author_red": {
+          "passed": 2,
+          "failed": 3,
+          "skipped": 0
+        },
+        "author_focused": {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0
+        },
+        "scope": "SSR initial rendering and direct archive-download callback; actual Console uses the components. No browser, DOM/fetch recovery-response interaction or automatic continuation claim."
+      },
+      "runtime_owner": {
+        "source_base_commit": "c02e12307e214b59dc02e18ca807a3c1ae762023",
+        "source_commit": "606fbc8a0e785d013f39e2cadcfca2fb1fb268f3",
+        "test_source_sha256": "cfc3899decd622b0b74d85efc2dfc0e8c3a1878a07af19fc74dd3438f9091c0e",
+        "tests": {
+          "top_level_passed": 3,
+          "subtests_passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "race": true,
+          "package_elapsed_seconds": 2.427,
+          "exit_code": 0
+        },
+        "scope": "In-process Owner with real PostgreSQL and SourceState HTTP policy, NOLOGIN SET ROLE application pools, synthetic model receipt, memory archive and callback-level reply loss; no SQL-fabricated run state, actual TCP loss, Worker retry loop, official Node or Storage process. Archive lost-ack naturally failed/not_waiting; archive_unconfirmed diagnostic and external-tool unknown not added."
+      }
+    },
+    {
+      "id": "evidence:macos-continuation-preview-20261015",
+      "type": "evidence_document",
+      "label": "Mac Runtime 失败任务只读接续预览",
+      "doc": "macos-continuation-preview-20261015.md",
+      "status": "readonly_preview_installed_owner_tested_continuation_open",
+      "scope": "Control-only read-only failed continuation preview v1 implemented and locally installed in Runtime; Owner PostgreSQL/HTTP fixtures plus read-only observations of existing Mac failures. No new execution action, generic resume guard, UI integration, provider retry or business/Windows acceptance.",
+      "verification": "executed_on_maintainer_mac_with_independent_review",
+      "evidence_environment_id": "environment:maintainer-macos",
+      "api": {
+        "protocol": "failed-run-continuation-preview-v1",
+        "method": "GET",
+        "route": "/v1/runs/{id}/continuation",
+        "authorized_role": "control",
+        "read_only": true,
+        "action_available": false,
+        "positive_assessment": "same_run_candidate is an observation, never execution authorization",
+        "legacy_resume_changed": false,
+        "ui_integrated": false
+      },
+      "runtime_owner": {
+        "source_base_commit": "606fbc8a0e785d013f39e2cadcfca2fb1fb268f3",
+        "source_commit": "879c5034ad556e37f1c987312eb4124b3c4806b6",
+        "source_set_sha256": "2c49c04472b5b9a32f28959e7a1c91776b3839c480628a6c27cea75e5d45a313",
+        "tests": {
+          "top_level_passed": 7,
+          "new_top_level_tests": 6,
+          "existing_peer_policy_tests": 1,
+          "subtests_passed": 17,
+          "failed": 0,
+          "skipped": 0,
+          "race": true,
+          "package_elapsed_seconds": 4.327,
+          "exit_code": 0
+        },
+        "vet_exit": 0,
+        "build_exit": 0,
+        "scope": "Owner in-process real isolated PostgreSQL and servicehttp authorization, NOLOGIN SET ROLE pools, synthetic native receipt and memory archive. Positive paths use normal APIs; five corrupt-record negative fixtures are deliberate injections. Separate actor invokes old resume in consistency test; GET never performs that action. No official Node/independent Worker/Storage or provider."
+      },
+      "installed_observation": {
+        "read_only": true,
+        "action_available": false,
+        "named_table_snapshots_equal": true,
+        "named_tables": 12,
+        "complete_task_lists_equal": true,
+        "terminal_tasks": 4,
+        "comparison_includes_instances": false,
+        "continuous_immutability_proven": false,
+        "preinstall_observed_at": "2026-10-15T07:25:50.728Z",
+        "postinstall_observed_at": "2026-10-15T07:26:30.050Z",
+        "tables_sha256": "cb618c38d0bd8933b658c3cbfc9e6c78ccbcecf982cd125906a6a3305a7136f6",
+        "tasks_sha256": "72d29da5eeab6c528ce5bf63b7e5cebba03536c9e724c4e007c339b576f2febf",
+        "observer_script_sha256": "e5824b1cbc4ab9a5988529c6d6b02769852f9eb685cee73468cb69ee9cbe25d1",
+        "preview_gets": 4,
+        "successful_phase_http_gets": 8,
+        "successful_phase_database_read_transactions": 4,
+        "provider_calls": 0,
+        "resumes_performed": 0,
+        "tasks_submitted": 0,
+        "assessments": [
+          {
+            "status": "completed",
+            "count": 2,
+            "assessment": "not_applicable",
+            "reason": "already_completed"
+          },
+          {
+            "status": "failed",
+            "count": 2,
+            "assessment": "same_run_candidate",
+            "reason": "retained_transient_model_failure",
+            "each_basis": {
+              "model_rounds": 1,
+              "max_steps": 12,
+              "family_model_attempts": 1,
+              "max_model_attempts": 12,
+              "retry_http_status": 503
+            }
+          }
+        ],
+        "scope": "Twelve named execution/notes table row digests and full terminal task metadata agree at observation endpoints across installation and GETs. HTTP and SQL snapshots are separate; no admission lock or continuous immutability proof. Excludes instances, app_runs, business_runs and all other tables; no live provider retry, Storage-byte validation, UI, business or Windows acceptance."
+      }
+    },
+    {
+      "id": "evidence:macos-native-attempt-revision-20261015",
+      "type": "evidence_document",
+      "label": "Mac native 模型新尝试规则修订守卫",
+      "doc": "macos-native-attempt-revision-20261015.md",
+      "status": "native_revision_guard_two_workers_installed_continuation_open",
+      "scope": "Native BeginModel admission guard rejects a new stale-revision attempt while preserving completed receipts and frozen history. Owner and actual old/new Worker plus fixed official Node/synthetic TLS fixtures verified; both own-Mac Workers updated. Runtime HTTP remains 879c5034; continuation action/UI, real provider/business and Windows acceptance remain open.",
+      "verification": "executed_on_maintainer_mac_with_independent_evidence_review",
+      "evidence_environment_id": "environment:maintainer-macos",
+      "source_versions": {
+        "runtime_core_execution_commit": "1f6c4c29c62bac3ad6d674b7797a7410f373bf00",
+        "runtime_tests_commit": "5017de09c37f50da270b1873c2dcf73439330653",
+        "worker_source_commit": "94d605910e0c3da011bb1213b516150ecb5fe1ba",
+        "worker_runtime_module_version": "v0.1.0-rc.5.0.20261015080014-1f6c4c29c62b",
+        "worker_runtime_module_sum": "h1:Ht2GnqP3SC9BPodtn85eJ+vm6ZfZjc46g/1mQM8cGhg=",
+        "runtime_http_installed_commit": "879c5034ad556e37f1c987312eb4124b3c4806b6",
+        "runtime_http_reinstalled": false
+      },
+      "runtime_owner": {
+        "core_commit": "1f6c4c29c62bac3ad6d674b7797a7410f373bf00",
+        "guard_sha256": "24ca3d033e23723bb23f4113be56fc0b79757bbd56e8b2b1310de0fec2cf042f",
+        "test_sha256": "2df2cbaa6fd3289fbbd18a3b06cb4b0dcca8343f0e40529faac3f7b6a98fadd4",
+        "tests": {
+          "red": {
+            "top_pass": 2,
+            "top_fail": 2,
+            "sub_pass": 0,
+            "skip": 0,
+            "exit_code": 1,
+            "package_elapsed_seconds": 1.089,
+            "stdout_sha256": "555dd0be6ab5397ab7e59bfaa53c59f5432f27cfe240961c374bdfbbb18ec8b9"
+          },
+          "green": {
+            "top_pass": 4,
+            "top_fail": 0,
+            "sub_pass": 0,
+            "skip": 0,
+            "exit_code": 0,
+            "package_elapsed_seconds": 2.09,
+            "stdout_sha256": "4e65695d9d92f37d7f8f3c9f3947547864f51d1cb251c87a516187a4ddf2fe46"
+          },
+          "regression": {
+            "top_pass": 32,
+            "top_fail": 0,
+            "sub_pass": 38,
+            "skip": 0,
+            "exit_code": 0,
+            "package_elapsed_seconds": 34,
+            "stdout_sha256": "1dd9d27d66ac223e885918f7da6eaba578e2349d810997cff9903ef953d97866"
+          }
+        },
+        "vet_exit": 0,
+        "build_exit": 0,
+        "original_instances_unchanged": 10,
+        "cleanup": {
+          "fixture_databases": 0,
+          "fixture_roles": 0,
+          "fixture_connections": 0
+        },
+        "provider_calls": 0,
+        "scope": "Owner real isolated PG and execution APIs with synthetic callbacks/memory archives, no actual Worker/Node/provider execution"
+      },
+      "worker_fixture": {
+        "runs": {
+          "worker-fixture": {
+            "exit_code": 1,
+            "top_pass": 0,
+            "top_fail": 1,
+            "sub_pass": 1,
+            "sub_fail": 2,
+            "skip": 0,
+            "package_elapsed_seconds": 4.146,
+            "stdout_sha256": "246d389378cab82682cd450ec656c14ae63244cd217aa8397c6193b08b630559"
+          },
+          "worker-fixture-v2": {
+            "exit_code": 0,
+            "top_pass": 1,
+            "top_fail": 0,
+            "sub_pass": 3,
+            "sub_fail": 0,
+            "skip": 0,
+            "package_elapsed_seconds": 4.917,
+            "stdout_sha256": "1b006354a12c723ee1cacc04bdb7bff224d4a796c6ff01b902a2cbed4f0e33b6"
+          }
+        },
+        "test_driver_race": true,
+        "worker_binaries_race": false,
+        "fixture_source_sha256": "13988cc825980dcee7d82d409e1a9c69cd5a816f23cd15dbf5be1d2d4ab33079",
+        "harness_manifest_sha256": "d76588bae0edd1d7f13cdb4d01423ac8fc14da240fba682bcec4a1fb08f8ba7f",
+        "original_instances_unchanged": 10,
+        "fixture_pids_remaining": 0,
+        "fixture_databases_roles_connections_remaining": {
+          "fixture_databases": 0,
+          "fixture_roles": 0,
+          "fixture_connections": 0
+        },
+        "model_http_scope": "Synthetic loopback TLS only; actual independent Worker binaries and fixed official Node runner, real Runtime HTTP and PG, archive fixture.",
+        "real_provider_calls": 0,
+        "cases": [
+          {
+            "name": "old_pin_stale",
+            "synthetic_http_requests": 2,
+            "model_attempts": 2,
+            "unknown_usage_attempts": 2,
+            "status": "failed"
+          },
+          {
+            "name": "new_pin_stale",
+            "synthetic_http_requests": 1,
+            "model_attempts": 1,
+            "unknown_usage_attempts": 1,
+            "status": "failed"
+          },
+          {
+            "name": "new_pin_same_revision",
+            "synthetic_http_requests": 2,
+            "model_attempts": 2,
+            "unknown_usage_attempts": 1,
+            "status": "completed"
+          }
+        ],
+        "request_equality": "Complete canonical JSON values agree with original frozen intent and every call/attempt; raw wire hashes are preserved and differ for replay requests."
+      },
+      "worker_installation": {
+        "installed": true,
+        "at": "2026-10-15T08:38:46.658Z",
+        "package_manifest_sha256": "384952564182170e6d12ff4bebf6bc4967d133413f2916a73cabf347f9ac1766",
+        "worker_binary_sha256": "7ec002f581b5dfd785db3fcfc6228595bd2f6c23e400ace7cc39f722452353f8",
+        "changed_instances": [
+          "worker",
+          "worker-2"
+        ],
+        "non_target_instances_unchanged": 8,
+        "all_configuration_hashes_unchanged": true,
+        "fixed_harness_unchanged": true,
+        "old_workers_exit_confirmed": true,
+        "final_observed_at": "2026-10-15T08:40:20.497Z",
+        "total_live_instances": 10,
+        "new_workers_authenticated_ready_status": 200,
+        "read_only_sql_transactions": 8,
+        "authenticated_ready_gets": 8,
+        "observed_scalar_counts": {
+          "runs": 4,
+          "nonterminal": 0,
+          "calls": 21,
+          "model_attempts": 11,
+          "exchanges": 70,
+          "archives": 70
+        },
+        "whole_row_immutability_proven": false,
+        "whole_database_immutability_proven": false,
+        "migrations_executed": false,
+        "release_package": false,
+        "provider_calls": 0,
+        "task_mutations": 0,
+        "scope": "Scalar observations and process checks are separate, not an atomic admission lock or full-row comparison; normal instance heartbeats remain possible. A later root live observation confirmed both new workers and eight unchanged peers."
+      }
+    },
+    {
+      "id": "evidence:macos-continuation-action-20261015",
+      "type": "evidence_document",
+      "label": "Mac 显式接续动作与Console回执恢复源码",
+      "doc": "macos-continuation-action-20261015.md",
+      "status": "explicit_continuation_source_tested_not_installed",
+      "scope": "Explicit manual continuation action, durable Owner receipt and Console recovery-pointer source implemented and locally committed. Isolated Owner and independent Worker/official Node/synthetic TLS plus Console source checks passed with explicit skips/limits. No live schema migration, service deployment, mounted/browser flow, real provider/business or Windows acceptance.",
+      "verification": "source_committed_and_isolated_execution_evidence_independently_reviewed_not_installed",
+      "evidence_environment_id": "environment:maintainer-macos",
+      "source_versions": {
+        "runtime_source_commit": "dbf99dca784c849f0386da1c3de219aa10142a8e",
+        "console_source_commit": "8e8186c07467897410f5a94973c7c4d36d99490e",
+        "runtime_installed_commit": "879c5034ad556e37f1c987312eb4124b3c4806b6",
+        "console_installed_commit": "58c511f3f2a29ca5a99a121e2197e74e5272ac90",
+        "worker_installed_commit": "94d605910e0c3da011bb1213b516150ecb5fe1ba",
+        "worker_execution_commit": "1f6c4c29c62bac3ad6d674b7797a7410f373bf00",
+        "worker_runtime_module": "v0.1.0-rc.5.0.20261015080014-1f6c4c29c62b",
+        "worker_pin_changed": false,
+        "harness_manifest_sha256": "d76588bae0edd1d7f13cdb4d01423ac8fc14da240fba682bcec4a1fb08f8ba7f"
+      },
+      "contract": {
+        "context_protocol": "failed-run-continuation-action-context-v1",
+        "receipt_protocol": "failed-run-continuation-receipt-v1",
+        "authorized_identity": "named control",
+        "manual_action_source_implemented": true,
+        "console_source_implemented": true,
+        "native_legacy_resume_source_rejected": true,
+        "preview_v1_unchanged": true,
+        "execution_protocol_unchanged": true,
+        "receipt_owner_table": "run_continuation_receipts",
+        "receipt_retention": "Permanent Owner decision history, no TTL; Runtime SELECT/INSERT, no new Worker grant"
+      },
+      "runtime_tests": {
+        "focused": {
+          "top_pass": 19,
+          "sub_pass": 42,
+          "top_skip": 0,
+          "sub_skip": 0,
+          "fail": 0,
+          "exit_code": 0,
+          "launcher_elapsed_ms": 13459,
+          "stdout_sha256": "2700b81fa0eb862b31d66a68d37af7b812e8787b5efb4ce8c01b131d4ccba9bc",
+          "new_owner_top_level": 7,
+          "new_owner_subtests": 11,
+          "pure_http_top_level": 2,
+          "pure_http_subtests": 14,
+          "preview_top_level": 6,
+          "preview_subtests": 17,
+          "native_guard_top_level": 4,
+          "package_seconds": 11.375,
+          "race": true
+        },
+        "broad_regression": {
+          "top_pass": 112,
+          "sub_pass": 195,
+          "top_skip": 14,
+          "sub_skip": 13,
+          "fail": 0,
+          "exit_code": 0,
+          "launcher_elapsed_ms": 104943,
+          "stdout_sha256": "93ece91b944de5d5472cfa5284095ed24b9f6bc2358069a9fce8fe361fac552a",
+          "package_seconds": 104.443,
+          "skipped_tests": [
+            "TestRuntimeDiskFullPreservesNotesAndModelReceipts",
+            "TestWorkerBinaryCompatibilityAfterCommittedEffect",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/serialized_overflow",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/rejection_kill",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/compaction_kill",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/usage_pressure",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/usage_control",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/irreducible",
+            "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/summary_overflow",
+            "TestIndependentWorkerEvidencePastFourMiBRecallsOmittedSourceAfterProcessInterruption",
+            "TestIndependentNativeWorkerRevisionGuard",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/large",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/completion_kill",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/rejection_kill",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/compaction_kill",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/cancel",
+            "TestIndependentNativeWorkerDurableProviderAndLongText/partial",
+            "TestIndependentSourceWorkerRecoversCommittedStateAfterCompactionAndLostReply",
+            "TestIndependentSourceWorkerSurvivesLostStateHTTPReplyWithoutProcessDeath",
+            "TestIndependentSourceWorkerExhaustedReplyRetriesRequireSafeOperatorRecovery",
+            "TestIndependentResidentWorkerRecoversCommittedStateAfterCompactionAndLostReply",
+            "TestIndependentResidentWorkerSurvivesLostStateHTTPReplyWithoutProcessDeath",
+            "TestIndependentResidentWorkerExhaustedReplyRetriesRequireSafeOperatorRecovery",
+            "TestIndependentBudgetWorkerRecoversCommittedStateAfterCompactionAndLostReply",
+            "TestIndependentBudgetWorkerSurvivesLostStateHTTPReplyWithoutProcessDeath",
+            "TestIndependentBudgetWorkerExhaustedReplyRetriesRequireSafeOperatorRecovery",
+            "TestIndependentSourceWorkerUpgradesV1AcrossCommittedStateInterruption"
+          ],
+          "scope": "Top-level passes can include grouping tests whose opt-in leaves skip; 27 explicit skip events are retained. The independent revision Worker run is covered separately, not relabelled in this invocation."
+        },
+        "source_set_sha256": "bcfc25c2d9a029abc2f0a3761a575b6099817208402f95b2e525b9e5b9a17e1c",
+        "internal_runstate_race_exit": 0,
+        "vet_exit": 0,
+        "build_exit": 0,
+        "permissions": "Isolated real PG with NOLOGIN/SET ROLE; not credential-authenticated login acceptance",
+        "reply_loss": "External HTTP connection dropped after Handler committed; PostgreSQL COMMIT response loss not injected"
+      },
+      "worker_tests": {
+        "top_pass": 1,
+        "sub_pass": 3,
+        "top_skip": 0,
+        "sub_skip": 0,
+        "fail": 0,
+        "exit_code": 0,
+        "launcher_elapsed_ms": 5489,
+        "stdout_sha256": "c5ce744fb8c2869358e90ad0fab2fc243ebf0cc107301938633b0267c2d72404",
+        "package_seconds": 4.779,
+        "race_test_driver": true,
+        "worker_binary_race_build": false,
+        "cases": [
+          {
+            "name": "old_pin_stale",
+            "revise": true,
+            "sends": 2,
+            "attempts": 2,
+            "unknown_usage_attempts": 2,
+            "status": "failed",
+            "complete_canonical_frozen_binding": true
+          },
+          {
+            "name": "new_pin_stale",
+            "revise": true,
+            "sends": 1,
+            "attempts": 1,
+            "unknown_usage_attempts": 1,
+            "status": "failed",
+            "complete_canonical_frozen_binding": true
+          },
+          {
+            "name": "new_pin_same_revision",
+            "revise": false,
+            "sends": 2,
+            "attempts": 2,
+            "unknown_usage_attempts": 1,
+            "status": "completed",
+            "complete_canonical_frozen_binding": true
+          }
+        ],
+        "source_actor": "Explicit action at R1, then optional Constraints R2 before second Worker Claim",
+        "scope": "Actual separate old/new Worker binaries and pinned official Node adaptation; real isolated Runtime HTTP/PG, synthetic loopback TLS model and archive fixture. Complete canonical bodies bind frozen exchanges/calls/attempts; raw wire hashes may differ.",
+        "actual_provider_calls": 0
+      },
+      "console_tests": {
+        "go_race_exit": 0,
+        "vet_exit": 0,
+        "build_exit": 0,
+        "web_tests_passed": 36,
+        "new_continuation_web_tests": 9,
+        "web_failed": 0,
+        "web_skipped": 0,
+        "tsc_exit": 0,
+        "vite_exit": 0,
+        "vite_nonfatal_warnings": [
+          "lucide-react use client directives",
+          "chunks over 500 kB"
+        ],
+        "scope": "MemoryStorage/fake fetch, static render and upstream proxy fixtures; no mounted React hook/click/unmount, real cross-tab StorageEvents or browser acceptance."
+      },
+      "live_schema_migration_executed": false,
+      "installed_services_changed": false,
+      "browser_executed": false,
+      "actual_provider_calls": 0
+    },
+    {
+      "id": "engine:guarded-v6",
+      "type": "engine",
+      "label": "DSH guarded-v6 参数纠正与回执成稿",
+      "status": "installed_owner_windows",
+      "engine_id": "dsh-source-639ed015-guarded-v6",
+      "doc": "windows-guarded-release-20261017.md"
+    },
+    {
+      "id": "task:qualitative-evidence",
+      "type": "task",
+      "label": "非数值论据绑定原文",
+      "status": "implemented_tested_installed",
+      "doc": "windows-ds01-statements-20261017.md",
+      "section": "DS-01",
+      "commit": "72d8e3631fb2d872b38c5c977d7f5049d56e60b8",
+      "scope": "Futures qualitative statements with task-scoped retained quotes; structure and source review only, not semantic truth or DS-03 research acceptance"
+    },
+    {
+      "id": "evidence:windows-ds01-statements-20261017",
+      "type": "evidence_document",
+      "label": "DS-01 非数值论据实现、复核、安装与实机检查",
+      "doc": "windows-ds01-statements-20261017.md"
+    },
+    {
+      "id": "evidence:windows-ds03-inventory-20261017",
+      "type": "evidence_document",
+      "label": "DS-03 库存/合同真实四问、两次更正与独立内容复核",
+      "doc": "windows-ds03-inventory-20261017.md"
+    },
+    {
+      "id": "evidence:windows-ds04-ui-browser-20261017",
+      "type": "evidence_document",
+      "label": "DS-04 中台/业务 Web 浏览器矩阵、入口修复与跟进项",
+      "doc": "windows-ds04-ui-browser-20261017.md"
+    },
+    {
+      "id": "evidence:windows-ds05-access-retirement-20261017",
+      "type": "evidence_document",
+      "label": "DS-05 正式执行域权限收缩、Telemetry inbox 与撤权后进程检查",
+      "doc": "windows-ds05-access-retirement-20261017.md"
+    },
+    {
+      "id": "evidence:windows-ds08-restore-20261017",
+      "type": "evidence_document",
+      "label": "DS-08 最终备份与隔离 PostgreSQL 恢复",
+      "doc": "windows-ds08-restore-20261017.md"
+    },
+    {
+      "id": "evidence:windows-ds06-storage-lifecycle-20261017",
+      "type": "evidence_document",
+      "label": "DS-06 真实笔记生命周期与 Windows 长历史 Compact/重放测量",
+      "doc": "windows-ds06-storage-lifecycle-20261017.md"
+    },
+    {
+      "id": "evidence:windows-ds07-platform-load-20261017",
+      "type": "evidence_document",
+      "label": "DS-07 撤权后 8 并发合成任务与 PostgreSQL/进程资源快照",
+      "doc": "windows-ds07-platform-load-20261017.md"
+    },
+    {
+      "id": "evidence:windows-local-acceptance-20261017",
+      "type": "evidence_document",
+      "label": "Windows 本机集中验收扫描（非 GitHub Actions）",
+      "doc": "windows-local-acceptance-20261017.md"
+    },
+    {
+      "id": "task:finalization-recovery",
+      "type": "task",
+      "label": "未就绪草稿提前结束",
+      "status": "installed_owner_windows",
+      "doc": "windows-ds02-finalization-investigation-20261017.md",
+      "section": "DS-02",
+      "commit": "c5d4e4e2d5d159557d3bb77b8bf895ee0597bda1",
+      "scope": "Harness guarded-v7 single continuation plus Runtime/Worker/Console dual v6/v7 release installed on the owner Windows; default v7, v6 recovery retained. DS-03 real four-question task passed on v7 with independent content review ACCEPT; v6 recovery action and fault replay remain."
+    },
+    {
+      "id": "evidence:windows-ds02-finalization-investigation-20261017",
+      "type": "evidence_document",
+      "label": "DS-02 未就绪草稿提前结束的失败序列与修复方案",
+      "doc": "windows-ds02-finalization-investigation-20261017.md"
+    },
+    {
+      "id": "task:finding-diagnostics",
+      "type": "task",
+      "label": "定位具体资料解读与引用错误",
+      "status": "implemented_tested_installed",
+      "doc": "windows-guarded-release-20261017.md",
+      "commit": "fc080b691bb95f2b78d8fd7890d4dd66efe48974",
+      "scope": "Precise structural diagnostics only; not semantic or full research acceptance"
+    },
+    {
+      "id": "run:guarded-research-20261017",
+      "type": "observed_run",
+      "label": "guarded真实研究，8/12请求失败",
+      "status": "failed",
+      "doc": "windows-guarded-release-20261017.md",
+      "run_id": "2bc11ddab7473a1e2ee29fd499330558",
+      "model_attempts": 8,
+      "attempt_limit": 12,
+      "final_report": false
+    },
+    {
+      "id": "evidence:windows-guarded-release-20261017",
+      "type": "evidence_document",
+      "label": "guarded安装、分层测试、失败及v7诊断回查",
+      "doc": "windows-guarded-release-20261017.md",
+      "scope": "Private receipts stay on owner Windows; public document is an index, not independent re-execution"
+    },
+    {
+      "id": "evidence:deepseek-handoff-20261017",
+      "type": "evidence_document",
+      "label": "DeepSeek最新交接与详细任务",
+      "doc": "deepseek-handoff-20261017.md"
+    }
+  ],
+  "edges": [
+    {
+      "from": "repo:agent-os",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-console",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-futures",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-harness",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-indexer",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-knowledge",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-registry",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-runtime",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-sandbox",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-sdk",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-sources",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-storage",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-telemetry",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-toolhub",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-worker",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "repo:agent-os-console",
+      "relation": "implements",
+      "to": "service:control"
+    },
+    {
+      "from": "repo:agent-os-futures",
+      "relation": "implements",
+      "to": "service:futures"
+    },
+    {
+      "from": "repo:agent-os-registry",
+      "relation": "implements",
+      "to": "service:registry"
+    },
+    {
+      "from": "service:registry",
+      "relation": "owns",
+      "to": "domain:registry"
+    },
+    {
+      "from": "repo:agent-os-runtime",
+      "relation": "implements",
+      "to": "service:runtime"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "owns",
+      "to": "domain:execution"
+    },
+    {
+      "from": "repo:agent-os-worker",
+      "relation": "implements",
+      "to": "service:worker"
+    },
+    {
+      "from": "service:worker",
+      "relation": "participates_in",
+      "to": "domain:execution"
+    },
+    {
+      "from": "repo:agent-os-toolhub",
+      "relation": "implements",
+      "to": "service:toolhub"
+    },
+    {
+      "from": "service:toolhub",
+      "relation": "owns",
+      "to": "domain:toolhub"
+    },
+    {
+      "from": "repo:agent-os-knowledge",
+      "relation": "implements",
+      "to": "service:knowledge"
+    },
+    {
+      "from": "service:knowledge",
+      "relation": "owns",
+      "to": "domain:knowledge"
+    },
+    {
+      "from": "repo:agent-os-indexer",
+      "relation": "implements",
+      "to": "service:indexer"
+    },
+    {
+      "from": "service:indexer",
+      "relation": "participates_in",
+      "to": "domain:knowledge"
+    },
+    {
+      "from": "repo:agent-os-storage",
+      "relation": "implements",
+      "to": "service:storage"
+    },
+    {
+      "from": "service:storage",
+      "relation": "owns",
+      "to": "domain:storage"
+    },
+    {
+      "from": "repo:agent-os-sources",
+      "relation": "implements",
+      "to": "service:sources"
+    },
+    {
+      "from": "service:sources",
+      "relation": "owns",
+      "to": "domain:sources"
+    },
+    {
+      "from": "repo:agent-os-sandbox",
+      "relation": "implements",
+      "to": "service:sandbox"
+    },
+    {
+      "from": "service:sandbox",
+      "relation": "owns",
+      "to": "domain:sandbox"
+    },
+    {
+      "from": "repo:agent-os-telemetry",
+      "relation": "implements",
+      "to": "service:telemetry"
+    },
+    {
+      "from": "service:telemetry",
+      "relation": "owns",
+      "to": "domain:telemetry"
+    },
+    {
+      "from": "service:worker",
+      "relation": "consumes_fixed_protocol",
+      "to": "service:runtime",
+      "note": "runtime-execution-v1，v0.1.0-rc.5；包 pin 见 repositories.json"
+    },
+    {
+      "from": "service:indexer",
+      "relation": "consumes_fixed_protocol",
+      "to": "service:knowledge",
+      "note": "knowledge-indexing-v1，v0.1.0-rc.1；包 pin 见 repositories.json"
+    },
+    {
+      "from": "service:control",
+      "relation": "depends_on",
+      "to": "service:registry"
+    },
+    {
+      "from": "service:control",
+      "relation": "depends_on",
+      "to": "service:runtime"
+    },
+    {
+      "from": "service:control",
+      "relation": "depends_on",
+      "to": "service:knowledge"
+    },
+    {
+      "from": "service:control",
+      "relation": "depends_on",
+      "to": "service:toolhub"
+    },
+    {
+      "from": "service:futures",
+      "relation": "depends_on",
+      "to": "service:registry"
+    },
+    {
+      "from": "service:futures",
+      "relation": "depends_on",
+      "to": "service:runtime"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "depends_on",
+      "to": "service:storage"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "depends_on",
+      "to": "service:toolhub"
+    },
+    {
+      "from": "service:sandbox",
+      "relation": "depends_on",
+      "to": "service:runtime"
+    },
+    {
+      "from": "service:telemetry",
+      "relation": "depends_on",
+      "to": "service:runtime"
+    },
+    {
+      "from": "repo:agent-os-harness",
+      "relation": "implements",
+      "to": "engine:dsh"
+    },
+    {
+      "from": "service:worker",
+      "relation": "uses",
+      "to": "engine:dsh"
+    },
+    {
+      "from": "engine:dsh",
+      "relation": "persists_in",
+      "to": "domain:execution"
+    },
+    {
+      "from": "service:registry",
+      "relation": "registers",
+      "to": "resource:agent"
+    },
+    {
+      "from": "service:registry",
+      "relation": "registers",
+      "to": "resource:prompt"
+    },
+    {
+      "from": "service:toolhub",
+      "relation": "registers",
+      "to": "resource:skill"
+    },
+    {
+      "from": "service:toolhub",
+      "relation": "registers",
+      "to": "resource:mcp"
+    },
+    {
+      "from": "service:registry",
+      "relation": "registers",
+      "to": "resource:knowledge-base"
+    },
+    {
+      "from": "resource:agent",
+      "relation": "binds",
+      "to": "resource:prompt",
+      "note": "固定具体版本；登记不自动等于执行权限"
+    },
+    {
+      "from": "resource:agent",
+      "relation": "binds",
+      "to": "resource:skill",
+      "note": "固定具体版本；登记不自动等于执行权限"
+    },
+    {
+      "from": "resource:agent",
+      "relation": "binds",
+      "to": "resource:mcp",
+      "note": "固定具体版本；登记不自动等于执行权限"
+    },
+    {
+      "from": "resource:agent",
+      "relation": "binds",
+      "to": "resource:knowledge-base",
+      "note": "固定具体版本；登记不自动等于执行权限"
+    },
+    {
+      "from": "state:model-context",
+      "relation": "derived_from",
+      "to": "domain:execution"
+    },
+    {
+      "from": "state:working-state",
+      "relation": "persists_in",
+      "to": "domain:execution"
+    },
+    {
+      "from": "state:receipts",
+      "relation": "persists_in",
+      "to": "domain:execution"
+    },
+    {
+      "from": "state:source-material",
+      "relation": "persists_in",
+      "to": "domain:knowledge"
+    },
+    {
+      "from": "state:artifacts",
+      "relation": "persists_in",
+      "to": "domain:storage"
+    },
+    {
+      "from": "state:notes",
+      "relation": "persists_in",
+      "to": "domain:execution"
+    },
+    {
+      "from": "state:cache",
+      "relation": "derived_from",
+      "to": "domain:execution"
+    },
+    {
+      "from": "state:source-material",
+      "relation": "persists_in",
+      "to": "domain:sources",
+      "note": "采集回执与原响应；导入资料与引用以具体 Owner 协议为准"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "phase:P0"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "phase:P1"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "phase:P2"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "phase:P2.5"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "phase:P3"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "phase:P4"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "phase:P5"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W01"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W02"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W03"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W04"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W05"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W06"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W07"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W08"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W09"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W10"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W11"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W12"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W13"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "acceptance:W14"
+    },
+    {
+      "from": "service:registry",
+      "relation": "supports",
+      "to": "capability:agent-config"
+    },
+    {
+      "from": "service:control",
+      "relation": "supports",
+      "to": "capability:agent-config"
+    },
+    {
+      "from": "capability:agent-config",
+      "relation": "constrained_by",
+      "to": "acceptance:W03"
+    },
+    {
+      "from": "service:toolhub",
+      "relation": "supports",
+      "to": "capability:toolhub"
+    },
+    {
+      "from": "service:control",
+      "relation": "supports",
+      "to": "capability:toolhub"
+    },
+    {
+      "from": "capability:toolhub",
+      "relation": "constrained_by",
+      "to": "acceptance:W04"
+    },
+    {
+      "from": "service:sources",
+      "relation": "supports",
+      "to": "capability:knowledge"
+    },
+    {
+      "from": "service:knowledge",
+      "relation": "supports",
+      "to": "capability:knowledge"
+    },
+    {
+      "from": "service:indexer",
+      "relation": "supports",
+      "to": "capability:knowledge"
+    },
+    {
+      "from": "service:storage",
+      "relation": "supports",
+      "to": "capability:knowledge"
+    },
+    {
+      "from": "service:control",
+      "relation": "supports",
+      "to": "capability:knowledge"
+    },
+    {
+      "from": "capability:knowledge",
+      "relation": "constrained_by",
+      "to": "acceptance:W05"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "supports",
+      "to": "capability:execution"
+    },
+    {
+      "from": "service:worker",
+      "relation": "supports",
+      "to": "capability:execution"
+    },
+    {
+      "from": "capability:execution",
+      "relation": "constrained_by",
+      "to": "acceptance:W07"
+    },
+    {
+      "from": "capability:execution",
+      "relation": "constrained_by",
+      "to": "acceptance:W10"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "supports",
+      "to": "capability:storage-lifecycle"
+    },
+    {
+      "from": "service:worker",
+      "relation": "supports",
+      "to": "capability:storage-lifecycle"
+    },
+    {
+      "from": "service:storage",
+      "relation": "supports",
+      "to": "capability:storage-lifecycle"
+    },
+    {
+      "from": "capability:storage-lifecycle",
+      "relation": "constrained_by",
+      "to": "acceptance:W08"
+    },
+    {
+      "from": "capability:storage-lifecycle",
+      "relation": "constrained_by",
+      "to": "acceptance:W09"
+    },
+    {
+      "from": "capability:storage-lifecycle",
+      "relation": "constrained_by",
+      "to": "acceptance:W14"
+    },
+    {
+      "from": "service:futures",
+      "relation": "supports",
+      "to": "capability:research"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "supports",
+      "to": "capability:research"
+    },
+    {
+      "from": "service:worker",
+      "relation": "supports",
+      "to": "capability:research"
+    },
+    {
+      "from": "service:knowledge",
+      "relation": "supports",
+      "to": "capability:research"
+    },
+    {
+      "from": "service:sources",
+      "relation": "supports",
+      "to": "capability:research"
+    },
+    {
+      "from": "capability:research",
+      "relation": "constrained_by",
+      "to": "acceptance:W06"
+    },
+    {
+      "from": "service:control",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:registry",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:worker",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:knowledge",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:indexer",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:storage",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:sources",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:sandbox",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:telemetry",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:toolhub",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "service:futures",
+      "relation": "supports",
+      "to": "capability:operations"
+    },
+    {
+      "from": "capability:operations",
+      "relation": "constrained_by",
+      "to": "acceptance:W01"
+    },
+    {
+      "from": "capability:operations",
+      "relation": "constrained_by",
+      "to": "acceptance:W02"
+    },
+    {
+      "from": "capability:operations",
+      "relation": "constrained_by",
+      "to": "acceptance:W11"
+    },
+    {
+      "from": "service:control",
+      "relation": "supports",
+      "to": "capability:ui"
+    },
+    {
+      "from": "service:futures",
+      "relation": "supports",
+      "to": "capability:ui"
+    },
+    {
+      "from": "capability:ui",
+      "relation": "constrained_by",
+      "to": "acceptance:W13"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "part_of",
+      "to": "phase:P5"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "affects",
+      "to": "service:worker"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "constrained_by",
+      "to": "acceptance:W06"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "part_of",
+      "to": "phase:P5"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "affects",
+      "to": "service:knowledge"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "affects",
+      "to": "service:sources"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "constrained_by",
+      "to": "acceptance:W06"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "part_of",
+      "to": "phase:P3"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "affects",
+      "to": "service:control"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "constrained_by",
+      "to": "acceptance:W03"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "constrained_by",
+      "to": "acceptance:W13"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "part_of",
+      "to": "phase:P2"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:control"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:registry"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:worker"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:toolhub"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:knowledge"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:indexer"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:storage"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:sources"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:sandbox"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "affects",
+      "to": "service:telemetry"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "constrained_by",
+      "to": "acceptance:W02"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "constrained_by",
+      "to": "acceptance:W12"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "part_of",
+      "to": "phase:P2.5"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "affects",
+      "to": "service:worker"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "affects",
+      "to": "service:storage"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "constrained_by",
+      "to": "acceptance:W08"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "constrained_by",
+      "to": "acceptance:W09"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "constrained_by",
+      "to": "acceptance:W14"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "part_of",
+      "to": "phase:P4"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "affects",
+      "to": "service:worker"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "affects",
+      "to": "service:storage"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "affects",
+      "to": "service:sandbox"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "affects",
+      "to": "service:telemetry"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "affects",
+      "to": "service:knowledge"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "constrained_by",
+      "to": "acceptance:W07"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "constrained_by",
+      "to": "acceptance:W08"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "constrained_by",
+      "to": "acceptance:W10"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "constrained_by",
+      "to": "acceptance:W12"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "constrained_by",
+      "to": "acceptance:W14"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "part_of",
+      "to": "phase:P4"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:control"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:registry"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:worker"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:toolhub"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:knowledge"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:indexer"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:storage"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:sources"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:sandbox"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "affects",
+      "to": "service:telemetry"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "constrained_by",
+      "to": "acceptance:W11"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "part_of",
+      "to": "phase:P4"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "documented_by",
+      "to": "evidence:windows-local-acceptance-20261017"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:control"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:registry"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:worker"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:toolhub"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:knowledge"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:indexer"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:storage"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:sources"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:sandbox"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "affects",
+      "to": "service:telemetry"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W01"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W02"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W03"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W04"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W05"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W06"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W07"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W08"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W09"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W10"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W11"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W12"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W13"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "constrained_by",
+      "to": "acceptance:W14"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "part_of",
+      "to": "phase:P1"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:control"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:registry"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:worker"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:toolhub"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:knowledge"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:indexer"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:storage"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:sources"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:sandbox"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "affects",
+      "to": "service:telemetry"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "constrained_by",
+      "to": "acceptance:W01"
+    },
+    {
+      "from": "task:fresh-windows-bootstrap",
+      "relation": "constrained_by",
+      "to": "acceptance:W02"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "affects",
+      "to": "repo:agent-os",
+      "note": "packs 与实际 Registry 资源版本须分别核对"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "affects",
+      "to": "repo:agent-os"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "affects",
+      "to": "engine:dsh"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "depends_on",
+      "to": "task:research-completion"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "depends_on",
+      "to": "task:research-quality"
+    },
+    {
+      "from": "task:final-ci",
+      "relation": "depends_on",
+      "to": "task:latest-recovery"
+    },
+    {
+      "from": "capability:research",
+      "relation": "documented_by",
+      "to": "evidence:drafts"
+    },
+    {
+      "from": "capability:knowledge",
+      "relation": "documented_by",
+      "to": "evidence:capture"
+    },
+    {
+      "from": "capability:execution",
+      "relation": "documented_by",
+      "to": "evidence:source-engine"
+    },
+    {
+      "from": "capability:storage-lifecycle",
+      "relation": "documented_by",
+      "to": "evidence:resident"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "documented_by",
+      "to": "evidence:retirement"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:windows-ds07-platform-load-20261017"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "documented_by",
+      "to": "evidence:windows-ds06-storage-lifecycle-20261017"
+    },
+    {
+      "from": "task:latest-recovery",
+      "relation": "documented_by",
+      "to": "evidence:windows-ds08-restore-20261017"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "documented_by",
+      "to": "evidence:windows-ds05-access-retirement-20261017"
+    },
+    {
+      "from": "capability:ui",
+      "relation": "documented_by",
+      "to": "evidence:ui"
+    },
+    {
+      "from": "phase:P1",
+      "relation": "documented_by",
+      "to": "evidence:recovery"
+    },
+    {
+      "from": "run:research-20261014",
+      "relation": "documents_failure_of",
+      "to": "capability:research"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "addresses",
+      "to": "run:research-20261014"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "addresses",
+      "to": "run:research-20261014"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "constraint:secrets"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "constraint:cost"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "constrained_by",
+      "to": "constraint:research"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "deferred:ha"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "deferred:capacity"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "deferred:commodities"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "development_environment",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "historical_deployment_environment",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "future_target_environment",
+      "to": "environment:future-linux"
+    },
+    {
+      "from": "service:control",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:futures",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:registry",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:worker",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:toolhub",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:knowledge",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:indexer",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:storage",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:sources",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:sandbox",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "service:telemetry",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "run:research-20261014",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "documented_by",
+      "to": "evidence:macos-development-20261015"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "documented_by",
+      "to": "evidence:macos-development-20261015"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "documented_by",
+      "to": "evidence:macos-development-20261015"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:macos-development-20261015"
+    },
+    {
+      "from": "acceptance:W14",
+      "relation": "documented_by",
+      "to": "evidence:macos-development-20261015"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "documented_by",
+      "to": "evidence:macos-research-and-storage-20261015"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "documented_by",
+      "to": "evidence:macos-research-and-storage-20261015"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "documented_by",
+      "to": "evidence:macos-research-and-storage-20261015"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "documented_by",
+      "to": "evidence:macos-research-and-storage-20261015"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:macos-research-and-storage-20261015"
+    },
+    {
+      "from": "acceptance:W03",
+      "relation": "documented_by",
+      "to": "evidence:macos-research-and-storage-20261015"
+    },
+    {
+      "from": "acceptance:W08",
+      "relation": "documented_by",
+      "to": "evidence:macos-research-and-storage-20261015"
+    },
+    {
+      "from": "acceptance:W13",
+      "relation": "documented_by",
+      "to": "evidence:macos-research-and-storage-20261015"
+    },
+    {
+      "from": "acceptance:W14",
+      "relation": "documented_by",
+      "to": "evidence:macos-research-and-storage-20261015"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "documented_by",
+      "to": "evidence:native-storage-reply-loss-20261015"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "documented_by",
+      "to": "evidence:native-storage-reply-loss-20261015"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:native-storage-reply-loss-20261015"
+    },
+    {
+      "from": "acceptance:W08",
+      "relation": "documented_by",
+      "to": "evidence:native-storage-reply-loss-20261015"
+    },
+    {
+      "from": "acceptance:W14",
+      "relation": "documented_by",
+      "to": "evidence:native-storage-reply-loss-20261015"
+    },
+    {
+      "from": "evidence:macos-research-and-storage-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "evidence:native-storage-reply-loss-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "run:macos-synthetic-research-20261015-initial",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "run:macos-synthetic-research-20261015-format-v5",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "run:macos-synthetic-research-20261015-initial",
+      "relation": "documented_by",
+      "to": "evidence:macos-research-and-storage-20261015"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "addresses",
+      "to": "run:macos-synthetic-research-20261015-initial"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "addresses",
+      "to": "run:macos-synthetic-research-20261015-initial"
+    },
+    {
+      "from": "run:macos-synthetic-research-20261015-format-v5",
+      "relation": "documented_by",
+      "to": "evidence:macos-research-and-storage-20261015"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "addresses",
+      "to": "run:macos-synthetic-research-20261015-format-v5"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "addresses",
+      "to": "run:macos-synthetic-research-20261015-format-v5"
+    },
+    {
+      "from": "evidence:macos-package-enospc-and-answer-contract-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "evidence:storage-enospc-macos-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "run:macos-synthetic-research-20261015-answer-contract",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "run:macos-synthetic-research-20261015-answer-contract",
+      "relation": "documented_by",
+      "to": "evidence:macos-package-enospc-and-answer-contract-20261015"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "documented_by",
+      "to": "evidence:macos-package-enospc-and-answer-contract-20261015"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "documented_by",
+      "to": "evidence:macos-package-enospc-and-answer-contract-20261015"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "documented_by",
+      "to": "evidence:macos-package-enospc-and-answer-contract-20261015"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "addresses",
+      "to": "run:macos-synthetic-research-20261015-answer-contract"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "addresses",
+      "to": "run:macos-synthetic-research-20261015-answer-contract"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "documented_by",
+      "to": "evidence:storage-enospc-macos-20261015"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:storage-enospc-macos-20261015"
+    },
+    {
+      "from": "evidence:runtime-owner-enospc-macos-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "documented_by",
+      "to": "evidence:runtime-owner-enospc-macos-20261015"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:runtime-owner-enospc-macos-20261015"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "documented_by",
+      "to": "evidence:runtime-owner-enospc-macos-20261015"
+    },
+    {
+      "from": "evidence:macos-research-verification-and-ui-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "documented_by",
+      "to": "evidence:macos-research-verification-and-ui-20261015"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "documented_by",
+      "to": "evidence:macos-research-verification-and-ui-20261015"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "documented_by",
+      "to": "evidence:macos-research-verification-and-ui-20261015"
+    },
+    {
+      "from": "evidence:macos-telemetry-owner-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "documented_by",
+      "to": "evidence:macos-telemetry-owner-20261015"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:macos-telemetry-owner-20261015"
+    },
+    {
+      "from": "service:telemetry",
+      "relation": "documented_by",
+      "to": "evidence:macos-telemetry-owner-20261015"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "documented_by",
+      "to": "evidence:macos-telemetry-owner-20261015"
+    },
+    {
+      "from": "evidence:macos-native-notes-and-unknown-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "documented_by",
+      "to": "evidence:macos-native-notes-and-unknown-20261015"
+    },
+    {
+      "from": "service:worker",
+      "relation": "documented_by",
+      "to": "evidence:macos-native-notes-and-unknown-20261015"
+    },
+    {
+      "from": "service:storage",
+      "relation": "documented_by",
+      "to": "evidence:macos-native-notes-and-unknown-20261015"
+    },
+    {
+      "from": "engine:dsh",
+      "relation": "documented_by",
+      "to": "evidence:macos-native-notes-and-unknown-20261015"
+    },
+    {
+      "from": "task:service-retirement",
+      "relation": "documented_by",
+      "to": "evidence:macos-native-notes-and-unknown-20261015"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "documented_by",
+      "to": "evidence:macos-native-notes-and-unknown-20261015"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:macos-native-notes-and-unknown-20261015"
+    },
+    {
+      "from": "acceptance:W09",
+      "relation": "documented_by",
+      "to": "evidence:macos-native-notes-and-unknown-20261015"
+    },
+    {
+      "from": "acceptance:W10",
+      "relation": "documented_by",
+      "to": "evidence:macos-native-notes-and-unknown-20261015"
+    },
+    {
+      "from": "acceptance:W14",
+      "relation": "documented_by",
+      "to": "evidence:macos-native-notes-and-unknown-20261015"
+    },
+    {
+      "from": "evidence:macos-console-native-and-state-recovery-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "service:control",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
+    },
+    {
+      "from": "engine:dsh",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
+    },
+    {
+      "from": "acceptance:W10",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
+    },
+    {
+      "from": "acceptance:W13",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
+    },
+    {
+      "from": "acceptance:W14",
+      "relation": "documented_by",
+      "to": "evidence:macos-console-native-and-state-recovery-20261015"
+    },
+    {
+      "from": "evidence:macos-continuation-preview-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-preview-20261015"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-preview-20261015"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-preview-20261015"
+    },
+    {
+      "from": "acceptance:W10",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-preview-20261015"
+    },
+    {
+      "from": "evidence:macos-native-attempt-revision-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "documented_by",
+      "to": "evidence:macos-native-attempt-revision-20261015"
+    },
+    {
+      "from": "service:worker",
+      "relation": "documented_by",
+      "to": "evidence:macos-native-attempt-revision-20261015"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "documented_by",
+      "to": "evidence:macos-native-attempt-revision-20261015"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:macos-native-attempt-revision-20261015"
+    },
+    {
+      "from": "acceptance:W10",
+      "relation": "documented_by",
+      "to": "evidence:macos-native-attempt-revision-20261015"
+    },
+    {
+      "from": "evidence:macos-continuation-action-20261015",
+      "relation": "observed_in",
+      "to": "environment:maintainer-macos"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-action-20261015"
+    },
+    {
+      "from": "service:control",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-action-20261015"
+    },
+    {
+      "from": "task:continuation-ui",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-action-20261015"
+    },
+    {
+      "from": "task:faults-and-resources",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-action-20261015"
+    },
+    {
+      "from": "task:storage-lifecycle",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-action-20261015"
+    },
+    {
+      "from": "acceptance:W10",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-action-20261015"
+    },
+    {
+      "from": "acceptance:W13",
+      "relation": "documented_by",
+      "to": "evidence:macos-continuation-action-20261015"
+    },
+    {
+      "from": "engine:guarded-v6",
+      "relation": "part_of",
+      "to": "engine:dsh"
+    },
+    {
+      "from": "engine:guarded-v6",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "repo:agent-os-harness",
+      "relation": "implements",
+      "to": "engine:guarded-v6"
+    },
+    {
+      "from": "run:guarded-research-20261017",
+      "relation": "uses",
+      "to": "engine:guarded-v6"
+    },
+    {
+      "from": "run:guarded-research-20261017",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "run:guarded-research-20261017",
+      "relation": "documented_by",
+      "to": "evidence:windows-guarded-release-20261017"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "task:qualitative-evidence"
+    },
+    {
+      "from": "task:qualitative-evidence",
+      "relation": "addresses",
+      "to": "run:guarded-research-20261017"
+    },
+    {
+      "from": "task:qualitative-evidence",
+      "relation": "documented_by",
+      "to": "evidence:windows-ds01-statements-20261017"
+    },
+    {
+      "from": "evidence:windows-ds01-statements-20261017",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "task:finalization-recovery"
+    },
+    {
+      "from": "task:finalization-recovery",
+      "relation": "addresses",
+      "to": "run:guarded-research-20261017"
+    },
+    {
+      "from": "task:finalization-recovery",
+      "relation": "documented_by",
+      "to": "evidence:windows-ds02-finalization-investigation-20261017"
+    },
+    {
+      "from": "evidence:windows-ds02-finalization-investigation-20261017",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
+    },
+    {
+      "from": "project:agent-platform",
+      "relation": "tracks",
+      "to": "task:finding-diagnostics"
+    },
+    {
+      "from": "task:finding-diagnostics",
+      "relation": "addresses",
+      "to": "run:guarded-research-20261017"
+    },
+    {
+      "from": "task:finding-diagnostics",
+      "relation": "documented_by",
+      "to": "evidence:deepseek-handoff-20261017"
+    },
+    {
+      "from": "task:qualitative-evidence",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:finding-diagnostics",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:finalization-recovery",
+      "relation": "affects",
+      "to": "engine:guarded-v6"
+    },
+    {
+      "from": "task:finalization-recovery",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:finalization-recovery",
+      "relation": "affects",
+      "to": "service:worker"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "depends_on",
+      "to": "task:qualitative-evidence"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "depends_on",
+      "to": "task:finalization-recovery"
+    },
+    {
+      "from": "task:research-quality",
+      "relation": "documented_by",
+      "to": "evidence:windows-guarded-release-20261017"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "depends_on",
+      "to": "task:qualitative-evidence"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "depends_on",
+      "to": "task:finalization-recovery"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "documented_by",
+      "to": "evidence:windows-guarded-release-20261017"
+    }
+  ],
+  "environment_policy": {
+    "file": "environments.json",
+    "default_execution_environment": null,
+    "current_execution_record": "windows-final-ci-20261018.md",
+    "updated_at": "2026-10-17",
+    "rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets."
+  },
+  "current_execution_record": "windows-ds08-restore-20261017.md"
+}

@@ -90,7 +90,7 @@ func (m *MCPClient) RPC(ctx context.Context, method string, params any, notify b
 			}
 			b := []byte(strings.Join(data, "\n"))
 			var obj map[string]json.RawMessage
-			if json.Unmarshal(b, &obj) == nil && obj["id"] != nil {
+			if json.Unmarshal(b, &obj) == nil && string(obj["id"]) == "1" {
 				found = b
 			}
 			data = nil
@@ -113,11 +113,16 @@ func (m *MCPClient) RPC(ctx context.Context, method string, params any, notify b
 		raw = found
 	}
 	var msg struct {
-		Result json.RawMessage `json:"result"`
-		Error  json.RawMessage `json:"error"`
+		Version string          `json:"jsonrpc"`
+		ID      json.RawMessage `json:"id"`
+		Result  json.RawMessage `json:"result"`
+		Error   json.RawMessage `json:"error"`
 	}
 	if e = json.Unmarshal(raw, &msg); e != nil {
 		return nil, e
+	}
+	if msg.Version != "2.0" || string(msg.ID) != "1" {
+		return nil, errors.New("MCP response version or request id mismatch")
 	}
 	if len(msg.Error) > 0 && string(msg.Error) != "null" {
 		return nil, fmt.Errorf("MCP protocol error: %s", msg.Error)

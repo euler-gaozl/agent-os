@@ -1,9 +1,12 @@
 services:
+  migrate:
+    environment:
+      LANGFUSE_URL: http://fixture:8111
   runtime:
-    cpus: 0.05
+    cpus: 0.04
     deploy: {replicas: 2}
   toolhub:
-    cpus: 0.05
+    cpus: 0.04
     deploy: {replicas: 2}
   fixture:
     image: node:24-alpine

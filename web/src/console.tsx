@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { Answer } from "./markdown";
+import { CatalogPager, useBindingCatalog } from "./catalog";
 import {
   Activity,
   ArrowLeft,
@@ -16,7 +18,7 @@ import {
   KeyRound,
   Layers,
   Link2,
-  MoreHorizontal,
+  Menu,
   Network,
   PanelRightOpen,
   Play,
@@ -45,15 +47,20 @@ import {
   Spinner,
   type Ref,
   type Resource,
+  type CatalogPage,
+  resourceDetail,
 } from "./shared";
 import "./console.css";
+import "./console-layout.css";
 import { ToolGovernance } from "./tool-governance";
+import { Notes } from "./notes";
 
-type Page = "agents" | "tools" | "knowledge" | "runs" | "services" | "settings";
+type Page = "agents" | "tools" | "knowledge" | "notes" | "runs" | "services" | "settings";
 const nav = [
   { id: "agents", name: "自定义 Agent", icon: Bot },
   { id: "tools", name: "ToolHub", icon: Box },
   { id: "knowledge", name: "知识库", icon: BookOpen },
+  { id: "notes", name: "工作记忆", icon: FileText },
   { id: "runs", name: "运行记录", icon: Activity },
   { id: "services", name: "服务与实例", icon: Network },
 ];
@@ -65,15 +72,19 @@ const blankAgent = () => ({
   connectors: [],
   knowledge: [],
   child_agents: [],
-  tools: ["knowledge_search", "note_save", "artifact_read", "document_read"],
+  tools: ["knowledge_search", "note_save", "artifact_read", "document_read", "run_recall"],
   model: {
     base_url: "https://api.deepseek.com",
     model: "deepseek-flash",
     key_env: "DEEPSEEK_API_KEY",
+    thinking: "disabled",
+    max_tokens: 4096,
   },
   publication: { enabled: false, app: "futures", name: "", description: "" },
   constraints: [],
   max_steps: 12,
+  max_model_attempts: 40,
+  model_token_budget: 200000,
   context_bytes: 64000,
   context_tokens: 32000,
   max_children: 2,
@@ -91,24 +102,108 @@ function Console() {
       kind: string;
       resource?: Resource;
     } | null>(null),
-    [search, setSearch] = useState("");
+    [search, setSearch] = useState(""),
+    [toolKind, setToolKind] = useState("skill"),
+    [cursors, setCursors] = useState<string[]>([""]),
+    [nextCursor, setNextCursor] = useState(""),
+    [mobileNav, setMobileNav] = useState(false),
+    [publicationFilter, setPublicationFilter] = useState("all"),
+    [catalogLoading, setCatalogLoading] = useState(true);
+  const after = cursors[cursors.length - 1];
+  const kind =
+    page === "tools" ? toolKind : page === "knowledge" ? "knowledge" : "agent";
+  const catalogIdentity = JSON.stringify([kind, search, after]);
+  const currentCatalog = useRef(catalogIdentity);
+  currentCatalog.current = catalogIdentity;
+  const requestVersion = useRef(0);
+  // Navigation and explicit open intents own the editor session. Saving a new
+  // revision must not remount the active editor or discard its trial run.
+  const resourceRequest = useRef(0);
+  const [editorSession, setEditorSession] = useState(0);
+  const [dialogSession, setDialogSession] = useState(0);
+  const openEditor = async (resource: Resource | null) => {
+    const version = ++resourceRequest.current;
+    try {
+      const full = resource ? await resourceDetail(resource) : null;
+      if (version !== resourceRequest.current) return;
+      setEditorSession(version);
+      setEditor(full);
+    } catch (e) {
+      if (version === resourceRequest.current) setNotice((e as Error).message);
+    }
+  };
+  const openDialog = async (kind: string, resource?: Resource) => {
+    const version = ++resourceRequest.current;
+    try {
+      const full = resource ? await resourceDetail(resource) : undefined;
+      if (version !== resourceRequest.current) return;
+      setDialogSession(version);
+      setDialog({ kind, resource: full });
+    } catch (e) {
+      if (version === resourceRequest.current) setNotice((e as Error).message);
+    }
+  };
   const load = useCallback(async () => {
+    if (currentCatalog.current !== catalogIdentity) return;
+    const version = ++requestVersion.current;
     const [r, run, st] = await Promise.allSettled([
-      api<{items:Resource[];services:Record<string,boolean>}>("/resources"),
+      api<CatalogPage>(
+        "/catalog?" + new URLSearchParams({ kind, q: search, after }),
+      ),
       api<any[]>("/runs"),
       api<any>("/status"),
     ]);
-    if([r,run,st].some(x=>x.status==="rejected" && x.reason?.status===401)){setReady(false);setError("请使用管理访问令牌登录。");return;}
-    const failures:string[]=[];
-    if(r.status==="fulfilled") {setResources(r.value.items); for(const [name,ok] of Object.entries(r.value.services)) if(!ok) failures.push(name);} else failures.push("资源目录");
-    if(run.status==="fulfilled") setRuns(run.value); else failures.push("运行记录");
-    if(st.status==="fulfilled") setStatus(st.value); else failures.push("服务状态");
+    if (
+      version !== requestVersion.current ||
+      currentCatalog.current !== catalogIdentity
+    )
+      return;
+    if (
+      [r, run, st].some(
+        (x) => x.status === "rejected" && x.reason?.status === 401,
+      )
+    ) {
+      setReady(false);
+      setError("请使用管理访问令牌登录。");
+      return;
+    }
+    const failures: string[] = [];
+    if (r.status === "fulfilled") {
+      setResources(r.value.items);
+      setNextCursor(r.value.next_cursor);
+      for (const [name, ok] of Object.entries(r.value.services))
+        if (!ok) failures.push(name);
+    } else {
+      failures.push("资源目录");
+      setNextCursor("");
+    }
+    if (run.status === "fulfilled") setRuns(run.value);
+    else failures.push("运行记录");
+    if (st.status === "fulfilled") setStatus(st.value);
+    else failures.push("服务状态");
     setReady(true);
-    setError(failures.length ? failures.join("、")+" 暂不可用；其他服务仍可使用。" : "");
-  }, []);
+    setCatalogLoading(false);
+    setError(
+      failures.length
+        ? failures.join("、") + " 暂不可用；其他服务仍可使用。"
+        : "",
+    );
+  }, [kind, search, after, catalogIdentity]);
+  const searchCatalog = (q: string) => {
+    requestVersion.current++;
+    setCatalogLoading(true);
+    setSearch(q);
+    setCursors([""]);
+    setNextCursor("");
+    setResources([]);
+  };
   const importInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    void load().catch((e) => setError(e.message));
+    const timer = setTimeout(
+      () => void load().catch((e) => setError(e.message)),
+      200,
+    );
+    return () => clearTimeout(timer);
   }, [load]);
   useEffect(() => {
     const id = setInterval(() => void load().catch(() => {}), 7000);
@@ -141,15 +236,32 @@ function Console() {
     );
   }
   const change = (id: Page) => {
+    requestVersion.current++;
+    resourceRequest.current++;
+    setDialog(null);
     setPage(id);
+    setMobileNav(false);
+    setCatalogLoading(true);
     setEditor(undefined);
     setSearch("");
+    setResources([]);
+    setCursors([""]);
+    setNextCursor("");
   };
   const importFile = async (file: File, kind: string) => {
     if (kind === "skill" && file.name.endsWith(".zip")) {
-      const id = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "-") || "imported-skill";
-      await api("/toolhub/assets", { kind, id, spec: { name: id, content: "Bundle SKILL.md" }, bundle: await base64(file) });
-      await load(); notify("Skill 包已登记。请在检测与启停中审阅后启用。"); return;
+      const id =
+        file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "-") ||
+        "imported-skill";
+      await api("/toolhub/assets", {
+        kind,
+        id,
+        spec: { name: id, content: "Bundle SKILL.md" },
+        bundle: await base64(file),
+      });
+      await load();
+      notify("Skill 包已登记。请在检测与启停中审阅后启用。");
+      return;
     }
     const text = await file.text();
     let resource: any;
@@ -175,8 +287,57 @@ function Console() {
     await load();
     notify("资源已导入，并保存为独立版本。");
   };
+  const navigation = (
+    <>
+      {[
+        ["构建", nav.slice(0, 3)],
+        ["运行与维护", nav.slice(3)],
+      ].map(([label, items]) => (
+        <div className="nav-group" key={label as string}>
+          <div className="nav-caption">{label as string}</div>
+          <nav aria-label={label as string}>
+            {(items as typeof nav).map((item) => (
+              <button
+                key={item.id}
+                aria-current={page === item.id ? "page" : undefined}
+                className={page === item.id ? "active" : ""}
+                onClick={() => change(item.id as Page)}
+              >
+                <item.icon size={18} />
+                {item.name}
+              </button>
+            ))}
+          </nav>
+        </div>
+      ))}
+      <div className="nav-group">
+        <div className="nav-caption">工作区</div>
+        <nav aria-label="工作区">
+          <button
+            aria-current={page === "settings" ? "page" : undefined}
+            className={page === "settings" ? "active" : ""}
+            onClick={() => change("settings")}
+          >
+            <Settings2 size={18} />
+            模型与凭证
+          </button>
+        </nav>
+      </div>
+    </>
+  );
+  const agents = resources.filter((r) => r.kind === "agent");
+  const visibleAgents = agents.filter(
+    (r) =>
+      publicationFilter === "all" ||
+      (publicationFilter === "published"
+        ? r.spec.publication?.enabled
+        : !r.spec.publication?.enabled),
+  );
   return (
     <div className="platform-shell">
+      <a className="skip-link" href="#workspace-content">
+        跳转到内容
+      </a>
       <aside className="sidebar">
         <a
           className="brand"
@@ -188,34 +349,18 @@ function Console() {
         >
           <span className="logo-symbol">a</span>
           <span>
-            Agent OS<small>能力中台</small>
+            Agent OS<small>管理工作台</small>
           </span>
         </a>
         <div className="workspace-switch">
-          <span className="workspace-avatar">G</span>
+          <span className="workspace-avatar">
+            <Layers size={17} />
+          </span>
           <div>
-            个人工作空间<small>本地部署</small>
+            个人工作区<small>资源 · 配置 · 执行</small>
           </div>
-          <ChevronRight size={14} />
         </div>
-        <div className="nav-caption">构建与管理</div>
-        <nav>
-          {nav.map((item) => (
-            <button
-              key={item.id}
-              className={page === item.id ? "active" : ""}
-              onClick={() => change(item.id as Page)}
-            >
-              <item.icon size={18} />
-              {item.name}
-              {item.id === "agents" && (
-                <span className="nav-count">
-                  {resources.filter((r) => r.kind === "agent").length}
-                </span>
-              )}
-            </button>
-          ))}
-        </nav>
+        {navigation}
         <div className="sidebar-bottom">
           <div className="nav-caption">业务应用</div>
           <a
@@ -230,27 +375,27 @@ function Console() {
             研序 · 期货研究
             <ArrowUpRight size={14} />
           </a>
-          <button
-            className={page === "settings" ? "active" : ""}
-            onClick={() => change("settings")}
-          >
-            <Settings2 size={18} />
-            模型与凭证
-          </button>
           <div className="profile">
-            <span>G</span>
+            <span>
+              <ShieldCheck size={16} />
+            </span>
             <div>
-              我的工作区
-              <small>
-                <i className="online-dot" /> 服务连接 · v0.5
-              </small>
+              独立服务 · 统一管理
+              <small>Agent OS · v0.6</small>
             </div>
-            <MoreHorizontal size={17} />
           </div>
         </div>
       </aside>
       <div className="main-shell">
         <div className="topbar">
+          <button
+            className="icon-button console-menu"
+            aria-label="展开导航"
+            aria-expanded={mobileNav}
+            onClick={() => setMobileNav(true)}
+          >
+            <Menu size={20} />
+          </button>
           <span>
             工作空间 <ChevronRight size={13} />{" "}
             <b>{nav.find((n) => n.id === page)?.name || "模型与凭证"}</b>
@@ -262,9 +407,7 @@ function Console() {
             )}
           </span>
           <div className="topbar-right">
-            <span className="deployment">
-              <i className="online-dot" /> 本地环境
-            </span>
+            <span className="deployment">工作区管理</span>
             <button
               className="icon-button"
               aria-label="刷新"
@@ -272,48 +415,48 @@ function Console() {
             >
               <RefreshCw size={16} />
             </button>
-            <span className="user-avatar">G</span>
           </div>
         </div>
+        {error && (
+          <div className="connection-banner" role="alert">
+            <span>{error}</span>
+            <button className="text-button" onClick={() => void act(load)}>
+              重试连接
+            </button>
+          </div>
+        )}
         {editor !== undefined ? (
           <AgentEditor
+            key={editorSession}
             resource={editor}
             resources={resources}
-            close={() => setEditor(undefined)}
+            close={() => {
+              resourceRequest.current++;
+              setEditor(undefined);
+            }}
             saved={async (r) => {
               await load();
-              setEditor(r);
+              if (resourceRequest.current === editorSession) setEditor(r);
             }}
             notify={notify}
           />
         ) : (
-          <main className="page-content">
+          <main className="page-content" id="workspace-content" tabIndex={-1}>
             <header className="page-heading">
               <div>
-                <div className="eyebrow">
-                  {
-                    {
-                      agents: "AGENTS",
-                      tools: "CAPABILITY LIBRARY",
-                      knowledge: "KNOWLEDGE",
-                      runs: "OBSERVABILITY",
-                      services: "INFRASTRUCTURE",
-                      settings: "MODEL ACCESS",
-                    }[page]
-                  }
-                </div>
                 <h1>{nav.find((n) => n.id === page)?.name || "模型与凭证"}</h1>
                 <p>
                   {
                     {
                       agents:
-                        "把工作方式变成可复用的 Agent。组合能力，调试，再交给业务使用。",
+                        "定义角色与工作方法，连接工具和资料，调试后发布到业务。",
                       tools:
                         "统一管理 Skill、MCP 与提示词，按版本为 Agent 提供能力。",
                       knowledge:
                         "保留原始资料与出处，为 Agent 提供可追溯的检索服务。",
                       runs: "查看执行结果、调用回执和恢复记录。",
-                      services: "各服务独立运行，共享当前工作区的持久化状态。",
+                      notes: "管理 Agent 留存的事实与工作记忆，查阅原文、有效状态和修订历史。",
+                      services: "查看各服务实例的心跳，以及执行与索引 Worker。",
                       settings: "统一管理模型访问凭证，Agent 通过名称引用。",
                     }[page]
                   }
@@ -341,7 +484,7 @@ function Console() {
                   </button>
                   <button
                     className="button primary"
-                    onClick={() => setEditor(null)}
+                    onClick={() => void openEditor(null)}
                   >
                     <Plus size={16} />
                     创建 Agent
@@ -351,7 +494,7 @@ function Console() {
               {page === "knowledge" && (
                 <button
                   className="button primary"
-                  onClick={() => setDialog({ kind: "knowledge" })}
+                  onClick={() => void openDialog("knowledge")}
                 >
                   <Plus size={16} />
                   创建知识库
@@ -362,12 +505,33 @@ function Console() {
               <>
                 <div className="section-toolbar">
                   <div className="tabs">
-                    <button className="selected">
-                      全部 Agent{" "}
-                      <span>
-                        {resources.filter((r) => r.kind === "agent").length}
-                      </span>
-                    </button>
+                    {[
+                      ["all", "全部"],
+                      ["published", "已发布"],
+                      ["draft", "未发布"],
+                    ].map(([value, label]) => (
+                      <button
+                        key={value}
+                        aria-pressed={publicationFilter === value}
+                        className={
+                          publicationFilter === value ? "selected" : ""
+                        }
+                        onClick={() => setPublicationFilter(value)}
+                      >
+                        {label}
+                        <span>
+                          {
+                            agents.filter(
+                              (r) =>
+                                value === "all" ||
+                                (value === "published"
+                                  ? r.spec.publication?.enabled
+                                  : !r.spec.publication?.enabled),
+                            ).length
+                          }
+                        </span>
+                      </button>
+                    ))}
                   </div>
                   <label className="search-input">
                     <Search size={16} />
@@ -375,58 +539,84 @@ function Console() {
                       aria-label="搜索 Agent"
                       placeholder="搜索 Agent…"
                       value={search}
-                      onChange={(e) => setSearch(e.target.value)}
+                      onChange={(e) => searchCatalog(e.target.value)}
                     />
                   </label>
                 </div>
-                <div className="agent-grid">
-                  {resources
-                    .filter(
-                      (r) =>
-                        r.kind === "agent" &&
-                        (r.spec.name + r.id).includes(search),
-                    )
-                    .map((r, i) => (
-                      <button
-                        className="agent-card"
-                        key={r.id}
-                        onClick={() => setEditor(r)}
-                      >
-                        <div className="card-top">
-                          <span className={"agent-icon color-" + (i % 3)}>
-                            <Bot size={23} />
-                          </span>
-                          <span className="version">v{r.revision}</span>
-                        </div>
-                        <h3>{r.spec.name}</h3>
-                        <p>{r.spec.prompt}</p>
-                        <div className="capability-chips">
-                          <span>
-                            <Box size={12} />
-                            {r.spec.skills?.length || 0} Skill
-                          </span>
-                          <span>
-                            <Link2 size={12} />
-                            {r.spec.connectors?.length || 0} MCP
-                          </span>
-                          <span>
-                            <BookOpen size={12} />
-                            {r.spec.knowledge?.length || 0} 知识库
-                          </span>
-                        </div>
-                        <footer>
-                          <span>
-                            <i className="subtle-dot" />
-                            {r.spec.publication?.enabled ? "已发布 · " : ""}
-                            {r.spec.model.model}
-                          </span>
-                          <ArrowUpRight size={16} />
-                        </footer>
-                      </button>
-                    ))}
+                <div className="catalog-context">
+                  <span>
+                    当前页 ·{" "}
+                    {catalogLoading
+                      ? "正在读取目录…"
+                      : `${visibleAgents.length} 个 Agent`}
+                  </span>
+                  <span>选择 Agent 进入配置与试运行</span>
+                </div>
+                {catalogLoading && (
+                  <div className="catalog-loading" role="status">
+                    <Spinner /> 正在加载资源
+                  </div>
+                )}
+                {!catalogLoading && !visibleAgents.length && (
+                  <Empty
+                    title={search ? "没有匹配的 Agent" : "这个分类还没有 Agent"}
+                    detail={
+                      search
+                        ? "试试其他名称或 ID，或清除搜索条件。"
+                        : "创建 Agent 后，可在发布设置中连接业务入口。"
+                    }
+                  />
+                )}
+                <div className="agent-grid" aria-busy={catalogLoading}>
+                  {visibleAgents.map((r, i) => (
+                    <button
+                      className="agent-card"
+                      key={r.id}
+                      onClick={() => void openEditor(r)}
+                    >
+                      <div className="card-top">
+                        <span className={"agent-icon color-" + (i % 3)}>
+                          <Bot size={23} />
+                        </span>
+                        <span className="version">v{r.revision}</span>
+                      </div>
+                      <h3>{r.spec.name}</h3>
+                      <p>
+                        {r.spec.publication?.description ||
+                          r.spec.prompt ||
+                          "尚未填写角色与工作方法"}
+                      </p>
+                      <div className="capability-chips">
+                        <span>
+                          <Box size={12} />
+                          {r.spec.skill_count || 0} Skill
+                        </span>
+                        <span>
+                          <Link2 size={12} />
+                          {r.spec.connector_count || 0} MCP
+                        </span>
+                        <span>
+                          <BookOpen size={12} />
+                          {r.spec.knowledge_count || 0} 知识库
+                        </span>
+                      </div>
+                      <footer>
+                        <span>
+                          <i className="subtle-dot" />
+                          {r.spec.publication?.enabled ? (
+                            <span className="publication-label">已发布</span>
+                          ) : (
+                            "未发布"
+                          )}
+                          <span>{r.spec.model?.model || "未设置模型"}</span>
+                        </span>
+                        <ArrowUpRight size={16} />
+                      </footer>
+                    </button>
+                  ))}
                   <button
                     className="create-card"
-                    onClick={() => setEditor(null)}
+                    onClick={() => void openEditor(null)}
                   >
                     <span>
                       <Plus size={23} />
@@ -445,7 +635,7 @@ function Console() {
                   </div>
                   <button
                     className="text-button"
-                    onClick={() => setEditor(null)}
+                    onClick={() => void openEditor(null)}
                   >
                     配置与发布 Agent <ArrowUpRight size={15} />
                   </button>
@@ -455,33 +645,96 @@ function Console() {
             {page === "tools" && (
               <ToolLibrary
                 resources={resources}
-                edit={(kind, resource) => setDialog({ kind, resource })}
+                loading={catalogLoading}
+                kind={toolKind}
+                setKind={(k) => {
+                  setToolKind(k);
+                  searchCatalog("");
+                }}
+                query={search}
+                setQuery={searchCatalog}
+                edit={(kind, resource) => void openDialog(kind, resource)}
                 importFile={(f, k) => void act(() => importFile(f, k))}
               />
             )}
             {page === "knowledge" && (
               <Knowledge
                 resources={resources}
+                loading={catalogLoading}
+                queryText={search}
+                searchCatalog={searchCatalog}
                 notify={notify}
-                edit={(r) => setDialog({ kind: "knowledge", resource: r })}
+                edit={(r) => void openDialog("knowledge", r)}
               />
             )}
             {page === "runs" && <Runs runs={runs} notify={notify} />}
+            {page === "notes" && <Notes notify={notify} />}
             {page === "services" && <Services status={status} />}
             {page === "settings" && (
               <Settings notify={notify} saved={load} status={status} />
             )}
+            {["agents", "tools", "knowledge"].includes(page) && (
+              <CatalogPager
+                after={after}
+                next={nextCursor}
+                previous={cursors.length > 1}
+                advance={() => {
+                  requestVersion.current++;
+                  setCatalogLoading(true);
+                  setCursors([...cursors, nextCursor]);
+                  setResources([]);
+                  setNextCursor("");
+                }}
+                back={() => {
+                  requestVersion.current++;
+                  setCatalogLoading(true);
+                  setCursors(cursors.slice(0, -1));
+                  setResources([]);
+                  setNextCursor("");
+                }}
+              />
+            )}
           </main>
         )}
       </div>
+      {mobileNav && (
+        <Modal title="工作区导航" close={() => setMobileNav(false)}>
+          <div className="modal-body drawer-navigation">
+            {navigation}
+            <a
+              className="business-link"
+              href="http://127.0.0.1:8098"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Layers size={17} />
+              研序 · 期货研究
+              <ArrowUpRight size={14} />
+            </a>
+          </div>
+        </Modal>
+      )}
       {dialog && (
         <ResourceDialog
+          key={dialogSession}
           {...dialog}
           resources={resources}
-          close={() => setDialog(null)}
+          close={() => {
+            resourceRequest.current++;
+            setDialog(null);
+          }}
           save={async (kind, id, spec) => {
-            await api("/resources", { kind, id, spec });
+            await api(kind === "skill" ? "/toolhub/assets" : "/resources", {
+              kind,
+              id,
+              spec,
+              ...(kind === "skill" && dialog.resource
+                ? { base_revision: dialog.resource.revision }
+                : {}),
+            });
             await load();
+            if (resourceRequest.current !== dialogSession) return;
+            resourceRequest.current++;
             setDialog(null);
             notify("已保存新版本。");
           }}
@@ -505,17 +758,44 @@ function Console() {
 function Bindings({
   kind,
   chosen,
-  resources,
   change,
+  excludeID,
 }: {
   kind: string;
   chosen: Ref[];
   resources: Resource[];
   change: (v: Ref[]) => void;
+  excludeID?: string;
 }) {
-  const options = resources.filter((r) => r.kind === kind);
+  const catalog = useBindingCatalog(kind);
+  const visible = catalog.items.filter((r) => r.id !== excludeID);
+  const options = [
+    ...chosen
+      .filter((c) => !visible.some((r) => r.id === c.id))
+      .map((c) => ({
+        kind,
+        id: c.id,
+        revision: c.revision,
+        spec: { name: c.id },
+      })),
+    ...visible,
+  ];
   return (
     <div className="binding-list">
+      <input
+        aria-label="搜索可绑定资源"
+        placeholder="搜索名称或 ID…"
+        value={catalog.query}
+        onChange={(e) => catalog.search(e.target.value)}
+      />
+      {catalog.error && (
+        <small className="inline-warning">{catalog.error}</small>
+      )}
+      {chosen.some((c) => !visible.some((r) => r.id === c.id)) && (
+        <small>
+          已绑定的历史版本或其他页资源仍保留；勾选表示绑定，不代表验活通过。
+        </small>
+      )}
       {options.length ? (
         options.map((r) => {
           const current = chosen.find((x) => x.id === r.id);
@@ -586,9 +866,25 @@ function Bindings({
               } as any
             )[kind]
           }
-          。先在对应资源页创建，再回来绑定。
+          。可以修改搜索条件，或在对应资源页创建。
         </div>
       )}
+      <div className="button-row">
+        {catalog.after && (
+          <button type="button" className="text-button" onClick={catalog.reset}>
+            返回第一页
+          </button>
+        )}
+        {catalog.next && (
+          <button
+            type="button"
+            className="text-button"
+            onClick={catalog.advance}
+          >
+            下一页资源
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -673,7 +969,12 @@ function AgentEditor({
     }
   };
   return (
-    <div className="agent-editor">
+    <div
+      className="agent-editor"
+      id="workspace-content"
+      tabIndex={-1}
+      role="main"
+    >
       <div className="editor-heading">
         <button
           className="icon-button"
@@ -747,7 +1048,9 @@ function AgentEditor({
                 >
                   <textarea
                     className="prompt-editor"
-                    placeholder="你是一位……\n你的任务是……\n工作步骤……\n输出要求……"
+                    placeholder={
+                      "你是一位……\n你的任务是……\n工作步骤……\n输出要求……"
+                    }
                     value={draft.prompt}
                     onChange={(e) => update("prompt", e.target.value)}
                   />
@@ -800,7 +1103,10 @@ function AgentEditor({
                   {[
                     ["knowledge_search", "检索工作资料"],
                     ["note_save", "保存有出处的记录"],
+                    ["note_revise", "修订本 Agent 的记录"],
+                    ["note_retire", "撤回本 Agent 的记录"],
                     ["artifact_read", "回读原始执行记录"],
+                    ["run_recall", "找回本任务的历史证据"],
                     ["document_read", "阅读完整资料"],
                     ["spawn_agent", "委派子 Agent"],
                     ["sandbox_exec", "容器内运行代码"],
@@ -825,6 +1131,7 @@ function AgentEditor({
                 <h3 className="section-label">允许委派的 Agent</h3>
                 <Bindings
                   kind="agent"
+                  excludeID={id}
                   chosen={draft.child_agents || []}
                   resources={resources.filter((r) => r.id !== id)}
                   change={(v) => update("child_agents", v)}
@@ -980,8 +1287,45 @@ function AgentEditor({
                 </div>
                 <h3 className="section-label">执行预算</h3>
                 <div className="two-fields">
+                  <Field label="思考模式（兼容 DeepSeek）">
+                    <select
+                      value={draft.model.thinking || ""}
+                      onChange={(e) =>
+                        update("model", {
+                          ...draft.model,
+                          thinking: e.target.value,
+                          reasoning_effort: "",
+                        })
+                      }
+                    >
+                      <option value="">使用供应商默认值</option>
+                      <option value="disabled">关闭 · 日常收集与整理</option>
+                      <option value="enabled">开启 · 复杂核验</option>
+                    </select>
+                  </Field>
+                  <Field label="单次输出上限 / tokens">
+                    <input
+                      type="number"
+                      min={1}
+                      max={32768}
+                      value={draft.model.max_tokens || 4096}
+                      onChange={(e) =>
+                        update("model", {
+                          ...draft.model,
+                          max_tokens: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </Field>
+                </div>
+                <div className="two-fields">
                   {[
                     ["max_steps", "最多模型步骤"],
+                    [
+                      "max_model_attempts",
+                      "整项任务模型尝试上限（含子任务及重试）",
+                    ],
+                    ["model_token_budget", "整项任务 token 预算（含子任务）"],
                     ["context_tokens", "上下文预算 / 估算 tokens"],
                     ["max_children", "最多直属子任务"],
                   ].map(([key, name]) => (
@@ -1032,7 +1376,9 @@ function AgentEditor({
                   <small>步骤 {run.step}</small>
                 </div>
                 {run.state?.result && (
-                  <article className="answer-text">{run.state.result}</article>
+                  <article className="answer-text">
+                    <Answer>{run.state.result}</Answer>
+                  </article>
                 )}
                 {run.state?.error && (
                   <div className="error-message">{run.state.error}</div>
@@ -1107,15 +1453,23 @@ function AgentEditor({
 }
 function ToolLibrary({
   resources,
+  loading,
   edit,
   importFile,
+  kind,
+  setKind,
+  query,
+  setQuery,
 }: {
   resources: Resource[];
+  loading: boolean;
   edit: (kind: string, r?: Resource) => void;
   importFile: (f: File, k: string) => void;
+  kind: string;
+  setKind: (kind: string) => void;
+  query: string;
+  setQuery: (query: string) => void;
 }) {
-  const [kind, setKind] = useState("skill"),
-    [query, setQuery] = useState("");
   const file = useRef<HTMLInputElement>(null);
   return (
     <>
@@ -1132,7 +1486,7 @@ function ToolLibrary({
               onClick={() => setKind(k)}
             >
               {label}
-              <span>{resources.filter((r) => r.kind === k).length}</span>
+              {kind === k && <span>{resources.length}</span>}
             </button>
           ))}
         </div>
@@ -1141,7 +1495,13 @@ function ToolLibrary({
             hidden
             ref={file}
             type="file"
-            accept={kind === "connector" ? ".json" : kind === "skill" ? ".md,.txt,.json,.zip" : ".md,.txt,.json"}
+            accept={
+              kind === "connector"
+                ? ".json"
+                : kind === "skill"
+                  ? ".md,.txt,.json,.zip"
+                  : ".md,.txt,.json"
+            }
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) importFile(f, kind);
@@ -1182,6 +1542,7 @@ function ToolLibrary({
       <label className="search-input compact">
         <Search size={16} />
         <input
+          aria-label="搜索工具资源"
           placeholder="搜索资源…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -1195,13 +1556,11 @@ function ToolLibrary({
           <span />
         </div>
         {resources
-          .filter(
-            (r) => r.kind === kind && (r.spec.name + r.id).includes(query),
-          )
+          .filter((r) => r.kind === kind)
           .map((r) => (
             <div
               className="resource-row"
-              key={r.id}
+              key={`${r.kind}/${r.id}@${r.revision}`}
             >
               <span>
                 <span className="resource-small-icon">
@@ -1212,21 +1571,42 @@ function ToolLibrary({
                   )}
                 </span>
                 <span>
-                  <button className="text-button" onClick={() => edit(kind, r)}><b>{r.spec.name || r.id}</b></button>
+                  <button className="text-button" onClick={() => edit(kind, r)}>
+                    <b>{r.spec.name || r.id}</b>
+                  </button>
                   <small>{r.id}</small>
                 </span>
               </span>
               <p>{r.spec.content?.slice(0, 100) || r.spec.endpoint}</p>
               <span className="version">v{r.revision}</span>
-              {kind === "prompt" ? <button className="icon-button" aria-label="编辑资源" onClick={() => edit(kind, r)}><ChevronRight size={16} /></button> : <ToolGovernance resource={r} />}
+              {kind === "prompt" ? (
+                <button
+                  className="icon-button"
+                  aria-label="编辑资源"
+                  onClick={() => edit(kind, r)}
+                >
+                  <ChevronRight size={16} />
+                </button>
+              ) : (
+                <ToolGovernance resource={r} />
+              )}
             </div>
           ))}
-        {!resources.some((r) => r.kind === kind) && (
-          <Empty
-            title="还没有资源"
-            detail="添加独立资源后，即可在 Agent 中选择和绑定。"
-          />
-        )}
+        {!resources.some((r) => r.kind === kind) &&
+          (loading ? (
+            <div className="catalog-loading" role="status">
+              <Spinner /> 正在读取资源目录…
+            </div>
+          ) : (
+            <Empty
+              title={query ? "没有匹配的资源" : "还没有资源"}
+              detail={
+                query
+                  ? "调整搜索词后再试。"
+                  : "添加独立资源后，即可在 Agent 中选择和绑定。"
+              }
+            />
+          ))}
       </div>
     </>
   );
@@ -1360,6 +1740,12 @@ function ResourceDialog({
               placeholder="描述工作方法、步骤、约束与预期输出…"
             />
           </Field>
+        )}
+        {kind === "skill" && resource && (
+          <p className="field-hint">
+            保存时保留 v{resource.revision} 的全部引用文件，并更新
+            SKILL.md。新版本需要重新检测和审阅；更换附件请上传完整 ZIP 包。
+          </p>
         )}
         {kind === "connector" && (
           <>
@@ -1588,39 +1974,116 @@ function ResourceDialog({
 }
 function Knowledge({
   resources,
+  loading,
   notify,
   edit,
+  queryText,
+  searchCatalog,
 }: {
   resources: Resource[];
+  loading: boolean;
   notify: (m: string) => void;
   edit: (r: Resource) => void;
+  queryText: string;
+  searchCatalog: (q: string) => void;
 }) {
   const [selected, setSelected] = useState<Resource | null>(null),
     [files, setFiles] = useState<any[]>([]),
     [query, setQuery] = useState(""),
     [result, setResult] = useState<any>(null),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [queryBusy, setQueryBusy] = useState(false),
+    [filesLoading, setFilesLoading] = useState(false),
+    [filesError, setFilesError] = useState("");
   const upload = useRef<HTMLInputElement>(null);
+  const currentLibrary = useRef<Resource | null>(null);
+  const selectionVersion = useRef(0),
+    fileVersion = useRef(0),
+    queryVersion = useRef(0);
+  const selectLibrary = (next: Resource | null) => {
+    selectionVersion.current++;
+    fileVersion.current++;
+    queryVersion.current++;
+    currentLibrary.current = next;
+    setSelected(next);
+    setFiles([]);
+    setFilesLoading(!!next);
+    setFilesError("");
+    setQuery("");
+    setResult(null);
+    setBusy(false);
+    setQueryBusy(false);
+  };
+  useEffect(
+    () => () => {
+      currentLibrary.current = null;
+      selectionVersion.current++;
+    },
+    [],
+  );
   const loadFiles = useCallback(async () => {
-    if (selected)
-      setFiles(
-        await api(
+    if (selected && currentLibrary.current === selected) {
+      const version = ++fileVersion.current;
+      try {
+        const loaded = await api(
           "/knowledge/files?id=" +
             encodeURIComponent(selected.id) +
             "&revision=" +
             selected.revision,
-        ),
-      );
+        );
+        if (
+          currentLibrary.current === selected &&
+          version === fileVersion.current
+        ) {
+          setFiles(loaded);
+          setFilesError("");
+        }
+      } catch (e) {
+        if (
+          currentLibrary.current === selected &&
+          version === fileVersion.current
+        )
+          setFilesError((e as Error).message);
+      } finally {
+        if (
+          currentLibrary.current === selected &&
+          version === fileVersion.current
+        )
+          setFilesLoading(false);
+      }
+    }
   }, [selected]);
   useEffect(() => {
-    void loadFiles().catch((e) => notify(e.message));
-    const id = setInterval(() => void loadFiles().catch(() => {}), 5000);
-    return () => clearInterval(id);
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const poll = async () => {
+      await loadFiles();
+      if (alive) timer = setTimeout(poll, 5000);
+    };
+    void poll();
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
   }, [loadFiles]);
   if (!selected)
     return (
       <>
+        <label className="search-input compact">
+          <Search size={16} />
+          <input
+            aria-label="搜索知识库"
+            placeholder="搜索知识库名称或 ID…"
+            value={queryText}
+            onChange={(e) => searchCatalog(e.target.value)}
+          />
+        </label>
         <div className="knowledge-grid">
+          {loading && (
+            <div className="catalog-loading" role="status">
+              <Spinner /> 正在读取知识库目录…
+            </div>
+          )}
           {resources
             .filter((r) => r.kind === "knowledge")
             .map((r) => (
@@ -1628,8 +2091,16 @@ function Knowledge({
                 className="knowledge-card"
                 key={r.id}
                 onClick={() => {
-                  setSelected(r);
-                  setResult(null);
+                  const version = ++selectionVersion.current;
+                  void resourceDetail(r)
+                    .then((full) => {
+                      if (version === selectionVersion.current)
+                        selectLibrary(full);
+                    })
+                    .catch((e) => {
+                      if (version === selectionVersion.current)
+                        notify(e.message);
+                    });
                 }}
               >
                 <div className="card-top">
@@ -1693,7 +2164,7 @@ function Knowledge({
   return (
     <>
       <div className="library-header">
-        <button className="text-button" onClick={() => setSelected(null)}>
+        <button className="text-button" onClick={() => selectLibrary(null)}>
           <ArrowLeft size={16} />
           全部知识库
         </button>
@@ -1738,11 +2209,13 @@ function Knowledge({
                       });
                     }
                     await loadFiles();
-                    notify("原文件已保存，索引任务已登记。");
+                    if (currentLibrary.current === selected)
+                      notify("原文件已保存，索引任务已登记。");
                   } catch (e) {
-                    notify((e as Error).message);
+                    if (currentLibrary.current === selected)
+                      notify((e as Error).message);
                   } finally {
-                    setBusy(false);
+                    if (currentLibrary.current === selected) setBusy(false);
                   }
                 })();
               }}
@@ -1758,7 +2231,16 @@ function Knowledge({
           <p className="field-hint">
             支持 UTF-8 TXT、Markdown、CSV、JSON 和 DOCX 正文；单文件 1 MiB。
           </p>
-          {files.length ? (
+          {filesError && (
+            <p className="inline-warning" role="alert">
+              资料列表暂不可用：{filesError}。正在重试。
+            </p>
+          )}
+          {filesLoading ? (
+            <div role="status">
+              <Spinner /> 正在读取资料列表…
+            </div>
+          ) : files.length ? (
             <div className="file-list">
               {files.map((f) => (
                 <div className="file-row" key={f.id}>
@@ -1776,9 +2258,11 @@ function Knowledge({
                     title="下载原文件"
                     aria-label={"下载 " + f.name}
                     onClick={() =>
-                      void downloadArtifact(f.artifact_hash, f.name, true).catch(
-                        (e) => notify(e.message),
-                      )
+                      void downloadArtifact(
+                        f.artifact_hash,
+                        f.name,
+                        true,
+                      ).catch((e) => notify(e.message))
                     }
                   >
                     <ArrowUpRight size={15} />
@@ -1786,7 +2270,7 @@ function Knowledge({
                 </div>
               ))}
             </div>
-          ) : (
+          ) : !filesError ? (
             <Empty
               title="从第一份资料开始"
               detail="原文件、正文和来源会一并保留，供检索和回溯使用。"
@@ -1800,7 +2284,7 @@ function Knowledge({
                 </button>
               }
             />
-          )}
+          ) : null}
         </section>
         <section className="panel retrieval-panel">
           <div className="panel-heading">
@@ -1813,34 +2297,51 @@ function Knowledge({
           <textarea
             aria-label="检索问题"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              queryVersion.current++;
+              setQuery(e.target.value);
+              setResult(null);
+              setQueryBusy(false);
+            }}
             placeholder="输入一个关键词或问题…"
           />
           <button
             className="button"
-            disabled={busy || !query.trim()}
+            disabled={queryBusy || !query.trim()}
             onClick={() =>
               void (async () => {
-                setBusy(true);
+                const version = ++queryVersion.current;
+                setQueryBusy(true);
                 try {
-                  setResult(
-                    await api("/knowledge/query", {
-                      knowledge: {
-                        id: selected.id,
-                        revision: selected.revision,
-                      },
-                      query,
-                    }),
-                  );
+                  const response = await api("/knowledge/query", {
+                    knowledge: {
+                      id: selected.id,
+                      revision: selected.revision,
+                    },
+                    query,
+                  });
+                  if (
+                    currentLibrary.current === selected &&
+                    version === queryVersion.current
+                  )
+                    setResult(response);
                 } catch (e) {
-                  notify((e as Error).message);
+                  if (
+                    currentLibrary.current === selected &&
+                    version === queryVersion.current
+                  )
+                    notify((e as Error).message);
                 } finally {
-                  setBusy(false);
+                  if (
+                    currentLibrary.current === selected &&
+                    version === queryVersion.current
+                  )
+                    setQueryBusy(false);
                 }
               })()
             }
           >
-            {busy ? <Spinner /> : <Search size={15} />}检索资料
+            {queryBusy ? <Spinner /> : <Search size={15} />}检索资料
           </button>
           {result && (
             <div className="retrieval-results">
@@ -1866,29 +2367,99 @@ function Knowledge({
   );
 }
 function Runs({ runs, notify }: { runs: any[]; notify: (m: string) => void }) {
+  const selection = useRef(0),
+    currentRun = useRef("");
+  useEffect(
+    () => () => {
+      selection.current++;
+      currentRun.current = "";
+    },
+    [],
+  );
   const [selected, setSelected] = useState<any>(null),
+    [usage, setUsage] = useState<any>(null),
     [calls, setCalls] = useState<any[]>([]),
     [evidence, setEvidence] = useState(""),
     [decision, setDecision] = useState("completed"),
     [receipt, setReceipt] = useState("{}"),
-    [callID, setCallID] = useState("");
+    [callID, setCallID] = useState(""),
+    [query, setQuery] = useState(""),
+    [stateFilter, setStateFilter] = useState("");
+  const visible = runs.filter(
+    (r) =>
+      (!stateFilter || r.status === stateFilter) &&
+      [r.task, r.id, r.snapshot.agent.name]
+        .join(" ")
+        .toLowerCase()
+        .includes(query.toLowerCase().trim()),
+  );
   const open = async (id: string) => {
+    const version = ++selection.current;
     try {
-      const [r, c] = await Promise.all([
+      const [r, c, u] = await Promise.all([
         api("/runs/" + id),
         api<any[]>("/runs/" + id + "/calls"),
+        api("/runs/" + id + "/usage"),
       ]);
+      if (version !== selection.current) return;
+      if (currentRun.current !== id) {
+        setEvidence("");
+        setDecision("completed");
+        setReceipt("{}");
+      }
+      currentRun.current = id;
       setSelected(r);
       setCalls(c);
+      setUsage(u);
       setCallID(
         c.find((x) => ["unknown", "inflight"].includes(x.status))?.id || "",
       );
     } catch (e) {
-      notify((e as Error).message);
+      if (version === selection.current) notify((e as Error).message);
+    }
+  };
+  const refreshAfter = async (
+    id: string,
+    operation: () => Promise<unknown>,
+  ) => {
+    const version = selection.current;
+    try {
+      await operation();
+      if (version === selection.current && currentRun.current === id)
+        await open(id);
+    } catch (e) {
+      if (version === selection.current) notify((e as Error).message);
     }
   };
   return (
     <>
+      <div className="run-filters">
+        <label className="search-input">
+          <Search size={16} />
+          <input
+            aria-label="搜索运行记录"
+            placeholder="任务、Agent 或 ID"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </label>
+        <select
+          aria-label="筛选运行状态"
+          value={stateFilter}
+          onChange={(e) => setStateFilter(e.target.value)}
+        >
+          <option value="">全部状态</option>
+          <option value="running">执行中</option>
+          <option value="queued">排队中</option>
+          <option value="completed">已完成</option>
+          <option value="failed">执行失败</option>
+          <option value="waiting_unknown">待核对</option>
+          <option value="cancelled">已取消</option>
+        </select>
+        <small>
+          已加载 {runs.length} 项 · 显示 {visible.length} 项
+        </small>
+      </div>
       <div className="resource-table">
         <div className="run-table-head">
           <span>任务</span>
@@ -1896,8 +2467,8 @@ function Runs({ runs, notify }: { runs: any[]; notify: (m: string) => void }) {
           <span>状态</span>
           <span>创建时间</span>
         </div>
-        {runs.length ? (
-          runs.map((r) => (
+        {visible.length ? (
+          visible.map((r) => (
             <button
               key={r.id}
               className="run-table-row"
@@ -1914,21 +2485,50 @@ function Runs({ runs, notify }: { runs: any[]; notify: (m: string) => void }) {
           ))
         ) : (
           <Empty
-            title="执行记录会留在这里"
-            detail="在 Agent 右侧试运行，或从业务工作台开始一项任务。"
+            title={runs.length ? "没有匹配的运行记录" : "执行记录会留在这里"}
+            detail={
+              runs.length
+                ? "调整搜索词或运行状态后再试。"
+                : "在 Agent 右侧试运行，或从业务工作台开始一项任务。"
+            }
           />
         )}
       </div>
       {selected && (
-        <Modal title="执行详情" close={() => setSelected(null)} wide>
+        <Modal
+          title="执行详情"
+          close={() => {
+            selection.current++;
+            currentRun.current = "";
+            setSelected(null);
+          }}
+          wide
+        >
           <div className="modal-body">
             <Badge state={selected.status} />
             <p className="field-hint">
               执行器：{selected.engine || "历史任务"}
             </p>
-            <h3>{selected.task}</h3>
+            {usage && (
+              <p className="field-hint">
+                整项任务（含子任务）模型尝试 {usage.attempts} 次 · 已报告输入{" "}
+                {usage.prompt_tokens} / 输出 {usage.completion_tokens} tokens
+                {usage.unknown_usage_attempts
+                  ? ` · ${usage.unknown_usage_attempts} 次用量未确认，仍占用保守预算`
+                  : ""}
+                。实际费用以供应商账单为准。
+              </p>
+            )}
+            <div className="run-task">
+              <span>任务内容</span>
+              <p>{selected.task}</p>
+            </div>
             <article className="answer-text">
-              {selected.state.result || selected.state.error || "等待执行结果…"}
+              <Answer>
+                {selected.state.result ||
+                  selected.state.error ||
+                  "等待执行结果…"}
+              </Answer>
             </article>
             <div className="button-row">
               {selected.state.harness_artifact && (
@@ -1937,12 +2537,14 @@ function Runs({ runs, notify }: { runs: any[]; notify: (m: string) => void }) {
                   onClick={() =>
                     void downloadArtifact(
                       selected.state.harness_artifact,
-                      `dsh-${selected.id}.json`,
+                      `dsh-${selected.engine === "dsh-0.2.0-rc.2-evidence-v1" ? "manifest-" : ""}${selected.id}.json`,
                     ).catch((e) => notify(e.message))
                   }
                 >
                   <FileText size={15} />
-                  下载完整 DSH 执行记录
+                  {selected.engine === "dsh-0.2.0-rc.2-evidence-v1"
+                    ? "下载执行记录清单"
+                    : "下载完整 DSH 执行记录"}
                 </button>
               )}
               <button className="button" onClick={() => void open(selected.id)}>
@@ -1953,9 +2555,9 @@ function Runs({ runs, notify }: { runs: any[]; notify: (m: string) => void }) {
                 <button
                   className="button"
                   onClick={() =>
-                    void api("/runs/" + selected.id + "/resume", {})
-                      .then(() => open(selected.id))
-                      .catch((e) => notify(e.message))
+                    void refreshAfter(selected.id, () =>
+                      api("/runs/" + selected.id + "/resume", {}),
+                    )
                   }
                 >
                   从检查点继续
@@ -1970,15 +2572,20 @@ function Runs({ runs, notify }: { runs: any[]; notify: (m: string) => void }) {
                 <button
                   className="button"
                   onClick={() =>
-                    void api("/runs/" + selected.id + "/cancel", {})
-                      .then(() => open(selected.id))
-                      .catch((e) => notify(e.message))
+                    void refreshAfter(selected.id, () =>
+                      api("/runs/" + selected.id + "/cancel", {}),
+                    )
                   }
                 >
                   请求取消
                 </button>
               )}
             </div>
+            {selected.engine === "dsh-0.2.0-rc.2-evidence-v1" && (
+              <p className="muted">
+                执行记录按批次保存。下载清单包含当前批次的文件索引、校验值及前序清单入口。
+              </p>
+            )}
             <details>
               <summary>修订当前任务及未结束子任务的约束</summary>
               <textarea
@@ -2042,19 +2649,14 @@ function Runs({ runs, notify }: { runs: any[]; notify: (m: string) => void }) {
                 <button
                   className="button primary"
                   onClick={() =>
-                    void (async () => {
-                      try {
-                        await api("/runs/" + selected.id + "/reconcile", {
-                          call_id: callID,
-                          decision,
-                          evidence,
-                          result: JSON.parse(receipt),
-                        });
-                        await open(selected.id);
-                      } catch (e) {
-                        notify((e as Error).message);
-                      }
-                    })()
+                    void refreshAfter(selected.id, () =>
+                      api("/runs/" + selected.id + "/reconcile", {
+                        call_id: callID,
+                        decision,
+                        evidence,
+                        result: JSON.parse(receipt),
+                      }),
+                    )
                   }
                 >
                   提交核对记录
@@ -2074,6 +2676,7 @@ function Runs({ runs, notify }: { runs: any[]; notify: (m: string) => void }) {
   );
 }
 function Services({ status }: { status: any }) {
+  const [showInactive, setShowInactive] = useState(false);
   const names: Record<string, string> = {
     control: "中台入口",
     registry: "Agent 与资源目录",
@@ -2086,6 +2689,7 @@ function Services({ status }: { status: any }) {
     sandbox: "Sandbox",
     futures: "期货业务入口",
     telemetry: "观测导出",
+    sources: "公开资料采集",
   };
   const active = status.instances.filter((i: any) => i.active);
   return (
@@ -2110,11 +2714,18 @@ function Services({ status }: { status: any }) {
       <div className="panel">
         <div className="panel-heading">
           <h3>实例状态</h3>
-          <span className="field-hint">自动刷新 · 15 秒心跳窗口</span>
+          <label className="checkbox-line">
+            <input
+              type="checkbox"
+              checked={showInactive}
+              onChange={(e) => setShowInactive(e.target.checked)}
+            />
+            显示失联实例
+          </label>
         </div>
         <div className="service-table">
           {status.instances
-            .filter((i: any) => i.active)
+            .filter((i: any) => showInactive || i.active)
             .map((i: any) => (
               <div key={i.id}>
                 <span className="resource-small-icon">
@@ -2126,13 +2737,14 @@ function Services({ status }: { status: any }) {
                 </span>
                 <span>{i.hostname}</span>
                 <code>PID {i.pid}</code>
-                <Badge state="在线" />
+                <Badge state={i.active ? "在线" : "心跳超时"} />
               </div>
             ))}
         </div>
       </div>
       <p className="field-hint">
-        服务在线表示进程存活。Milvus、LightRAG、模型和 Docker
+        自动刷新，心跳窗口 15
+        秒。服务在线表示近期有心跳。Milvus、LightRAG、模型和 Docker
         的可用性需要在对应能力中实际验证。
       </p>
     </>

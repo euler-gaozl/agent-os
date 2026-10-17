@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -126,14 +127,22 @@ func TestMilvusEmbeddingAndSourceBackreference(t *testing.T) {
 func TestLightRAGTracksAsynchronousCompletionAndUnknownOutcome(t *testing.T) {
 	s, _ := testStore(t)
 	ctx := context.Background()
+	var fileSource atomic.Value
 	remote := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/documents/text":
+			var input struct {
+				FileSource string `json:"file_source"`
+			}
+			if e := json.NewDecoder(r.Body).Decode(&input); e != nil {
+				t.Error(e)
+			}
+			fileSource.Store(input.FileSource)
 			jsonResponse(w, 200, map[string]string{"track_id": "fixture-track"})
 		case "/documents/track_status/fixture-track":
 			jsonResponse(w, 200, map[string]any{"documents": []any{map[string]string{"status": "processed"}}})
 		case "/query/data":
-			jsonResponse(w, 200, map[string]any{"status": "success", "data": map[string]any{"chunks": []any{map[string]string{"content": "fixture graph context", "file_path": "fixture"}}, "entities": []any{}}})
+			jsonResponse(w, 200, map[string]any{"status": "success", "data": map[string]any{"chunks": []any{map[string]string{"content": "fixture graph evidence", "file_path": fileSource.Load().(string)}}, "entities": []any{}}})
 		default:
 			w.WriteHeader(404)
 		}
@@ -159,7 +168,7 @@ func TestLightRAGTracksAsynchronousCompletionAndUnknownOutcome(t *testing.T) {
 		t.Fatal("external index completion not tracked")
 	}
 	result, e := s.Retrieve(ctx, ref, f.Config, "fixture")
-	if e != nil || !strings.Contains(string(result.Graph), "fixture graph context") {
+	if e != nil || !strings.Contains(string(result.Graph), "fixture graph evidence") || !strings.Contains(string(result.Graph), f.DocumentID) {
 		t.Fatal(e)
 	}
 	if _, e = s.DB.Exec(ctx, "UPDATE knowledge_files SET status='running',track_id='' WHERE id=$1", f.ID); e != nil {
