@@ -31,6 +31,12 @@
 - 需要先做 **双版本 Worker bundle**：同一发布同时携带 `639ed015` 旧引擎和新 `687f282e` 引擎，默认新任务用新引擎、旧任务仍用旧引擎；再做 replay/activation 验收和备份。
 - 在新引擎默认切换前，旧 `worker-52356bed…`/`runtime-57ce21ba…` 继续运行。
 
+## 双版本注册脚手架（未启用）
+
+- Runtime `69b9e62`：识别新 `687f282e` 六种 engine、增加 claim/reap 成员和 budget 路由；旧 engine 路径保持不变。`go test ./internal/runstate ./execution ./runtime` 通过。
+- Worker `ac2a166`：增加新 engine 的 slot/常量/验证入口；尚未加入新 lock 文件、环境变量和 `sourceForEngine` 映射，因此**没有任何路径能启用新引擎**；Worker 测试通过。
+- 下一步仍需：为每个新引擎生成 compiled lock、增加 `DSH_*_V2_RUNNER` 环境变量和启动 wiring、打包同时含旧/新目录的 Worker release，再做 replay/activation。
+
 ## 下一步
 
 1. 设计并实现双版本 Worker 打包（旧/新 engine 目录+manifest 列表）。
