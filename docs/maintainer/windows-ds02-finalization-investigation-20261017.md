@@ -1,6 +1,6 @@
-# DS-02 未就绪草稿提前结束：失败序列与修复方案（调查记录）
+# DS-02 未就绪草稿提前结束：失败序列、修复与双引擎安装
 
-日期：2026-10-17。状态：**v7 源码已在 Harness/Runtime/Worker/Console 实现并推送，但未安装**。运行库中仍有一个可恢复的 guarded-v6 失败任务，单产物替换会移除其恢复 runner；因此集成 pin 已回退到 v6，下一步需要双产物/双 profile 发布。Harness `c5d4e4e2d5` 的 31 项本地 guarded 检查通过；没有真实供应商调用、没有服务安装或任务变更。DS-01 已独立完成并安装，见 [DS-01 记录](windows-ds01-statements-20261017.md)。
+日期：2026-10-17。状态：**已实现并安装 v6+v7 双产物，默认 guarded-v7；v6 失败任务仍可恢复**。Harness `c5d4e4e2d5`、Runtime `fb5a5c1`、Worker `76485b6`、Console `c6081ab` 已推送并受管安装；`Test-GuardedRelease.ps1` 42 项通过；平台 `core_ready=true`、两个 Worker。没有真实供应商调用，DS-03 真实四问研究仍未执行。DS-01 已独立完成并安装，见 [DS-01 记录](windows-ds01-statements-20261017.md)。
 
 ## 已确认失败序列
 
@@ -20,69 +20,50 @@
 - runner 把“本轮没有 `selected:true`”直接等同于终态失败，未区分“模型放弃了成稿”和“模型提交了未就绪稿、Runtime 已明确拒绝、仍可修订”。
 - 没有新增决策循环的必要：Runtime 仍拥有尝试次数、步骤、取消和未知效果边界；修复只是在固定 DSH loop 内把一次**确定的、可修订的**拒绝返回给模型。
 
-## 候选修复 A（推荐，新引擎）
+## 修复：guarded-v7 单次续接
 
 1. `FinalTurnSelection` 记录“有效的 `selected:false` + 有界 `continue`”拒绝，绑定其 `turn`；新增 `rejected(end)`。
 2. runner 在 `completed(end)` 为空且同一轮存在有效拒绝时，**只续接一次**：把 Runtime 的 `continue` 加上固定说明（不得以自由正文结束；修订后重新送检；仍无法完成则如实失败）作为下一条 user message，继续同一 AgentLoop。
-3. 同一轮第二次仍无成功选择时直接失败；不增加 harness 自己的重试计数或第二个循环。Runtime 的 12 次尝试和步骤预算仍是唯一预算权威。
-4. 拒绝文本来自 Runtime 的冻结响应，不注入动态剩余次数；恢复不得用新的剩余数改写旧请求。若以后加入当前尝试信息，必须在模型调用前随 intent 冻结。
-5. 因为改变了重放可见的 loop 行为，必须使用新引擎 `dsh-source-639ed015-guarded-v7`，v6 产物与旧任务语义不变。
+3. 第二次仍无成功选择时直接失败；不增加 harness 自己的重试计数或第二个循环。Runtime 的 12 次尝试和步骤预算仍是唯一预算权威。
+4. 拒绝文本来自 Runtime 的冻结响应，不注入动态剩余次数；恢复不得用新的剩余数改写旧请求。
+5. 因为改变了重放可见的 loop 行为，使用新引擎 `dsh-source-639ed015-guarded-v7`；v6 产物与旧任务语义不变。
 
-### 验收（候选）
+Harness 提交 `c5d4e4e2d5` 实现上述行为；31 项本地 guarded 检查通过，新增“拒绝后模型以正文结束 → 一次续接 → 重新检查并成功”和“第二次文本结束即终止、不死循环”，原有强杀/丢回包重放、坏参数和远端错误用例保持通过。
 
-- 合成供应商：返回未就绪稿 → 误提 `final_output_commit` → Runtime 拒绝 → 模型返回文本 → runner 续接一次 → 模型修正并送检 → 成功选择；不得把文本稿当最终结果。
-- 拒绝后模型再次只返回文本：一次续接后终止，不死循环。
-- 错误哈希、旧稿、未就绪稿仍拒绝；取消、权限、数据库/RPC、未知效果仍走原有失败屏障，不被包装成可重试。
-- 断点/丢回包重放不重复已完成的检查或模型效果；准确记录尝试次数；旧 v6 任务重放字节语义不变。
-- 真实供应商调用不在本候选的离线验收内。
+## 双引擎发布
 
-## 已实现候选（Harness）
+安装前运行库有一个可恢复的 guarded-v6 失败任务（`guarded_v6_runs=1`、`resumable_guarded_v6_runs=1`）。单产物替换会移除 v6 runner，使该历史任务无法恢复，因此没有采用替换方案；集成 pin/策略曾实现后回退（主仓 `3ca9556`），最终改为 v6+v7 双产物：
 
-Harness 提交 `c5d4e4e2d5`：
-- `src/final-protocol.ts` 的 `FinalTurnSelection` 记录 Runtime 返回的有效 `selected:false` + 有界 `continue` 拒绝，绑定其 turn；`rejected(end)` 只在当前 turn 已结束时返回它。成功选择或新 turn 会清除拒绝。
-- `guarded-runner.mjs` 在没有成功选择但存在有效拒绝时，**只续接一次**：把 Runtime 的 `continue` 和固定说明交回同一 DSH loop；第二次仍无成功选择则明确失败，不增加 harness 重试计数。
-- `src/guarded-kernel.ts` 与 `scripts/build-guarded.mjs` 使用 `dsh-source-639ed015-guarded-v7`；v6 产物保留在历史提交和发布包中。
-- 本地 31 项 guarded 检查通过，新增：拒绝后模型以正文结束 → 一次续接 → 重新检查并成功；以及第二次文本结束即终止、不死循环。强杀/丢回包重放测试仍通过。
-- README 明确 v7 是候选；Runtime/Worker/Console 源码已接入但未安装，原因是可恢复 v6 任务。
+- Runtime `fb5a5c1`：`NewSourceVersions` 同时准入 v6/v7；v7 为新默认，v6 仅恢复历史。
+- Worker `76485b6`：同时打包 v7 与 v6 harness（另含 source/resident/budget/native/final）；`DSH_GUARDED_RUNNER` 与 `DSH_GUARDED_V6_RUNNER` 分别启用。
+- Console `c6081ab`：`guarded_transport=guarded-v7`，同时允许 v6/v7 接续；v6 归档仍显示。
+- 集成：新增 `guarded_v6_execution`/`guarded_v6_harness` profile，发布策略分别检查两引擎；`Test-GuardedRelease.ps1` 42 项通过。
 
-Runtime 提交 `934b856`（已推送）：`IsFinalEngine` 识别 v7 以便历史回放/只读，`NewSourceVersions` 只准入 v7；v6 进入历史识别。Worker 提交 `bbfdbfe`（已推送）只打包 v7 产物并固定 Runtime execution `934b856`；Console 提交 `0350682`（已推送）声明 `guarded_transport=guarded-v7` 并保留 v6 归档显示。集成 pin、发布策略和 profiles 的 v7 改动已实现并测试（`Test-GuardedRelease.ps1` 37 项通过），但因下述可恢复 v6 任务阻断，已在主仓 `3ca9556` 回退到已安装 v6 pin；v7 源码仍保留为候选，未安装。
+## 安装结果
 
-## 单产物替换被可恢复 v6 任务阻断
+| 服务 | 版本 | 提交 | 关键内容 |
+| --- | --- | --- | --- |
+| Runtime | `runtime-4aa22b35076b48d2b9645fe78a4c20f4` | `fb5a5c1` | 同时准入 v6/v7 |
+| Worker | `worker-47166229da304bb694f17813b3e7ac69` | `76485b6` | 同时打包 v6/v7 harness |
+| Console | `control-70c8d97eef2645f0a093e3d965b1c8f3` | `c6081ab` | `guarded_transport=guarded-v7`，v6/v7 接续 |
+| 默认引擎 | `dsh-source-639ed015-guarded-v7` | — | `set-engine guarded`，non-target unchanged |
 
-安装前只读查询运行库：
+安装后只读验证：
 
-```text
-dsh-source-639ed015-guarded-v6|failed|1
-```
+- `Platform.ps1 status`：`core_ready=true`，两个 Worker；Runtime/Worker/Console 均为上表版本。
+- 运行库事实：`guarded_v6_runs=1`、`resumable_guarded_v6_runs=1`、`guarded_v7_runs=0`；v6 历史任务未被修改。
+- Worker launch 同时含两个 guarded runner 环境变量；Console Web 包同时包含 v6/v7 引擎字符串。
+- 未启动 v6 恢复任务，避免无授权的真实模型调用。
 
-该失败任务 `2bc11ddab7473a1e2ee29fd499330558` 仍可由显式 continuation 动作恢复，按发布策略的 `resumable_guarded_v6_runs` 计为可恢复。单产物替换会移除 v6 runner，使该历史任务无法恢复，违反“旧任务不被静默改语义”。因此没有安装 Runtime/Worker/Console v7；平台仍为已安装 v6，`core_ready=true`，未改任务状态。
+## 验证边界与仍未完成
 
-下一步必须做**双产物/双 profile**：Worker 同时打包 v6 与 v7 harness；Runtime 同时准入两种引擎（新任务默认 v7，v6 仅恢复历史）；Console 同时识别两种引擎并允许 v6 任务接续；集成发布策略分别检查 `guarded_execution` 与 `guarded_v6_execution`。只有在双产物验收通过后才可切换默认并保留 v6 恢复能力。
+- 合成 Harness 测试和发布策略不代表真实供应商成功；DS-03 仍需一次有区别的真实四问研究及独立内容复核。
+- “让模型获得准确当前尝试信息”只通过提示层“不得自行声称预算耗尽”缓解；未新增 Runtime 动态剩余次数注入。
+- 真实 v6 恢复动作、v7 真实任务、取消/数据库故障与双 Worker 接管仍需在 DS-03/DS-04/P4 范围验收。
+- 没有触发 CI、没有付费模型调用、没有修改旧任务或正式数据库。
 
-## 需要同步的 Owner 与入口（尚未修改）
+## 推送与提示层缓解
 
-| 层 | 入口 | 需要的工作 |
-| --- | --- | --- |
-| Harness | `src/final-protocol.ts`、`guarded-runner.mjs`、`src/guarded-kernel.ts`、`scripts/build-guarded.mjs`、`tests/guarded/*` | 记录拒绝、单次续接、新引擎 ID、构建/测试/README |
-| Runtime | `internal/runstate/harness_archive.go`、`deploy/release-contract.json` | v7 回放识别与领取准入已完成（`934b856`）；未安装，单产物替换被 v6 可恢复任务阻断 |
-| Worker | `worker/source_harness.go`、`guarded-harness-lock.json`、`scripts/Package-Worker.ps1`、`scripts/kernel-smoke.mjs`、`deploy/release-contract.json` | 需要 v7 artifact/lock 与 v6 历史策略；未修改，v7 不可领取 |
-| Console | `web/src/working-state.tsx`、`web/src/continuation-client.ts`、`deploy/release-contract.json`、`console/model_capabilities.go` | 识别 v7，保留 v6；发布能力/回滚门禁 |
-| 集成 | `scripts/lib/platform-source-execution.ps1`、`platform-model-management.ps1`、`scripts/Test-GuardedRelease.ps1` | 默认引擎、候选枚举、发布/回滚检查 |
-| 业务方法 | `packs/futures/research-finalization.md`、`reportInstructions` | 拒绝后必须修订并重新送检，不得以正文结束或自行声称预算耗尽 |
-
-## 为什么没有安装
-
-- Harness、Runtime、Worker、Console 的 v7 源码和发布策略测试已完成；`Test-GuardedRelease.ps1` 37 项通过。
-- 运行库有一个可恢复的 guarded-v6 失败任务。若用 v7 单产物替换，旧任务将无法恢复，违反历史语义；发布策略的 `resumable_guarded_v6_runs` 也正确拒绝该替换。
-- 集成 pin/发布 profiles 的 v7 改动已在主仓 `3ca9556` 回退到已安装 v6；平台仍 `core_ready=true`，没有服务被替换、没有任务被修改。
-- 下一步是双产物/双 profile：v6 与 v7 同时可运行，新任务默认 v7，v6 仅用于恢复历史。
-
-## 本轮推送与验证
-
-- 相关仓库的分支已与远端同步：`agent-os` `3ca9556`（含本记录后续提交）、`agent-os-futures` `d0e2efc`、`agent-os-runtime` `934b856`、`agent-os-worker` `bbfdbfe`、`agent-os-console` `0350682`、`agent-os-harness` `c5d4e4e2d5`。
-- GitHub Git transport 间歇失败；提交通过 Git data API 上传，逐 blob/tree/commit/ref 校验 SHA，Actions 保持禁用。没有 force push，没有改写历史。
-- 本轮没有触发 CI、没有付费模型调用、没有修改旧任务或正式数据库。
-
-## 提示层缓解（已随 Futures `d0e2efc` 安装，但不能替代 A）
-
-Futures `d0e2efc`（安装 `futures-7ddefba00ef2477983e240fee1dfd75e`）已在新任务 `reportInstructions` 和 `packs/futures/research-finalization.md` 中明确：`final_output_commit` 返回 `selected:false`/`continue` 时，必须按拒绝原因在本轮继续修订并重新送检；不得改以普通正文结束，也不得自行声称预算耗尽。此缓解只影响新任务提示，不改变 v6 执行器语义，不能把真实任务的提前结束标记为已修复；guarded-v7 候选仍未安装。
+- 相关仓库分支已与远端同步：`agent-os`、`agent-os-futures` `d0e2efc`、`agent-os-runtime` `fb5a5c1`、`agent-os-worker` `76485b6`、`agent-os-console` `c6081ab`、`agent-os-harness` `c5d4e4e2d5`。
+- GitHub Git transport 间歇失败；提交通过 Git data API 上传，逐 blob/tree/commit/ref 校验 SHA，Actions 保持禁用；没有 force push。
+- Futures `d0e2efc`（安装 `futures-7ddefba00ef2477983e240fee1dfd75e`）已在新任务说明中要求：`final_output_commit` 返回 `selected:false`/`continue` 时必须继续修订并重新送检，不得以普通正文结束或自行声称预算耗尽。此提示不改变执行器语义，不能替代 guarded-v7 的循环修复。

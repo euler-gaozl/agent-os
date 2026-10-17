@@ -5,7 +5,7 @@
 | 顺序 | 当前状态 | 本体任务 / Owner | 下一步 |
 | --- | --- | --- | --- |
 | DS-01 | 已完成（源码/测试/安装/静态复核） | task:qualitative-evidence / Futures | 非数值说明已绑定留存原文并安装；转入 DS-02，DS-03 真实内容复核仍待做 |
-| DS-02 | v7 Harness/Runtime/Worker/Console 源码与策略已推送（37 项策略检查通过）；未安装 | task:finalization-recovery / Harness、Runtime、Worker、业务方法 | 做 v6+v7 双产物/双 profile 发布：Worker 同时打包、Runtime 准入两引擎、Console 双识别、发布门禁；默认 v7 但保留 v6 失败任务恢复；不得删 v6 runner 或改旧任务 |
+| DS-02 | 已实现并安装 v6+v7 双产物，默认 v7；真实任务未复验 | task:finalization-recovery / Harness、Runtime、Worker、业务方法 | 在 v7 上执行一次有区别的真实四问研究，验证拒绝后单次续接、v6 历史恢复和故障/重放；不能只凭合成测试宣称 P5 |
 | DS-03 | 未通过 | task:research-completion、task:research-quality / Futures及集成 | 前两项离线验证后，一次有区别的真实四问研究，独立内容复核 |
 | DS-04 | 部分实现，完整页面未验收 | task:continuation-ui / Console、Futures、Runtime | 接续动作已有实现；补全部功能/错误状态/窄屏和原文回读浏览器矩阵 |
 | DS-05 | 部分完成 | task:service-retirement / 各Owner及集成 | 对照p2-linux-cutover逐行移交覆盖、权限和旧实现退役 |
@@ -14,7 +14,7 @@
 | DS-08 | 最近备份真实还原已通过，最终快照待做 | task:latest-recovery / 原Windows集成 | 新最终任务/安装组合稳定后备份与隔离恢复 |
 | DS-09 | 未执行最终CI | task:final-ci / 集成 | 全部本机验收后唯一一次集中CI及独立逐条完工审查 |
 
-已完成不重做：Mac成果接回、接续回执迁移/安装、final-v5确定性成稿协议、guarded-v6工具参数纠正、Futures v7精确引用诊断、DS-01非数值说明绑定与v8检查器、15仓同步。它们不等于最终业务和平台验收通过。
+已完成不重做：Mac成果接回、接续回执迁移/安装、final-v5确定性成稿协议、guarded-v6工具参数纠正、Futures v7精确引用诊断、DS-01非数值说明绑定与v8检查器、DS-02双引擎v7单次续接安装、15仓同步。它们不等于最终业务和平台验收通过。
 
 task:fresh-windows-bootstrap仍保留为用户以后要求新Windows时的条件任务；新维护者可先在独立环境做便携代码测试，不能把环境不同当作伪造原Windows验收的理由。服务器/机器HA/最终全量容量和全品种后续范围见objective.md。
 

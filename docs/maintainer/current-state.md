@@ -12,11 +12,11 @@
 | P2.5 DSH与存储 | 部分完成 | 固定源码、持久化、工作状态、Compact回查、冻结重放、guarded参数恢复已实现并有分层证据；完整生命周期及整平台资源仍待收尾 |
 | P3 UI与功能 | 部分完成 | 中台/业务独立，Agent/ToolHub/知识库/任务/草稿/来源可用部分已测；全部桌面/窄屏/错误流程未逐项验收 |
 | P4 故障恢复 | 部分完成 | 接管、丢回复、SQL故障、取消、备份恢复等多项证据；仍须对照W07–12/14核对缺口，不能以合成供应商证明真实服务成功 |
-| P5 真实研究 | 未通过 | DS-01 非数值说明通道已安装，但最新实际任务仍失败于第 8/12 次请求；DS-02 提前结束、DS-03 内容复核和四问真实验收未完成 |
+| P5 真实研究 | 未通过 | DS-01 说明通道与 DS-02 双引擎修复已安装，但最新真实任务仍是修复前的第 8/12 次失败；DS-03 内容复核和四问真实验收未完成 |
 
 ## 当前安装与工程验证
 
-默认引擎 guarded-v6，两个 Worker，最近只读 core_ready=true。Runtime 1e17aae、Worker 029cc2b、Console a5f8c59、Registry 2f7f836、Futures d0e2efc；Futures 报告检查器为 `futures-report-check-v8`。其他安装及完整 SHA 以 [仓库清单](repositories.json) 的 installed 为准。其来源是原 Windows release catalog，不是远端用户的可用服务。
+默认引擎 guarded-v7，两个 Worker，最近只读 core_ready=true。Runtime fb5a5c1、Worker 76485b6、Console c6081ab、Registry 2f7f836、Futures d0e2efc；Futures 报告检查器为 `futures-report-check-v8`。Runtime/Worker 同时保留 guarded-v6 恢复能力。其他安装及完整 SHA 以 [仓库清单](repositories.json) 的 installed 为准。其来源是原 Windows release catalog，不是远端用户的可用服务。
 
 核对发现Telemetry源码HEAD为6f9f539、集成pin为c2a02e2、正式安装为fcaca2e；Indexer/Sandbox/Sources/ToolHub也有HEAD领先pin的情况。清单分别保留，DS-05先调查差异再决定部署，不能用全量build/update把当前安装静默换成pin。Harness产物随Worker固定，SDK随编译依赖固定，不按独立进程计数。
 
@@ -24,13 +24,13 @@ guarded-v6：29项Harness测试、85项Runtime测试事件、69项Worker相关�
 
 DS-01 增量（2026-10-17）：Futures `72d8e36` 增加可选 `statements` 与问题/解读 `statement_ids`，检查器升级为 `futures-report-check-v8`；说明只能绑定本任务留存原文，不能夹带市场报数（日期、页码、期数、样本家数等非报数计数除外），数值仍由 `facts` 检查。Go 测试/vet、27 项 Web 测试、TypeScript/Vite 构建通过；两次独立只读静态复核（无 blocker/high，第二次 MEDIUM）提出的日期误伤、说明限制数量、借用事实 ID、非法编号路径、README 版本等问题已修复。受管发布安装后 `Platform.ps1 status` 为 futures ready，旧任务 report-check 返回 v8，已安装 MCP 的纯说明草稿 `ready=true`/`revise=0`，含裸数量的说明草稿 `ready=false`/`statement_quantity`。详见 [DS-01 记录](windows-ds01-statements-20261017.md)。随后 `d0e2efc` 又安装为 `futures-7ddefba…`，只增加“final_output_commit 被拒后继续修订、不得以正文结束或自称预算耗尽”的新任务提示，检查器仍为 v8；这不是 DS-03 真实研究通过。
 
-DS-02 增量（2026-10-17）：已确认“未就绪稿 → 误提成稿 → Runtime 拒绝 → 模型以正文结束 → runner 失败”的完整序列。Harness `c5d4e4e2d5` 实现 guarded-v7 单次续接（31 项测试通过）；Runtime `934b856`、Worker `bbfdbfe`、Console `0350682` 的 v7 源码和发布策略已推送，`Test-GuardedRelease.ps1` 37 项通过。但运行库仍有 1 个可恢复的 guarded-v6 失败任务，单产物替换会移除其恢复 runner；主仓已用 `3ca9556` 把集成 pin 回退到已安装 v6，**v7 未安装、未改任务**。下一步做双产物/双 profile 发布；不能把 v7 源码完成写成 DS-02 完成。
+DS-02 增量（2026-10-17）：已确认“未就绪稿 → 误提成稿 → Runtime 拒绝 → 模型以正文结束 → runner 失败”的完整序列。Harness `c5d4e4e2d5` 实现 guarded-v7 单次续接（31 项测试通过）；Runtime `fb5a5c1`、Worker `76485b6`、Console `c6081ab` 实现 v6+v7 双产物并已受管安装，默认引擎切换为 guarded-v7，`Test-GuardedRelease.ps1` 42 项通过。运行库仍保留 1 个可恢复 guarded-v6 任务、未改其状态；v6 runner 保留在 Worker 中。平台 `core_ready=true`、两个 Worker。真实任务尚未在 v7 上复验，DS-03 待做；不能把安装写成 P5 通过。
 
 guarded安装前完整备份已在隔离库实际恢复：1数据库、10角色、3项凭证解密和历史产物验证通过，隔离库已停。但该备份早于最新失败研究和v7安装，最终DS-08仍需捕获新的交付状态。
 
 ## 最新业务失败与下一步
 
-Agent v20 / Skill v9 / MCP v2；任务 2bc11ddab7473a1e2ee29fd499330558，第8/12次模型请求失败，无最终报告，22次阅读、两份草稿留存。已确认三类问题：引用归属错误（检查器v7已能精确提示）；非数值来源说明借用不支持论点的数字事实；模型对未就绪稿提前提交并直接返回不同正文。另有日期覆盖解释自相矛盾。DS-01 已实现并安装（`statements`/`statement_ids`，检查器 v8，说明通道不能夹带市场数量），但尚未在该真实四问任务中复验；DS-02 提前结束尚未修复，DS-03 真实研究内容复核未执行。不能把结构 ready 或安装完成写成 P5 通过。
+Agent v20 / Skill v9 / MCP v2；任务 2bc11ddab7473a1e2ee29fd499330558，第8/12次模型请求失败，无最终报告，22次阅读、两份草稿留存。已确认三类问题：引用归属错误（检查器v7已能精确提示）；非数值来源说明借用不支持论点的数字事实；模型对未就绪稿提前提交并直接返回不同正文。另有日期覆盖解释自相矛盾。DS-01 已实现并安装（`statements`/`statement_ids`，检查器 v8，说明通道不能夹带市场数量），DS-02 双引擎修复也已安装并默认 v7，但两者都尚未在该真实四问任务中复验；DS-03 真实研究内容复核未执行。不能把结构 ready 或安装完成写成 P5 通过。
 
 官方DeepSeek保留原生上下文/输出能力，未增加人为token限制。研究需要通过逐问、来源、日期/样本/性质、可比性、最终稿一致性和原文回读的联合验收；结构ready与终态completed都不是内容质量证明。
 
