@@ -78,3 +78,18 @@ Windows Go 复测使用新建的隔离 PostgreSQL，测试后已停止。Runtime
 私有执行证据入口为 `ops/windows-continuation-build.path`；其中 `delivery-progress.json`、各更新回执、status、构建/恢复日志、`worker-revision/rechecked-result.json` 分别保存真实结果。当前 staged set 为 `local/releases/staged/23f52f591485425598e3e10883a52f2b.json`，其 Runtime 是 `217f2ae`、Console 是 `34094b1`。正式 Runtime 和 Console **尚未更新**，正式回执表 **尚未迁移**。
 
 下一步继续 R1：按新固定 Runtime `96fbf63` 构建迁移/Runtime 包，复用 Owner 迁移日志机制加入可恢复的接续迁移，先在恢复副本排练并核对旧表/序列/权限，再执行正式迁移和 Runtime → Console 发布。迁移 gate 当前只识别 telemetry/runtime-access/sources 三种操作，不能绕过它或借别的 operation 名称套用。备份早于本轮两次发布；正式迁移计划必须明确这一差异并验证最新停止后的数据基线，不能谎称 catalog 与旧备份一致。完成后才进入 R2 的有界真实研究验收。
+
+## R1 Runtime 与 Console 已正式升级（同日后续）
+
+此前待办已推进，不能再按上节历史状态重复执行迁移。Runtime 新增受保护 `--config` 入口并提交 `cda132d`；集成 `f8ede09` 纳入独立 `runtime-continuation-v1` 日志、Owner Job、恢复副本排练及正式协调器，详见 [操作说明](../windows-continuation-migration-20261017.md)。
+
+- 本轮备份 `runtime-continuation-20261017-120409` 包含已升级的两个 Worker 和 Futures；隔离恢复 `30d95d79b71440c08216d04f67e3e9a0` 通过。旧备份没有冒充新 catalog。
+- 配置解析 1 顶层/10 子项、迁移 journal 73 项通过。恢复副本排练 `ce40c6b5026445ac9f3f048811705dda` 使用真实 Owner 二进制与 PostgreSQL，44 张旧表/序列数据及旧 schema/ACL 不变；新空表仅 Runtime SELECT/INSERT、Worker 无权；重复迁移和四项恢复检查通过。SQL 前后异常检查点不冒充进程崩溃；journal 的进程退出检查为另一组证据。隔离库已停止，两次独立静态复核未发现 P1/P2。
+- 正式迁移 `d0928a3e46d149fab5ece271a7fecbfc` 已提交并验证与排练一致，关系总数 44→45，旧字段/序列摘要保持；日志先归档再恢复原服务，临时明文迁移配置已由协调器退役。
+- Runtime 实际发布为 `runtime-f4f979d40e4a4bf4b86ac92c7bb4e18e`（Owner `cda132d`），操作 `ec3e8d916db841fb8a2a5a36c28a8a3e`；Console 为 `control-7b198bc337f54232b115b6fb73eb03e3`（`34094b1`），操作 `3c5d231bf539484aa5f78d0cae99b680`。两次更新均 committed、鉴权就绪通过、非目标实例未变。观察为 11 种服务/12 个实例、core_ready=true；Sandbox 执行仍未配置。
+- 正式浏览器中 Agent/历史运行可读；既存 native-v4 失败研究显示已用 12/12、轮次耗尽且没有接续提交按钮，刷新条件正常。没有改旧快照或强行重跑历史任务。
+- 新 `scripts/Test-ContinuationBrowser.mjs` 导入选定且干净的 Console 实际组件/hook，绑定独立 loopback 18090，后端为合成 HTTP。A 在提交后断开回复，浏览器实际发出同 ID 的 3 次 POST，服务端仅 1 次效果；页面保留待确认请求，刷新后 1 次 lookup 取得原回执并清除待确认。B 的 4 秒延迟回复到达前切到 C，回复不切回旧任务；C 即使预算显示暂旧仍服从新的 blocked 判定，没有提交；360px 容器截图无横向溢出。第二次 B 提交由另一个标签页按原 ID 回读确认，不新增 POST；原页收到迟到回复后也正常完成。验收页及临时服务已关闭。这不是全平台真实供应商接续或手机 viewport 测试。
+
+执行证据仍由 `ops/windows-continuation-build.path` 索引：新增 `migration-{backup,restore,plan,formal}.path`、迁移/更新日志、`after-runtime-console-status.json`、`browser-fixture-final` 和 `live-console-continuation.png`。首次合成丢回复只丢一次，浏览器透明重试立即取得回执；原记录保留，随后改为 lookup 前持续丢回复再验证待确认流程，没有把首轮当作已测页面恢复。
+
+Runtime `cda132d` 与集成迁移源码已同步 GitHub；Git HTTPS 两次连接失败后，使用现有 Git Data API 回退逐对象核对 SHA，非强制快进更新开发分支和 main。Actions 始终关闭，无新增付费模型调用。下一步 R2 真实研究成稿/内容质量；尚未完成的整页窄屏、正式业务入口 URL 配置及其他平台剩余项仍按完整 backlog 推进。
