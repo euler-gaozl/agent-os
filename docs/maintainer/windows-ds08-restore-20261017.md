@@ -117,3 +117,13 @@ DS-08 的“最终备份 + 隔离恢复”已由真实 PostgreSQL 集群验证�
   - 完整发布 **211 代 / 25 引用 / 3,103 文件**；
   - 离线 Harness 3 项通过，`isolated_cluster_stopped=true`，`provider_calls=0`。
 - 仍不证明恢复后真实任务成功、服务器/HA、八物理库或外部服务恢复。
+
+## 最新复验：ds08-final-20261017j（4 并发新引擎任务后）
+
+- 4 个新引擎 40 轮任务完成后重建 `local/backups/ds08-final-20261017j`。
+- 隔离恢复 `local/restore-checks/ae30132ca2434e6ab93ddbdba52aec52/result.json`：`status=passed`。
+  - **46** 个关系、**10** 个角色、**5** 条密封凭据；
+  - 2 个 Worker bundle（`worker-52356bed…`、`worker-806b411d…`）；
+  - 完整发布 **213 代 / 25 引用 / 3,103 文件**；
+  - `isolated_cluster_stopped=true`，`provider_calls=0`。
+- 仍不证明恢复后真实任务成功、服务器/HA、八物理库或外部服务恢复。
