@@ -194,3 +194,12 @@
 - 手工 Worker 只打印 `service started` 后退出；提交的任务保持 `queued`/step 0，未进入 claim，也没有形成可观测分区。
 - 已停止代理/手工 Worker，恢复受管 2 Worker；`core_ready=true`。
 - 结论：当前手工 Worker 启动方式不等价于受管 Worker，不能作为网络分区证据；需要测试布局或受管 Worker 的可配置 Runtime 端点。
+
+## 网络分区：手工 Worker + 代理的实际结果（2026-10-18，未闭环）
+
+- 用 `ProcessStartInfo` 启动 detached 手工 Worker，`RUNTIME_URL=http://127.0.0.1:18094`，代理转发到 Runtime 8094；这次 Worker 实际 claim 了任务。
+- 任务 `d1147ecc…` 运行到 step 13，杀掉代理形成分区；30 秒后恢复代理。
+- 结果：任务停在 **waiting_unknown / step 15**，owner 仍是手工 Worker；30 个 call 全部 completed，没有 unknown/inflight call。
+- `POST /resume` 被拒绝：`only failed, non-cancelled runs may resume; unknown calls require reconciliation`。控制台 reconcile 只适用于有未决 call 的情况，本次没有可核对 call，无法用现有 UI 恢复。
+- 已停止手工 Worker/代理，恢复受管 2 Worker，`core_ready=true`。
+- 结论：分区后平台确实停止而不是盲目重试，但缺少“无未决 call 的 waiting_unknown”恢复路径；网络分区验收仍未通过。
