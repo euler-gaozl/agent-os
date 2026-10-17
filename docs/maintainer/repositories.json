@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "latest_recovery_audit": "windows-source-recovery-20261017.json",
-  "current_execution_record": "windows-resumption-20261017.md",
-  "as_of": "2026-10-14",
+  "current_execution_record": "deepseek-handoff-20261017.md",
+  "as_of": "2026-10-17T08:09:21.828Z",
   "project_id": "project:agent-platform",
-  "source_baseline": "4b8074cf658b4a715fd69ae6207c219a838f033b",
+  "source_baseline": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe",
   "integration_handoff_branch": "feat/end-to-end-delivery",
-  "integration_checkout_note": "主仓从交接分支读取本文件及后续交接提交；source_baseline 是文档前的代码基线，不是包含本文件的自引用提交。其余仓可固定 source_head_at_audit 作审查，部署使用 integration_pins 或核对 installed。",
+  "integration_checkout_note": "Integration source_baseline is the clean pre-handoff commit. Read latest main for these handoff documents; the handoff commit cannot contain its own SHA. Service heads, integration pins, installed releases are separate observations.",
   "evidence": "原电脑 ops/maintainer-handoff.path 指向的 repositories.json；deploy/service-sources.json；local/releases/current.json 及固定 manifest",
   "repositories": [
     {
@@ -15,14 +15,15 @@
       "url": "https://github.com/euler-gaozl/agent-os",
       "clone_url": "https://github.com/euler-gaozl/agent-os.git",
       "branch": "feat/end-to-end-delivery",
-      "source_head_at_audit": "4b8074cf658b4a715fd69ae6207c219a838f033b",
+      "source_head_at_audit": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
       "working_tree_clean_before_handoff": true,
       "roles": [],
       "integration_pins": [],
-      "installed": []
+      "installed": [],
+      "remote_main_head_at_audit": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe"
     },
     {
       "id": "repo:agent-os-console",
@@ -30,7 +31,7 @@
       "url": "https://github.com/euler-gaozl/agent-os-console",
       "clone_url": "https://github.com/euler-gaozl/agent-os-console.git",
       "branch": "feat/model-native-limits",
-      "source_head_at_audit": "00bc6280d13e5b1bb57276b0dedef90ea2226c68",
+      "source_head_at_audit": "a5f8c59a7f000aea37d824d3b80fda04aea6f759",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -41,28 +42,29 @@
       "integration_pins": [
         {
           "role": "control",
-          "commit": "00bc6280d13e5b1bb57276b0dedef90ea2226c68",
+          "commit": "a5f8c59a7f000aea37d824d3b80fda04aea6f759",
           "owner_modules": []
         }
       ],
       "installed": [
         {
           "role": "control",
-          "commit": "00bc6280d13e5b1bb57276b0dedef90ea2226c68",
-          "manifest": "descriptors/control-af4f3ac649224d4d9c7f0446d7e004f1.json",
+          "commit": "a5f8c59a7f000aea37d824d3b80fda04aea6f759",
+          "manifest": "descriptors/control-7f70db99cfa24474989f5cc8362cdde4.json",
           "sdk": {
-            "version": "v0.1.0-rc.3",
-            "module_sum": "h1:1Vxtuif+Fn5+vm8aN+WmK8Idf8rid2je9xfkoEfuQeA=",
-            "zip_sha256": "9fe7df5df1558314b03a0f0107f9a6444b94f51ca192ef71705bb1602de879c0",
-            "commit": "bbbfe34b65ac44c1823b1029349b454aef26ce21",
+            "version": "v0.1.0-rc.4",
+            "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
+            "zip_sha256": "f3301da68a7b9493cf6e53ee7b5f909384096d92494ed70815fd1eaf4cd1ef8d",
+            "commit": "4022ca5e86168b1d5f748b72a8483cd7ff5a73e8",
             "module": "github.com/euler-gaozl/agent-os-sdk"
           },
           "owner_modules": [],
-          "observed_at": "2026-10-14",
-          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
-          "environment_id": "environment:owner-windows"
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
         }
-      ]
+      ],
+      "remote_main_head_at_audit": "a5f8c59a7f000aea37d824d3b80fda04aea6f759"
     },
     {
       "id": "repo:agent-os-futures",
@@ -70,7 +72,7 @@
       "url": "https://github.com/euler-gaozl/agent-os-futures",
       "clone_url": "https://github.com/euler-gaozl/agent-os-futures.git",
       "branch": "feat/native-task-transport",
-      "source_head_at_audit": "f40a8f8ae8c9ca6cfadef7af67b7f9953d4f24bc",
+      "source_head_at_audit": "fc080b691bb95f2b78d8fd7890d4dd66efe48974",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -81,28 +83,29 @@
       "integration_pins": [
         {
           "role": "futures",
-          "commit": "f40a8f8ae8c9ca6cfadef7af67b7f9953d4f24bc",
+          "commit": "fc080b691bb95f2b78d8fd7890d4dd66efe48974",
           "owner_modules": []
         }
       ],
       "installed": [
         {
           "role": "futures",
-          "commit": "f40a8f8ae8c9ca6cfadef7af67b7f9953d4f24bc",
-          "manifest": "descriptors/futures-6b38726600c547be9a19ca329164ff3e.json",
+          "commit": "fc080b691bb95f2b78d8fd7890d4dd66efe48974",
+          "manifest": "descriptors/futures-f62fd89042604ec889a5fba607d571f1.json",
           "sdk": {
-            "version": "v0.1.0-rc.2",
-            "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
-            "zip_sha256": "6381fef8a276eb62f52329142549d933a6630c0235bd3a50c7ebb4d922b8c3b4",
-            "commit": "f45ca168dee81f864533a8f77f8c203960caad1a",
+            "version": "v0.1.0-rc.4",
+            "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
+            "zip_sha256": "f3301da68a7b9493cf6e53ee7b5f909384096d92494ed70815fd1eaf4cd1ef8d",
+            "commit": "4022ca5e86168b1d5f748b72a8483cd7ff5a73e8",
             "module": "github.com/euler-gaozl/agent-os-sdk"
           },
           "owner_modules": [],
-          "observed_at": "2026-10-14",
-          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
-          "environment_id": "environment:owner-windows"
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
         }
-      ]
+      ],
+      "remote_main_head_at_audit": "fc080b691bb95f2b78d8fd7890d4dd66efe48974"
     },
     {
       "id": "repo:agent-os-harness",
@@ -110,14 +113,15 @@
       "url": "https://github.com/euler-gaozl/agent-os-harness",
       "clone_url": "https://github.com/euler-gaozl/agent-os-harness.git",
       "branch": "feat/source-owned-harness",
-      "source_head_at_audit": "a8a18e41de719901dbef4513faf898af95822d7a",
+      "source_head_at_audit": "47522dfdd02436d5f6528831fe7a2c1fcab5a37c",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
       "working_tree_clean_before_handoff": true,
       "roles": [],
       "integration_pins": [],
-      "installed": []
+      "installed": [],
+      "remote_main_head_at_audit": "47522dfdd02436d5f6528831fe7a2c1fcab5a37c"
     },
     {
       "id": "repo:agent-os-indexer",
@@ -173,11 +177,12 @@
               "package": "indexing"
             }
           ],
-          "observed_at": "2026-10-14",
-          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
-          "environment_id": "environment:owner-windows"
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
         }
-      ]
+      ],
+      "remote_main_head_at_audit": "30ed978324aa34a2275a0e27a10a65e85f9e28f9"
     },
     {
       "id": "repo:agent-os-knowledge",
@@ -213,11 +218,12 @@
             "module": "github.com/euler-gaozl/agent-os-sdk"
           },
           "owner_modules": [],
-          "observed_at": "2026-10-14",
-          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
-          "environment_id": "environment:owner-windows"
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
         }
-      ]
+      ],
+      "remote_main_head_at_audit": "ed54550f15e115956fc30e08e0e8121b976ee796"
     },
     {
       "id": "repo:agent-os-registry",
@@ -225,7 +231,7 @@
       "url": "https://github.com/euler-gaozl/agent-os-registry",
       "clone_url": "https://github.com/euler-gaozl/agent-os-registry.git",
       "branch": "feat/model-native-limits",
-      "source_head_at_audit": "755b8de85531f0b9620a98beaf1e3a9dccc9d6b0",
+      "source_head_at_audit": "2f7f8364e972a54d65414bcebb5f77738eced586",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -236,28 +242,29 @@
       "integration_pins": [
         {
           "role": "registry",
-          "commit": "755b8de85531f0b9620a98beaf1e3a9dccc9d6b0",
+          "commit": "2f7f8364e972a54d65414bcebb5f77738eced586",
           "owner_modules": []
         }
       ],
       "installed": [
         {
           "role": "registry",
-          "commit": "755b8de85531f0b9620a98beaf1e3a9dccc9d6b0",
-          "manifest": "descriptors/registry-aa9af928de2f4d2eb0ae7d30d1dc1c1b.json",
+          "commit": "2f7f8364e972a54d65414bcebb5f77738eced586",
+          "manifest": "descriptors/registry-e4cf19eb11dc4251abb4d9c7cf0bec72.json",
           "sdk": {
-            "version": "v0.1.0-rc.3",
-            "module_sum": "h1:1Vxtuif+Fn5+vm8aN+WmK8Idf8rid2je9xfkoEfuQeA=",
-            "zip_sha256": "9fe7df5df1558314b03a0f0107f9a6444b94f51ca192ef71705bb1602de879c0",
-            "commit": "bbbfe34b65ac44c1823b1029349b454aef26ce21",
+            "version": "v0.1.0-rc.4",
+            "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
+            "zip_sha256": "f3301da68a7b9493cf6e53ee7b5f909384096d92494ed70815fd1eaf4cd1ef8d",
+            "commit": "4022ca5e86168b1d5f748b72a8483cd7ff5a73e8",
             "module": "github.com/euler-gaozl/agent-os-sdk"
           },
           "owner_modules": [],
-          "observed_at": "2026-10-14",
-          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
-          "environment_id": "environment:owner-windows"
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
         }
-      ]
+      ],
+      "remote_main_head_at_audit": "2f7f8364e972a54d65414bcebb5f77738eced586"
     },
     {
       "id": "repo:agent-os-runtime",
@@ -265,7 +272,7 @@
       "url": "https://github.com/euler-gaozl/agent-os-runtime",
       "clone_url": "https://github.com/euler-gaozl/agent-os-runtime.git",
       "branch": "feat/model-native-limits",
-      "source_head_at_audit": "e6c8b935e5e0a00e6bfab14aa099eb8aaf0436d9",
+      "source_head_at_audit": "1e17aae52b40db9ecb7a637090e5859edf9cf9aa",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -276,28 +283,29 @@
       "integration_pins": [
         {
           "role": "runtime",
-          "commit": "e6c8b935e5e0a00e6bfab14aa099eb8aaf0436d9",
+          "commit": "1e17aae52b40db9ecb7a637090e5859edf9cf9aa",
           "owner_modules": []
         }
       ],
       "installed": [
         {
           "role": "runtime",
-          "commit": "e6c8b935e5e0a00e6bfab14aa099eb8aaf0436d9",
-          "manifest": "descriptors/runtime-1fe2275d5b6f419eaa1c102c8b348909.json",
+          "commit": "1e17aae52b40db9ecb7a637090e5859edf9cf9aa",
+          "manifest": "descriptors/runtime-0684025094054ee6ad52c2661239b122.json",
           "sdk": {
-            "version": "v0.1.0-rc.3",
-            "module_sum": "h1:1Vxtuif+Fn5+vm8aN+WmK8Idf8rid2je9xfkoEfuQeA=",
-            "zip_sha256": "9fe7df5df1558314b03a0f0107f9a6444b94f51ca192ef71705bb1602de879c0",
-            "commit": "bbbfe34b65ac44c1823b1029349b454aef26ce21",
+            "version": "v0.1.0-rc.4",
+            "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
+            "zip_sha256": "f3301da68a7b9493cf6e53ee7b5f909384096d92494ed70815fd1eaf4cd1ef8d",
+            "commit": "4022ca5e86168b1d5f748b72a8483cd7ff5a73e8",
             "module": "github.com/euler-gaozl/agent-os-sdk"
           },
           "owner_modules": [],
-          "observed_at": "2026-10-14",
-          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
-          "environment_id": "environment:owner-windows"
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
         }
-      ]
+      ],
+      "remote_main_head_at_audit": "1e17aae52b40db9ecb7a637090e5859edf9cf9aa"
     },
     {
       "id": "repo:agent-os-sandbox",
@@ -333,11 +341,12 @@
             "module": "github.com/euler-gaozl/agent-os-sdk"
           },
           "owner_modules": [],
-          "observed_at": "2026-10-14",
-          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
-          "environment_id": "environment:owner-windows"
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
         }
-      ]
+      ],
+      "remote_main_head_at_audit": "b7a2cdfa7fdb1fe04d89d268e261b99db777ab98"
     },
     {
       "id": "repo:agent-os-sdk",
@@ -345,14 +354,15 @@
       "url": "https://github.com/euler-gaozl/agent-os-sdk",
       "clone_url": "https://github.com/euler-gaozl/agent-os-sdk.git",
       "branch": "feat/model-native-limits",
-      "source_head_at_audit": "bbbfe34b65ac44c1823b1029349b454aef26ce21",
+      "source_head_at_audit": "4022ca5e86168b1d5f748b72a8483cd7ff5a73e8",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
       "working_tree_clean_before_handoff": true,
       "roles": [],
       "integration_pins": [],
-      "installed": []
+      "installed": [],
+      "remote_main_head_at_audit": "4022ca5e86168b1d5f748b72a8483cd7ff5a73e8"
     },
     {
       "id": "repo:agent-os-sources",
@@ -388,11 +398,12 @@
             "module": "github.com/euler-gaozl/agent-os-sdk"
           },
           "owner_modules": [],
-          "observed_at": "2026-10-14",
-          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
-          "environment_id": "environment:owner-windows"
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
         }
-      ]
+      ],
+      "remote_main_head_at_audit": "76511f1738bfbb5d791ad8f804bd54ae23380c03"
     },
     {
       "id": "repo:agent-os-storage",
@@ -428,11 +439,12 @@
             "module": "github.com/euler-gaozl/agent-os-sdk"
           },
           "owner_modules": [],
-          "observed_at": "2026-10-14",
-          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
-          "environment_id": "environment:owner-windows"
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
         }
-      ]
+      ],
+      "remote_main_head_at_audit": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c"
     },
     {
       "id": "repo:agent-os-telemetry",
@@ -440,7 +452,7 @@
       "url": "https://github.com/euler-gaozl/agent-os-telemetry",
       "clone_url": "https://github.com/euler-gaozl/agent-os-telemetry.git",
       "branch": "feat/independent-service",
-      "source_head_at_audit": "cf73e7f16307fa1a41f82c026067308b1dd8ce23",
+      "source_head_at_audit": "6f9f539125431bebbf88ddbdbb6840f3dd426068",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -468,11 +480,12 @@
             "module": "github.com/euler-gaozl/agent-os-sdk"
           },
           "owner_modules": [],
-          "observed_at": "2026-10-14",
-          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
-          "environment_id": "environment:owner-windows"
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
         }
-      ]
+      ],
+      "remote_main_head_at_audit": "6f9f539125431bebbf88ddbdbb6840f3dd426068"
     },
     {
       "id": "repo:agent-os-toolhub",
@@ -508,11 +521,12 @@
             "module": "github.com/euler-gaozl/agent-os-sdk"
           },
           "owner_modules": [],
-          "observed_at": "2026-10-14",
-          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
-          "environment_id": "environment:owner-windows"
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
         }
-      ]
+      ],
+      "remote_main_head_at_audit": "448f449db9f18a0810fdc6c111582c2e51048776"
     },
     {
       "id": "repo:agent-os-worker",
@@ -520,7 +534,7 @@
       "url": "https://github.com/euler-gaozl/agent-os-worker",
       "clone_url": "https://github.com/euler-gaozl/agent-os-worker.git",
       "branch": "feat/model-native-limits",
-      "source_head_at_audit": "ff9a2f07f397bf0b408256e8a71644b3d2976376",
+      "source_head_at_audit": "029cc2be25a9ec7381f59aab9af7628fb18edbbc",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -531,14 +545,14 @@
       "integration_pins": [
         {
           "role": "worker",
-          "commit": "ff9a2f07f397bf0b408256e8a71644b3d2976376",
+          "commit": "029cc2be25a9ec7381f59aab9af7628fb18edbbc",
           "owner_modules": [
             {
               "module": "github.com/euler-gaozl/agent-os-runtime",
-              "version": "v0.1.0-rc.5",
-              "commit": "4ce51328924af8a5d457b2a05bf0d24307c30418",
-              "module_sum": "h1:fHtgETrjthSbteb3VIseJw7tHnPJp1GMD7IZ3BEVd7A=",
-              "go_mod_sum": "h1:o0IFAQIKPHQPkk/nfwhBhLon9OkNV7IbYTJw2ty1X9g=",
+              "version": "v0.1.0-rc.5.0.20261017073920-6774494b61ec",
+              "commit": "6774494b61ec35d79852f0148b590a4c64f18365",
+              "module_sum": "h1:tAiBC9+2e+DUuz04RuVzSZk3rIzWbQJiXHM4B+aCBvA=",
+              "go_mod_sum": "h1:FGT+LijN16Y7wtJwBy2qB07OtfQXi+/4wuf2xG9bQQw=",
               "protocol": "runtime-execution-v1",
               "package": "execution"
             }
@@ -548,31 +562,32 @@
       "installed": [
         {
           "role": "worker",
-          "commit": "ff9a2f07f397bf0b408256e8a71644b3d2976376",
-          "manifest": "descriptors/worker-05539cd2b8d44718b1c944c39f77420e.json",
+          "commit": "029cc2be25a9ec7381f59aab9af7628fb18edbbc",
+          "manifest": "descriptors/worker-1122e37ad194497d9aedb7ca82d76564.json",
           "sdk": {
-            "version": "v0.1.0-rc.3",
-            "module_sum": "h1:1Vxtuif+Fn5+vm8aN+WmK8Idf8rid2je9xfkoEfuQeA=",
-            "zip_sha256": "9fe7df5df1558314b03a0f0107f9a6444b94f51ca192ef71705bb1602de879c0",
-            "commit": "bbbfe34b65ac44c1823b1029349b454aef26ce21",
+            "version": "v0.1.0-rc.4",
+            "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
+            "zip_sha256": "f3301da68a7b9493cf6e53ee7b5f909384096d92494ed70815fd1eaf4cd1ef8d",
+            "commit": "4022ca5e86168b1d5f748b72a8483cd7ff5a73e8",
             "module": "github.com/euler-gaozl/agent-os-sdk"
           },
           "owner_modules": [
             {
               "module": "github.com/euler-gaozl/agent-os-runtime",
-              "version": "v0.1.0-rc.5",
-              "commit": "4ce51328924af8a5d457b2a05bf0d24307c30418",
-              "module_sum": "h1:fHtgETrjthSbteb3VIseJw7tHnPJp1GMD7IZ3BEVd7A=",
-              "go_mod_sum": "h1:o0IFAQIKPHQPkk/nfwhBhLon9OkNV7IbYTJw2ty1X9g=",
+              "version": "v0.1.0-rc.5.0.20261017073920-6774494b61ec",
+              "commit": "6774494b61ec35d79852f0148b590a4c64f18365",
+              "module_sum": "h1:tAiBC9+2e+DUuz04RuVzSZk3rIzWbQJiXHM4B+aCBvA=",
+              "go_mod_sum": "h1:FGT+LijN16Y7wtJwBy2qB07OtfQXi+/4wuf2xG9bQQw=",
               "protocol": "runtime-execution-v1",
               "package": "execution"
             }
           ],
-          "observed_at": "2026-10-14",
-          "observation": "原 Windows 的固定发布 manifest 历史快照；不是 Mac 安装清单，也不授予原机访问权限",
-          "environment_id": "environment:owner-windows"
+          "environment_id": "environment:owner-windows",
+          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
         }
-      ]
+      ],
+      "remote_main_head_at_audit": "029cc2be25a9ec7381f59aab9af7628fb18edbbc"
     }
   ],
   "environment_policy": {

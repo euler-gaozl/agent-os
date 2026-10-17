@@ -1,12 +1,14 @@
 # 项目群维护知识库
 
+**2026-10-17 最新交接：** 用户要求交给 DeepSeek，交接后暂停原 Codex Goal。先读 [DeepSeek详细接续](deepseek-handoff-20261017.md) 和 [开工提示词](deepseek-start-prompt.txt)。进度、仓库清单、本体已按本次现场核对更新；执行机器尚未指定，先识别环境。下方早期“当前Mac/继续Windows”均按时间作为历史，不构成本次环境选择。
+
 **当前入口（2026-10-17）：[Windows 接回与交付续做](windows-resumption-20261017.md)。** 用户已让原 Windows 接回并继续；以下 Mac 开工说明保留为环境隔离历史。最新源码已恢复并同步开发分支，完整产品仍待交付。
 
 这是一份随 Git 版本维护、可直接由 Codex 读取的知识库，以及 JSON 形式的概念/关系映射。它不依赖额外数据库、Embedding、向量库或模型服务。以后可作为 RAG 输入；目前没有宣称已经建立在线知识图谱服务。
 
 ## 先读这四份
 
-**接手者已确定使用自己的 Mac。先读 [environment.md](environment.md) 和 [environments.json](environments.json)，再读下面四类资料。** 原电脑的可用状态不能推导出 Mac 的可用状态，路径和 localhost 地址也不能跨机器解释。
+**接手者先识别实际机器，再读 [environment.md](environment.md) 和 [environments.json](environments.json)，不要从旧Mac交接推断当前环境。** 原电脑的可用状态不能推导出 Mac 的可用状态，路径和 localhost 地址也不能跨机器解释。
 
 1. [objective.md](objective.md)：原 Goal 全文、有效用户约束和验收矩阵入口。
 2. [current-state.md](current-state.md)：目标进度与原 Windows 的历史观测；不是 Mac 现场。

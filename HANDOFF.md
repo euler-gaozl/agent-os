@@ -1,5 +1,7 @@
 # Agent Platform 接手入口
 
+**最新：交给 DeepSeek。** 直接读 [2026-10-17接续任务](docs/maintainer/deepseek-handoff-20261017.md)，复制 [开工提示词](docs/maintainer/deepseek-start-prompt.txt)。用户要求交接后暂停原Codex。15仓远端和当前安装已重新核对，整体仍未完成；下方较早的交接内容保留作历史。
+
 **2026-10-17 更新：Mac 成果已接回原 Windows，6 仓 29 个新增提交已同步 GitHub。** 当前从 [Windows 续做记录与顺序](docs/maintainer/windows-resumption-20261017.md) 开始；下文是原交接背景。Mac 最后一轮 Runtime/Console 安装证据已找回，不能继续按旧文“尚未安装”判断 Mac，也不能当作 Windows 已安装。
 
 交接日期：2026-10-14。维护者交接知识库已整理，原所有者要求完成交接后暂停本聊天 Goal，由朋友的 Codex 继续。**整体目标尚未完成。**

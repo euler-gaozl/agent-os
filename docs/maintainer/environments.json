@@ -2,9 +2,9 @@
   "schema_version": 1,
   "updated_at": "2026-10-17",
   "purpose": "区分可移植项目知识与环境绑定观测，避免在 Mac 误用原所有者 Windows 环境",
-  "default_execution_environment": "environment:owner-windows",
-  "current_execution_record": "windows-resumption-20261017.md",
-  "environment_selection_rule": "Default describes the current owner session only. Detect the actual host and workspace before executing; never inherit another host's installation, paths, secrets or access authorization.",
+  "default_execution_environment": null,
+  "current_execution_record": "deepseek-handoff-20261017.md",
+  "environment_selection_rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets.",
   "environments": [
     {
       "id": "environment:maintainer-macos",
@@ -627,7 +627,9 @@
       "role": "active_owner_development_and_target_validation",
       "current_authorization": "2026-10-17 owner requested recovery from Mac and continuation on original Windows; historic restrictions below describe access from the earlier Mac handoff only",
       "current_execution_record": "windows-resumption-20261017.md",
-      "current_authorized_scope": ["maintain_original_local_owner_workspace_under_existing_user_authorization"],
+      "current_authorized_scope": [
+        "maintain_original_local_owner_workspace_under_existing_user_authorization"
+      ],
       "root_hint": "D:\\workspace\\agent-platform",
       "observation_date": "2026-10-14",
       "access_for_mac_handoff": "not_authorized",

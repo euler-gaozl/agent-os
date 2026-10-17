@@ -1,5 +1,9 @@
 # Agent OS 工作约定
 
+## 2026-10-17 DeepSeek交接（最新）
+
+用户要求更新GitHub进度、维护知识库与本体，由DeepSeek接续；交接完成后暂停本聊天Goal。当前入口为 docs/maintainer/deepseek-handoff-20261017.md。新执行机器未指定，须先识别OS/路径/授权，不沿用下方旧会话的环境或继续指令。完整目标不变，Actions保持关闭，密钥及私有资料不提交。
+
 ## 2026-10-17 回到原 Windows 继续交付
 
 用户已要求接回 Mac 成果并继续、更新 GitHub。当前执行环境是原 Windows，有效主仓为 `D:\workspace\agent-platform\repos\agent-os`。先读 `docs/maintainer/windows-resumption-20261017.md`；恢复的 Mac 提交/证据与 Windows 安装事实分开。下方“朋友在 Mac”“本次只交接”和“保持暂停”属于当时交接约束，不再禁止本聊天按用户新指令继续开发。旧 Goal 卡片恢复由用户界面控制；不可因此伪造状态或另建缩减目标。P0–P5/P2.5、W01–W14 完整范围保留，日常 Actions 继续禁用。

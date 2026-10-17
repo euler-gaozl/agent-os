@@ -1,5 +1,7 @@
 # 完整目标与有效约束
 
+**2026-10-17 最新交接：** 用户要求交给 DeepSeek，交接后暂停原 Codex Goal。先读 [DeepSeek详细接续](deepseek-handoff-20261017.md) 和 [开工提示词](deepseek-start-prompt.txt)。进度、仓库清单、本体已按本次现场核对更新；执行机器尚未指定，先识别环境。下方早期“当前Mac/继续Windows”均按时间作为历史，不构成本次环境选择。
+
 ## 当前执行版本（2026-10-17）
 
 用户要求接回朋友 Mac 的未推送成果、回到原 Windows 继续，并及时同步 GitHub。执行主仓 `D:\workspace\agent-platform\repos\agent-os`；新顺序见 [接回与续做计划](windows-resumption-20261017.md)。下面原 Goal 全文作历史保留；路径、公开仓库和当前环境按后续指令修正。此前交接暂停要求已被“继续”覆盖，Goal 卡片的恢复需用户点击；这不影响已授权的当前工作。目标范围仍完整保留。
