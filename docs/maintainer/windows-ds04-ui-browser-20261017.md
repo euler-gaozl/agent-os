@@ -43,10 +43,16 @@
 
 修复：Console `52ce5c9` 在 `applyLocalDefaults` 中**仅当 `DEV_LOCAL=1` 且未显式配置时**默认 `FUTURES_PUBLIC_URL=http://127.0.0.1:8098/`；生产仍必须显式配置。Go 测试覆盖默认、显式覆盖、非 dev 不默认。已构建并安装为 `control-dfd76a2459894aa68f51ca11b9580f6f`；浏览器复核侧栏链接为 `http://127.0.0.1:8098/`，不再显示未配置。平台 `core_ready=true`。
 
+## 增量：Console 运行详情“查看源任务”
+
+- Console `4b0520f` 在运行详情为有 `parent_id` 的运行增加“查看源任务”按钮；安装为 `control-94f118e7c5154f0e8041ea79830c62f9`，readiness verified。
+- 浏览器复核：用受控 parent/child 夹具生成父任务 `b6b15192…`、子任务 `bbdfcd06…`；在 Console 运行记录中打开子任务，按钮可见且可点击，点击后父任务 ID 可见，截图 `local/evidence/ds04-parent-link-2026-10-17T12-18-44-101Z/child-detail.png`、`parent-detail.png`。
+- 这是 **Console 管理员运行详情**的溯源，不是 Futures 业务记录页的最终报告证据链；Futures 更正任务“0 份阅读资料”仍需要单独的来源任务/证据链，不能把本增量写成业务侧溯源完成。
+
 ## 待跟进（不阻塞页面矩阵，但不能写成已完成恢复）
 
 1. **v6 失败任务续跑评估**：运行记录中 `2bc11dd…`（guarded-v6）显示“当前记录不足以直接续跑，需要核对执行详情”，点击“更新续跑条件”仍相同。直接查询 continuation context 得到 `assessment=manual_review`、`reason=unsupported_checkpoint`；运行库粗粒度事实 `resumable_guarded_v6_runs=1` 只表示非 completed/cancelled，不等于可直接续跑。需要区分“保留 v6 重放/读取能力”和“可直接续跑”，并在 DS-07 做真实恢复验收；不能用该状态宣称 v6 直接续跑已通过。
-2. **跨任务证据溯源**：最终 DS-03 报告来自更正任务 `3c059635…`，该任务本身 0 份阅读资料；3 份来源在原始任务 `a526d178…`。记录页对更正任务显示“资料回查 0 份”是事实，但最终记录没有一键跳到原始任务的证据。需要在 Futures 记录页增加来源任务/证据链，或明确标注“更正任务沿用原任务证据”。
+2. **跨任务证据溯源**：Console 运行详情现已能跳到有 `parent_id` 的源任务；但最终 DS-03 报告来自更正任务 `3c059635…`，Futures 业务记录页本身仍是 0 份阅读资料，3 份来源在原始任务 `a526d178…`。仍需在 Futures 记录页增加来源任务/证据链，或明确标注“更正任务沿用原任务证据”；Console 的父子链接不能替代业务侧验收。
 3. **运行详情“任务内容”**：执行详情模态直接展示大段原始任务 JSON（含完整报告），可读性一般；适合管理员排障，但不是面向业务的摘要视图。
 4. **浏览器覆盖**：只覆盖 Chrome headless、1440 与 390 两个视口；未覆盖 Firefox/Safari、真实触屏、字体缩放/高对比度。不能把本次矩阵写成跨浏览器认证。
 
