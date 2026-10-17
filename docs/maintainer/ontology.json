@@ -787,7 +787,7 @@
       "status": "partial_notes_and_long_history",
       "doc": "windows-ds06-storage-lifecycle-20261017.md",
       "section": "DS-06",
-      "scope": "Real Runtime note revise/expire/stale-head conflict/retire verified; two simultaneous revisers produced 200/409 without a second branch. Source-Harness benchmark passed 128/512/2048 steps with compaction and journal replay. A 64k-context 20-round task completed after step-8 kill/fence-2 takeover. Tight 8192/16384 contexts failed at step 19/13 with 'DSH turn did not complete' even without a kill; 32768 completed after a step-10 fence-2 takeover, as did schema-maximum 1M both with and without a kill. A 40-second RSS sample during a 20-round max-limit task showed Runtime 23.2→23.0MB, workers 47.1→42.0MB and PostgreSQL 502.2→513.4MB without monotonic growth. The failure is confined to too-small contexts, but no explicit Compact success was observed; long-run service RSS bounds remain."
+      "scope": "Real Runtime note revise/expire/stale-head conflict/retire verified; two simultaneous revisers produced 200/409 without a second branch. Source-Harness benchmark passed 128/512/2048/4096/8192 steps with compaction and journal replay; 8192 reached 90,119 events/100.2MB, 168.1MB max heap and 339.5MB max RSS. A 64k-context 20-round task completed after step-8 kill/fence-2 takeover. Tight 8192/16384 contexts failed at step 19/13 with 'DSH turn did not complete' even without a kill; 32768 and schema-maximum 1M completed with and without a kill. A 40-second RSS sample during a 20-round task showed no monotonic growth. The failure is confined to too-small contexts, but no explicit Compact success was observed; 10M-chunk and long-run service RSS bounds remain."
     },
     {
       "id": "task:faults-and-resources",
@@ -3755,7 +3755,7 @@
   "environment_policy": {
     "file": "environments.json",
     "default_execution_environment": null,
-    "current_execution_record": "windows-ds07-platform-load-20261017.md",
+    "current_execution_record": "windows-ds06-storage-lifecycle-20261017.md",
     "updated_at": "2026-10-17",
     "rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets."
   },
