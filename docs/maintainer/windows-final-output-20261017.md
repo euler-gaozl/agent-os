@@ -1,5 +1,27 @@
 # Windows 确定性交付候选（2026-10-17）
 
+## 后续：Worker 完整包与 Registry 已接通
+
+2026-10-17 13:50：本次增加独立 Worker 集成及资源发布校验，正式配置/数据库/运行版本保持原组合。未做付费调用，Actions 仍禁用。此前“尚未接入 Worker”是下方首轮记录的当时状态。
+
+| Owner | 固定源码 | 本次结果 |
+| --- | --- | --- |
+| Worker | `c828bbccbb9903ff20c47e6b0e5201124d810f2b` | 固定 execution `7805a48`、SDK rc.4、Harness `696c019`；独立 final-v5 pin、显式配置、冻结策略传递、原生传输及完整五源码引擎包 |
+| Runtime | `3477714dd70f8a7657eb57219071530a028f27c7` | 增加实际独立进程联合验收；生产 execution 仍为上一提交，Worker pin 无需因测试/文档变化漂移 |
+| Registry | `6053f9cb5201c42ecef78c702a9c9be6f320c9f6` | SDK rc.4 保留 final_output；发布前通过 ToolHub HTTP 校验固定 Skill/MCP 绑定；声明支持配置协议 |
+
+Worker 全仓 102 个测试事件通过，零测试跳过（healthcheck 无测试文件不算测试跳过）；vet、依赖所有权检查及泄漏扫描通过。新完整包实际移到新目录，原目录不存在；历史两种包协议及源码 v1–v5 均执行，v5 真正走送检→引用选择→finish_ref。搬迁后的包再次参与真实 PostgreSQL/Runtime HTTP/独立 Worker exe/Node 联调，2 顶层、13 子场景全部通过，零 skip。
+
+其中 v5 的 7 个子场景覆盖 312,021 字节 Unicode/CRLF/尾空白原文、选择后强杀、结束事件落盘后强杀、选择/完成 SQL 写故障后的显式恢复、取消及供应商半包。正常/恢复均两次模型请求、一次检查、唯一完成回执；原文 SHA-256 为 `6a53a44c51653aea8e52d9e4d3852af05a7c6643bd207e8176c309d6cc0bb0f6`。旧 native-v4 六场景保持通过。供应商、检查工具和归档 HTTP 为夹具；接管只对测试任务手动缩短租约，不称作自然超时或真实 Storage 验收。私有入口 `ops/final-worker.path`、`ops/final-worker-package.path`、`ops/final-worker-joint.path`，最终联合证据 `final-worker-joint-81294f9ce4cc42618434ffac6bcf5a14`。
+
+Registry 全仓 39 个测试事件、零测试跳过及 vet/build 通过，实际隔离 PostgreSQL 验证发布/回读不丢策略、新 MCP 版本不改变旧绑定、错误不增加版本、无策略旧 Agent 兼容；独立 ToolHub HTTP 夹具验证精确版本解析与故障关闭。模型能力发现为合成响应。私有入口 `ops/final-registry.path` 指向 `final-registry-2621080b112d49c8a2f00b50f9e58ede`。
+
+独立 Agent 复核 Worker/Registry 未发现新的 P1/P2。它发现的 result_kill 注入条件错误已改为匹配真实冻结回执摘要及完成事件，并通过整套重跑；包冒烟测试的 inputSchema 拼写错误也已修正并以重建搬迁包验证。失败证据保留，未算通过。独立 Agent 未运行 PostgreSQL。
+
+**下一步仍须完成：** Console/Futures 实际读写/编辑字段保留与 UI 配置；业务检查工具显式结构就绪；v5 模型失败的显式接续；受管升级/回滚门槛和完整固定资源发布；再按内容缺陷修复及离线预检安排一次有界真实业务验收。集成 source pins 尚未切换，新 Worker/Registry 尚未安装。P0–P5/P2.5、W01–W14 及其余 UI/生命周期/权限/备份/故障/最终 CI 继续保留。
+
+## 首轮：SDK、Harness 与 Runtime 事务候选
+
 完整 P0–P5/P2.5、W01–W14 继续执行。本轮关闭的是确定性交付的 SDK、DSH 候选和 Runtime 事务实现，不是整个 R2 或单机 Goal。正式安装组合保持，未重跑真实研究，也没有新增付费模型调用。
 
 ## 源码增量
