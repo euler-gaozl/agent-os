@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "latest_recovery_audit": "windows-source-recovery-20261017.json",
-  "current_execution_record": "windows-ds03-inventory-20261017.md",
-  "as_of": "2026-10-17T09:39:06Z",
+  "current_execution_record": "windows-ds04-ui-browser-20261017.md",
+  "as_of": "2026-10-17T09:50:40Z",
   "project_id": "project:agent-platform",
   "source_baseline": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe",
   "integration_handoff_branch": "feat/end-to-end-delivery",
@@ -31,7 +31,7 @@
       "url": "https://github.com/euler-gaozl/agent-os-console",
       "clone_url": "https://github.com/euler-gaozl/agent-os-console.git",
       "branch": "feat/model-native-limits",
-      "source_head_at_audit": "c6081ab9c548e9b6ae901e2d8149b231790bd8e6",
+      "source_head_at_audit": "52ce5c905c523dd4a09a088ea58912f8e067971d",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -49,8 +49,8 @@
       "installed": [
         {
           "role": "control",
-          "commit": "c6081ab9c548e9b6ae901e2d8149b231790bd8e6",
-          "manifest": "descriptors/control-70c8d97eef2645f0a093e3d965b1c8f3.json",
+          "commit": "52ce5c905c523dd4a09a088ea58912f8e067971d",
+          "manifest": "descriptors/control-dfd76a2459894aa68f51ca11b9580f6f.json",
           "sdk": {
             "version": "v0.1.0-rc.4",
             "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
@@ -60,8 +60,8 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T09:15:51Z",
-          "observation": "Actual owner Windows release catalog; guarded-v7 Console with v6 continuation."
+          "observed_at": "2026-10-17T09:50:40Z",
+          "observation": "Actual owner Windows release catalog; guarded-v7 Console with local Futures business entry."
         }
       ],
       "remote_main_head_at_audit": "a5f8c59a7f000aea37d824d3b80fda04aea6f759"

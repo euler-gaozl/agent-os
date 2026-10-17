@@ -16,7 +16,7 @@
 
 ## 当前安装与工程验证
 
-默认引擎 guarded-v7，两个 Worker，最近只读 core_ready=true。Runtime fb5a5c1、Worker 76485b6、Console c6081ab、Registry 2f7f836、Futures 5be0b1a（`futures-7b35c15…`）；Futures 报告检查器为 `futures-report-check-v8`，已包含“拒绝后立即结束回合、由执行器续接”的提示。Runtime/Worker 同时保留 guarded-v6 恢复能力。其他安装及完整 SHA 以 [仓库清单](repositories.json) 的 installed 为准。其来源是原 Windows release catalog，不是远端用户的可用服务。
+默认引擎 guarded-v7，两个 Worker，最近只读 core_ready=true。Runtime fb5a5c1、Worker 76485b6、Console 52ce5c9（`control-dfd76…`）、Registry 2f7f836、Futures 5be0b1a（`futures-7b35c15…`）；Futures 报告检查器为 `futures-report-check-v8`，已包含“拒绝后立即结束回合、由执行器续接”的提示。Runtime/Worker 同时保留 guarded-v6 恢复能力。其他安装及完整 SHA 以 [仓库清单](repositories.json) 的 installed 为准。其来源是原 Windows release catalog，不是远端用户的可用服务。
 
 核对发现Telemetry源码HEAD为6f9f539、集成pin为c2a02e2、正式安装为fcaca2e；Indexer/Sandbox/Sources/ToolHub也有HEAD领先pin的情况。清单分别保留，DS-05先调查差异再决定部署，不能用全量build/update把当前安装静默换成pin。Harness产物随Worker固定，SDK随编译依赖固定，不按独立进程计数。
 
@@ -27,6 +27,8 @@ DS-01 增量（2026-10-17）：Futures `72d8e36` 增加可选 `statements` 与�
 DS-02 增量（2026-10-17）：已确认“未就绪稿 → 误提成稿 → Runtime 拒绝 → 模型以正文结束 → runner 失败”的完整序列。Harness `c5d4e4e2d5` 实现 guarded-v7 单次续接（31 项测试通过）；Runtime `fb5a5c1`、Worker `76485b6`、Console `c6081ab` 实现 v6+v7 双产物并已受管安装，默认引擎切换为 guarded-v7，`Test-GuardedRelease.ps1` 42 项通过。运行库仍保留 1 个可恢复 guarded-v6 任务、未改其状态；v6 runner 保留在 Worker 中。平台 `core_ready=true`、两个 Worker。DS-03 已在 v7 上跑通真实任务；v6 恢复动作未实际启动。详见 [DS-02 记录](windows-ds02-finalization-investigation-20261017.md)。
 
 DS-03 增量（2026-10-17）：用 Agent 22/Skill 10/Connector 4 在 guarded-v7 上执行了**有区别的库存、区域分布与未执行合同四问研究**，只读 Mysteel 9/18 选段、国粮 9/18 与 9/25 转载三份原文。第三次任务 `a526d178…` 完成（6/12 次请求，17,708 字节，检查器 `needs_review`、无结构 revise）；独立内容复核先判 REVISE，指出 6月末被写成精确日、q2 样本一致性自相矛盾、q4“现有资料”越界、s3 引文不足、发布主体过度断言；两次更正月（`634a5052…` 7 项、`3c059635…` 仅 s5）后，最终 `report-final.json` 18,925 字节，独立复核 **ACCEPT**。核心数字 74.29/117.32/43.7/37.3%/37.2/609.4/459.91/869/113/873/124 与 58.0%/24.5%/17.5% 均对原文；未把不同来源相减、未把合同当库存、未把转载当独立调查。唯一 minor：s1 引文拼接两段不相邻原文。旧任务 `2bc11dd…` 仍是失败记录，未回填。
+
+DS-04 增量（2026-10-17）：用真实 Chrome headless（CDP，无付费模型）执行中台/业务 Web 浏览器矩阵。中台 7 个页面（Agent、ToolHub、知识库、工作记忆、运行记录、服务与实例、模型与凭证）均能登录、渲染、无横向溢出、无 JS 异常；Agent 编辑器 5 个标签、ToolHub 检测/MCP、知识库原文与检索、运行详情、服务失联筛选、移动端抽屉均验证。业务端首页、已完成记录、失败记录、阶段草稿、移动端记录页均验证，记录页加载 3 份原始阅读资料。Console `52ce5c9` 增加**仅 DEV_LOCAL 的本地业务入口默认值**并安装为 `control-dfd76…`，侧栏“研序·期货研究”从“业务入口未配置”变为可点击 `http://127.0.0.1:8098/`。仍保留两个待跟进项：v6 失败任务续跑面板显示“当前记录不足以直接续跑，需要核对执行详情”（DB 的 `resumable_guarded_v6_runs=1` 只是粗粒度）；s5 更正任务本身 0 份阅读资料，最终报告的证据在原始 `a526…` 任务，跨任务溯源未在记录页直连。详见 [DS-04 记录](windows-ds04-ui-browser-20261017.md)。
 
 guarded安装前完整备份已在隔离库实际恢复：1数据库、10角色、3项凭证解密和历史产物验证通过，隔离库已停。但该备份早于最新失败研究和v7安装，最终DS-08仍需捕获新的交付状态。
 

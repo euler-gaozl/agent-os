@@ -2,7 +2,7 @@
 
 **2026-10-17 最新交接：** 用户要求交给 DeepSeek，交接后暂停原 Codex Goal。先读 [DeepSeek详细接续](deepseek-handoff-20261017.md) 和 [开工提示词](deepseek-start-prompt.txt)。进度、仓库清单、本体已按本次现场核对更新；执行机器尚未指定，先识别环境。下方早期“当前Mac/继续Windows”均按时间作为历史，不构成本次环境选择。
 
-**2026-10-17 后续增量：** [DS-01 非数值论据绑定原文](windows-ds01-statements-20261017.md) 已实现、测试、独立静态复核并受管安装；[DS-02 未就绪成稿](windows-ds02-finalization-investigation-20261017.md) 的 guarded-v7 单次续接与 v6+v7 双产物已安装，默认 v7，v6 失败任务仍可恢复；[DS-03 库存/合同真实四问](windows-ds03-inventory-20261017.md) 已产出报告并通过独立内容复核（ACCEPT）。整体目标仍未完成；DS-04 页面/浏览器矩阵是下一步。
+**2026-10-17 后续增量：** [DS-01 非数值论据绑定原文](windows-ds01-statements-20261017.md) 已实现、测试、独立静态复核并受管安装；[DS-02 未就绪成稿](windows-ds02-finalization-investigation-20261017.md) 的 guarded-v7 单次续接与 v6+v7 双产物已安装，默认 v7，v6 失败任务仍保留；[DS-03 库存/合同真实四问](windows-ds03-inventory-20261017.md) 已产出报告并通过独立内容复核（ACCEPT）；[DS-04 中台/业务浏览器矩阵](windows-ds04-ui-browser-20261017.md) 已通过主要页面/窄屏/交互检查，并修复本地业务入口。整体目标仍未完成；v6 续跑评估与跨任务证据溯源待跟进，随后进入 DS-05。
 
 **当前入口（2026-10-17）：[Windows 接回与交付续做](windows-resumption-20261017.md)。** 用户已让原 Windows 接回并继续；以下 Mac 开工说明保留为环境隔离历史。最新源码已恢复并同步开发分支，完整产品仍待交付。
 

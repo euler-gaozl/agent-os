@@ -766,9 +766,10 @@
       "id": "task:continuation-ui",
       "type": "task",
       "label": "继续任务与完整 UI",
-      "status": "open",
-      "doc": "backlog.md",
-      "scope": "原目标余项"
+      "status": "browser_matrix_passed_followups",
+      "doc": "windows-ds04-ui-browser-20261017.md",
+      "section": "DS-04",
+      "scope": "Chrome headless CDP browser matrix on the owner Windows: seven Console pages, Agent editor tabs, ToolHub, Knowledge search, run detail, services filter, mobile drawer; Futures home/records/failure/mobile. Console local business entry fixed and installed. Follow-ups: v6 continuation assessment blocked despite coarse resumable count; correction-task evidence provenance; raw task JSON in run detail."
     },
     {
       "id": "task:service-retirement",
@@ -1631,6 +1632,12 @@
       "type": "evidence_document",
       "label": "DS-03 库存/合同真实四问、两次更正与独立内容复核",
       "doc": "windows-ds03-inventory-20261017.md"
+    },
+    {
+      "id": "evidence:windows-ds04-ui-browser-20261017",
+      "type": "evidence_document",
+      "label": "DS-04 中台/业务 Web 浏览器矩阵、入口修复与跟进项",
+      "doc": "windows-ds04-ui-browser-20261017.md"
     },
     {
       "id": "task:finalization-recovery",
@@ -3700,7 +3707,7 @@
   "environment_policy": {
     "file": "environments.json",
     "default_execution_environment": null,
-    "current_execution_record": "windows-ds03-inventory-20261017.md",
+    "current_execution_record": "windows-ds04-ui-browser-20261017.md",
     "updated_at": "2026-10-17",
     "rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets."
   },

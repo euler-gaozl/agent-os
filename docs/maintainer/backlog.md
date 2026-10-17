@@ -7,7 +7,7 @@
 | DS-01 | 已完成（源码/测试/安装/静态复核） | task:qualitative-evidence / Futures | 非数值说明已绑定留存原文并安装；转入 DS-02，DS-03 真实内容复核仍待做 |
 | DS-02 | 已完成（双产物安装，默认 v7；DS-03 已在 v7 上跑通真实任务） | task:finalization-recovery / Harness、Runtime、Worker、业务方法 | v6 恢复动作仍未实际启动；不得删 v6 runner 或改旧任务；真实延迟/故障重放归 DS-07 |
 | DS-03 | 已完成（真实四问报告 + 独立内容复核 ACCEPT） | task:research-quality / Agent 22、Skill 10、Futures 检查器 | 仅覆盖库存/区域/合同三份资料；旧供给/进口/压榨失败任务未回填；保留 s1 引文拼接 minor；下一步 DS-04 |
-| DS-04 | 部分实现，完整页面未验收 | task:continuation-ui / Console、Futures、Runtime | 接续动作已有实现；补全部功能/错误状态/窄屏和原文回读浏览器矩阵 |
+| DS-04 | 浏览器矩阵通过（7 中台页 + 5 编辑器标签 + ToolHub/知识库/运行/服务 + 业务首页/记录/失败/移动端）；业务入口已修复安装；2 项跟进 | task:continuation-ui / Console、Futures、Runtime | 跟进 v6 失败任务“不足以直接续跑”的评估与跨任务证据溯源；补浏览器自动化的可重复入口；不把浏览器通过写成后端恢复/故障通过 |
 | DS-05 | 部分完成 | task:service-retirement / 各Owner及集成 | 对照p2-linux-cutover逐行移交覆盖、权限和旧实现退役 |
 | DS-06 | 部分完成 | task:storage-lifecycle / Harness、Runtime、Worker、Storage | 补笔记/缓存/失败退出与长历史内存恢复验收，不删权威资料 |
 | DS-07 | 部分完成 | task:faults-and-resources / 集成及相关Owner | 仅补缺失或受改动影响的故障，并测整平台+PG连续负载 |
