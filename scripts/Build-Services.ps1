@@ -244,7 +244,7 @@ try{
             $modelManagement=$null;if($owner){$modelManagement=Get-DeclaredModelManagement $owner.release}
             if($null -ne $modelManagement){Assert-ModelManagementBinary $binary @{role=$role;model_management=$modelManagement}}
             $continuationManagement=if($owner){$owner.release['continuation_management']}else{$null}
-            $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance $sourceExecution $residentExecution $receiptManagement $executionAccess $knowledgeArchives -BudgetExecution $budgetExecution -NativeExecution $nativeExecution -FinalExecution $finalExecution -GuardedExecution $guardedExecution -GuardedV6Execution $guardedV6Execution -ModelManagement $modelManagement -ContinuationManagement $continuationManagement
+            $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance $sourceExecution $residentExecution $receiptManagement $executionAccess $knowledgeArchives -BudgetExecution $budgetExecution -NativeExecution $nativeExecution -FinalExecution $finalExecution -GuardedExecution $guardedExecution -GuardedV6Execution $guardedV6Execution -ModelManagement $modelManagement -ContinuationManagement $continuationManagement -SourceV2Execution $sourceV2Execution -ResidentV2Execution $residentV2Execution -BudgetV2Execution $budgetV2Execution -NativeV2Execution $nativeV2Execution -FinalV2Execution $finalV2Execution -GuardedV2Execution $guardedV2Execution
             if($sourceV2Execution){$references[$role].source_v2_execution=$sourceV2Execution}
             if($residentV2Execution){$references[$role].resident_v2_execution=$residentV2Execution}
             if($budgetV2Execution){$references[$role].budget_v2_execution=$budgetV2Execution}
