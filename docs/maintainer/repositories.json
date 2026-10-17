@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "latest_recovery_audit": "windows-source-recovery-20261017.json",
-  "current_execution_record": "dsh-upstream-0.2.1-rc.2-20261017.md",
-  "as_of": "2026-10-17T14:45:00Z",
+  "current_execution_record": "windows-ds08-restore-20261017.md",
+  "as_of": "2026-10-17T14:40:54Z",
   "project_id": "project:agent-platform",
   "source_baseline": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe",
   "integration_handoff_branch": "feat/end-to-end-delivery",
@@ -290,8 +290,8 @@
       "installed": [
         {
           "role": "runtime",
-          "commit": "55dc3cd747008d9f5d8f13e989a8ebbfe437fbab",
-          "manifest": "descriptors/runtime-57ce21bae7714d17b7d66a3231b2ebaf.json",
+          "commit": "69b9e62b23155596a5c1b36b488ad0e9b1d5941c",
+          "manifest": "descriptors/runtime-cd1436ca0bca41199ad2ad35b901af97.json",
           "sdk": {
             "version": "v0.1.0-rc.4",
             "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
@@ -301,8 +301,8 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T12:06:26Z",
-          "observation": "Actual owner Windows release catalog; cancel waits up to 60s for an in-flight run row lock."
+          "observed_at": "2026-10-17T14:40:00Z",
+          "observation": "Actual owner Windows release catalog; dual DSH engine registry installed; default guarded-v2."
         }
       ],
       "remote_main_head_at_audit": "1e17aae52b40db9ecb7a637090e5859edf9cf9aa"
@@ -562,8 +562,8 @@
       "installed": [
         {
           "role": "worker",
-          "commit": "3e8eec3d125240e730cf393a11694d482a0e3cfe",
-          "manifest": "descriptors/worker-52356bed330c4d0085b4ba5806eef71f.json",
+          "commit": "64a31b9989dba5597fb85477c15cfe48a7240f27",
+          "manifest": "descriptors/worker-806b411dd08049178458ef34702f34c5.json",
           "sdk": {
             "version": "v0.1.0-rc.4",
             "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
@@ -583,11 +583,11 @@
             }
           ],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T13:44:37Z",
-          "observation": "Actual owner Windows release catalog; 70s Runtime stop/start left a 503 run for fence-2 lease takeover; task d0abfb0d completed step 6."
+          "observed_at": "2026-10-17T14:40:00Z",
+          "observation": "Actual owner Windows release catalog; dual DSH engine bundle (old 639ed015 + new 687f282e) installed."
         }
       ],
-      "remote_main_head_at_audit": "3e8eec3d125240e730cf393a11694d482a0e3cfe"
+      "remote_main_head_at_audit": "64a31b9989dba5597fb85477c15cfe48a7240f27"
     }
   ],
   "environment_policy": {

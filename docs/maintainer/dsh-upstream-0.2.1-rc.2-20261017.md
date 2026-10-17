@@ -42,8 +42,11 @@
 - 平台脚本已支持 `-SourceV2Artifact`/`-ResidentV2Artifact`/`-BudgetV2Artifact`/`-NativeV2Artifact`/`-FinalV2Artifact`/`-GuardedV2Artifact`，把新旧目录放进同一 Worker release，并写入六个 `*_v2_execution` 描述。
 - 已实际生成 staged Worker `worker-76038f18…` / `worker-26bb66a5…`：同时含旧 `639ed015` 资产和六个 `687f282e` V2 资产；描述中的 manifest/engine/protocol 均正确。
 - Worker `64a31b9` 已把 vendored Runtime 更新到 `69b9e62`（新引擎识别），`go test ./worker ./cmd/worker` 通过；`64a31b9` 同步 source provenance。
-- **安装仍被拒绝**：`Platform.ps1 update` 报 `Retained tasks or Worker capability require Runtime support for dsh-source-687f282e-state-v1; downgrade refused.` 当前安装的 Runtime `57ce21ba…` 仍是旧代码/旧 descriptor，不能支持 V2。必须先构建/安装 Runtime `69b9e62` 并给 Runtime descriptor 增加同一组 V2 metadata，然后才能安装双版本 Worker。
-- 旧任务仍由当前 `worker-52356bed…` 运行，平台未改变。
+- Runtime 已生成并安装 `runtime-cd1436ca…`（含六个 V2 descriptor）；双版本 Worker 已安装 `worker-806b411d…`（staged 26bb66a5，含旧/新目录与六个 V2 环境变量），2 副本 readiness verified。
+- `DEFAULT_RUN_ENGINE` 已切到 `dsh-source-687f282e-guarded-v7`。
+- 旧引擎回归：任务 `59a78329…` 仍用 `dsh-source-639ed015-budget-v3` 完成 step 6，证明旧任务路径未断。
+- 新引擎任务尚未真正跑通：用 `ds06-long-task`/delivery fixture 提交时 Runtime 仍选择旧 `budget-v3`（Agent 没有 final output，回退到旧 budget），所以不能把“默认已切”写成新引擎已验收。
+- 安装后已生成 `ds08-final-20261017f` 并隔离恢复通过（46 关系、10 角色、5 凭据、2 Worker bundle、192 代/3,103 文件）；临时集群停止。
 
 ## 下一步
 
