@@ -42,6 +42,14 @@
 - Harness core/guarded 测试覆盖 source loop、Compact、冻结策略、重放和错误持久性。
 - 这些都是**本机测试/构建**，不能替代 GitHub Actions 的独立 runner、真实 Langfuse、服务器/跨机 HA、10M 分块或旧实现删除验收。
 
+## DSH 双版本安装后复跑（2026-10-17 后续）
+
+- 版本：Runtime `cd1436ca…`、Worker `806b411d…`（旧 `639ed015` + 新 `687f282e`），默认 `dsh-source-687f282e-guarded-v7`。
+- 证据：`local/evidence/ds09-local-suite-edbd10d0ca27421bb5fac4d93a972ac2/`。
+- 五个 Go 仓库 `go test -mod=vendor ./...` 全部 exit 0：Runtime、Console、Worker、Futures、Telemetry。
+- Console Web **40/40**、Futures Web **27/27**、Harness core **16/16**、Harness guarded **31/31**，全部 0 skip。
+- 这是双版本安装后的本机回归，不是 hosted CI；guarded-v2 final 任务仍未验收。
+
 ## 未覆盖
 
 - 真实 Langfuse/managed Telemetry、真实外部 OTLP 端点。

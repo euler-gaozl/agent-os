@@ -813,7 +813,7 @@
       "label": "一次统一验收与交付",
       "status": "local_sweep_passed_hosted_ci_open",
       "doc": "windows-local-acceptance-20261017.md",
-      "scope": "Windows local full suite passed and was rerun on Worker 1ac65212/Futures fdc9a7/Console 94f118: Runtime, Console Go+Web (40), Worker, Futures Go+Web (27), Telemetry, Harness core 16 and guarded 31, all exit 0 with zero reported skips; evidence ds09-local-suite-ff7f6d242fba4d25ad73d855d8bebf6c. This is not GitHub Actions. Hosted CI, external Langfuse, Compact-point recovery, production RSS and old implementation retirement remain."
+      "scope": "Windows local full suite passed after the dual-engine DSH install (Runtime cd1436ca/Worker 806b411d): five Go repos, Console Web 40, Futures Web 27, Harness core 16 and guarded 31, all exit 0 with zero skips; evidence ds09-local-suite-edbd10d0ca27421bb5fac4d93a972ac2. Guarded-v2 final, hosted CI, external Langfuse, Compact-point recovery and old implementation retirement remain."
     },
     {
       "id": "task:fresh-windows-bootstrap",
@@ -3766,9 +3766,9 @@
   "environment_policy": {
     "file": "environments.json",
     "default_execution_environment": null,
-    "current_execution_record": "dsh-upstream-0.2.1-rc.2-20261017.md",
+    "current_execution_record": "windows-local-acceptance-20261017.md",
     "updated_at": "2026-10-17",
     "rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets."
   },
-  "current_execution_record": "dsh-upstream-0.2.1-rc.2-20261017.md"
+  "current_execution_record": "windows-local-acceptance-20261017.md"
 }
