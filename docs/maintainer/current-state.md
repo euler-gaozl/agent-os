@@ -1,6 +1,6 @@
 # 当前进度 · DeepSeek 交接
 
-2026-10-17 原 Windows 最新观测，接手者的执行环境已确认为原 Windows。整体未完成。**DS-01 非数值论据、DS-02 v6+v7 双引擎、DS-03 库存/合同真实四问均已实现并验收**（DS-03 报告经独立内容复核 ACCEPT）；**DS-04 中台/业务浏览器矩阵已通过主要页面/窄屏/交互检查**，本地业务入口已修复安装，保留 v6 续跑评估与跨任务证据溯源两个跟进项；**DS-05 正式执行域 ACL 已收缩**（Worker 最小权限、Telemetry inbox/HTTP 能力就绪，撤权后合成任务完成 note_save/run_recall），但双 Worker 接管、Telemetry 实际导出、旧实现删除仍未完成；**DS-08 最终快照备份与隔离恢复已通过**；DS-06 存储生命周期、DS-07 故障/资源、DS-09 集中 CI 仍待做。首读 [DS-08 记录](windows-ds08-restore-20261017.md)、[DS-05 记录](windows-ds05-access-retirement-20261017.md) 与 [详细接续任务](deepseek-handoff-20261017.md)，旧状态保存在 [历史快照](current-state-before-deepseek-20261017.md)，不得把历史“当前”覆盖本页。
+2026-10-17 原 Windows 最新观测，接手者的执行环境已确认为原 Windows。整体未完成。**DS-01 非数值论据、DS-02 v6+v7 双引擎、DS-03 库存/合同真实四问均已实现并验收**（DS-03 报告经独立内容复核 ACCEPT）；**DS-04 中台/业务浏览器矩阵已通过主要页面/窄屏/交互检查**，本地业务入口已修复安装，保留 v6 续跑评估与跨任务证据溯源两个跟进项；**DS-05 正式执行域 ACL 已收缩**（Worker 最小权限、Telemetry inbox/HTTP 能力就绪；撤权后合成任务完成 note_save/run_recall，双 Worker 杀 owner 后接管完成），Telemetry 实际导出、旧实现删除仍未完成；**DS-06 已取得真实笔记修订/过期/冲突/撤回与 Windows 长历史 Compact/重放测量**，但真实长任务中断续跑、并发写者和生产 RSS 上界仍待补；**DS-08 最终快照备份与隔离恢复已通过**；DS-07 故障/资源、DS-09 集中 CI 仍待做。首读 [DS-06 记录](windows-ds06-storage-lifecycle-20261017.md)、[DS-05 记录](windows-ds05-access-retirement-20261017.md) 与 [详细接续任务](deepseek-handoff-20261017.md)，旧状态保存在 [历史快照](current-state-before-deepseek-20261017.md)，不得把历史“当前”覆盖本页。
 
 ## 阶段状态
 
@@ -36,9 +36,11 @@ DS-05 增量（2026-10-17）：先创建协调备份 `ds05-pre-telemetry-2026101
 
 guarded 安装前的完整备份已在隔离库实际恢复（1 数据库、10 角色、3 项凭证解密、历史产物通过，隔离库已停）；该备份早于 v7/DS-03/DS-05。DS-08 已另用 post-DS05 的 `ds08-final-20261017b` 重新恢复通过，历史备份结果保留为不同快照的证据。
 
+DS-06 增量（2026-10-17）：① 用已安装 source-Harness 运行 `benchmarks/source-memory.mjs`，128/512/2048 步各记录+fresh-process 重放全部 `completed`；2048 步 22,535 事件/25.0 MB/2,047 次 Compact，最大 heap 50.5 MB、最大 RSS 222.5 MB，journal 哈希链一致，摘要故意遗漏数量/日期但工作状态保留；合成供应商、0 付费。② 对真实 Runtime 的一个受控笔记执行 revise/expire/stale-head conflict/retire：新版本 `ce154d51…`，旧版本非 current/effective，`valid_until` 过去后 `expired=true`，对旧 head 再次修订返回 409，撤回后 `state=retired`、`effective=false`，旧/新正文均保留。证据 `local/evidence/ds06-long-history-aeb187b79033421b84e179ececf6703c/`、`local/evidence/ds06-note-lifecycle-251bec3dd12644829ffeefee2a0c61d4/`。仍未做真实长任务 Compact 中断续跑、真正并发写者、Runtime/Worker/DB 的 RSS 上界，故 DS-06 只记部分完成。详见 [DS-06 记录](windows-ds06-storage-lifecycle-20261017.md)。
+
 ## 最新业务失败与下一步
 
-旧任务 `2bc11ddab7473a1e2ee29fd499330558` 仍是失败记录：Agent v20 / Skill v9 / MCP v2，第8/12次模型请求失败，无最终报告，22次阅读、两份草稿留存。已确认三类问题：引用归属错误（检查器v7已能精确提示）；非数值来源说明借用不支持论点的数字事实；模型对未就绪稿提前提交并直接返回不同正文；日期覆盖解释自相矛盾。DS-01 与 DS-02 已安装；DS-03 用 Agent 22/Skill 10 在 guarded-v7 上完成了**有区别的库存/合同四问**并通过独立内容复核（ACCEPT），但**没有**把旧供给/进口/压榨任务回填为成功。下一步：DS-05 双 Worker 接管/Telemetry 实际导出/旧实现删除，DS-06 存储生命周期，DS-07 故障/整平台资源，DS-09 集中 CI；DS-08 已完成。不能把单项通过写成整个目标完成。
+旧任务 `2bc11ddab7473a1e2ee29fd499330558` 仍是失败记录：Agent v20 / Skill v9 / MCP v2，第8/12次模型请求失败，无最终报告，22次阅读、两份草稿留存。已确认三类问题：引用归属错误（检查器v7已能精确提示）；非数值来源说明借用不支持论点的数字事实；模型对未就绪稿提前提交并直接返回不同正文；日期覆盖解释自相矛盾。DS-01 与 DS-02 已安装；DS-03 用 Agent 22/Skill 10 在 guarded-v7 上完成了**有区别的库存/合同四问**并通过独立内容复核（ACCEPT），但**没有**把旧供给/进口/压榨任务回填为成功。下一步：DS-05 Telemetry 实际导出/旧实现删除，DS-06 真实长任务 Compact 中断续跑/并发写者/RSS 上界，DS-07 故障/整平台资源，DS-09 集中 CI；DS-08 已完成。不能把单项通过写成整个目标完成。
 
 官方DeepSeek保留原生上下文/输出能力，未增加人为token限制。研究需要通过逐问、来源、日期/样本/性质、可比性、最终稿一致性和原文回读的联合验收；结构ready与终态completed都不是内容质量证明。
 

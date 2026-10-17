@@ -784,9 +784,10 @@
       "id": "task:storage-lifecycle",
       "type": "task",
       "label": "存储生命周期余项",
-      "status": "open",
-      "doc": "backlog.md",
-      "scope": "原目标余项"
+      "status": "partial_notes_and_long_history",
+      "doc": "windows-ds06-storage-lifecycle-20261017.md",
+      "section": "DS-06",
+      "scope": "Real Runtime note revise/expire/stale-head conflict/retire verified on PostgreSQL; installed source-Harness benchmark completed 128/512/2048 steps with compaction and fresh-process journal replay (max 50.5MB heap, 222.5MB RSS at 2048, 25MB events, zero provider calls). True long-task interruption/resume, simultaneous writers and service-level RSS bounds remain."
     },
     {
       "id": "task:faults-and-resources",
@@ -1652,6 +1653,12 @@
       "type": "evidence_document",
       "label": "DS-08 最终备份与隔离 PostgreSQL 恢复",
       "doc": "windows-ds08-restore-20261017.md"
+    },
+    {
+      "id": "evidence:windows-ds06-storage-lifecycle-20261017",
+      "type": "evidence_document",
+      "label": "DS-06 真实笔记生命周期与 Windows 长历史 Compact/重放测量",
+      "doc": "windows-ds06-storage-lifecycle-20261017.md"
     },
     {
       "id": "task:finalization-recovery",
@@ -2978,6 +2985,11 @@
       "to": "evidence:retirement"
     },
     {
+      "from": "task:storage-lifecycle",
+      "relation": "documented_by",
+      "to": "evidence:windows-ds06-storage-lifecycle-20261017"
+    },
+    {
       "from": "task:latest-recovery",
       "relation": "documented_by",
       "to": "evidence:windows-ds08-restore-20261017"
@@ -3731,7 +3743,7 @@
   "environment_policy": {
     "file": "environments.json",
     "default_execution_environment": null,
-    "current_execution_record": "windows-ds05-access-retirement-20261017.md",
+    "current_execution_record": "windows-ds06-storage-lifecycle-20261017.md",
     "updated_at": "2026-10-17",
     "rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets."
   },
