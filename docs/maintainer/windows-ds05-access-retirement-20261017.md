@@ -65,6 +65,14 @@ Worker 仍可领取任务、写心跳/回执；Runtime 自身权限未缩减；T
 - 该任务使用合成 `evidence-recall-fixture`，不是 DeepSeek/真实供应商；不能写成真实模型任务通过。
 - 证据：`local/evidence/ds05-access-retirement-4a1fe16c53504a7b8764b0fc9cd558a8/result.json`、`local/evidence/post-retirement-worker-fixture-2026-10-17T10-10-27-213Z/terminal.json`、`local/evidence/post-retirement-worker-2026-10-17T10-01-42-905Z/`。
 
+## 双 Worker 接管（撤权后）
+
+- 启动带 10 秒首响延迟的同一合成模型夹具；提交任务 `476b9ba1…`，首任 owner `worker-a18a3981…`（PID 39864）。
+- 在任务运行中强杀该 Worker；约 20 秒后 lease 到期，另一 Worker `worker-6edd768b…` 接管同一任务，未新建任务、未重置 fence 语义。
+- 接管后任务 **completed**，step 3，工具回执仍为 `note_save`（`.../dsh/6`）与 `run_recall`（`.../dsh/12`）；从接管到完成约 10 秒。
+- 观察记录：`local/evidence/ds05-dual-worker-takeover-2026-10-17T10-19-47-143Z/`（31 次采样，owner 在 10:20:08Z 切换，10:20:18Z 完成）。
+- 接管后已停止并重启两个 Worker，`core_ready=true`、2 Worker 恢复。该测试使用合成模型，不是真实供应商；证明的是撤权后的 lease 接管和笔记/回执链路，不是模型质量。
+
 ## Telemetry 启动检查
 
 - 已安装 `telemetry-http-v1`，但尝试启动时服务退出：`valid HTTP(S) endpoint without credentials required`。当前 Telemetry 配置没有可用的 `LANGFUSE_URL`/导出端点，因此保持 **0 实例** 是配置缺口，不是 ACL 或程序能力失败。
@@ -72,11 +80,10 @@ Worker 仍可领取任务、写心跳/回执；Runtime 自身权限未缩减；T
 
 ## 仍待完成
 
-1. 撤权后的**双 Worker 接管**（杀 owner、lease 过期后另一 Worker 完成同一任务）与历史回读；本次已完成单 Worker 完整任务与笔记回读，但未做接管。
-2. Telemetry 配置有效导出端点后实际启动/接收/导出（Langfuse 或受控 OTLP），不能只凭 profile 声明。
-3. 旧实现覆盖逐行移交与删除（P2 清单）、Linux 组合、W01–W14 剩余项。
-4. DS-08 已用 post-DS05 快照 `ds08-final-20261017b` 通过隔离恢复；本 pre-DS05 快照保留为历史保护点，未单独恢复。
-5. 最终统一 CI 仅在全部本机验收后执行一次。
+1. Telemetry 配置有效导出端点后实际启动/接收/导出（Langfuse 或受控 OTLP），不能只凭 profile 声明。
+2. 旧实现覆盖逐行移交与删除（P2 清单）、Linux 组合、W01–W14 剩余项。
+3. DS-08 已用 post-DS05 快照 `ds08-final-20261017b` 通过隔离恢复；本 pre-DS05 快照保留为历史保护点，未单独恢复。
+4. 最终统一 CI 仅在全部本机验收后执行一次。
 
 ## 边界
 

@@ -8,7 +8,7 @@
 | DS-02 | 已完成（双产物安装，默认 v7；DS-03 已在 v7 上跑通真实任务） | task:finalization-recovery / Harness、Runtime、Worker、业务方法 | v6 任务 continuation context=`manual_review`/`unsupported_checkpoint`，保留重放/读取但不能直接续跑；不得删 v6 runner 或改旧任务；真实恢复/故障重放归 DS-07 |
 | DS-03 | 已完成（真实四问报告 + 独立内容复核 ACCEPT） | task:research-quality / Agent 22、Skill 10、Futures 检查器 | 仅覆盖库存/区域/合同三份资料；旧供给/进口/压榨失败任务未回填；保留 s1 引文拼接 minor；下一步 DS-04 |
 | DS-04 | 浏览器矩阵通过（7 中台页 + 5 编辑器标签 + ToolHub/知识库/运行/服务 + 业务首页/记录/失败/移动端）；业务入口已修复安装；2 项跟进 | task:continuation-ui / Console、Futures、Runtime | 跟进 v6 失败任务“不足以直接续跑”的评估与跨任务证据溯源；补浏览器自动化的可重复入口；不把浏览器通过写成后端恢复/故障通过 |
-| DS-05 | 正式 ACL 已收缩；撤权后合成任务完成 note_save/run_recall；双 Worker/Telemetry/旧实现/Linux 未完成 | task:service-retirement / 各Owner及集成 | 做双 Worker 接管与历史回读；配置有效导出端点后跑 Telemetry 接收/导出；逐行删除旧实现；隔离恢复与最终 CI 另做 |
+| DS-05 | 正式 ACL 已收缩；撤权后合成任务完成 note_save/run_recall，双 Worker 接管通过；Telemetry 导出/旧实现/Linux 未完成 | task:service-retirement / 各Owner及集成 | 配置有效导出端点后跑 Telemetry 接收/导出；逐行删除旧实现；隔离恢复已完成，最终 CI 另做 |
 | DS-06 | 部分完成 | task:storage-lifecycle / Harness、Runtime、Worker、Storage | 补笔记/缓存/失败退出与长历史内存恢复验收，不删权威资料 |
 | DS-07 | 部分完成 | task:faults-and-resources / 集成及相关Owner | 仅补缺失或受改动影响的故障，并测整平台+PG连续负载 |
 | DS-08 | 已完成（最终快照备份 + 隔离恢复 passed） | task:latest-recovery / 原Windows集成 | 备份 `ds08-final-20261017b`，46 表/序列、10 服务登录、3 密封凭据、2 Worker bundle、离线 Harness 重建全部通过；不替代服务器/HA 或外部服务恢复 |

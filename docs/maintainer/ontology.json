@@ -778,7 +778,7 @@
       "status": "formal_acl_retired_validation_open",
       "doc": "windows-ds05-access-retirement-20261017.md",
       "section": "DS-05",
-      "scope": "Formal owner Windows PostgreSQL Runtime ACL contraction executed: Telemetry inbox migrated, telemetry-http-v1 installed at 6f9f539 (zero instances), Worker reduced to worker-minimal-v1 grants, Telemetry execution events revoked. Post-retirement synthetic fixture task completed with note_save/run_recall and final POST_RETIREMENT_OK; dual-worker takeover, Telemetry export, old implementation deletion and isolated restore remain."
+      "scope": "Formal owner Windows PostgreSQL Runtime ACL contraction executed: Telemetry inbox migrated, telemetry-http-v1 installed at 6f9f539 (zero instances), Worker reduced to worker-minimal-v1 grants, Telemetry execution events revoked. Post-retirement synthetic fixture completed note_save/run_recall and a killed-owner task was taken over by the second Worker to completion. Telemetry export, old implementation deletion and Linux remain."
     },
     {
       "id": "task:storage-lifecycle",
@@ -3731,7 +3731,7 @@
   "environment_policy": {
     "file": "environments.json",
     "default_execution_environment": null,
-    "current_execution_record": "windows-ds08-restore-20261017.md",
+    "current_execution_record": "windows-ds05-access-retirement-20261017.md",
     "updated_at": "2026-10-17",
     "rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets."
   },
