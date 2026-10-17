@@ -48,6 +48,8 @@
 - **新引擎任务已跑通**：把默认临时切到 `dsh-source-687f282e-budget-v3` 后，任务 `da77e711…` **completed step 6**，5 个工具回执，engine 为 `dsh-source-687f282e-budget-v3`；证据 `local/evidence/dsh-0.2.1-new-engine-smoke-c63c82b360d54063b14a50e5f6a1e095/`。随后默认恢复为 `dsh-source-687f282e-guarded-v7`。
 - guarded-v2 的 final-capable Agent 任务尚未跑（现有 final Agent 使用真实 provider/MCP，未调用付费模型）。这不能写成 guarded-v2 已验收，但新引擎的 budget-v3 路径已有真实 Runtime/Worker/DB 证据。
 - 新引擎 40 轮：任务 `7ceb0cf2…` 在 `dsh-source-687f282e-budget-v3` 上 **completed step 41**（40 个 recall 回执）；证据 `local/evidence/ds06-80round-nokill-2026-10-17T14-47-34-495Z/`（文件名沿用旧脚本，内容为 40 轮 COMPACT40_OK）。这验证了新引擎的长历史路径，但不等于 guarded-v2/final 验收。
+- 受控 final 尝试：本地 MCP `127.0.0.1:8113/mcp` + ToolHub 计划配置把 8113 加入白名单后，connector `fixture-final` 注册成功；但创建 Agent 时 Registry 拒绝：`native model capabilities are not supported for this provider endpoint`。fixture 的 loopback endpoint 不能作为 native-capable provider，因此无法在不付费的情况下创建 final-capable 受控 Agent。
+- 清理：ToolHub 白名单已恢复为 `127.0.0.1:8101`，MCP 进程已停止；测试 connector `fixture-final` 仍留在 Registry（指向已停止的本地端点，未被任何 Agent 使用）。
 - 安装后已生成 `ds08-final-20261017f` 并隔离恢复通过（46 关系、10 角色、5 凭据、2 Worker bundle、192 代/3,103 文件）；临时集群停止。
 
 ## 下一步
