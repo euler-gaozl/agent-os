@@ -88,10 +88,17 @@
 - 证据：`local/evidence/ds07-cancel-lock-2026-10-17T11-55-26-316Z/`。
 - 这验证“DB 阻塞期间的取消”能落到显式 cancelled；未验证取消与 fence 接管同时发生、取消后的补偿清理或锁超时。
 
+## 接管前取消
+
+- 任务 `bb172a27…` 在第 10 步强杀 owner，随后立即 cancel（**202**）；cancel 事件在第二 Worker 以 fence 2 接管前写入。
+- 接管后终态为 **cancelled**（step 0，error `lease expired, cancelled, or worker superseded`），`cancel_requested=true`；已有 10 个工具回执，但没有 completed/成功终态。
+- 证据：`local/evidence/ds07-cancel-takeover-2026-10-17T11-57-32-350Z/`。
+- 这验证“取消与 lease/fence 接管竞争”不会静默完成；未验证取消后清理外部副作用或取消重试。
+
 ## 结论与边界
 
-- 8 个并发合成任务没有触发连接耗尽、死锁、临时文件或 Worker 分配失衡；两个 Worker 均实际接单。32 秒双 Worker 负载 2/2 完成；3 分钟 12 任务 soak 12/12 完成；9.1 分钟 36 任务 soak 36/36 完成；30.1 分钟 24 任务 soak 24/24 完成，连接 13–18、deadlocks 0，RSS 峰值受控且结束回落。8 秒 `runs` 行锁使任务等待后恢复并 completed；30 秒行锁使任务在 step 6 显式失败（model attempt budget exhausted）；15 秒行锁期间的取消落到 cancelled，均没有静默成功。
+- 8 个并发合成任务没有触发连接耗尽、死锁、临时文件或 Worker 分配失衡；两个 Worker 均实际接单。32 秒双 Worker 负载 2/2 完成；3 分钟 12 任务 soak 12/12 完成；9.1 分钟 36 任务 soak 36/36 完成；30.1 分钟 24 任务 soak 24/24 完成，连接 13–18、deadlocks 0，RSS 峰值受控且结束回落。8 秒 `runs` 行锁使任务等待后恢复并 completed；30 秒行锁使任务在 step 6 显式失败（model attempt budget exhausted）；15 秒行锁期间的取消落到 cancelled；杀 owner 后立即取消也落到 cancelled，均没有静默成功。
 - 该负载没有真实模型延迟、工具网络、外部 Storage/Knowledge 或长历史，不能替代 10 万/百万级任务或服务器容量。
-- 30 分钟下限已达到，且完成 8 秒恢复、30 秒失败、15 秒锁内取消三个锁场景；仍未做 PG 慢查询计划、死锁注入、自动补偿和内存增长趋势，不能把 30 分钟合成 soak 写成生产容量验收。
+- 30 分钟下限已达到，且完成 8 秒恢复、30 秒失败、15 秒锁内取消、杀 owner 后取消四个故障场景；仍未做 PG 慢查询计划、死锁注入、自动补偿和内存增长趋势，不能把 30 分钟合成 soak 写成生产容量验收。
 - 双 Worker 杀 owner 接管已在 DS-05 真实执行（合成模型，20 秒 lease 后接管），不等同于本负载的持续故障矩阵。
 - 无付费模型调用、无 CI、无任务删除；合成任务产生了受控笔记与运行记录，保留供复核。
