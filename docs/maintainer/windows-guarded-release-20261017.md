@@ -32,3 +32,5 @@ guarded-v6 在 DSH 调用工具前验证冻结 JSON Schema，将确定的参数�
 私有证据入口：`ops/guarded-v6.path`、`ops/guarded-runtime.path`、`ops/guarded-worker-joint.path`；路径属于原 Windows。Actions 继续关闭。完整 P0–P5/P2.5 和未验收 UI/平台项目保持，不因本次修复缩减。
 
 发布前独立评审补充：旧 Console 无法识别 v6 的接续及工作状态。已新增显式 UI 支持和 guarded_transport 能力，默认/留存任务阻止回滚到旧 Console；新增 4 项门禁检查，总计 29 项。14 项 Console Web 测试及 Go/TypeScript 检查通过。
+
+独立内容复核进一步确认：末版 q1 的第 3 条 finding 使用了未纳入该问题 fact_ids 的 f8，构成结构阻断；q2 的部分来源性质/样本解释还引用了不支持该论点的旧指标事实，属于语义证据链错配。不能只补一个 ID 就宣称研究通过，下一步必须同时修引用归属与正文支持关系。原文依据和完整评审只保存在本机 independent-outcome.md，不向模型注入本题答案。
