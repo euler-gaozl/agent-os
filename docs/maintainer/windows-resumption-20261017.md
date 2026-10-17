@@ -1,5 +1,7 @@
 # Windows 接回与交付续做（2026-10-17）
 
+**最新推进：** [确定性交付候选](windows-final-output-20261017.md)已完成 SDK、Harness v5 和 Runtime 事务/恢复实现，Node/DSH 与真实隔离 PostgreSQL 分层测试通过。新版本未安装；下一项为固定 Worker、资源登记字段保留、联合验证和受管发布，原完整目标及报告内容缺陷保留。
+
 **同日最新：** R1 已完成下述正式迁移/升级；R2 的一次真实研究已成稿但独立内容验收未通过。[跨回执修复](windows-cross-receipt-20261017.md)已安装 Runtime `b723081` / Futures `f99d4de`，真实任务 27/27 引文可匹配并逐段回读；原输出及内容待核结论保持。下一步为[确定性成稿协议](../architecture/receipt-finalization.md)，不是继续盲重跑模型。具体真实研究结果见 [Windows 研究记录](windows-research-20261017.md)，不重复下文历史待办。
 
 用户要求接回朋友 Mac 上未推送的成果，在原 Windows 继续完整单机目标，并及时更新 GitHub。本文件更新执行顺序与环境归属，不重新定义或缩小 P0–P5、P2.5 和 W01–W14。
