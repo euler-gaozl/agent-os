@@ -1629,10 +1629,11 @@
       "id": "task:finalization-recovery",
       "type": "task",
       "label": "未就绪草稿提前结束",
-      "status": "investigated_plan_ready_not_implemented",
+      "status": "candidate_implemented_not_admitted",
       "doc": "windows-ds02-finalization-investigation-20261017.md",
       "section": "DS-02",
-      "scope": "Failure sequence and candidate guarded-v7 single continuation documented; no source, release, engine or task mutation yet"
+      "commit": "c5d4e4e2d5d159557d3bb77b8bf895ee0597bda1",
+      "scope": "Harness guarded-v7 single continuation implemented and tested; not admitted by Runtime/Worker/Console, not installed, no task mutation or paid run"
     },
     {
       "id": "evidence:windows-ds02-finalization-investigation-20261017",

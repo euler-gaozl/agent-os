@@ -1,6 +1,6 @@
 # DS-02 未就绪草稿提前结束：失败序列与修复方案（调查记录）
 
-日期：2026-10-17。状态：**未实现、未安装**。本文件只记录已确认的失败序列和候选修复，不把计划写成完成。DS-01 已独立完成并安装，见 [DS-01 记录](windows-ds01-statements-20261017.md)。
+日期：2026-10-17。状态：**Harness 候选已实现并提交，未接入 Runtime/Worker/Console，未安装**。Harness `c5d4e4e2d5`（分支 `feat/source-owned-harness`）实现 guarded-v7 单次续接，31 项本地 guarded 检查通过；没有真实供应商调用、没有发布或任务变更。DS-01 已独立完成并安装，见 [DS-01 记录](windows-ds01-statements-20261017.md)。
 
 ## 已确认失败序列
 
@@ -36,6 +36,16 @@
 - 断点/丢回包重放不重复已完成的检查或模型效果；准确记录尝试次数；旧 v6 任务重放字节语义不变。
 - 真实供应商调用不在本候选的离线验收内。
 
+## 已实现候选（Harness）
+
+Harness 提交 `c5d4e4e2d5`：
+
+- `src/final-protocol.ts` 的 `FinalTurnSelection` 记录 Runtime 返回的有效 `selected:false` + 有界 `continue` 拒绝，绑定其 turn；`rejected(end)` 只在当前 turn 已结束时返回它。成功选择或新 turn 会清除拒绝。
+- `guarded-runner.mjs` 在没有成功选择但存在有效拒绝时，**只续接一次**：把 Runtime 的 `continue` 和固定说明交回同一 DSH loop；第二次仍无成功选择则明确失败，不增加 harness 重试计数。
+- `src/guarded-kernel.ts` 与 `scripts/build-guarded.mjs` 使用 `dsh-source-639ed015-guarded-v7`；v6 产物保留在历史提交和发布包中。
+- 本地 31 项 guarded 检查通过，新增：拒绝后模型以正文结束 → 一次续接 → 重新检查并成功；以及第二次文本结束即终止、不死循环。强杀/丢回包重放测试仍通过。
+- README 明确 v7 是候选，未接入 Runtime/Worker/Console，未部署。
+
 ## 需要同步的 Owner 与入口（尚未修改）
 
 | 层 | 入口 | 需要的工作 |
@@ -47,11 +57,11 @@
 | 集成 | `scripts/lib/platform-source-execution.ps1`、`platform-model-management.ps1`、`scripts/Test-GuardedRelease.ps1` | 默认引擎、候选枚举、发布/回滚检查 |
 | 业务方法 | `packs/futures/research-finalization.md`、`reportInstructions` | 拒绝后必须修订并重新送检，不得以正文结束或自行声称预算耗尽 |
 
-## 为什么尚未实施
+## 为什么尚未接入或发布
 
-- 这不是单文件修补：新引擎要同时满足 Runtime/Worker/Console/集成的准入、回滚、旧任务兼容和发布产物，且要保留 v6 以重放历史任务。
-- 当前会话已完成 DS-01 的源码、测试、静态复核、受管安装和文档同步；DS-02 需要独立的发布集和故障/重放验收，不能用局部测试代替。
-- Actions 保持关闭；本调查没有付费模型调用、没有改任务状态、没有打开真实重跑。
+- Harness 候选已提交，但新引擎要同时满足 Runtime/Worker/Console/集成的准入、回滚、旧任务兼容和发布产物，且要保留 v6 以重放历史任务。
+- 当前发布模型每个 guarded 引擎只有一个 artifact/profile；v7 需要第二套 Worker 产物/锁、Runtime `IsFinalEngine` 与 release-contract 候选、Console 引擎识别和集成发布检查。不能用替换 v6 的方式静默改语义。
+- 本调查没有付费模型调用、没有改任务状态、没有打开真实重跑，也没有安装 v7。
 
 ## 提示层缓解（可在不改引擎时先做，但不能替代 A）
 

@@ -2,7 +2,7 @@
 
 **2026-10-17 最新交接：** 用户要求交给 DeepSeek，交接后暂停原 Codex Goal。先读 [DeepSeek详细接续](deepseek-handoff-20261017.md) 和 [开工提示词](deepseek-start-prompt.txt)。进度、仓库清单、本体已按本次现场核对更新；执行机器尚未指定，先识别环境。下方早期“当前Mac/继续Windows”均按时间作为历史，不构成本次环境选择。
 
-**2026-10-17 后续增量：[DS-01 非数值论据绑定原文](windows-ds01-statements-20261017.md) 已实现、测试、独立静态复核并受管安装（futures `72d8e36`，检查器 `futures-report-check-v8`）。** 整体目标仍未完成；DS-02 已确认失败序列并记录新引擎修复方案（[调查](windows-ds02-finalization-investigation-20261017.md)，未实现），DS-03 真实研究复核按 [DeepSeek详细接续](deepseek-handoff-20261017.md) 继续。
+**2026-10-17 后续增量：[DS-01 非数值论据绑定原文](windows-ds01-statements-20261017.md) 已实现、测试、独立静态复核并受管安装（futures `72d8e36`，检查器 `futures-report-check-v8`）。** 整体目标仍未完成；DS-02 的 Harness guarded-v7 单次续接候选已提交（`c5d4e4e2d5`，31 项测试通过），但尚未接入 Runtime/Worker/Console 或安装（[调查](windows-ds02-finalization-investigation-20261017.md)）；DS-03 真实研究复核按 [DeepSeek详细接续](deepseek-handoff-20261017.md) 继续。
 
 **当前入口（2026-10-17）：[Windows 接回与交付续做](windows-resumption-20261017.md)。** 用户已让原 Windows 接回并继续；以下 Mac 开工说明保留为环境隔离历史。最新源码已恢复并同步开发分支，完整产品仍待交付。
 
