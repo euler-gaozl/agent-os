@@ -3,12 +3,14 @@ function Get-SourceEngineName { return 'dsh-source-639ed015-state-v1' }
 function Get-ResidentEngineName { return 'dsh-source-639ed015-resident-v2' }
 function Get-BudgetEngineName { return 'dsh-source-639ed015-budget-v3' }
 function Get-NativeEngineName { return 'dsh-source-639ed015-native-v4' }
+function Get-FinalEngineName { return 'dsh-source-639ed015-final-v5' }
 function Get-SourceEngineProfiles {
     return @(
         @{engine=(Get-SourceEngineName);metadata='source_execution';asset='source_harness';environment='DSH_SOURCE_RUNNER';runs='source_runs';resumable='resumable_source_runs'},
         @{engine=(Get-ResidentEngineName);metadata='resident_execution';asset='resident_harness';environment='DSH_RESIDENT_RUNNER';runs='resident_runs';resumable='resumable_resident_runs'},
         @{engine=(Get-BudgetEngineName);metadata='budget_execution';asset='budget_harness';environment='DSH_BUDGET_RUNNER';runs='budget_runs';resumable='resumable_budget_runs'},
-        @{engine=(Get-NativeEngineName);metadata='native_execution';asset='native_harness';environment='DSH_NATIVE_RUNNER';runs='native_runs';resumable='resumable_native_runs'}
+        @{engine=(Get-NativeEngineName);metadata='native_execution';asset='native_harness';environment='DSH_NATIVE_RUNNER';runs='native_runs';resumable='resumable_native_runs'},
+        @{engine=(Get-FinalEngineName);metadata='final_execution';asset='final_harness';environment='DSH_FINAL_RUNNER';runs='final_runs';resumable='resumable_final_runs'}
     )
 }
 function Assert-SourceExecutionDescriptor([System.Collections.IDictionary]$Descriptor){
@@ -17,7 +19,9 @@ function Assert-SourceExecutionDescriptor([System.Collections.IDictionary]$Descr
     if(-not $source){if($asset){throw 'Source Harness asset has no execution provenance.'};continue}
     if($source.format -ne 1 -or $source.engine -cne $profile.engine -or $source.execution_protocol -cne 'runtime-execution-v1'){throw 'Unsupported source execution metadata.'}
     if($profile.engine -ceq (Get-BudgetEngineName) -and $source['model_receipt_protocol'] -cne 'budget-model-receipt-v1'){throw 'Budget engine requires durable model receipt protocol 1.'}
-    if($profile.engine -ceq (Get-NativeEngineName) -and $source['model_receipt_protocol'] -cne 'native-model-receipt-v2'){throw 'Native engine requires durable model receipt protocol 2.'}
+    if($profile.engine -cin @((Get-NativeEngineName),(Get-FinalEngineName)) -and $source['model_receipt_protocol'] -cne 'native-model-receipt-v2'){throw 'Native engine requires durable model receipt protocol 2.'}
+    if($profile.engine -ceq (Get-FinalEngineName) -and $source['final_output_protocol'] -cne 'receipt-field-v1'){throw 'Final engine requires receipt-field-v1.'}
+    if($profile.engine -ceq (Get-FinalEngineName) -and $Descriptor.role -ceq 'runtime' -and $source['continuation_protocol'] -cne 'final-model-continuation-v1'){throw 'Final Runtime requires explicit final model continuation.'}
     switch($Descriptor.role){
         runtime {
             if($asset -or $source.state_protocol -cne 'source-state-recovery-v1' -or $source.submission_protocol -cne 'source-root-default-v1' -or $source.preview_protocol -cne 'source-recovery-preview-v1' -or $Descriptor.contract.http -cne 'agentos-http-v0.7-source-state-v1' -or $Descriptor.contract.data -cne 'execution-v0.7-working-state'){throw 'Runtime source protocols are incomplete.'}
@@ -31,6 +35,7 @@ function Assert-SourceExecutionDescriptor([System.Collections.IDictionary]$Descr
     if($Descriptor.role -ceq 'runtime' -and $Descriptor['resident_execution'] -and -not $Descriptor['source_execution']){throw 'Resident Runtime must retain the v1 source protocols.'}
     if($Descriptor.role -ceq 'runtime' -and $Descriptor['budget_execution'] -and (-not $Descriptor['source_execution'] -or -not $Descriptor['resident_execution'])){throw 'Budget Runtime must retain v1/v2 source protocols.'}
     if($Descriptor.role -ceq 'runtime' -and $Descriptor['native_execution'] -and (-not $Descriptor['source_execution'] -or -not $Descriptor['resident_execution'] -or -not $Descriptor['budget_execution'])){throw 'Native Runtime must retain v1/v2/v3 protocols.'}
+    if($Descriptor.role -ceq 'runtime' -and $Descriptor['final_execution'] -and (-not $Descriptor['source_execution'] -or -not $Descriptor['resident_execution'] -or -not $Descriptor['budget_execution'] -or -not $Descriptor['native_execution'])){throw 'Final Runtime must retain v1/v2/v3/v4 protocols.'}
 }
 function Test-SourceRuntimeTransition([System.Collections.IDictionary]$Previous,[System.Collections.IDictionary]$Next){
     if($Previous.role -cne 'runtime' -or $Next.role -cne 'runtime'){return $false}
@@ -44,10 +49,11 @@ function Test-SourceRuntimeTransition([System.Collections.IDictionary]$Previous,
 function Assert-SourceExecutionPolicy([System.Collections.IDictionary]$Runtime,[System.Collections.IDictionary]$Worker,[string]$DefaultEngine,[System.Collections.IDictionary]$Facts){
     Assert-SourceExecutionDescriptor $Runtime;Assert-SourceExecutionDescriptor $Worker
     if(-not $DefaultEngine){$DefaultEngine='dsh-0.2.0-rc.2-evidence-v1'}
-    if($DefaultEngine -cnotin @('dsh-0.2.0-rc.2-evidence-v1',(Get-SourceEngineName),(Get-ResidentEngineName),(Get-BudgetEngineName),(Get-NativeEngineName))){throw 'Unknown configured submission engine.'}
+    if($DefaultEngine -cnotin @('dsh-0.2.0-rc.2-evidence-v1')+@((Get-SourceEngineProfiles).engine)){throw 'Unknown configured submission engine.'}
     if(-not $Facts.Contains('working_state_ready') -or $Facts.working_state_ready -isnot [bool]){throw 'Execution compatibility facts are incomplete.'}
     if($Runtime.contract.data -ceq 'execution-v0.7-working-state' -and -not $Runtime['source_execution']){throw 'New Runtime data contract lacks source protocol provenance.'}
-    if($DefaultEngine -ceq (Get-NativeEngineName) -and -not $Worker['budget_execution']){throw 'Native default requires budget-v3 Worker support for frozen legacy Agent revisions.'}
+    if($DefaultEngine -cin @((Get-NativeEngineName),(Get-FinalEngineName)) -and -not $Worker['budget_execution']){throw 'Native default requires budget-v3 Worker support for frozen legacy Agent revisions.'}
+    if($DefaultEngine -ceq (Get-FinalEngineName) -and -not $Worker['native_execution']){throw 'Final default requires native-v4 Workers for Agent trees without final policy.'}
     foreach($profile in (Get-SourceEngineProfiles)){
         foreach($key in @($profile.runs,$profile.resumable)){
             if(-not $Facts.Contains($key)){throw 'Execution compatibility facts are incomplete.'}
@@ -83,6 +89,8 @@ SELECT jsonb_build_object(
  'resumable_budget_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-budget-v3' AND status NOT IN('completed','cancelled')),
  'native_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-native-v4'),
  'resumable_native_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-native-v4' AND status NOT IN('completed','cancelled')),
+ 'final_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-final-v5'),
+ 'resumable_final_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-final-v5' AND status NOT IN('completed','cancelled')),
  'working_state_ready',(SELECT CASE WHEN t.oid IS NULL THEN false ELSE
  has_table_privilege(current_user,t.oid,'SELECT') AND has_table_privilege(current_user,t.oid,'INSERT')
  AND NOT EXISTS(SELECT 1 FROM required_columns c WHERE NOT EXISTS(
@@ -162,10 +170,42 @@ function Assert-SourceExecutionDeployment([hashtable]$Layout,[System.Collections
     try{
         $facts=Get-SourceExecutionFacts $Layout $config
         Assert-SourceExecutionPolicy $descriptors.runtime $descriptors.worker ([string]$config['DEFAULT_RUN_ENGINE']) $facts
+        # A Worker replacement stops every old instance before starting its target.
+        # Other operations must check the actual running revisions, not just catalog.current.
+        if(-not $Overrides.Contains('worker')){Assert-SourceExecutionWorkers $Layout $catalog $descriptors.runtime $config $facts}
     }finally{$config=$null}
 }
+function Assert-SourceWorkerLaunch([hashtable]$Layout,[System.Collections.IDictionary]$Descriptor,[System.Collections.IDictionary]$Launch,[System.Collections.IDictionary]$RuntimeConfig){
+    Assert-SourceExecutionDescriptor $Descriptor
+    foreach($profile in (Get-SourceEngineProfiles)){
+        $expected=if($Descriptor.assets[$profile.asset]){Join-Path (Resolve-ReleasePath $Layout.release_root $Descriptor.assets[$profile.asset]) 'source-runner.mjs'}else{''}
+        if([string]$Launch[$profile.environment] -cne $expected){throw 'Live Worker source runner differs from its verified release.'}
+    }
+    if([string]$Launch['AGENTOS_NODE'] -cne (Resolve-ReleasePath $Layout.release_root $Descriptor.assets.node)){throw 'Live Worker Node differs from its verified release.'}
+    Assert-ExecutionAccessTarget $RuntimeConfig $Launch worker
+    Assert-ReceiptManagementTarget $RuntimeConfig $Launch
+    try{$peers=$RuntimeConfig.SERVICE_PEERS|ConvertFrom-Json -AsHashtable}catch{throw 'Runtime peer identity configuration is invalid.'}
+    if(-not $Launch['SERVICE_TOKEN'] -or $peers['worker'] -cne ([Convert]::ToHexStringLower([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($Launch.SERVICE_TOKEN))))){throw 'Runtime does not recognize the live Worker identity.'}
+}
+function Assert-SourceExecutionWorkers([hashtable]$Layout,[System.Collections.IDictionary]$Catalog,[System.Collections.IDictionary]$Runtime,[System.Collections.IDictionary]$RuntimeConfig,[System.Collections.IDictionary]$Facts){
+    . (Join-Path $PSScriptRoot 'platform-processes.ps1')
+    $entries=@((Read-PlatformProcesses $Layout)|Where-Object role -eq 'worker')
+    if(-not $entries.Count){return}
+    # Verifies job ownership, protected launch hash, registered release and binary for every instance.
+    $bound=Get-BoundExecutionConsumerConfiguration $Layout $Catalog worker
+    try{
+        foreach($entry in $entries){
+            $state=Get-PlatformInstanceState $entry $Layout
+            if(-not $state.process){continue}
+            $descriptor=Read-ReleaseDescriptor $Layout $entry.release_reference -Verify
+            Assert-SourceExecutionPolicy $Runtime $descriptor ([string]$RuntimeConfig['DEFAULT_RUN_ENGINE']) $Facts
+            $launch=Read-ReleaseJson $entry.launch_config
+            try{Assert-SourceWorkerLaunch $Layout $descriptor $launch $RuntimeConfig}finally{$launch=$null}
+        }
+    }finally{$bound=$null}
+}
 function Copy-PinnedSourceHarness([string]$Artifact,[string]$Destination,[string]$PinFile,[string]$Engine=(Get-SourceEngineName)){
-    if($Engine -cnotin @((Get-SourceEngineName),(Get-ResidentEngineName),(Get-BudgetEngineName),(Get-NativeEngineName))){throw 'Unknown source Harness engine.'}
+    if($Engine -cnotin @((Get-SourceEngineProfiles).engine)){throw 'Unknown source Harness engine.'}
     $artifactRoot=[IO.Path]::GetFullPath($Artifact)
     Assert-ReleasePhysicalPath (Split-Path -Parent ([IO.Path]::GetFullPath($PinFile))) $PinFile
     Assert-ReleasePhysicalPath (Split-Path -Parent ([IO.Path]::GetFullPath($Destination))) $Destination
@@ -192,6 +232,7 @@ function Copy-PinnedSourceHarness([string]$Artifact,[string]$Destination,[string
     Copy-Item -LiteralPath $PinFile -Destination (Join-Path $Destination 'source-lock.json')
     $metadata=@{format=1;engine=$pin.engine;execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';manifest_sha256=$pin.manifest_sha256;harness_commit=$pin.commit}
     if($Engine -ceq (Get-BudgetEngineName)){$metadata.model_receipt_protocol='budget-model-receipt-v1'}
-    if($Engine -ceq (Get-NativeEngineName)){$metadata.model_receipt_protocol='native-model-receipt-v2'}
+    if($Engine -cin @((Get-NativeEngineName),(Get-FinalEngineName))){$metadata.model_receipt_protocol='native-model-receipt-v2'}
+    if($Engine -ceq (Get-FinalEngineName)){$metadata.final_output_protocol='receipt-field-v1'}
     return $metadata
 }

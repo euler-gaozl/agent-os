@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$RegistryBinary,[Parameter(Mandatory)][string]$ConsoleBinary,[Parameter(Mandatory)][string]$EvidenceDirectory)
+param([Parameter(Mandatory)][string]$RegistryBinary,[Parameter(Mandatory)][string]$ConsoleBinary,[Parameter(Mandatory)][string]$EvidenceDirectory,[Parameter(Mandatory)][string]$FinalRegistryBinary,[Parameter(Mandatory)][string]$FinalConsoleBinary,[IO.FileStream]$MaintenanceLock=$null)
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 foreach($file in @('platform-paths','platform-lock','platform-releases','platform-processes','platform-release-operations')){. (Join-Path $PSScriptRoot ('lib/'+$file+'.ps1'))}
 $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -9,7 +9,7 @@ $null=New-Item -ItemType Directory -Path $proof
 $layout=Get-PlatformLayout $repo
 foreach($key in @('state_root','config_root','database_root','log_root','release_root','harness_root','console_web_root','futures_web_root')){$layout[$key]=Join-Path $proof $key;$null=New-Item -ItemType Directory -Path $layout[$key]}
 $layout.layout_path=Join-Path $proof 'layout.json';Write-PlatformJson $layout.layout_path $layout
-$lock=Enter-PlatformMaintenance $layout.state_root
+$lock=if($MaintenanceLock){$null=Enter-PlatformMaintenance $layout.state_root $MaintenanceLock;$MaintenanceLock}else{Enter-PlatformMaintenance $layout.state_root}
 $checks=[Collections.Generic.List[string]]::new();$created=$false;$roles=[Collections.Generic.List[string]]::new();$session=$null
 $result=@{passed=$false;ci_runs=0;paid_model_calls=0;formal_changes=0;scope='Actual binary profile probes and production maintenance entrypoints with zero replicas, restricted PostgreSQL, synthetic resources/runs fixture tables, delayed COMMIT after client kill. Not live Agent execution or model metadata discovery.'}
 function Accept([scriptblock]$Action,[string]$Name){& $Action|Out-Null;$checks.Add($Name)}
@@ -64,7 +64,7 @@ try{
     }
     $ro=Read-ReleaseDescriptor $layout $registryOld -Verify;$rn=Read-ReleaseDescriptor $layout $registryNew -Verify
     $co=Read-ReleaseDescriptor $layout $controlOld -Verify;$cn=Read-ReleaseDescriptor $layout $controlNew -Verify;$rt=Read-ReleaseDescriptor $layout $runtime -Verify
-    $facts=@{format=1;leaf_identity=$true;native_agents=$false;invalid_agents=$false}
+    $facts=@{format=1;leaf_identity=$true;native_agents=$false;final_agents=$false;invalid_agents=$false}
     Accept {Assert-ModelManagementPolicy $ro $co $rt $facts $false (Get-BudgetEngineName)} 'legacy_pair_remains_usable'
     Accept {Assert-ModelManagementPolicy $rn $co $rt $facts $false (Get-BudgetEngineName)} 'Registry_can_upgrade_before_Console'
     Deny {Assert-ModelManagementPolicy $ro $cn $rt $facts $false (Get-BudgetEngineName)} 'new_Console_old_Registry_rejected' 'requires capable'
@@ -146,12 +146,86 @@ CREATE CONSTRAINT TRIGGER fixture_commit_delay AFTER INSERT ON public.resources 
     SQL $database 'DELETE FROM public.resources;'|Out-Null
     $path=Join-Path $layout.config_root 'services/registry.json';$original=[IO.File]::ReadAllBytes($path)
     try{Write-PlatformJson $path @{DATABASE_URL=$config.DATABASE_URL;LISTEN='127.0.0.1:8096'};Deny {Assert-ModelManagementDeployment $layout} 'unregistered_Registry_configuration_rejected' 'configuration differs'}finally{[IO.File]::WriteAllBytes($path,$original)}
+    # New real binaries must attest the complete profile; a native-only manifest
+    # must not conceal a final-aware writer during a later downgrade.
+    Copy-Item -LiteralPath $FinalRegistryBinary -Destination (Join-Path $layout.release_root 'registry-final.exe')
+    Copy-Item -LiteralPath $FinalConsoleBinary -Destination (Join-Path $layout.release_root 'control-final.exe')
+    $registryFinal=New-ReleaseDescriptor $layout registry @{binary='registry-final.exe'} $contract $provenance -ModelManagement @{format=1;provides='agent-model-native-v1';final_output='receipt-field-v1'}
+    $controlFinal=New-ReleaseDescriptor $layout control @{binary='control-final.exe';web='web'} $contract $provenance -ModelManagement @{format=1;requires='agent-model-native-v1';requires_final_output='receipt-field-v1'}
+    $profiles.final_execution.model_receipt_protocol='native-model-receipt-v2';$profiles.final_execution.final_output_protocol='receipt-field-v1';$profiles.final_execution.continuation_protocol='final-model-continuation-v1'
+    $runtimeFinal=New-ReleaseDescriptor $layout runtime @{binary='inert.exe'} $runtimeContract $provenance -SourceExecution $profiles.source_execution -ResidentExecution $profiles.resident_execution -BudgetExecution $profiles.budget_execution -NativeExecution $profiles.native_execution -FinalExecution $profiles.final_execution -ContinuationManagement @{format=1;provides='failed-run-continuation-v1';requires='native-model-revision-guard-v1'}
+    $continuationDDL=Get-Content -LiteralPath (Join-Path (Split-Path -Parent $repo) 'agent-os-runtime/runtime/continuation_requests.sql') -Raw
+    SQL $database ('ALTER TABLE public.runs ADD COLUMN id text PRIMARY KEY; '+$continuationDDL+' GRANT SELECT,INSERT ON public.run_continuation_receipts TO '+$reader+';')|Out-Null
+    $workerFinal=New-ReleaseDescriptor $layout worker @{binary='inert.exe';node='inert.exe';harness='web'} $contract $provenance -ContinuationManagement @{format=1;provides='native-model-revision-guard-v1'}
+    Write-PlatformJson (Join-Path $layout.config_root 'services/worker.json') @{DATABASE_URL=$config.DATABASE_URL;RUNTIME_URL=$configs.control.RUNTIME_URL}
+    $workerFinal.config_sha256=(Get-FileHash -LiteralPath (Join-Path $layout.config_root 'services/worker.json')).Hash.ToLowerInvariant()
+    $catalog.services.worker=@{current=$workerFinal;previous=$null;pending=$null}
+    foreach($item in @(@{role='registry';ref=$registryFinal},@{role='control';ref=$controlFinal},@{role='runtime';ref=$runtimeFinal})){$item.ref.config_sha256=(Get-FileHash -LiteralPath (Join-Path $layout.config_root ('services/'+$item.role+'.json'))).Hash.ToLowerInvariant()}
+    $rf=Read-ReleaseDescriptor $layout $registryFinal -Verify;$cf=Read-ReleaseDescriptor $layout $controlFinal -Verify;$rtf=Read-ReleaseDescriptor $layout $runtimeFinal -Verify
+    Accept {Assert-ModelManagementBinary $FinalRegistryBinary $rf;Assert-ModelManagementBinary $FinalConsoleBinary $cf} 'final_real_binary_profiles_match'
+    Deny {Assert-ModelManagementBinary $FinalRegistryBinary $rn} 'final_binary_cannot_be_declared_native_only' 'differs'
+    Deny {Assert-ModelManagementBinary $RegistryBinary $rf} 'native_binary_cannot_claim_final' 'differs'
+    Deny {Assert-ModelManagementPolicy $rf $cn $rt $facts $false ''} 'final_Registry_writer_requires_final_Runtime_even_before_first_policy' 'requires capable Runtime'
+    Accept {Assert-ModelManagementPolicy $rf $co @{role='runtime'} $facts $false '' $false $false} 'standalone_final_Registry_remains_independent'
+    Accept {Assert-ModelManagementPolicy $rf $cn $rtf $facts $false ''} 'final_Registry_can_precede_stopped_Console'
+    Deny {Assert-ModelManagementPolicy $rn $cf $rtf $facts $false ''} 'final_Console_requires_final_Registry' 'requires capable'
+    Deny {Assert-ModelManagementPolicy $rf $cn $rtf $facts $false (Get-FinalEngineName)} 'final_default_requires_final_Console' 'Final tasks'
+    Deny {Assert-ModelManagementPolicy $rf $cn $rtf $facts $false '' -FinalRuns $true} 'retained_final_tasks_require_final_Console' 'Final tasks'
+    Deny {Assert-LegacyConsoleWriterStopped $true $rf $cn $true} 'pre_final_Console_requires_Registry_drain' 'Stop Registry'
+    $catalog.services.registry.current=$registryFinal;$catalog.services.registry.previous=$registryNew
+    $catalog.services.control.current=$controlFinal;$catalog.services.control.previous=$controlNew
+    $catalog.services.runtime.current=$runtimeFinal;Save-Catalog
+    Accept {Assert-ModelManagementDeployment $layout} 'final_bound_capabilities_and_restricted_SQL_accept'
+    $writeFinal="INSERT INTO public.resources VALUES('agent','final-history',1,'{`"model`":{`"limits`":{}},`"final_output`":{`"protocol`":`"receipt-field-v1`",`"tool`":`"check`",`"input_field`":`"draft`",`"ready_path`":[`"structuredContent`",`"ready`"]}}');"
+    SQL $database ($writeFinal+" INSERT INTO public.resources VALUES('agent','final-history',2,'{`"model`":{`"limits`":{}}}');")|Out-Null
+    $observed=Get-ModelManagementFacts $layout $config -Stopped
+    if(-not $observed.final_agents -or $observed.invalid_agents){throw 'Historical final Agent hidden by latest native revision'};$checks.Add('all_retained_final_revisions_checked')
+    Deny {Assert-ModelManagementPolicy $rn $co @{role='runtime'} $observed $false '' $false $false} 'standalone_old_Registry_cannot_hide_final_history' 'Retained final Agent'
+    Accept {Assert-ModelManagementPolicy $rf $co @{role='runtime'} $observed $false '' $false $false} 'standalone_final_Registry_preserves_retained_policy'
+    $finalExport=Join-Path $proof 'final-export';Export-ReleaseCatalog $layout $finalExport|Out-Null
+    $finalRestored=Join-Path $proof 'final-restored';Restore-ReleaseCatalog $finalExport $finalRestored|Out-Null
+    Accept {Assert-ModelManagementPolicy (Read-ReleaseDescriptor @{release_root=$finalRestored} $registryFinal -Verify) (Read-ReleaseDescriptor @{release_root=$finalRestored} $controlFinal -Verify) (Read-ReleaseDescriptor @{release_root=$finalRestored} $runtimeFinal -Verify) $observed $false (Get-FinalEngineName)} 'final_backup_restore_preserves_policy_capabilities'
+    foreach($item in @(@{role='registry';descriptor=$rn},@{role='control';descriptor=$cn})){
+        Deny {Assert-ModelManagementDeployment $layout @{$item.role=$item.descriptor}} ('retained_final_blocks_'+$item.role+'_downgrade') 'Retained final Agent'
+    }
+    Deny {Assert-ModelManagementDeployment $layout @{runtime=$rt}} 'final_writer_blocks_Runtime_downgrade' 'requires capable Runtime'
+    Deny {Invoke-ReleaseChange $layout registry rollback $null $PSScriptRoot $lock} 'final_real_rollback_entrypoint_refuses' 'Retained final Agent'
+    $catalog.services.registry.pending=@{id=[guid]::NewGuid().ToString('N');action='update';phase='started';prior=$registryNew;target=$registryFinal;replicas=0;non_target=@()};Save-Catalog
+    Deny {Restore-PendingRelease $layout registry $PSScriptRoot $lock} 'final_pending_recovery_preserves_required_reader' 'Retained final Agent'
+    if(-not (Read-ReleaseCatalog $layout).services.registry.pending){throw 'Final blocked recovery lost journal'}
+    $catalog.services.registry.pending=$null;$catalog.services.control.current=$controlNew;Save-Catalog
+    Deny {& (Join-Path $PSScriptRoot 'Start-Local.ps1') -LayoutPath $layout.layout_path -Service control -MaintenanceLock $lock} 'final_history_blocks_pre_final_Console_cold_start' 'Retained final Agent'
+    SQL $database 'DELETE FROM public.resources;'|Out-Null
+    $checkpoint={param($point) if($point -ceq 'stopped'){SQL $database $writeFinal|Out-Null}}
+    Deny {Invoke-ReleaseChange $layout registry rollback $null $PSScriptRoot $lock 5 $checkpoint} 'final_late_write_blocks_post_stop_downgrade_and_recovery' 'Retained final Agent'
+    if(-not (Read-ReleaseCatalog $layout).services.registry.pending){throw 'Final late write lost pending journal'}
+    $catalog.services.registry.pending=$null;$catalog.services.control.current=$controlFinal;Save-Catalog
+    SQL $database 'DELETE FROM public.resources;'|Out-Null
+    SQL $database @'
+CREATE FUNCTION public.fixture_commit_delay() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_sleep(2); RETURN NEW; END $$;
+CREATE CONSTRAINT TRIGGER fixture_commit_delay AFTER INSERT ON public.resources DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION public.fixture_commit_delay();
+'@|Out-Null
+    $session=Start-SQL $leaf ('BEGIN; '+$writeFinal+' COMMIT;')
+    $deadline=[datetime]::UtcNow.AddSeconds(5);$sleeping=$false
+    do{$sleeping=[int](SQL $database "SELECT count(*) FROM pg_stat_activity WHERE usename='$app' AND wait_event='PgSleep';").Trim() -eq 1;if($sleeping){break};Start-Sleep -Milliseconds 20}while([datetime]::UtcNow -lt $deadline)
+    if(-not $sleeping){throw 'Final deferred COMMIT fault not reached'}
+    if((Get-ModelManagementFacts $layout $config).final_agents){throw 'Uncommitted final fixture visible'}
+    $session.process.Kill();if(-not $session.process.WaitForExit(10000) -or $session.process.ExitCode -eq 0){throw 'Final client kill not proven'}
+    Deny {Invoke-ReleaseChange $layout control rollback $null $PSScriptRoot $lock} 'final_Console_rollback_waits_for_deferred_Registry_commit' 'Retained final Agent'
+    $observed=Get-ModelManagementFacts $layout $config -Stopped
+    if(-not $observed.final_agents){throw 'Final late COMMIT missed'};$checks.Add('final_killed_client_commit_detected_after_drain')
+    Close-SQL $session;$session=$null
+    SQL $database 'DROP TRIGGER fixture_commit_delay ON public.resources; DROP FUNCTION public.fixture_commit_delay();'|Out-Null
+    foreach($policy in @('[]','{"protocol":"wrong","tool":"check","input_field":"draft","ready_path":[]}','{"protocol":"receipt-field-v1","tool":"check","input_field":"draft","ready_path":"ready"}')){
+        SQL $database ("UPDATE public.resources SET spec=jsonb_set(spec,'{final_output}','"+$policy+"'::jsonb);")|Out-Null
+        Deny {Assert-ModelManagementDeployment $layout} ('malformed_final_policy_'+$checks.Count) 'malformed Agent'
+    }
     $result.passed=$true
 }catch{$result.failure=$_.Exception.Message;$result.failure_line=$_.InvocationInfo.ScriptLineNumber}finally{
     Close-SQL $session
     if($created){SQL $admin ('DROP DATABASE '+$name+' WITH (FORCE)')|Out-Null}
     foreach($role in $roles){SQL $admin ('DROP ROLE '+$role)|Out-Null}
-    $lock.Dispose();$result.checks=$checks.ToArray();$result.source_hashes=@{}
+    if(-not $MaintenanceLock){$lock.Dispose()};$result.checks=$checks.ToArray();$result.source_hashes=@{}
     foreach($file in @('Test-ModelManagement.ps1','lib/platform-model-management.ps1','lib/platform-releases.ps1','lib/platform-receipts.ps1','lib/platform-release-operations.ps1','lib/platform-engine-configuration.ps1','Start-Local.ps1','Build-Services.ps1')){$result.source_hashes[$file]=(Get-FileHash -LiteralPath (Join-Path $PSScriptRoot $file)).Hash.ToLowerInvariant()}
     $result|ConvertTo-Json -Depth 8|Set-Content -LiteralPath (Join-Path $proof 'result.json')
     [pscustomobject]@{proof=$proof;passed=$result.passed;checks=$checks.Count;failure=$result['failure'];line=$result['failure_line']}|ConvertTo-Json

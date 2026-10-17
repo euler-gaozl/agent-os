@@ -99,6 +99,7 @@ function Restore-PendingRelease([hashtable]$Layout,[string]$Role,[string]$Script
     & $Checkpoint 'reverting'
     & (Join-Path $Scripts 'Stop-Local.ps1') -LayoutPath $Layout.layout_path -Service @($Role) -MaintenanceLock $Lock
     if($Role -in @('runtime','worker','control')){Assert-ContinuationDeployment $Layout @{$Role=$priorDescriptor} -RuntimeStopped:($Role -eq 'runtime')}
+    if($Role -in @('runtime','worker')){Assert-SourceExecutionDeployment $Layout @{$Role=$priorDescriptor}}
     if($Role -eq 'knowledge'){Assert-KnowledgeArchiveDeployment $Layout $priorDescriptor -Stopped}
     if($Role -in @('registry','runtime','control')){Assert-ModelManagementDeployment $Layout @{$Role=$priorDescriptor} -RegistryStopped:($Role -eq 'registry')}
     if($pending.replicas -gt 0){
@@ -160,6 +161,7 @@ function Invoke-ReleaseChange([hashtable]$Layout,[string]$Role,[string]$Action,[
         if($Role -in @('runtime','worker','control')){Assert-ContinuationDeployment $Layout @{$Role=$after} -RuntimeStopped:($Role -eq 'runtime')}
         $null=Save-ReleasePhase $Layout $Role $pending.id 'stopped'
         & $Checkpoint 'stopped'
+        if($Role -in @('runtime','worker')){Assert-SourceExecutionDeployment $Layout @{$Role=$after}}
         if($Role -eq 'knowledge'){Assert-KnowledgeArchiveDeployment $Layout $after -Stopped}
         if($Role -in @('registry','runtime','control')){Assert-ModelManagementDeployment $Layout @{$Role=$after} -RegistryStopped:($Role -eq 'registry')}
         if($pending.replicas -gt 0){

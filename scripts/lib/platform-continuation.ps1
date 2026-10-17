@@ -22,6 +22,7 @@ function Assert-ContinuationPolicy([System.Collections.IDictionary]$Runtime,[Sys
     }
     foreach($key in @('schema_ready','has_receipts')){if(-not $Facts.Contains($key) -or $Facts[$key] -isnot [bool]){throw 'Missing continuation database facts.'}}
     $runtimeCap=$Runtime.Contains('continuation_management');$workerCap=$Worker.Contains('continuation_management');$controlCap=$Control.Contains('continuation_management')
+    if($Runtime['final_execution'] -and -not $runtimeCap){throw 'Final Runtime requires durable continuation management.'}
     if($runtimeCap -and -not $workerCap){throw 'Continuation requires revision-aware Workers; upgrade all Workers first or refuse Worker rollback.'}
     if($controlCap -and -not $runtimeCap){throw 'Continuation Console requires Runtime action and durable receipts; upgrade Runtime first.'}
     if($runtimeCap -and -not $Facts.schema_ready){throw 'Continuation requires the Runtime Owner receipt migration before activation.'}

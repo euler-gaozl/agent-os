@@ -1,9 +1,9 @@
-param([string]$CrashRoot='',[string]$CrashPoint='',[switch]$HoldCheckpoint,[ValidateSet('source','resident','budget','native')][string]$Candidate='source')
+param([string]$CrashRoot='',[string]$CrashPoint='',[switch]$HoldCheckpoint,[ValidateSet('source','resident','budget','native','final')][string]$Candidate='source')
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 foreach($library in @('platform-paths','platform-lock','platform-processes','platform-releases','platform-release-operations')){. (Join-Path $PSScriptRoot ('lib/'+$library+'.ps1'))}
-$candidateEngine=switch($Candidate){resident {Get-ResidentEngineName};budget {Get-BudgetEngineName};native {Get-NativeEngineName};default{Get-SourceEngineName}}
+$candidateEngine=switch($Candidate){resident {Get-ResidentEngineName};budget {Get-BudgetEngineName};native {Get-NativeEngineName};final {Get-FinalEngineName};default{Get-SourceEngineName}}
 function Check([bool]$Value,[string]$Name){if(-not $Value){throw $Name};$checks.Add($Name)}
 function Reject([scriptblock]$Action,[string]$Pattern,[string]$Name){$message='';try{& $Action|Out-Null}catch{$message=$_.Exception.Message};if($message -notmatch $Pattern){throw ($Name+': unexpected outcome '+$message)};$checks.Add($Name)}
 if($CrashRoot){
@@ -116,30 +116,45 @@ try{
     $newContract=@{http='agentos-http-v0.7-source-state-v1';data='execution-v0.7-working-state';engines=@();tools=@()}
     $runtimeMetadata=@{format=1;engine=(Get-SourceEngineName);execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';submission_protocol='source-root-default-v1';preview_protocol='source-recovery-preview-v1'}
     $workerMetadata=@{format=1;engine=(Get-SourceEngineName);execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';manifest_sha256=('a'*64);harness_commit=('b'*40)}
-    $residentRuntime=$null;$residentWorker=$null;$budgetRuntime=$null;$budgetWorker=$null;$nativeRuntime=$null;$nativeWorker=$null
+    $residentRuntime=$null;$residentWorker=$null;$budgetRuntime=$null;$budgetWorker=$null;$nativeRuntime=$null;$nativeWorker=$null;$finalRuntime=$null;$finalWorker=$null;$runtimeContinuation=$null;$workerContinuation=$null
     $workerAssets=@{binary='fixture.exe';node='node.exe';harness='harness';source_harness='source'}
-    if($Candidate -cin @('resident','budget','native')){
+    if($Candidate -cin @('resident','budget','native','final')){
         $residentRuntime=$runtimeMetadata.Clone();$residentRuntime.engine=Get-ResidentEngineName
         $residentWorker=$workerMetadata.Clone();$residentWorker.engine=Get-ResidentEngineName
         Write-PlatformText (Join-Path $layout.release_root 'resident/source-runner.mjs') 'synthetic resident asset'
         $workerAssets.resident_harness='resident'
     }
-    if($Candidate -cin @('budget','native')){
+    if($Candidate -cin @('budget','native','final')){
         $budgetRuntime=$runtimeMetadata.Clone();$budgetRuntime.engine=Get-BudgetEngineName;$budgetRuntime.model_receipt_protocol='budget-model-receipt-v1'
         $budgetWorker=$workerMetadata.Clone();$budgetWorker.engine=Get-BudgetEngineName;$budgetWorker.model_receipt_protocol='budget-model-receipt-v1'
         Write-PlatformText (Join-Path $layout.release_root 'budget/source-runner.mjs') 'synthetic budget asset'
         $workerAssets.budget_harness='budget'
     }
-    if($Candidate -ceq 'native'){
+    if($Candidate -cin @('native','final')){
         $nativeRuntime=$runtimeMetadata.Clone();$nativeRuntime.engine=Get-NativeEngineName;$nativeRuntime.model_receipt_protocol='native-model-receipt-v2'
         $nativeWorker=$workerMetadata.Clone();$nativeWorker.engine=Get-NativeEngineName;$nativeWorker.model_receipt_protocol='native-model-receipt-v2'
         Write-PlatformText (Join-Path $layout.release_root 'native/source-runner.mjs') 'synthetic native asset'
         $workerAssets.native_harness='native'
     }
-    $runtimeRef=New-ReleaseDescriptor $layout runtime @{binary='fixture.exe'} $newContract @{kind='synthetic';dirty=$false} $runtimeMetadata $residentRuntime -BudgetExecution $budgetRuntime -NativeExecution $nativeRuntime
+    if($Candidate -ceq 'final'){
+        $finalRuntime=$nativeRuntime.Clone();$finalRuntime.engine=Get-FinalEngineName;$finalRuntime.final_output_protocol='receipt-field-v1';$finalRuntime.continuation_protocol='final-model-continuation-v1'
+        $finalWorker=$nativeWorker.Clone();$finalWorker.engine=Get-FinalEngineName;$finalWorker.final_output_protocol='receipt-field-v1'
+        Write-PlatformText (Join-Path $layout.release_root 'final/source-runner.mjs') 'synthetic final asset';$workerAssets.final_harness='final'
+        $runtimeContinuation=@{format=1;provides='failed-run-continuation-v1';requires='native-model-revision-guard-v1'};$workerContinuation=@{format=1;provides='native-model-revision-guard-v1'}
+        $continuationDDL=Get-Content -LiteralPath (Join-Path (Split-Path -Parent $repo) 'agent-os-runtime/runtime/continuation_requests.sql') -Raw
+        $null=Invoke-RecoverySQL $pg $dbAdmin ($continuationDDL+' GRANT SELECT,INSERT ON run_continuation_receipts TO '+(Quote-PgIdentifier $roleName))
+    }
+    $runtimeRef=New-ReleaseDescriptor $layout runtime @{binary='fixture.exe'} $newContract @{kind='synthetic';dirty=$false} $runtimeMetadata $residentRuntime -BudgetExecution $budgetRuntime -NativeExecution $nativeRuntime -FinalExecution $finalRuntime -ContinuationManagement $runtimeContinuation
     $runtimeOld=New-ReleaseDescriptor $layout runtime @{binary='fixture.exe'} $oldContract @{kind='synthetic';dirty=$false}
-    $workerRef=New-ReleaseDescriptor $layout worker $workerAssets $oldContract @{kind='synthetic';dirty=$false} $workerMetadata $residentWorker -BudgetExecution $budgetWorker -NativeExecution $nativeWorker
+    $workerRef=New-ReleaseDescriptor $layout worker $workerAssets $oldContract @{kind='synthetic';dirty=$false} $workerMetadata $residentWorker -BudgetExecution $budgetWorker -NativeExecution $nativeWorker -FinalExecution $finalWorker -ContinuationManagement $workerContinuation
     $workerOld=New-ReleaseDescriptor $layout worker @{binary='fixture.exe';node='node.exe';harness='harness'} $oldContract @{kind='synthetic';dirty=$false}
+    if($Candidate -ceq 'final'){
+        # The previous generation is native-v4 with its already shipped revision
+        # guard. Rolling back v5 never removes the unrelated continuation feature.
+        $oldAssets=$workerAssets.Clone();$null=$oldAssets.Remove('final_harness')
+        $workerOld=New-ReleaseDescriptor $layout worker $oldAssets $oldContract @{kind='synthetic';dirty=$false} $workerMetadata $residentWorker -BudgetExecution $budgetWorker -NativeExecution $nativeWorker -ContinuationManagement $workerContinuation
+        $runtimeOld=New-ReleaseDescriptor $layout runtime @{binary='fixture.exe'} $newContract @{kind='synthetic';dirty=$false} $runtimeMetadata $residentRuntime -BudgetExecution $budgetRuntime -NativeExecution $nativeRuntime -ContinuationManagement $runtimeContinuation
+    }
     foreach($ref in @($runtimeRef,$runtimeOld)){$ref.config_sha256=Get-BytesHash $initialConfig}
     foreach($ref in @($workerRef,$workerOld)){$ref.config_sha256=(Get-FileHash -LiteralPath $workerPath).Hash.ToLowerInvariant()}
     $catalog=@{format=2;generation=1;services=@{runtime=@{current=$runtimeRef;previous=$runtimeOld;pending=$null};worker=@{current=$workerRef;previous=$workerOld;pending=$null}}};Save-Catalog

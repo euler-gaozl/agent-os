@@ -11,7 +11,8 @@ param(
     [string]$ResidentArtifact='',
     [string]$BudgetArtifact='',
     [string]$NativeArtifact='',
-    [ValidateSet('source','resident','budget','native','historical')][string]$Engine='',
+    [string]$FinalArtifact='',
+    [ValidateSet('source','resident','budget','native','final','historical')][string]$Engine='',
     [switch]$WithDatabase
 )
 $ErrorActionPreference='Stop'
@@ -23,7 +24,7 @@ $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $layout=Get-PlatformLayout $root $LayoutPath
 switch($Action){
     'set-engine' {
-        if(-not $Engine){throw 'set-engine requires -Engine source, resident, budget, native or historical.'}
+        if(-not $Engine){throw 'set-engine requires -Engine source, resident, budget, native, final or historical.'}
         & (Join-Path $PSScriptRoot 'Set-DefaultEngine.ps1') -LayoutPath $LayoutPath -Engine $Engine
     }
     {$_ -in @('update','rollback','release-recover')} {
@@ -43,8 +44,8 @@ switch($Action){
     }
     doctor {& (Join-Path $PSScriptRoot 'Doctor-Local.ps1') -LayoutPath $LayoutPath}
     build {
-        if($Service.Count){& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Service $Service -Pnpm $Pnpm -SourceArtifact $SourceArtifact -ResidentArtifact $ResidentArtifact -BudgetArtifact $BudgetArtifact -NativeArtifact $NativeArtifact}
-        else{& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Pnpm $Pnpm -SourceArtifact $SourceArtifact -ResidentArtifact $ResidentArtifact -BudgetArtifact $BudgetArtifact -NativeArtifact $NativeArtifact}
+        if($Service.Count){& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Service $Service -Pnpm $Pnpm -SourceArtifact $SourceArtifact -ResidentArtifact $ResidentArtifact -BudgetArtifact $BudgetArtifact -NativeArtifact $NativeArtifact -FinalArtifact $FinalArtifact}
+        else{& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Pnpm $Pnpm -SourceArtifact $SourceArtifact -ResidentArtifact $ResidentArtifact -BudgetArtifact $BudgetArtifact -NativeArtifact $NativeArtifact -FinalArtifact $FinalArtifact}
     }
     'restore-check' {
         if(-not $BackupDirectory){throw 'restore-check requires -BackupDirectory.'}

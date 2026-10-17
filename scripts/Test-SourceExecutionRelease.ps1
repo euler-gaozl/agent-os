@@ -1,4 +1,4 @@
-param([Parameter(Mandatory)][string]$SourceArtifact,[Parameter(Mandatory)][string]$ResidentArtifact,[Parameter(Mandatory)][string]$BudgetArtifact,[Parameter(Mandatory)][string]$NativeArtifact)
+param([Parameter(Mandatory)][string]$SourceArtifact,[Parameter(Mandatory)][string]$ResidentArtifact,[Parameter(Mandatory)][string]$BudgetArtifact,[Parameter(Mandatory)][string]$NativeArtifact,[Parameter(Mandatory)][string]$FinalArtifact)
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -14,7 +14,7 @@ $newContract=Clone $oldContract;$newContract.http='agentos-http-v0.7-source-stat
 $runtimeOld=@{role='runtime';assets=@{binary='runtime.exe'};contract=$oldContract}
 $runtimeNew=@{role='runtime';assets=@{binary='runtime.exe'};contract=$newContract;source_execution=@{format=1;engine=(Get-SourceEngineName);execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';submission_protocol='source-root-default-v1';preview_protocol='source-recovery-preview-v1'}}
 $workerOld=@{role='worker';assets=@{binary='worker.exe';node='node.exe';harness='harness'};contract=$oldContract}
-$facts=@{source_runs=0;resumable_source_runs=0;resident_runs=0;resumable_resident_runs=0;budget_runs=0;resumable_budget_runs=0;native_runs=0;resumable_native_runs=0;working_state_ready=$false}
+$facts=@{source_runs=0;resumable_source_runs=0;resident_runs=0;resumable_resident_runs=0;budget_runs=0;resumable_budget_runs=0;native_runs=0;resumable_native_runs=0;final_runs=0;resumable_final_runs=0;working_state_ready=$false}
 $result=@{passed=$false;paid_model_calls=0;scope='Release compatibility policy, real pinned source artifact copy/export/restore, plus real PostgreSQL metadata probe on synthetic tables; no service activation';checks=@()}
 $fixture='D:\workspace\agent-platform\local\evidence\p2-first-services-85be4f84e89f47ad935b6ed8882093c0\postgres'
 $pg='D:\workspace\.tools\postgresql\pgsql\bin';$started=$false;$dbCreated=$false;$roleCreated=$false
@@ -156,12 +156,62 @@ try{
         }
     }
     Reject {Copy-PinnedSourceHarness $BudgetArtifact (Join-Path $proof 'wrong-v4') $nativePin (Get-NativeEngineName)} 'budget_bytes_cannot_satisfy_native_pin'
+    $finalPin=Join-Path (Split-Path -Parent $repo) 'agent-os-worker/worker/final-harness-lock.json'
+    $final=Copy-PinnedSourceHarness $FinalArtifact (Join-Path $proof 'releases/bundles/worker/final-harness') $finalPin (Get-FinalEngineName)
+    $runtimeFive=Clone $runtimeQuad;$runtimeFive.final_execution=Clone $runtimeQuad.native_execution
+    $runtimeFive.final_execution.engine=Get-FinalEngineName;$runtimeFive.final_execution.final_output_protocol='receipt-field-v1';$runtimeFive.final_execution.continuation_protocol='final-model-continuation-v1'
+    $workerFive=Clone $workerQuad;$workerFive.final_execution=$final;$workerFive.assets.final_harness='bundles/worker/final-harness'
+    Assert-SourceExecutionPolicy $runtimeFive $workerQuad (Get-NativeEngineName) $facts;$checks.Add('final_Runtime_can_upgrade_first_with_native_default')
+    Reject {Assert-SourceExecutionPolicy $runtimeQuad $workerFive (Get-NativeEngineName) $facts} 'final_Worker_requires_final_Runtime'
+    Reject {Assert-SourceExecutionPolicy $runtimeFive $workerQuad (Get-FinalEngineName) $facts} 'final_default_requires_final_Worker'
+    Assert-SourceExecutionPolicy $runtimeFive $workerFive (Get-FinalEngineName) $facts;$checks.Add('five_engine_pair_accepts_final_default')
+    foreach($profile in @('budget','native')){
+        $bad=Clone $workerFive;$null=$bad.Remove($profile+'_execution');$null=$bad.assets.Remove($profile+'_harness')
+        Reject {Assert-SourceExecutionPolicy $runtimeFive $bad (Get-FinalEngineName) $facts} ('final_default_retains_'+$profile+'_fallback')
+    }
+    $facts.final_runs=2;$facts.resumable_final_runs=1
+    Reject {Assert-SourceExecutionPolicy $runtimeFive $workerQuad (Get-NativeEngineName) $facts} 'resumable_final_task_blocks_Worker_rollback'
+    $facts.resumable_final_runs=0
+    Assert-SourceExecutionPolicy $runtimeFive $workerQuad (Get-NativeEngineName) $facts;$checks.Add('terminal_final_history_allows_Worker_rollback')
+    Reject {Assert-SourceExecutionPolicy $runtimeQuad $workerQuad (Get-NativeEngineName) $facts} 'terminal_final_history_blocks_Runtime_rollback'
+    foreach($field in @('model_receipt_protocol','final_output_protocol','continuation_protocol')){
+        $bad=Clone $runtimeFive;$null=$bad.final_execution.Remove($field)
+        Reject {Assert-SourceExecutionDescriptor $bad} ('final_Runtime_requires_'+$field)
+    }
+    foreach($profile in @('source','resident','budget','native')){
+        $bad=Clone $runtimeFive;$null=$bad.Remove($profile+'_execution')
+        Reject {Assert-SourceExecutionDescriptor $bad} ('final_Runtime_retains_'+$profile)
+    }
+    foreach($key in @('final_runs','resumable_final_runs')){
+        $badFacts=Clone $facts;$null=$badFacts.Remove($key)
+        Reject {Assert-SourceExecutionPolicy $runtimeQuad $workerQuad '' $badFacts} ('missing_'+$key+'_denied')
+        foreach($value in @(-1,'0',0.5)){
+            $badFacts=Clone $facts;$badFacts[$key]=$value
+            Reject {Assert-SourceExecutionPolicy $runtimeFive $workerFive '' $badFacts} ('invalid_'+$key+'_'+[string]$value+'_denied')
+        }
+    }
+    $badFacts=Clone $facts;$badFacts.resumable_final_runs=3
+    Reject {Assert-SourceExecutionPolicy $runtimeFive $workerFive '' $badFacts} 'final_resumable_cannot_exceed_total'
+    $bad=Clone $workerFive;$null=$bad.Remove('final_execution')
+    Reject {Assert-SourceExecutionDescriptor $bad} 'final_asset_requires_provenance'
+    $bad=Clone $workerFive;$null=$bad.assets.Remove('final_harness')
+    Reject {Assert-SourceExecutionDescriptor $bad} 'final_capability_requires_artifact'
+    Reject {Copy-PinnedSourceHarness $NativeArtifact (Join-Path $proof 'wrong-v5') $finalPin (Get-FinalEngineName)} 'native_bytes_cannot_satisfy_final_pin'
     $layout=@{release_root=(Join-Path $proof 'releases')}
+    $launchRuntime=@{DATABASE_URL='postgres://runtime:fixture-only@127.0.0.1:55591/release?sslmode=disable&search_path=public';LISTEN='127.0.0.1:18094';SERVICE_PEERS=('{"worker":"'+[Convert]::ToHexStringLower([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes('fixture-only')))+'"}')}
+    $launch=@{DATABASE_URL='postgres://worker:fixture-only@127.0.0.1:55591/release?sslmode=disable&search_path=public';RUNTIME_URL='http://127.0.0.1:18094';SERVICE_TOKEN='fixture-only';AGENTOS_NODE=(Resolve-ReleasePath $layout.release_root $workerFive.assets.node)}
+    foreach($p in (Get-SourceEngineProfiles)){$launch[$p.environment]=Join-Path (Resolve-ReleasePath $layout.release_root $workerFive.assets[$p.asset]) 'source-runner.mjs'}
+    Assert-SourceWorkerLaunch $layout $workerFive $launch $launchRuntime;$checks.Add('actual_launch_binding_accepts_five_pinned_runners')
+    foreach($key in @('DSH_FINAL_RUNNER','DSH_NATIVE_RUNNER','DSH_BUDGET_RUNNER','AGENTOS_NODE','RUNTIME_URL','DATABASE_URL','SERVICE_TOKEN')){
+        $bad=Clone $launch;$bad[$key]='wrong-fixture-target'
+        Reject {Assert-SourceWorkerLaunch $layout $workerFive $bad $launchRuntime} ('launch_rejects_wrong_'+$key)
+    }
     foreach($relative in @('bundles/worker/worker.exe','bundles/worker/node.exe','bundles/worker/harness/runner.mjs','bundles/runtime/runtime.exe')){Write-PlatformText (Join-Path $layout.release_root $relative) 'synthetic non-executable inventory marker'}
     $workerAssets=@{binary='bundles/worker/worker.exe';node='bundles/worker/node.exe';harness='bundles/worker/harness';source_harness='bundles/worker/source-harness';resident_harness='bundles/worker/resident-harness';budget_harness='bundles/worker/budget-harness'}
     $workerAssets.native_harness='bundles/worker/native-harness'
-    $workerRef=New-ReleaseDescriptor $layout worker $workerAssets $oldContract @{kind='synthetic';dirty=$false} $source $resident -BudgetExecution $budget -NativeExecution $native
-    $runtimeRef=New-ReleaseDescriptor $layout runtime @{binary='bundles/runtime/runtime.exe'} $newContract @{kind='synthetic';dirty=$false} $runtimeNew.source_execution $runtimeDual.resident_execution -BudgetExecution $runtimeTriple.budget_execution -NativeExecution $runtimeQuad.native_execution
+    $workerAssets.final_harness='bundles/worker/final-harness'
+    $workerRef=New-ReleaseDescriptor $layout worker $workerAssets $oldContract @{kind='synthetic';dirty=$false} $source $resident -BudgetExecution $budget -NativeExecution $native -FinalExecution $final
+    $runtimeRef=New-ReleaseDescriptor $layout runtime @{binary='bundles/runtime/runtime.exe'} $newContract @{kind='synthetic';dirty=$false} $runtimeNew.source_execution $runtimeDual.resident_execution -BudgetExecution $runtimeTriple.budget_execution -NativeExecution $runtimeQuad.native_execution -FinalExecution $runtimeFive.final_execution
     Write-PlatformJson (Join-Path $layout.release_root 'current.json') @{format=2;generation=1;services=@{worker=@{current=$workerRef;previous=$null;pending=$null};runtime=@{current=$runtimeRef;previous=$null;pending=$null}}}
     $export=Export-ReleaseCatalog $layout (Join-Path $proof 'archive')
     $restored=Restore-ReleaseCatalog (Join-Path $proof 'archive') (Join-Path $proof 'restored')
@@ -172,6 +222,11 @@ try{
     Check ($restoredRuntime.resident_execution.engine -ceq (Get-ResidentEngineName)) 'resident_protocol_provenance_survives_release_restore'
     Check ($restoredRuntime.budget_execution.model_receipt_protocol -ceq 'budget-model-receipt-v1') 'budget_receipt_protocol_survives_release_restore'
     Check ($restoredRuntime.native_execution.model_receipt_protocol -ceq 'native-model-receipt-v2') 'native_receipt_protocol_survives_release_restore'
+    Check ($restoredRuntime.final_execution.continuation_protocol -ceq 'final-model-continuation-v1' -and $restoredRuntime.final_execution.final_output_protocol -ceq 'receipt-field-v1') 'final_protocols_survive_release_restore'
+    $finalRunner=Join-Path $restoredLayout.release_root 'bundles/worker/final-harness/source-runner.mjs'
+    $finalBytes=[IO.File]::ReadAllBytes($finalRunner);Write-PlatformText $finalRunner 'tampered final fixture'
+    Reject {Read-ReleaseDescriptor $restoredLayout $workerRef -Verify} 'restored_final_runner_tamper_denied'
+    [IO.File]::WriteAllBytes($finalRunner,$finalBytes)
     $nativeRunner=Join-Path $restoredLayout.release_root 'bundles/worker/native-harness/source-runner.mjs'
     $nativeBytes=[IO.File]::ReadAllBytes($nativeRunner)
     Write-PlatformText $nativeRunner 'tampered native fixture'
@@ -215,6 +270,10 @@ try{
     $null=Invoke-RecoverySQL $pg $dbAdmin "INSERT INTO runs VALUES('v4-done','dsh-source-639ed015-native-v4','completed'),('v4-cancel','dsh-source-639ed015-native-v4','cancelled'),('v4-fail','dsh-source-639ed015-native-v4','failed'),('v4-unknown','dsh-source-639ed015-native-v4','waiting_unknown')"
     $actual=Get-SourceExecutionFacts $probeLayout
     Check ($actual.native_runs -eq 4 -and $actual.resumable_native_runs -eq 2 -and $actual.budget_runs -eq 4) 'restricted_probe_counts_native_failed_unknown_as_resumable'
+    Check ($actual.final_runs -eq 0 -and $actual.resumable_final_runs -eq 0) 'restricted_probe_reports_absent_final_history'
+    $null=Invoke-RecoverySQL $pg $dbAdmin "INSERT INTO runs VALUES('v5-done','dsh-source-639ed015-final-v5','completed'),('v5-cancel','dsh-source-639ed015-final-v5','cancelled'),('v5-fail','dsh-source-639ed015-final-v5','failed'),('v5-unknown','dsh-source-639ed015-final-v5','waiting_unknown')"
+    $actual=Get-SourceExecutionFacts $probeLayout
+    Check ($actual.final_runs -eq 4 -and $actual.resumable_final_runs -eq 2 -and $actual.native_runs -eq 4) 'restricted_probe_counts_final_failed_unknown_as_resumable'
     $null=Invoke-RecoverySQL $pg $dbAdmin ('CREATE TABLE run_working_states(revision bigint); GRANT SELECT ON run_working_states TO '+(Quote-PgIdentifier $roleName))
     Check (-not (Get-SourceExecutionFacts $probeLayout).working_state_ready) 'read_only_state_grant_is_not_migration_readiness'
     $null=Invoke-RecoverySQL $pg $dbAdmin ('GRANT INSERT ON run_working_states TO '+(Quote-PgIdentifier $roleName))
