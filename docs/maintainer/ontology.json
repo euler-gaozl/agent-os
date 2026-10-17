@@ -805,7 +805,7 @@
       "status": "current_snapshot_restore_passed",
       "doc": "windows-ds08-restore-20261017.md",
       "section": "DS-08",
-      "scope": "Latest backup ds08-final-20261017f (after dual-engine Runtime cd1436ca and Worker 806b411d) restored into a disposable random-port PostgreSQL cluster: 46 relations, 10 service logins, 5 sealed credential decryptions, 2 archived Worker bundles (52356bed/806b411d), offline Harness reconstruction, complete release generation 192 with 3103 files; isolated cluster stopped, provider calls 0. Earlier e/d/c/b also passed. Not server/HA, eight physical databases or external Milvus/LightRAG/Langfuse."
+      "scope": "Latest backup ds08-final-20261017g (after dual-engine Runtime cd1436ca and Worker 806b411d, new-engine budget smoke and 40-round task) restored into a disposable random-port PostgreSQL cluster: 46 relations, 10 service logins, 5 sealed credential decryptions, 2 archived Worker bundles (52356bed/806b411d), offline Harness reconstruction, complete release generation 198 with 3103 files; isolated cluster stopped, provider calls 0. Earlier f/e/d/c/b also passed. Not server/HA, eight physical databases or external Milvus/LightRAG/Langfuse."
     },
     {
       "id": "task:final-ci",
@@ -3766,9 +3766,9 @@
   "environment_policy": {
     "file": "environments.json",
     "default_execution_environment": null,
-    "current_execution_record": "windows-local-acceptance-20261017.md",
+    "current_execution_record": "windows-ds08-restore-20261017.md",
     "updated_at": "2026-10-17",
     "rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets."
   },
-  "current_execution_record": "windows-local-acceptance-20261017.md"
+  "current_execution_record": "windows-ds08-restore-20261017.md"
 }
