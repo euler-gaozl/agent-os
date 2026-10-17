@@ -60,14 +60,20 @@ Worker 仍可领取任务、写心跳/回执；Runtime 自身权限未缩减；T
 ## 撤权后真实进程检查
 
 - `Platform.ps1 status`：`core_ready=true`，2 Worker；Runtime/Control/Futures 均在线。
-- 通过 Console API 提交无付费夹具任务 `090fa7a3c4db6f059569560f6b629649`，目标 Agent `delivery-evidence-recall`。Worker `worker-184a74…` 成功 **claim**，写入 `claimed`、`checkpoint`、`model_started` 和 `model_failed` 事件，证明最小 `runs`/`events` 权限可用。
-- 任务在第 1 步失败，原因是合成模型服务 `127.0.0.1:8112` 未运行（`connectex: actively refused`），不是数据库权限拒绝。因此本次只证明“领取与事件写入”，**不证明完整任务成功、笔记生命周期或双 Worker 接管**。
-- 证据：`local/evidence/ds05-access-retirement-4a1fe16c53504a7b8764b0fc9cd558a8/result.json` 与 `local/evidence/post-retirement-worker-2026-10-17T10-01-42-905Z/`。
+- 第一次无付费夹具任务 `090fa7a3…`：Worker `worker-184a74…` 成功 **claim** 并写入 `claimed`、`checkpoint`、`model_started`、`model_failed`；第 1 步因合成模型 `127.0.0.1:8112` 未运行而失败（连接被拒绝），不是数据库权限拒绝。该次只证明领取/事件写入。
+- 启动本机合成模型夹具 `127.0.0.1:8112`（OpenAI-compatible，非真实供应商）后，重新提交同一无付费 Agent 任务 `3fa0b9b7…`：**completed**，step 3，owner `worker-41c7b1b4…`；工具回执包含 `note_save`（写入 `POST_RETIREMENT_NOTE`）与 `run_recall`（读回该记录），最终模型回答 `POST_RETIREMENT_OK: note_save and run_recall completed.`。这证明撤权后 Worker 最小 `runs`/`calls`/`events` 权限、Runtime 笔记原子写入与回读、工具回执链路可用。
+- 该任务使用合成 `evidence-recall-fixture`，不是 DeepSeek/真实供应商；不能写成真实模型任务通过。
+- 证据：`local/evidence/ds05-access-retirement-4a1fe16c53504a7b8764b0fc9cd558a8/result.json`、`local/evidence/post-retirement-worker-fixture-2026-10-17T10-10-27-213Z/terminal.json`、`local/evidence/post-retirement-worker-2026-10-17T10-01-42-905Z/`。
+
+## Telemetry 启动检查
+
+- 已安装 `telemetry-http-v1`，但尝试启动时服务退出：`valid HTTP(S) endpoint without credentials required`。当前 Telemetry 配置没有可用的 `LANGFUSE_URL`/导出端点，因此保持 **0 实例** 是配置缺口，不是 ACL 或程序能力失败。
+- 未执行实际接收/导出；不能把 profile 声明或 inbox 授权写成 Telemetry 端到端通过。
 
 ## 仍待完成
 
-1. 启动合成模型夹具或使用真实小任务，完成撤权后的完整 Worker 任务、笔记/回执、双 Worker 接管与历史回读。
-2. Telemetry 实际启动/接收/导出（Langfuse 或受控 OTLP），不能只凭 profile 声明。
+1. 撤权后的**双 Worker 接管**（杀 owner、lease 过期后另一 Worker 完成同一任务）与历史回读；本次已完成单 Worker 完整任务与笔记回读，但未做接管。
+2. Telemetry 配置有效导出端点后实际启动/接收/导出（Langfuse 或受控 OTLP），不能只凭 profile 声明。
 3. 旧实现覆盖逐行移交与删除（P2 清单）、Linux 组合、W01–W14 剩余项。
 4. 用 `ds05-pre-telemetry-20261017b` 做隔离恢复（DS-08），验证备份真实可恢复。
 5. 最终统一 CI 仅在全部本机验收后执行一次。
