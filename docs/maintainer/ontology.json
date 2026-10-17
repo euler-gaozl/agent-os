@@ -3478,8 +3478,9 @@
   ],
   "environment_policy": {
     "file": "environments.json",
-    "default_execution_environment": "environment:maintainer-macos",
-    "updated_at": "2026-10-15",
-    "rule": "便携源码知识和逻辑架构可用于 Mac 开发；环境观测不可跨机器继承，不推导访问授权"
+    "default_execution_environment": "environment:owner-windows",
+    "current_execution_record": "windows-resumption-20261017.md",
+    "updated_at": "2026-10-17",
+    "rule": "默认值描述当前原 Windows 会话；执行前仍须识别实际主机和工作区。便携源码知识可跨环境使用，安装观测、私有状态和访问授权不可跨机器继承"
   }
 }

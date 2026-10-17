@@ -1,5 +1,7 @@
 # Agent OS
 
+**2026-10-17 更新：** 已从 Mac 接回 6 仓 29 个提交，并同步各仓 `main` 和开发分支；原 Windows 已恢复 12 个服务实例。最新接续功能的 Windows 安装与完整业务验收仍在推进，见 [续做计划及核验结果](docs/maintainer/windows-resumption-20261017.md)。下面保留历史记录，源码同步不代表全部功能已安装或项目已交付。
+
 面向多个业务的 Agent 平台。DeepSeek Harness（DSH）负责 Agent 执行循环与上下文压缩；Go 服务负责持久化调度、工具与资料管理；React / TypeScript 提供统一中台和独立的期货研究工作台。
 
 **维护者交接入口：[HANDOFF.md](HANDOFF.md)。** [项目群知识库](docs/maintainer/README.md) 包含完整目标、未完成任务、15 仓版本清单、原电脑/新电脑接手方法及可机读本体映射。交接分支为 `feat/end-to-end-delivery`；项目整体尚未完成，源码、集成 pin 与实际安装版本分别记录。下文保留历史增量状态，接手先读知识库的带日期快照再核对现场。

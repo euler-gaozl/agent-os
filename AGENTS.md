@@ -1,5 +1,9 @@
 # Agent OS 工作约定
 
+## 2026-10-17 回到原 Windows 继续交付
+
+用户已要求接回 Mac 成果并继续、更新 GitHub。当前执行环境是原 Windows，有效主仓为 `D:\workspace\agent-platform\repos\agent-os`。先读 `docs/maintainer/windows-resumption-20261017.md`；恢复的 Mac 提交/证据与 Windows 安装事实分开。下方“朋友在 Mac”“本次只交接”和“保持暂停”属于当时交接约束，不再禁止本聊天按用户新指令继续开发。旧 Goal 卡片恢复由用户界面控制；不可因此伪造状态或另建缩减目标。P0–P5/P2.5、W01–W14 完整范围保留，日常 Actions 继续禁用。
+
 ## 2026-10-15 接手者在 Mac 上开发
 
 用户已明确：朋友使用她自己的 Mac，知识库必须避免误用原所有者的 Windows 环境。接手先读 `docs/maintainer/environment.md` 和 `environments.json`。朋友的工作根默认 `~/workspace/agent-platform`，源码、配置、数据库、日志及证据全部独立。下文及服务仓历史文档中的 D 盘路径、Windows 维护命令、安装版本、127.0.0.1 地址、DPAPI 和私有证据指针仅属于原电脑，不是 Mac 的执行指令或已有状态。不得自动连接、映射、恢复或修改原电脑环境；GitHub 交接不授予这种访问权限。

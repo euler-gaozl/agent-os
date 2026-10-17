@@ -1,5 +1,9 @@
 # 完整目标与有效约束
 
+## 当前执行版本（2026-10-17）
+
+用户要求接回朋友 Mac 的未推送成果、回到原 Windows 继续，并及时同步 GitHub。执行主仓 `D:\workspace\agent-platform\repos\agent-os`；新顺序见 [接回与续做计划](windows-resumption-20261017.md)。下面原 Goal 全文作历史保留；路径、公开仓库和当前环境按后续指令修正。此前交接暂停要求已被“继续”覆盖，Goal 卡片的恢复需用户点击；这不影响已授权的当前工作。目标范围仍完整保留。
+
 ## 原 Goal 全文
 
 按 D:\workspace\agent-os\docs\windows-single-machine-plan.md 与 docs\architecture\dsh-source-and-storage-decision.md 的完整规划，交付可日常使用的 Windows 单机 Agent 平台。顺序：P0 固定现有可恢复基线与所有权威数据库/密钥配置/构建产物的恢复清单；P1 建立 start/status/stop/doctor/backup/restore-check/update/rollback 本机维护闭环，将源码和状态安全归入 D:\workspace\agent-platform（repos/local/ops），不移动运行中数据库、不丢旧资料；P2 将12个服务分别置于独立私有 GitHub 仓库，agent-os 只管集成部署，各仓库独立构建/配置/迁移/发布/回滚，Runtime/Worker 和 Knowledge/Indexer 保持必要事务域与固定共享协议；P2.5 纳管固定 DSH 源码至 agent-os-harness，实现持久化/checkpoint 插件、结构化任务工作状态、Compact 信息保留与原文回查、长输出引用、可重建缓存清理和有界内存/恢复测量，已有扩展点优先，必要的 Session/Loop 核心补丁以证据决定，保留旧引擎任务兼容，不另造决策循环；P3 完整中台 Web 管理 Agent/提示词/Skill/MCP 检测验活/资料/记忆/运行，独立期货业务 Web，真实官方 DeepSeek+DSH 端到端跑通并逐页优化UI；P4 Windows 双Worker接管、取消、丢回复、未知效果、Compact、数据库中断、备份还原与独立升级回滚故障验收；P5 固定品种/日期/供给库存问题完成采集校验入库研究引用回读的真实业务验收。每阶段记录真实证据与未解决缺陷并接受独立评审，不以目录数量或绿色CI代替交付。凭证和私有数据不得进入GitHub/日志/模型上下文，付费调用小额有界。先以本机PostgreSQL词法检索及现有Windows环境完成核心链路，Sandbox/Milvus/LightRAG/Langfuse等扩展的服务交付与实际配置可用性分别验收，未配置不假报可用。服务器/跨机器HA、主备数据库、公网生产部署、最终百万文档千万块全平台规模验收和全品种业务资料覆盖进入后续阶段，不阻塞本次单机目标；机器宕机HA和未执行测试不得宣称完成。
