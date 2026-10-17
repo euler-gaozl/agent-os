@@ -139,6 +139,7 @@
 - 结果：一个事务收到 **`deadlock detected`（40P01）**，另一个成功提交；`pg_stat_database.deadlocks` 从 **0→1**。
 - 这是数据库层死锁检测，不涉及 Worker/任务执行；不能写成“任务级死锁恢复”或“平台自动重试”。
 - 证据：`local/evidence/ds07-deadlock-2026-10-17T13-02-53-428Z/`。
+- 任务级死锁未复现：另两次对 `note_save` 任务在 `documents` 表锁 + `runs` 行锁下尝试注入，任务均 **completed step 3**，psql 未收到 `deadlock detected`；没有取得任务级死锁证据。证据：`local/evidence/ds07-task-deadlock-2026-10-17T13-04-27-994Z/`、`ds07-task-deadlock-2026-10-17T13-04-48-824Z/`。
 
 ## 结论与边界
 

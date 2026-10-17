@@ -2,7 +2,7 @@
   "schema_version": 1,
   "latest_recovery_audit": "windows-source-recovery-20261017.json",
   "current_execution_record": "windows-ds07-platform-load-20261017.md",
-  "as_of": "2026-10-17T13:02:53Z",
+  "as_of": "2026-10-17T13:04:48Z",
   "project_id": "project:agent-platform",
   "source_baseline": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe",
   "integration_handoff_branch": "feat/end-to-end-delivery",
