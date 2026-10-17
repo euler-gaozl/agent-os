@@ -200,6 +200,7 @@ function Assert-ReleaseAssets([string]$Role,[System.Collections.IDictionary]$Ass
     if($Role -eq 'worker' -and $Assets.Contains('native_harness')){$expected+='native_harness'}
     if($Role -eq 'worker' -and $Assets.Contains('final_harness')){$expected+='final_harness'}
     if($Role -eq 'worker' -and $Assets.Contains('guarded_harness')){$expected+='guarded_harness'}
+    if($Role -eq 'worker' -and $Assets.Contains('guarded_v6_harness')){$expected+='guarded_v6_harness'}
     if(@(Compare-Object @($Assets.Keys|Sort-Object) @($expected|Sort-Object)).Count){throw 'Release does not contain the complete role-specific asset set.'}
 }
 function Assert-CompatibleRelease([System.Collections.IDictionary]$Previous,[System.Collections.IDictionary]$Next){
