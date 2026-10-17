@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "latest_recovery_audit": "windows-source-recovery-20261017.json",
-  "current_execution_record": "windows-ds07-platform-load-20261017.md",
-  "as_of": "2026-10-17T13:52:00Z",
+  "current_execution_record": "dsh-upstream-0.2.1-rc.2-20261017.md",
+  "as_of": "2026-10-17T14:12:00Z",
   "project_id": "project:agent-platform",
   "source_baseline": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe",
   "integration_handoff_branch": "feat/end-to-end-delivery",
@@ -113,7 +113,7 @@
       "url": "https://github.com/euler-gaozl/agent-os-harness",
       "clone_url": "https://github.com/euler-gaozl/agent-os-harness.git",
       "branch": "feat/source-owned-harness",
-      "source_head_at_audit": "c5d4e4e2d5d159557d3bb77b8bf895ee0597bda1",
+      "source_head_at_audit": "19e0ceee82cd6f8776cbc5eb97d1a5aab0f7a210",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -121,7 +121,7 @@
       "roles": [],
       "integration_pins": [],
       "installed": [],
-      "remote_main_head_at_audit": "47522dfdd02436d5f6528831fe7a2c1fcab5a37c"
+      "remote_main_head_at_audit": "19e0ceee82cd6f8776cbc5eb97d1a5aab0f7a210"
     },
     {
       "id": "repo:agent-os-indexer",
