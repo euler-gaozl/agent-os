@@ -203,3 +203,12 @@
 - `POST /resume` 被拒绝：`only failed, non-cancelled runs may resume; unknown calls require reconciliation`。控制台 reconcile 只适用于有未决 call 的情况，本次没有可核对 call，无法用现有 UI 恢复。
 - 已停止手工 Worker/代理，恢复受管 2 Worker，`core_ready=true`。
 - 结论：分区后平台确实停止而不是盲目重试，但缺少“无未决 call 的 waiting_unknown”恢复路径；网络分区验收仍未通过。
+
+## 网络分区恢复：通过（2026-10-18）
+
+- 手工 detached Worker（`RUNTIME_URL=http://127.0.0.1:18094`）经 TCP 代理连接 Runtime，成功 claim 任务 `cdcf5fe0…`。
+- 任务跑到 step 5 时杀掉代理；恢复代理后任务进入 `waiting_unknown` step 8。
+- 调用 Runtime 的受控恢复端点 `POST /v1/runs/{id}/resume-source-state` 返回 **202 queued**；随后 Worker 重新 claim，任务 **completed step 41**。
+- 证据：`local/evidence/ds06-80round-nokill-2026-10-17T16-36-44-065Z/result.json`（任务 `cdcf5fe048466c6eccf2b15410ffc5b9`）。
+- 结论：网络分区不会盲目重试；无未决 call 时必须走 `resume-source-state` 显式恢复，恢复后可完成。之前 `d1147ecc…` 的 `waiting_unknown` 是缺少该恢复动作，不是数据损坏。
+- 已停止手工 Worker/代理，恢复受管 2 Worker，`core_ready=true`。

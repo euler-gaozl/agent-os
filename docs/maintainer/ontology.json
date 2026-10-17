@@ -805,7 +805,7 @@
       "status": "current_snapshot_restore_passed",
       "doc": "windows-ds08-restore-20261017.md",
       "section": "DS-08",
-      "scope": "Latest backup ds08-final-20261017j (after four concurrent new-engine 40-round tasks) restored into a disposable random-port PostgreSQL cluster: 46 relations, 10 service logins, 5 sealed credential decryptions, 2 archived Worker bundles (52356bed/806b411d), complete release generation 213 with 3103 files; isolated cluster stopped, provider calls 0. Not server/HA, eight physical databases or external Milvus/LightRAG/Langfuse."
+      "scope": "Latest backup ds08-final-20261017k (after network-partition recovery task cdcf5fe0) restored into a disposable random-port PostgreSQL cluster: 46 relations, 10 service logins, 5 sealed credential decryptions, 2 archived Worker bundles (52356bed/806b411d), complete release generation 213 with 3103 files; isolated cluster stopped, provider calls 0. Not server/HA, eight physical databases or external Milvus/LightRAG/Langfuse."
     },
     {
       "id": "task:final-ci",
