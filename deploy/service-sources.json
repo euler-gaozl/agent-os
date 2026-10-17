@@ -19,7 +19,7 @@
     },
     "telemetry": {
       "repository": "agent-os-telemetry",
-      "commit": "c2a02e27fcc0ef517347dcaaaabe11fbcc671e81"
+      "commit": "6f9f539125431bebbf88ddbdbb6840f3dd426068"
     },
     "toolhub": {
       "commit": "98f8fecc5a139b3f1b0e4d76f4a11c9d8e0c0d07",
