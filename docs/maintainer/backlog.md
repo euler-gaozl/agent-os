@@ -5,8 +5,8 @@
 | 顺序 | 当前状态 | 本体任务 / Owner | 下一步 |
 | --- | --- | --- | --- |
 | DS-01 | 已完成（源码/测试/安装/静态复核） | task:qualitative-evidence / Futures | 非数值说明已绑定留存原文并安装；转入 DS-02，DS-03 真实内容复核仍待做 |
-| DS-02 | 已实现并安装 v6+v7 双产物，默认 v7；真实任务未复验 | task:finalization-recovery / Harness、Runtime、Worker、业务方法 | 在 v7 上执行一次有区别的真实四问研究，验证拒绝后单次续接、v6 历史恢复和故障/重放；不能只凭合成测试宣称 P5 |
-| DS-03 | 未通过 | task:research-completion、task:research-quality / Futures及集成 | 前两项离线验证后，一次有区别的真实四问研究，独立内容复核 |
+| DS-02 | 已完成（双产物安装，默认 v7；DS-03 已在 v7 上跑通真实任务） | task:finalization-recovery / Harness、Runtime、Worker、业务方法 | v6 恢复动作仍未实际启动；不得删 v6 runner 或改旧任务；真实延迟/故障重放归 DS-07 |
+| DS-03 | 已完成（真实四问报告 + 独立内容复核 ACCEPT） | task:research-quality / Agent 22、Skill 10、Futures 检查器 | 仅覆盖库存/区域/合同三份资料；旧供给/进口/压榨失败任务未回填；保留 s1 引文拼接 minor；下一步 DS-04 |
 | DS-04 | 部分实现，完整页面未验收 | task:continuation-ui / Console、Futures、Runtime | 接续动作已有实现；补全部功能/错误状态/窄屏和原文回读浏览器矩阵 |
 | DS-05 | 部分完成 | task:service-retirement / 各Owner及集成 | 对照p2-linux-cutover逐行移交覆盖、权限和旧实现退役 |
 | DS-06 | 部分完成 | task:storage-lifecycle / Harness、Runtime、Worker、Storage | 补笔记/缓存/失败退出与长历史内存恢复验收，不删权威资料 |
