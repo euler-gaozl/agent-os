@@ -2,7 +2,7 @@
 
 本文件是当前开工入口。用户要求把进度、待办、维护知识库和本体同步 GitHub，交接完成后暂停原 Codex Goal，由 DeepSeek 接续。**产品整体未交付，不能把修复报告校验器当作完成全部平台。** 原目标保留在 [objective.md](objective.md)，逐项验收为 [P0–P5/P2.5、W01–W14](../windows-single-machine-plan.md)。
 
-**2026-10-17 后续增量：DS-01 已实现并受管安装；DS-02 的 guarded-v7 单次续接与 v6+v7 双产物也已安装，默认 v7，v6 失败任务仍保留；DS-03 库存/合同真实四问已产出报告并通过独立内容复核 ACCEPT；DS-04 中台/业务浏览器矩阵已通过主要页面/窄屏/交互检查，并修复本地业务入口。** 详见 [DS-01 记录](windows-ds01-statements-20261017.md)、[DS-02 记录](windows-ds02-finalization-investigation-20261017.md)、[DS-03 记录](windows-ds03-inventory-20261017.md) 与 [DS-04 记录](windows-ds04-ui-browser-20261017.md)。下一步跟进 v6 续跑评估与跨任务证据溯源，然后进入 DS-05 服务退役、DS-06 存储生命周期、DS-07 故障/资源、DS-08 备份恢复、DS-09 集中 CI；不能把 DS-04 页面矩阵当作后端恢复或整个目标完成。
+**2026-10-17 后续增量：DS-01 已实现并受管安装；DS-02 的 guarded-v7 单次续接与 v6+v7 双产物也已安装，默认 v7，v6 任务保留重放/读取但不能直接续跑；DS-03 库存/合同真实四问已产出报告并通过独立内容复核 ACCEPT；DS-04 中台/业务浏览器矩阵已通过主要页面/窄屏/交互检查并修复本地业务入口；DS-05 正式执行域 ACL 已收缩，Worker 最小权限与 Telemetry inbox/HTTP 能力就绪。** 详见 [DS-01 记录](windows-ds01-statements-20261017.md)、[DS-02 记录](windows-ds02-finalization-investigation-20261017.md)、[DS-03 记录](windows-ds03-inventory-20261017.md)、[DS-04 记录](windows-ds04-ui-browser-20261017.md) 与 [DS-05 记录](windows-ds05-access-retirement-20261017.md)。下一步完成撤权后的完整任务/双 Worker/Telemetry 导出与旧实现删除，然后进入 DS-06 存储生命周期、DS-07 故障/资源、DS-08 备份恢复、DS-09 集中 CI；不能把 ACL 收缩当作整个目标完成。
 
 ## 先拿到正确的源码与环境
 

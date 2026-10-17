@@ -1,6 +1,6 @@
 # 当前进度 · DeepSeek 交接
 
-2026-10-17 原 Windows 最新观测，接手者的执行环境已确认为原 Windows。整体未完成。**DS-01 非数值论据、DS-02 v6+v7 双引擎、DS-03 库存/合同真实四问均已实现并验收**（DS-03 报告经独立内容复核 ACCEPT）；**DS-04 中台/业务浏览器矩阵已通过主要页面/窄屏/交互检查**，本地业务入口已修复安装，保留 v6 续跑评估与跨任务证据溯源两个跟进项；DS-05 服务退役、DS-06 存储生命周期、DS-07 故障/资源、DS-08 最终备份恢复、DS-09 集中 CI 仍待做。首读 [DS-04 记录](windows-ds04-ui-browser-20261017.md)、[DS-03 记录](windows-ds03-inventory-20261017.md) 与 [详细接续任务](deepseek-handoff-20261017.md)，旧状态保存在 [历史快照](current-state-before-deepseek-20261017.md)，不得把历史“当前”覆盖本页。
+2026-10-17 原 Windows 最新观测，接手者的执行环境已确认为原 Windows。整体未完成。**DS-01 非数值论据、DS-02 v6+v7 双引擎、DS-03 库存/合同真实四问均已实现并验收**（DS-03 报告经独立内容复核 ACCEPT）；**DS-04 中台/业务浏览器矩阵已通过主要页面/窄屏/交互检查**，本地业务入口已修复安装，保留 v6 续跑评估与跨任务证据溯源两个跟进项；**DS-05 正式执行域 ACL 已收缩**（Worker 最小权限、Telemetry inbox/HTTP 能力就绪），但撤权后的完整任务/双 Worker/Telemetry 导出/旧实现删除仍未完成；DS-06 存储生命周期、DS-07 故障/资源、DS-08 最终备份恢复、DS-09 集中 CI 仍待做。首读 [DS-05 记录](windows-ds05-access-retirement-20261017.md)、[DS-04 记录](windows-ds04-ui-browser-20261017.md) 与 [详细接续任务](deepseek-handoff-20261017.md)，旧状态保存在 [历史快照](current-state-before-deepseek-20261017.md)，不得把历史“当前”覆盖本页。
 
 ## 阶段状态
 
@@ -16,7 +16,7 @@
 
 ## 当前安装与工程验证
 
-默认引擎 guarded-v7，两个 Worker，最近只读 core_ready=true。Runtime fb5a5c1、Worker 76485b6、Console 52ce5c9（`control-dfd76…`）、Registry 2f7f836、Futures 5be0b1a（`futures-7b35c15…`）；Futures 报告检查器为 `futures-report-check-v8`，已包含“拒绝后立即结束回合、由执行器续接”的提示。Runtime/Worker 同时保留 guarded-v6 恢复能力。其他安装及完整 SHA 以 [仓库清单](repositories.json) 的 installed 为准。其来源是原 Windows release catalog，不是远端用户的可用服务。
+默认引擎 guarded-v7，两个 Worker，最近只读 core_ready=true。Runtime fb5a5c1、Worker 76485b6、Console 52ce5c9（`control-dfd76…`）、Registry 2f7f836、Futures 5be0b1a（`futures-7b35c15…`）、Telemetry 6f9f539（`telemetry-d243b05…`，0 实例）；Futures 报告检查器为 `futures-report-check-v8`，已包含“拒绝后立即结束回合、由执行器续接”的提示。Runtime/Worker 同时保留 guarded-v6 重放能力；正式执行域 ACL 已收缩为 Worker 最小权限。其他安装及完整 SHA 以 [仓库清单](repositories.json) 的 installed 为准。其来源是原 Windows release catalog，不是远端用户的可用服务。
 
 核对发现Telemetry源码HEAD为6f9f539、集成pin为c2a02e2、正式安装为fcaca2e；Indexer/Sandbox/Sources/ToolHub也有HEAD领先pin的情况。清单分别保留，DS-05先调查差异再决定部署，不能用全量build/update把当前安装静默换成pin。Harness产物随Worker固定，SDK随编译依赖固定，不按独立进程计数。
 
@@ -29,6 +29,8 @@ DS-02 增量（2026-10-17）：已确认“未就绪稿 → 误提成稿 → Run
 DS-03 增量（2026-10-17）：用 Agent 22/Skill 10/Connector 4 在 guarded-v7 上执行了**有区别的库存、区域分布与未执行合同四问研究**，只读 Mysteel 9/18 选段、国粮 9/18 与 9/25 转载三份原文。第三次任务 `a526d178…` 完成（6/12 次请求，17,708 字节，检查器 `needs_review`、无结构 revise）；独立内容复核先判 REVISE，指出 6月末被写成精确日、q2 样本一致性自相矛盾、q4“现有资料”越界、s3 引文不足、发布主体过度断言；两次更正月（`634a5052…` 7 项、`3c059635…` 仅 s5）后，最终 `report-final.json` 18,925 字节，独立复核 **ACCEPT**。核心数字 74.29/117.32/43.7/37.3%/37.2/609.4/459.91/869/113/873/124 与 58.0%/24.5%/17.5% 均对原文；未把不同来源相减、未把合同当库存、未把转载当独立调查。唯一 minor：s1 引文拼接两段不相邻原文。旧任务 `2bc11dd…` 仍是失败记录，未回填。
 
 DS-04 增量（2026-10-17）：用真实 Chrome headless（CDP，无付费模型）执行中台/业务 Web 浏览器矩阵。中台 7 个页面（Agent、ToolHub、知识库、工作记忆、运行记录、服务与实例、模型与凭证）均能登录、渲染、无横向溢出、无 JS 异常；Agent 编辑器 5 个标签、ToolHub 检测/MCP、知识库原文与检索、运行详情、服务失联筛选、移动端抽屉均验证。业务端首页、已完成记录、失败记录、阶段草稿、移动端记录页均验证，记录页加载 3 份原始阅读资料。Console `52ce5c9` 增加**仅 DEV_LOCAL 的本地业务入口默认值**并安装为 `control-dfd76…`，侧栏“研序·期货研究”从“业务入口未配置”变为可点击 `http://127.0.0.1:8098/`。仍保留两个待跟进项：v6 失败任务续跑面板显示“当前记录不足以直接续跑，需要核对执行详情”（continuation context `manual_review`/`unsupported_checkpoint`；DB 的 `resumable_guarded_v6_runs=1` 只是粗粒度）；s5 更正任务本身 0 份阅读资料，最终报告的证据在原始 `a526…` 任务，跨任务溯源未在记录页直连。详见 [DS-04 记录](windows-ds04-ui-browser-20261017.md)。
+
+DS-05 增量（2026-10-17）：先创建协调备份 `ds05-pre-telemetry-20261017b`（含 45 张表指纹与依赖；隔离恢复留 DS-08）。Telemetry 正式库原缺 `telemetry_inbox`；用 `6f9f539` 的 migrator 创建 inbox 并授权本域，随后安装 `telemetry-d243b05…`（`telemetry-http-v1`，0 实例）。停 Worker 与 Runtime 后执行 Runtime `retire-access`，正式收缩 Worker/Telemetry 对执行表的权限：Worker 仅保留 runs SELECT/UPDATE、calls/model_attempts/harness_exchanges/harness_archives 的最小组合、events SELECT/INSERT 和 events 序列；`documents`、`note_*` 与 note 序列撤销；Telemetry 失去 execution `events`，保留 inbox/exports 本域权限。`Platform.ps1 status` 恢复 `core_ready=true`、2 Worker；撤权后提交无付费夹具任务 `090fa7a3…`，Worker 成功 claim 并写 claimed/checkpoint/model_started 事件，随后因合成模型 8112 未运行而失败——证明最小 DB 权限可用，但不证明完整任务/双 Worker/笔记生命周期。旧 Telemetry 被发布门禁拒绝，旧 Worker 因已声明 minimal profile 仍通过。详见 [DS-05 记录](windows-ds05-access-retirement-20261017.md)。
 
 guarded安装前完整备份已在隔离库实际恢复：1数据库、10角色、3项凭证解密和历史产物验证通过，隔离库已停。但该备份早于最新失败研究和v7安装，最终DS-08仍需捕获新的交付状态。
 

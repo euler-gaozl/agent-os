@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "latest_recovery_audit": "windows-source-recovery-20261017.json",
-  "current_execution_record": "windows-ds04-ui-browser-20261017.md",
-  "as_of": "2026-10-17T09:50:40Z",
+  "current_execution_record": "windows-ds05-access-retirement-20261017.md",
+  "as_of": "2026-10-17T09:59:03Z",
   "project_id": "project:agent-platform",
   "source_baseline": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe",
   "integration_handoff_branch": "feat/end-to-end-delivery",
@@ -470,8 +470,8 @@
       "installed": [
         {
           "role": "telemetry",
-          "commit": "fcaca2e96927c4fd2139b681a471dd83a7612932",
-          "manifest": "descriptors/telemetry-8bc472b6d7204b3e9f30c0b600cf22c0.json",
+          "commit": "6f9f539125431bebbf88ddbdbb6840f3dd426068",
+          "manifest": "descriptors/telemetry-d243b05fc74b416aa4c164561e3099be.json",
           "sdk": {
             "version": "v0.1.0-rc.2",
             "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
@@ -481,8 +481,8 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T08:09:21.828Z",
-          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
+          "observed_at": "2026-10-17T09:59:03Z",
+          "observation": "Actual owner Windows release catalog; Telemetry telemetry-http-v1 installed with inbox present, zero instances."
         }
       ],
       "remote_main_head_at_audit": "6f9f539125431bebbf88ddbdbb6840f3dd426068"

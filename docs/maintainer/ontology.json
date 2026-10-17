@@ -775,9 +775,10 @@
       "id": "task:service-retirement",
       "type": "task",
       "label": "旧覆盖与权限退役",
-      "status": "open",
-      "doc": "backlog.md",
-      "scope": "原目标余项"
+      "status": "formal_acl_retired_validation_open",
+      "doc": "windows-ds05-access-retirement-20261017.md",
+      "section": "DS-05",
+      "scope": "Formal owner Windows PostgreSQL Runtime ACL contraction executed: Telemetry inbox migrated, telemetry-http-v1 installed at 6f9f539 (zero instances), Worker reduced to worker-minimal-v1 grants, Telemetry execution events revoked. Post-retirement Worker claimed a task and wrote events; full task, note lifecycle, dual-worker takeover, Telemetry export and old implementation deletion remain."
     },
     {
       "id": "task:storage-lifecycle",
@@ -1638,6 +1639,12 @@
       "type": "evidence_document",
       "label": "DS-04 中台/业务 Web 浏览器矩阵、入口修复与跟进项",
       "doc": "windows-ds04-ui-browser-20261017.md"
+    },
+    {
+      "id": "evidence:windows-ds05-access-retirement-20261017",
+      "type": "evidence_document",
+      "label": "DS-05 正式执行域权限收缩、Telemetry inbox 与撤权后进程检查",
+      "doc": "windows-ds05-access-retirement-20261017.md"
     },
     {
       "id": "task:finalization-recovery",
@@ -2964,6 +2971,11 @@
       "to": "evidence:retirement"
     },
     {
+      "from": "task:service-retirement",
+      "relation": "documented_by",
+      "to": "evidence:windows-ds05-access-retirement-20261017"
+    },
+    {
       "from": "capability:ui",
       "relation": "documented_by",
       "to": "evidence:ui"
@@ -3707,7 +3719,7 @@
   "environment_policy": {
     "file": "environments.json",
     "default_execution_environment": null,
-    "current_execution_record": "windows-ds04-ui-browser-20261017.md",
+    "current_execution_record": "windows-ds05-access-retirement-20261017.md",
     "updated_at": "2026-10-17",
     "rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets."
   },
