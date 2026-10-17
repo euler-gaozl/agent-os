@@ -69,14 +69,21 @@
 - 证据：`local/evidence/ds06-maxlimits-nokill-2026-10-17T11-48-14-327Z/`、`local/evidence/ds06-maxlimits-takeover-2026-10-17T11-48-50-399Z/`。
 - 结论：先前 8k/16k 失败由过紧的上下文/预算限制触发；放宽到 schema 上限后，同一 20 轮任务在杀/不杀两种情况下都通过。这个复验**绕过了 Compact**（1M 上下文不会触发），所以仍不能替代 DSH Compact 点续跑验收。
 
+## 七、32k 上下文边界
+
+- 再用 revision 6：`context_tokens=32768`、`context_bytes=65536`，其余为 100 steps/500 attempts/10M budget。
+- 任务 `19c8f1fd…` 在第 10 步强杀首任 owner，第二 Worker 以 fence 2 接管，最终 **completed step 21**，20 个工具回执，`LONG_TASK_OK`。
+- 证据：`local/evidence/ds06-32k-takeover-2026-10-17T11-51-53-245Z/`。
+- 与 8k/16k 失败、32k/64k/1M 通过合起来看，失败集中在过小上下文，而不是接管；但 32k 是否真正触发 Compact 仍无显式证据，不能替代 Compact 点验收。
+
 ## 边界与仍未完成
 
 - 并发写者已完成两客户端真实竞争；未做更多写者、跨进程/跨实例或自动分支 resolver。
-- 已完成 64k/最大限制下 20 轮长任务的强杀/接管；8k/16k 收紧上下文会失败，根因仍未定位，DSH Compact 点真实续跑仍未通过。
+- 已完成 32k/64k/最大限制下 20 轮长任务的强杀/接管；8k/16k 收紧上下文会失败，失败集中在过小上下文，但 Compact 点仍无显式成功证据。
 - 长历史基准使用合成 source-Harness/受控 journal，不是 Runtime/Worker/DB 进程 RSS，也不是 10M 分块或服务器容量。
 - 自动 GC/删除策略未启用；不删除权威笔记/回执。
 - DS-07 仍需真实整平台资源、PG 连续负载和故障矩阵；DS-09 最后统一 CI。
 
 ## 结论
 
-DS-06 的“真实笔记修订/过期/并发冲突/撤回”“Windows 长历史 Compact/重放测量”“64k/最大限制下 20 轮长任务中断/接管”已取得可复核证据；8k/16k 收紧上下文在 step 13/19 失败（`DSH turn did not complete`），最大限制复验通过但绕过了 Compact，生产级内存上界也未验，不能把本记录写成 DS-06 全部完成。
+DS-06 的“真实笔记修订/过期/并发冲突/撤回”“Windows 长历史 Compact/重放测量”“32k/64k/最大限制下 20 轮长任务中断/接管”已取得可复核证据；8k/16k 收紧上下文在 step 13/19 失败（`DSH turn did not complete`），32k 起通过，但 Compact 点仍无显式成功证据，生产级内存上界也未验，不能把本记录写成 DS-06 全部完成。
