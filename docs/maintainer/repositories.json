@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "latest_recovery_audit": "windows-source-recovery-20261017.json",
-  "current_execution_record": "windows-ds06-storage-lifecycle-20261017.md",
-  "as_of": "2026-10-17T12:01:55Z",
+  "current_execution_record": "windows-ds07-platform-load-20261017.md",
+  "as_of": "2026-10-17T12:06:26Z",
   "project_id": "project:agent-platform",
   "source_baseline": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe",
   "integration_handoff_branch": "feat/end-to-end-delivery",
@@ -272,7 +272,7 @@
       "url": "https://github.com/euler-gaozl/agent-os-runtime",
       "clone_url": "https://github.com/euler-gaozl/agent-os-runtime.git",
       "branch": "feat/model-native-limits",
-      "source_head_at_audit": "fb5a5c1017ca0cdbe83ff227cc77742a66ea9c24",
+      "source_head_at_audit": "55dc3cd747008d9f5d8f13e989a8ebbfe437fbab",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -283,15 +283,15 @@
       "integration_pins": [
         {
           "role": "runtime",
-          "commit": "1e17aae52b40db9ecb7a637090e5859edf9cf9aa",
+          "commit": "55dc3cd747008d9f5d8f13e989a8ebbfe437fbab",
           "owner_modules": []
         }
       ],
       "installed": [
         {
           "role": "runtime",
-          "commit": "fb5a5c1017ca0cdbe83ff227cc77742a66ea9c24",
-          "manifest": "descriptors/runtime-4aa22b35076b48d2b9645fe78a4c20f4.json",
+          "commit": "55dc3cd747008d9f5d8f13e989a8ebbfe437fbab",
+          "manifest": "descriptors/runtime-57ce21bae7714d17b7d66a3231b2ebaf.json",
           "sdk": {
             "version": "v0.1.0-rc.4",
             "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
@@ -301,8 +301,8 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T09:14:12Z",
-          "observation": "Actual owner Windows release catalog; dual guarded-v6/v7 Runtime."
+          "observed_at": "2026-10-17T12:06:26Z",
+          "observation": "Actual owner Windows release catalog; cancel waits up to 60s for an in-flight run row lock."
         }
       ],
       "remote_main_head_at_audit": "1e17aae52b40db9ecb7a637090e5859edf9cf9aa"
