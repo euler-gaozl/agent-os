@@ -1,5 +1,17 @@
 # Windows 确定性交付候选（2026-10-17）
 
+## 后续：final-v5 失败接续已通过实际进程联调
+
+Runtime `91b5b5fc3c1083548fab2628a0b954faa8d91400` 补齐新引擎的显式模型失败接续，已同步 GitHub 开发分支及 `main`，提交/树哈希核对一致，Actions 禁用。仅接受完整保留的 HTTP 503 回执、同一任务/约束和原模型意图、未耗尽的冻结预算、已确认归档及无未决效果；锁内重查，入队、事件和永久回执仍同事务。根任务的整棵策略树必须保持合法，允许根无策略但子 Agent 有策略；策略全部丢失或工具绑定损坏会拒绝。没有从 Registry 新版本替换旧快照，也没有修改 native-v4 的原评估规则。
+
+实际 PostgreSQL/Runtime 管理 HTTP 回归、搬迁后的独立 Worker exe 与 Node/DSH 联合共 84 个测试事件通过、零 skip。补上整树策略丢失/合法子树策略和供应商半包拒绝后，定向 20 个事件再次通过；内部 Owner 单元 13 项、全仓 vet、原生命令构建及泄漏扫描通过。独立 Agent 静态复核两次未发现 P1/P2；其未代跑数据库或实际进程。
+
+新的 model503 场景先执行检查工具，再让供应商返回完整 503；停止第一个已失败 Worker，经管理 HTTP 预览、POST、重复 POST 和 GET 回读接续，由第二个实际进程完成。312,021 字节原文哈希仍为 `6a53a44c51653aea8e52d9e4d3852af05a7c6643bd207e8176c309d6cc0bb0f6`，3 次供应商请求、1 次检查、1 条接续回执/入队事件、1 次完成，原失败尝试和 1 次未知用量保持。半包响应的预览和动作都拒绝续跑；不是把所有失败统一重试。
+
+这是失败后的显式接续与进程替换，不是执行中宕机或自然租约超时证明；供应商/检查工具/归档仍为 HTTP 夹具。Worker 使用原 `c828bbcc` 完整包，execution pin 仍为 `7805a48`；本次只改管理 Owner 方法，没有执行 facade 协议变化，实际联调证明此组合可用，不需为了提交号更新 Worker 依赖。首轮证据 `final-continuation-f5e32c87926a4bd9ac7fa9d31ad27729`，补验 `final-continuation-7e244422c6f445e39deb604afe9c2107`；当前私有入口 `ops/final-continuation.path`。隔离数据库已停止，正式服务/库/Agent 资源未改，没有付费模型或 Actions。
+
+**当前下一步为完整受管发布门槛。** 已定位 `scripts/lib/platform-source-execution.ps1`、`platform-model-management.ps1`、`platform-continuation.ps1` 及 `Build-Services.ps1`：现有集成只识别源码 v1–v4，模型管理声明也只认旧两字段，必须增加 v5 固定产物/运行计数/回退拒绝、新 Registry/Console 策略声明兼容、所有实际 Worker 实例与 Runtime 能力核对，再更新受管构建/包/配置入口。需以旧版本兼容、保留 final Agent 版本及任务、失败/未决发布恢复测试验证，不能直接切默认引擎。完成后再做固定业务资源发布、安装/浏览器、内容缺陷离线预检及有界真实任务。前一轮浏览器启动审批拒绝仍保留，不能跳过实测。完整 Goal 其余验收项不变。
+
 ## 后续：中台编辑与业务就绪协议已接通
 
 2026-10-17 14:08：新增 Console `6baf4e03820e35c00666e5b49a6a942f893edf8f`、Futures `8b948636e10bc0d435aed21cd8f3843b6f669f23`，均固定 SDK rc.4。两个仓的开发分支与 `main` 已同步，GitHub API 核对提交/树哈希一致且 Actions 禁用。本轮仍未改变正式安装组合、数据库或 Agent 资源，没有付费模型调用或 GitHub Actions。

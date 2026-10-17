@@ -1,6 +1,6 @@
 # 通过已提交回执确定性成稿
 
-状态：2026-10-17 SDK、独立 Harness v5、Runtime 原子事务、Worker 固定依赖及完整搬迁包联合、Registry 固定策略发布校验、Console 配置编辑与 Futures 结构就绪协议已通过本机代码测试。**v5 模型失败接续、受管发布及完整安装/浏览器/业务验收仍待完成，尚未正式安装**。具体提交、证据与下一步见[实施记录](../maintainer/windows-final-output-20261017.md)。完整单机目标中的 R2/P2.5 子项，不另建或缩减 Goal。
+状态：2026-10-17 SDK、独立 Harness v5、Runtime 原子事务及显式失败接续、Worker 固定依赖及完整搬迁包联合、Registry 固定策略发布校验、Console 配置编辑与 Futures 结构就绪协议已通过对应本机检查。**受管发布及完整安装/浏览器/业务验收仍待完成，尚未正式安装**。具体提交、证据与下一步见[实施记录](../maintainer/windows-final-output-20261017.md)。完整单机目标中的 R2/P2.5 子项，不另建或缩减 Goal。
 
 ## 问题和边界
 
