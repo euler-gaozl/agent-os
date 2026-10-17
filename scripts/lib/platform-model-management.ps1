@@ -157,7 +157,7 @@ function Assert-ModelManagementDeployment([hashtable]$Layout,[System.Collections
         $runs=if($hasRuntime){Get-SourceExecutionFacts $Layout $runtime}else{@{native_runs=0;final_runs=0;guarded_runs=0;guarded_v6_runs=0;resumable_guarded_v6_runs=0}}
         foreach($key in @('native_runs','final_runs','guarded_runs','guarded_v6_runs','resumable_guarded_v6_runs')){if(-not $runs.Contains($key) -or ($runs[$key] -isnot [int] -and $runs[$key] -isnot [long]) -or $runs[$key] -lt 0){throw 'Invalid native/final run compatibility count.'}}
         $effectiveDefault=if($DefaultEngine){$DefaultEngine}elseif($runtime){[string]$runtime['DEFAULT_RUN_ENGINE']}else{''}
-        Assert-ModelManagementPolicy $pair.registry $pair.control $pair.runtime $facts ($runs.native_runs -gt 0) $effectiveDefault $hasControl $hasRuntime (($runs.final_runs + $runs.guarded_runs + $runs.guarded_v6_runs) -gt 0) (($runs.guarded_runs + $runs.resumable_guarded_v6_runs) -gt 0)
+        Assert-ModelManagementPolicy $pair.registry $pair.control $pair.runtime $facts ($runs.native_runs -gt 0) $effectiveDefault $hasControl $hasRuntime (($runs.final_runs + $runs.guarded_runs + $runs.guarded_v6_runs) -gt 0) ($runs.guarded_runs -gt 0)
         if($pair.control.Contains('model_management')){Assert-ModelManagementTarget $registry $control;Assert-ReceiptManagementTarget $runtime $control}
         foreach($role in @('registry','control')){if($pair[$role].Contains('model_management')){Assert-ModelManagementBinary (Resolve-ReleasePath $Layout.release_root $pair[$role].assets.binary) $pair[$role]}}
     }finally{$registry=$null;$control=$null;$runtime=$null}
