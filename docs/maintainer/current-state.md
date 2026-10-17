@@ -1,6 +1,6 @@
 # 当前进度 · DeepSeek 交接
 
-2026-10-17 原 Windows 最新观测，接手者的执行环境已确认为原 Windows。整体未完成。**DS-01 非数值论据、DS-02 v6+v7 双引擎、DS-03 库存/合同真实四问均已实现并验收**（DS-03 报告经独立内容复核 ACCEPT）；**DS-04 中台/业务浏览器矩阵已通过主要页面/窄屏/交互检查**，本地业务入口已修复安装，保留 v6 续跑评估与跨任务证据溯源两个跟进项；**DS-05 正式执行域 ACL 已收缩**（Worker 最小权限、Telemetry inbox/HTTP 能力就绪），但撤权后的完整任务/双 Worker/Telemetry 导出/旧实现删除仍未完成；DS-06 存储生命周期、DS-07 故障/资源、DS-08 最终备份恢复、DS-09 集中 CI 仍待做。首读 [DS-05 记录](windows-ds05-access-retirement-20261017.md)、[DS-04 记录](windows-ds04-ui-browser-20261017.md) 与 [详细接续任务](deepseek-handoff-20261017.md)，旧状态保存在 [历史快照](current-state-before-deepseek-20261017.md)，不得把历史“当前”覆盖本页。
+2026-10-17 原 Windows 最新观测，接手者的执行环境已确认为原 Windows。整体未完成。**DS-01 非数值论据、DS-02 v6+v7 双引擎、DS-03 库存/合同真实四问均已实现并验收**（DS-03 报告经独立内容复核 ACCEPT）；**DS-04 中台/业务浏览器矩阵已通过主要页面/窄屏/交互检查**，本地业务入口已修复安装，保留 v6 续跑评估与跨任务证据溯源两个跟进项；**DS-05 正式执行域 ACL 已收缩**（Worker 最小权限、Telemetry inbox/HTTP 能力就绪，撤权后合成任务完成 note_save/run_recall），但双 Worker 接管、Telemetry 实际导出、旧实现删除仍未完成；**DS-08 最终快照备份与隔离恢复已通过**；DS-06 存储生命周期、DS-07 故障/资源、DS-09 集中 CI 仍待做。首读 [DS-08 记录](windows-ds08-restore-20261017.md)、[DS-05 记录](windows-ds05-access-retirement-20261017.md) 与 [详细接续任务](deepseek-handoff-20261017.md)，旧状态保存在 [历史快照](current-state-before-deepseek-20261017.md)，不得把历史“当前”覆盖本页。
 
 ## 阶段状态
 
@@ -30,13 +30,15 @@ DS-03 增量（2026-10-17）：用 Agent 22/Skill 10/Connector 4 在 guarded-v7 
 
 DS-04 增量（2026-10-17）：用真实 Chrome headless（CDP，无付费模型）执行中台/业务 Web 浏览器矩阵。中台 7 个页面（Agent、ToolHub、知识库、工作记忆、运行记录、服务与实例、模型与凭证）均能登录、渲染、无横向溢出、无 JS 异常；Agent 编辑器 5 个标签、ToolHub 检测/MCP、知识库原文与检索、运行详情、服务失联筛选、移动端抽屉均验证。业务端首页、已完成记录、失败记录、阶段草稿、移动端记录页均验证，记录页加载 3 份原始阅读资料。Console `52ce5c9` 增加**仅 DEV_LOCAL 的本地业务入口默认值**并安装为 `control-dfd76…`，侧栏“研序·期货研究”从“业务入口未配置”变为可点击 `http://127.0.0.1:8098/`。仍保留两个待跟进项：v6 失败任务续跑面板显示“当前记录不足以直接续跑，需要核对执行详情”（continuation context `manual_review`/`unsupported_checkpoint`；DB 的 `resumable_guarded_v6_runs=1` 只是粗粒度）；s5 更正任务本身 0 份阅读资料，最终报告的证据在原始 `a526…` 任务，跨任务溯源未在记录页直连。详见 [DS-04 记录](windows-ds04-ui-browser-20261017.md)。
 
+DS-08 增量（2026-10-17）：在 DS-05 正式 ACL 收缩与 Telemetry inbox 迁移之后创建最终备份 `ds08-final-20261017b`（46 张表/序列指纹），并在随机 loopback 端口、独立 PGDATA 的临时 PostgreSQL 集群执行 `restore-check`：manifest/逐文件 SHA、46 个关系的内容指纹、数据库元数据/ACL/schema、10 个服务角色登录、身份索引、3 条密封凭据解密、2 个归档 Worker bundle、离线 Harness 重建与 3 项 Node 检查全部通过，临时集群已停止。结果 `local/restore-checks/8aadcb287d5f4ac2a3be8488428bd912/result.json`，`status=passed`。这关闭 DS-08，但不是服务器/跨机 HA、八物理库或外部 Milvus/LightRAG/Langfuse 恢复。详见 [DS-08 记录](windows-ds08-restore-20261017.md)。
+
 DS-05 增量（2026-10-17）：先创建协调备份 `ds05-pre-telemetry-20261017b`（含 45 张表指纹与依赖；隔离恢复留 DS-08）。Telemetry 正式库原缺 `telemetry_inbox`；用 `6f9f539` 的 migrator 创建 inbox 并授权本域，随后安装 `telemetry-d243b05…`（`telemetry-http-v1`，0 实例）。停 Worker 与 Runtime 后执行 Runtime `retire-access`，正式收缩 Worker/Telemetry 对执行表的权限：Worker 仅保留 runs SELECT/UPDATE、calls/model_attempts/harness_exchanges/harness_archives 的最小组合、events SELECT/INSERT 和 events 序列；`documents`、`note_*` 与 note 序列撤销；Telemetry 失去 execution `events`，保留 inbox/exports 本域权限。`Platform.ps1 status` 恢复 `core_ready=true`、2 Worker；撤权后先用合成模型提交任务 `090fa7a3…`，Worker 成功 claim 并写事件，但合成模型 8112 未运行；启动本机合成模型夹具后任务 `3fa0b9b7…` **completed**（step 3，owner `worker-41c7b1b4…`），工具回执含 `note_save`/`run_recall`，最终回答 `POST_RETIREMENT_OK`——证明最小 DB 权限与笔记/回执链路可用；仍未做双 Worker 接管和 Telemetry 实际导出。旧 Telemetry 被发布门禁拒绝，旧 Worker 因已声明 minimal profile 仍通过。详见 [DS-05 记录](windows-ds05-access-retirement-20261017.md)。
 
-guarded安装前完整备份已在隔离库实际恢复：1数据库、10角色、3项凭证解密和历史产物验证通过，隔离库已停。但该备份早于最新失败研究和v7安装，最终DS-08仍需捕获新的交付状态。
+guarded 安装前的完整备份已在隔离库实际恢复（1 数据库、10 角色、3 项凭证解密、历史产物通过，隔离库已停）；该备份早于 v7/DS-03/DS-05。DS-08 已另用 post-DS05 的 `ds08-final-20261017b` 重新恢复通过，历史备份结果保留为不同快照的证据。
 
 ## 最新业务失败与下一步
 
-旧任务 `2bc11ddab7473a1e2ee29fd499330558` 仍是失败记录：Agent v20 / Skill v9 / MCP v2，第8/12次模型请求失败，无最终报告，22次阅读、两份草稿留存。已确认三类问题：引用归属错误（检查器v7已能精确提示）；非数值来源说明借用不支持论点的数字事实；模型对未就绪稿提前提交并直接返回不同正文；日期覆盖解释自相矛盾。DS-01 与 DS-02 已安装；DS-03 用 Agent 22/Skill 10 在 guarded-v7 上完成了**有区别的库存/合同四问**并通过独立内容复核（ACCEPT），但**没有**把旧供给/进口/压榨任务回填为成功。下一步 DS-04 页面/浏览器矩阵、DS-05 服务退役、DS-06 存储生命周期、DS-07 故障/整平台资源、DS-08 最终备份恢复、DS-09 集中 CI；不能把 DS-03 通过写成整个目标完成。
+旧任务 `2bc11ddab7473a1e2ee29fd499330558` 仍是失败记录：Agent v20 / Skill v9 / MCP v2，第8/12次模型请求失败，无最终报告，22次阅读、两份草稿留存。已确认三类问题：引用归属错误（检查器v7已能精确提示）；非数值来源说明借用不支持论点的数字事实；模型对未就绪稿提前提交并直接返回不同正文；日期覆盖解释自相矛盾。DS-01 与 DS-02 已安装；DS-03 用 Agent 22/Skill 10 在 guarded-v7 上完成了**有区别的库存/合同四问**并通过独立内容复核（ACCEPT），但**没有**把旧供给/进口/压榨任务回填为成功。下一步：DS-05 双 Worker 接管/Telemetry 实际导出/旧实现删除，DS-06 存储生命周期，DS-07 故障/整平台资源，DS-09 集中 CI；DS-08 已完成。不能把单项通过写成整个目标完成。
 
 官方DeepSeek保留原生上下文/输出能力，未增加人为token限制。研究需要通过逐问、来源、日期/样本/性质、可比性、最终稿一致性和原文回读的联合验收；结构ready与终态completed都不是内容质量证明。
 

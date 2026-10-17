@@ -5,7 +5,7 @@
 ## 前置与回滚保护
 
 - 先尝试 `local/backups/ds05-pre-telemetry-20261017`，因备份命令未带 pnpm 在依赖导出阶段失败；该目录保留，不当作可用备份。
-- 重新执行成功：`local/backups/ds05-pre-telemetry-20261017b`（协调备份、45 张表指纹、依赖导出）。**未执行隔离恢复验证**；DS-08 仍需做真实恢复。
+- 重新执行成功：`local/backups/ds05-pre-telemetry-20261017b`（协调备份、45 张表指纹、依赖导出）。该 pre-DS05 快照本身未单独做隔离恢复；DS-08 另用 post-DS05 的 `ds08-final-20261017b` 恢复通过。
 - 撤权前只读审计：Runtime/Worker/Telemetry 均为非管理叶子角色，无 public schema CREATE、无成员关系、无默认 ACL、无 prepared transaction；Worker/Telemetry 无活跃会话。
 
 ## Telemetry 本域迁移
@@ -75,11 +75,11 @@ Worker 仍可领取任务、写心跳/回执；Runtime 自身权限未缩减；T
 1. 撤权后的**双 Worker 接管**（杀 owner、lease 过期后另一 Worker 完成同一任务）与历史回读；本次已完成单 Worker 完整任务与笔记回读，但未做接管。
 2. Telemetry 配置有效导出端点后实际启动/接收/导出（Langfuse 或受控 OTLP），不能只凭 profile 声明。
 3. 旧实现覆盖逐行移交与删除（P2 清单）、Linux 组合、W01–W14 剩余项。
-4. 用 `ds05-pre-telemetry-20261017b` 做隔离恢复（DS-08），验证备份真实可恢复。
+4. DS-08 已用 post-DS05 快照 `ds08-final-20261017b` 通过隔离恢复；本 pre-DS05 快照保留为历史保护点，未单独恢复。
 5. 最终统一 CI 仅在全部本机验收后执行一次。
 
 ## 边界
 
 - 本次是正式本机 PostgreSQL 的权限收缩，不是服务器/跨机 HA、Linux 或容量验收。
 - 没有付费模型调用、没有 GitHub Actions；没有删除旧任务或业务行。
-- 备份存在不等于恢复已验证；不能把本次撤权写成 DS-08 完成。
+- 备份存在不等于恢复已验证；DS-08 已用 post-DS05 快照恢复通过，但本 pre-DS05 快照未单独恢复，不能把两者混为同一次恢复。

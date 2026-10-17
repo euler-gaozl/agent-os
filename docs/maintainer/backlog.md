@@ -11,7 +11,7 @@
 | DS-05 | 正式 ACL 已收缩；撤权后合成任务完成 note_save/run_recall；双 Worker/Telemetry/旧实现/Linux 未完成 | task:service-retirement / 各Owner及集成 | 做双 Worker 接管与历史回读；配置有效导出端点后跑 Telemetry 接收/导出；逐行删除旧实现；隔离恢复与最终 CI 另做 |
 | DS-06 | 部分完成 | task:storage-lifecycle / Harness、Runtime、Worker、Storage | 补笔记/缓存/失败退出与长历史内存恢复验收，不删权威资料 |
 | DS-07 | 部分完成 | task:faults-and-resources / 集成及相关Owner | 仅补缺失或受改动影响的故障，并测整平台+PG连续负载 |
-| DS-08 | 最近备份真实还原已通过，最终快照待做 | task:latest-recovery / 原Windows集成 | 新最终任务/安装组合稳定后备份与隔离恢复 |
+| DS-08 | 已完成（最终快照备份 + 隔离恢复 passed） | task:latest-recovery / 原Windows集成 | 备份 `ds08-final-20261017b`，46 表/序列、10 服务登录、3 密封凭据、2 Worker bundle、离线 Harness 重建全部通过；不替代服务器/HA 或外部服务恢复 |
 | DS-09 | 未执行最终CI | task:final-ci / 集成 | 全部本机验收后唯一一次集中CI及独立逐条完工审查 |
 
 已完成不重做：Mac成果接回、接续回执迁移/安装、final-v5确定性成稿协议、guarded-v6工具参数纠正、Futures v7精确引用诊断、DS-01非数值说明绑定与v8检查器、DS-02双引擎v7单次续接安装、15仓同步。它们不等于最终业务和平台验收通过。
