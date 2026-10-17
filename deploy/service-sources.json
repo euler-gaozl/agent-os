@@ -68,7 +68,7 @@
           "package": "execution"
         }
       ],
-      "commit": "180293621c950e2dd661ec1f16dead571eebf153",
+      "commit": "e45c9fbf48e0308df647853bb85abc812ac68aae",
       "repository": "agent-os-worker"
     }
   }
