@@ -61,7 +61,7 @@ function Get-ReleaseInventory([string]$Root,[System.Collections.IDictionary]$Ass
     }
     return @{files=@($files.Keys|Sort-Object|ForEach-Object{$files[$_]});links=@($links.Keys|Sort-Object|ForEach-Object{$links[$_]})}
 }
-function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Assets,[System.Collections.IDictionary]$Contract,[System.Collections.IDictionary]$Provenance,[System.Collections.IDictionary]$SourceExecution=$null,[System.Collections.IDictionary]$ResidentExecution=$null,[System.Collections.IDictionary]$ReceiptManagement=$null,[System.Collections.IDictionary]$ExecutionAccess=$null,[System.Collections.IDictionary]$KnowledgeArchives=$null,[System.Collections.IDictionary]$BudgetExecution=$null,[System.Collections.IDictionary]$NativeExecution=$null,[System.Collections.IDictionary]$ModelManagement=$null,[System.Collections.IDictionary]$ContinuationManagement=$null,[System.Collections.IDictionary]$FinalExecution=$null,[System.Collections.IDictionary]$GuardedExecution=$null){
+function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Assets,[System.Collections.IDictionary]$Contract,[System.Collections.IDictionary]$Provenance,[System.Collections.IDictionary]$SourceExecution=$null,[System.Collections.IDictionary]$ResidentExecution=$null,[System.Collections.IDictionary]$ReceiptManagement=$null,[System.Collections.IDictionary]$ExecutionAccess=$null,[System.Collections.IDictionary]$KnowledgeArchives=$null,[System.Collections.IDictionary]$BudgetExecution=$null,[System.Collections.IDictionary]$NativeExecution=$null,[System.Collections.IDictionary]$ModelManagement=$null,[System.Collections.IDictionary]$ContinuationManagement=$null,[System.Collections.IDictionary]$FinalExecution=$null,[System.Collections.IDictionary]$GuardedExecution=$null,[System.Collections.IDictionary]$GuardedV6Execution=$null){
     Assert-ReleaseAssets $Role $Assets
     $identifier=$Role+'-'+[guid]::NewGuid().ToString('N')
     $inventory=Get-ReleaseInventory $Layout.release_root $Assets
@@ -72,6 +72,7 @@ function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collecti
     if($NativeExecution){$descriptor.native_execution=$NativeExecution}
     if($FinalExecution){$descriptor.final_execution=$FinalExecution}
     if($GuardedExecution){$descriptor.guarded_execution=$GuardedExecution}
+    if($GuardedV6Execution){$descriptor.guarded_v6_execution=$GuardedV6Execution}
     if($null -ne $ReceiptManagement){$descriptor.receipt_management=$ReceiptManagement}
     if($null -ne $ExecutionAccess){$descriptor.execution_access=$ExecutionAccess}
     if($null -ne $KnowledgeArchives){$descriptor.source_archives=$KnowledgeArchives}

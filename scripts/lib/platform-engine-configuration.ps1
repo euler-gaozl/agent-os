@@ -4,7 +4,7 @@
 function Get-SubmissionEngine([System.Collections.IDictionary]$Config){
     $engine=[string]$Config['DEFAULT_RUN_ENGINE']
     if(-not $engine){return 'dsh-0.2.0-rc.2-evidence-v1'}
-    if($engine -cnotin @('dsh-0.2.0-rc.2-evidence-v1',(Get-SourceEngineName),(Get-ResidentEngineName),(Get-BudgetEngineName),(Get-NativeEngineName),(Get-FinalEngineName),(Get-GuardedEngineName))){throw 'Unknown submission engine in configuration.'}
+    if($engine -cnotin @('dsh-0.2.0-rc.2-evidence-v1',(Get-SourceEngineName),(Get-ResidentEngineName),(Get-BudgetEngineName),(Get-NativeEngineName),(Get-FinalEngineName),(Get-GuardedEngineName),(Get-HistoricalGuardedEngineName))){throw 'Unknown submission engine in configuration.'}
     return $engine
 }
 function Get-EngineChangeDirectory([hashtable]$Layout,[string]$ID){
