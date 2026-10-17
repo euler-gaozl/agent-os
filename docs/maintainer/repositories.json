@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "latest_recovery_audit": "windows-source-recovery-20261017.json",
-  "current_execution_record": "windows-delivery-status-20261017.md",
-  "as_of": "2026-10-17T13:20:00Z",
+  "current_execution_record": "windows-ds04-ui-browser-20261017.md",
+  "as_of": "2026-10-17T13:40:24Z",
   "project_id": "project:agent-platform",
   "source_baseline": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe",
   "integration_handoff_branch": "feat/end-to-end-delivery",
@@ -72,7 +72,7 @@
       "url": "https://github.com/euler-gaozl/agent-os-futures",
       "clone_url": "https://github.com/euler-gaozl/agent-os-futures.git",
       "branch": "feat/native-task-transport",
-      "source_head_at_audit": "375eebfd9bfb5836e6856b74bdea18b5626b213c",
+      "source_head_at_audit": "67f15271215f4aaf5c50bcd8edf651914d66bffd",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -83,15 +83,15 @@
       "integration_pins": [
         {
           "role": "futures",
-          "commit": "375eebfd9bfb5836e6856b74bdea18b5626b213c",
+          "commit": "67f15271215f4aaf5c50bcd8edf651914d66bffd",
           "owner_modules": []
         }
       ],
       "installed": [
         {
           "role": "futures",
-          "commit": "375eebfd9bfb5836e6856b74bdea18b5626b213c",
-          "manifest": "descriptors/futures-fdc9a7b10257457daf70568f541ab713.json",
+          "commit": "67f15271215f4aaf5c50bcd8edf651914d66bffd",
+          "manifest": "descriptors/futures-8d91333b485f4853b7012b8bff61451b.json",
           "sdk": {
             "version": "v0.1.0-rc.4",
             "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
@@ -101,11 +101,11 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T12:28:15Z",
-          "observation": "Actual owner Windows release catalog; same-commodity history links in business record."
+          "observed_at": "2026-10-17T13:40:24Z",
+          "observation": "Actual owner Windows release catalog; explicit source-task ID lookup added to the business record."
         }
       ],
-      "remote_main_head_at_audit": "375eebfd9bfb5836e6856b74bdea18b5626b213c"
+      "remote_main_head_at_audit": "67f15271215f4aaf5c50bcd8edf651914d66bffd"
     },
     {
       "id": "repo:agent-os-harness",

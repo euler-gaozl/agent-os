@@ -81,6 +81,7 @@ Worker 仍可领取任务、写心跳/回执；Runtime 自身权限未缩减；T
 - 通过 Runtime HTTP claim/ack 消费事件并落盘 inbox：**3,992** 条事件全部 `exported_at` 非空，`telemetry_exports` **3,992** 行；mock 收到 **125** 次 POST、**3,992** 个 span、覆盖 **73** 个 run，Basic auth 存在、`x-langfuse-ingestion-version: 4`。
 - 证据：`local/evidence/ds05-telemetry-export-a1d3a80ff6be4bc3affef7dbb48ad01d/`（`result.json`、`requests/`）。
 - 这证明独立 Telemetry 的真实启动、Runtime claim/ack、inbox 落盘和 OTLP 导出路径；**不是真实 Langfuse**、不是 managed 实例、也不是外部供应商送达验收。假凭证仅在本机，未进入 Git/日志。
+- 2026-10-17 用户明确表示没有真实凭据、不要在本机部署 Langfuse（其需独立部署）；因此真实 Langfuse/managed 作为**显式延后的独立部署项**，本机 mock 不计为真实接收。
 
 ## 仍待完成
 

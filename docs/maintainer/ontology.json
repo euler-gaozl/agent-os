@@ -769,7 +769,7 @@
       "status": "browser_matrix_passed_followups",
       "doc": "windows-ds04-ui-browser-20261017.md",
       "section": "DS-04",
-      "scope": "Chrome headless CDP browser matrix on the owner Windows: seven Console pages, Agent editor tabs, ToolHub, Knowledge search, run detail, services filter, mobile drawer; Futures home/records/failure/mobile. Console local business entry fixed and installed. Follow-ups: v6 continuation assessment blocked despite coarse resumable count; correction-task evidence provenance; raw task JSON in run detail."
+      "scope": "Chrome headless CDP browser matrix on the owner Windows: seven Console pages, Agent editor tabs, ToolHub, Knowledge search, run detail, services filter, mobile drawer; Futures home/records/failure/mobile. Console local business entry fixed and installed. Console run detail now links parent_id source tasks; Futures shows same-commodity history and accepts an explicit source-task ID (manual cross-check, not an automatic evidence chain). Follow-ups: v6 continuation assessment blocked despite coarse resumable count; automatic/persisted correction-task provenance; raw task JSON in run detail."
     },
     {
       "id": "task:service-retirement",
@@ -778,7 +778,7 @@
       "status": "formal_acl_retired_validation_open",
       "doc": "windows-ds05-access-retirement-20261017.md",
       "section": "DS-05",
-      "scope": "Formal owner Windows PostgreSQL Runtime ACL contraction executed: Telemetry inbox migrated, telemetry-http-v1 installed at 6f9f539 (zero managed instances), Worker reduced to worker-minimal-v1 grants, Telemetry execution events revoked. Post-retirement synthetic fixture completed note_save/run_recall and a killed-owner task was taken over by the second Worker. A temporary Telemetry instance with a local mock Langfuse exported 3992 events (125 POSTs, 73 runs) through Runtime claim/ack; real Langfuse/managed delivery, old implementation deletion and Linux remain."
+      "scope": "Formal owner Windows PostgreSQL Runtime ACL contraction executed: Telemetry inbox migrated, telemetry-http-v1 installed at 6f9f539 (zero managed instances), Worker reduced to worker-minimal-v1 grants, Telemetry execution events revoked. Post-retirement synthetic fixture completed note_save/run_recall and a killed-owner task was taken over by the second Worker. A temporary Telemetry instance with a local mock Langfuse exported 3992 events (125 POSTs, 73 runs) through Runtime claim/ack. On 2026-10-17 the owner confirmed no real credentials and declined local Langfuse deployment; real Langfuse/managed is an explicitly deferred separate deployment. Old implementation deletion and Linux remain."
     },
     {
       "id": "task:storage-lifecycle",
@@ -3766,9 +3766,9 @@
   "environment_policy": {
     "file": "environments.json",
     "default_execution_environment": null,
-    "current_execution_record": "windows-delivery-status-20261017.md",
+    "current_execution_record": "windows-ds04-ui-browser-20261017.md",
     "updated_at": "2026-10-17",
     "rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets."
   },
-  "current_execution_record": "windows-delivery-status-20261017.md"
+  "current_execution_record": "windows-ds04-ui-browser-20261017.md"
 }

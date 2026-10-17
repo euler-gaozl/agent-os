@@ -18,7 +18,7 @@
 
 ## 明确阻塞/不可在本机关闭
 
-1. **真实 Langfuse/managed Telemetry**：本机没有 Docker/managed 实例或供应商凭据，现有只有临时 Telemetry 实例 + 本机 mock；不能伪造真实接收。
+1. **真实 Langfuse/managed Telemetry**：2026-10-17 用户明确表示没有真实凭据、不要在本机部署 Langfuse（其需独立部署）；现有只有临时 Telemetry 实例 + 本机 mock，作为**显式延后的独立部署项**，mock 不得写成真实接收。
 2. **旧主仓实现删除**：P2 清单中仍有未完全移交的独有覆盖（ENOSPC、归档丢确认、真实 Langfuse、Docker 沙箱、旧权限升级等）；在等价覆盖执行前删除会降低覆盖，不能做。
 3. **真实 Compact 点强杀续跑**：受控 OpenAI 夹具走 budget-v3，40/80 轮没有可见 Compact；带 Compact 的 source 基准是合成 journal，不是真实 Worker/DSH 任务。需要 native/guarded 协议夹具或真实供应商，当前没有。
 4. **网络分区**：本机非管理员，无法用防火墙制造 loopback 分区；不能把停 Runtime/PG 写成网络分区。

@@ -56,10 +56,23 @@
 - 证据：`local/evidence/ds04-related-tasks-2026-10-17T12-28-15-144Z/record-with-related.png`、`related-selected.png`。
 - 这提供了业务侧人工跳转入口，但**不是精确的来源任务/证据链**；它是同品种启发式，可能包含不相关任务，不能把“更正任务沿用原任务证据”写成自动成立。
 
+## 增量：Futures 按 ID 打开源任务
+
+- Futures `67f1527` 在业务记录页增加“源任务 ID”输入框和“打开源任务”按钮；只做格式校验，不声称自动证据链。
+- 安装为 `futures-8d91333b485f4853b7012b8bff61451b`，readiness verified。
+- Chrome 实测：打开一条“记录已生成”记录，输入原始任务 `a526d178ba61f74114d11e0384762741`，按钮变为可用；点击后实际请求：
+  - `/api/tasks/a526…`
+  - `/api/tasks/a526…/report-check`
+  - `/api/tasks/a526…/draft-match`
+  - `/api/tasks/a526…/sources`
+  - `/api/tasks/a526…/drafts`
+- 证据：`local/evidence/ds04-source-task-2026-10-17T13-40-24-061Z/source-task-opened.png`、`result.json`。
+- 这使操作者可以**精确手动打开**原始任务，但输入仍来自人工核对；不是自动从更正任务解析来源，也不持久化映射。
+
 ## 待跟进（不阻塞页面矩阵，但不能写成已完成恢复）
 
 1. **v6 失败任务续跑评估**：运行记录中 `2bc11dd…`（guarded-v6）显示“当前记录不足以直接续跑，需要核对执行详情”，点击“更新续跑条件”仍相同。直接查询 continuation context 得到 `assessment=manual_review`、`reason=unsupported_checkpoint`；运行库粗粒度事实 `resumable_guarded_v6_runs=1` 只表示非 completed/cancelled，不等于可直接续跑。需要区分“保留 v6 重放/读取能力”和“可直接续跑”，并在 DS-07 做真实恢复验收；不能用该状态宣称 v6 直接续跑已通过。
-2. **跨任务证据溯源**：Console 运行详情可跳到有 `parent_id` 的源任务；Futures 业务记录页新增同品种历史任务入口，可人工找到 `a526…`，但仍是启发式、非精确证据链。最终 DS-03 报告来自更正任务 `3c059635…`，记录页本身仍是 0 份阅读资料；仍需在 Futures 记录页增加精确来源任务/证据链，或明确标注“更正任务沿用原任务证据”。
+2. **跨任务证据溯源**：Console 运行详情可跳到有 `parent_id` 的源任务；Futures 业务记录页新增同品种历史任务入口，并新增“源任务 ID”输入框，操作者可精确手动打开 `a526…`。但输入仍是人工核对、非自动解析，也不持久化映射；最终 DS-03 报告来自更正任务 `3c059635…`，记录页本身仍是 0 份阅读资料。仍需自动/持久化的精确来源任务或明确标注“更正任务沿用原任务证据”。
 3. **运行详情“任务内容”**：执行详情模态直接展示大段原始任务 JSON（含完整报告），可读性一般；适合管理员排障，但不是面向业务的摘要视图。
 4. **浏览器覆盖**：只覆盖 Chrome headless、1440 与 390 两个视口；未覆盖 Firefox/Safari、真实触屏、字体缩放/高对比度。不能把本次矩阵写成跨浏览器认证。
 
