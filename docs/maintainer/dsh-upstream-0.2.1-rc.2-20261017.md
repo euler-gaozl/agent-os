@@ -50,6 +50,7 @@
 - 新引擎 40 轮：任务 `7ceb0cf2…` 在 `dsh-source-687f282e-budget-v3` 上 **completed step 41**（40 个 recall 回执）；证据 `local/evidence/ds06-80round-nokill-2026-10-17T14-47-34-495Z/`（文件名沿用旧脚本，内容为 40 轮 COMPACT40_OK）。这验证了新引擎的长历史路径，但不等于 guarded-v2/final 验收。
 - 受控 final 尝试：本地 MCP `127.0.0.1:8113/mcp` + ToolHub 计划配置把 8113 加入白名单后，connector `fixture-final` 注册成功；但创建 Agent 时 Registry 拒绝：`native model capabilities are not supported for this provider endpoint`。fixture 的 loopback endpoint 不能作为 native-capable provider，因此无法在不付费的情况下创建 final-capable 受控 Agent。
 - 清理：ToolHub 白名单已恢复为 `127.0.0.1:8101`，MCP 进程已停止；测试 connector `fixture-final` 仍留在 Registry（指向已停止的本地端点，未被任何 Agent 使用）。
+- 真实 final 尝试（用户已授权一次）：`published-supply-inventory` rev22 提交返回 400 `upstream request rejected`；用同一 spec 创建 rev23、新 id `ds02-final-real` 也 400。fixture Agent 仍可 201，Registry `deepseek_configured=true`；未收到模型/MCP 调用，因此没有付费请求。400 发生在 final Agent 的 model-capability/final-binding 校验路径，尚未定位到具体字段。
 - 安装后已生成 `ds08-final-20261017f` 并隔离恢复通过（46 关系、10 角色、5 凭据、2 Worker bundle、192 代/3,103 文件）；临时集群停止。
 
 ## 下一步
