@@ -3,7 +3,7 @@
   "services": {
     "control": {
       "repository": "agent-os-console",
-      "commit": "6baf4e03820e35c00666e5b49a6a942f893edf8f"
+      "commit": "c63ea990d0045fb468a059385c649d2b7994e17a"
     },
     "futures": {
       "repository": "agent-os-futures",
@@ -11,7 +11,7 @@
     },
     "registry": {
       "repository": "agent-os-registry",
-      "commit": "6053f9cb5201c42ecef78c702a9c9be6f320c9f6"
+      "commit": "2f7f8364e972a54d65414bcebb5f77738eced586"
     },
     "sandbox": {
       "repository": "agent-os-sandbox",
