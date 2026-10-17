@@ -51,14 +51,24 @@
 - 证据：`local/evidence/ds06-long-task-takeover-2026-10-17T10-57-37-128Z/`；首轮失败 `local/evidence/ds06-long-task-takeover-2026-10-17T10-52-56-844Z/`。
 - 这是 20 轮长任务的中断/接管，**不是 DSH Compact 的长历史强杀续跑**；也没有证明 10 万步或生产内存上界。
 
+## 五、8k context 长任务 Compact/接管失败
+
+- 为逼近 Compact，将同一 Agent 的 revision 3 设为 `context_tokens=8192`、`context_bytes=16000`，仍为 20 轮 `run_recall`。
+- 任务 `45050b17…` 在第 10 步强杀首任 owner；第二 Worker 以 fence 2 接管，继续到第 17 个工具回执后，在第 **19** 步失败：
+  `DSH failed: {"error":"DSH turn did not complete"}`。
+- 没有静默成功、没有写入成功终态；失败发生在收紧上下文后的长任务接管阶段，疑似 Compact/上下文边界问题，**未定位根因**。事件中没有显式 Compact 成功标记。
+- revision 4（16k）的第一次尝试因测试脚本杀掉了当时唯一剩余 Worker 而无效；任务 `8da83469…` 已取消，**不计入证据**。之后已恢复 2 Worker。
+- 证据：`local/evidence/ds06-long-task-compact-2026-10-17T11-38-52-176Z/`（失败）；`...compact16...` 仅作无效尝试保留。
+- 这说明“20 轮长任务接管”在 64k 上下文下通过，但在 8k 收紧上下文并强杀后失败；不能把 W08 Compact 续跑写成通过。
+
 ## 边界与仍未完成
 
 - 并发写者已完成两客户端真实竞争；未做更多写者、跨进程/跨实例或自动分支 resolver。
-- 已完成 20 轮长任务的强杀/接管；未做真实 DSH Compact 长历史在 Compact 点被强杀后的续跑。
+- 已完成 20 轮长任务的强杀/接管；8k context 版本在第 19 步 `DSH turn did not complete` 失败，根因未定位，DSH Compact 点真实续跑仍未通过。
 - 长历史基准使用合成 source-Harness/受控 journal，不是 Runtime/Worker/DB 进程 RSS，也不是 10M 分块或服务器容量。
 - 自动 GC/删除策略未启用；不删除权威笔记/回执。
 - DS-07 仍需真实整平台资源、PG 连续负载和故障矩阵；DS-09 最后统一 CI。
 
 ## 结论
 
-DS-06 的“真实笔记修订/过期/并发冲突/撤回”“Windows 长历史 Compact/重放测量”和“20 轮长任务中断/接管”已取得可复核证据；DSH Compact 点的真实强杀续跑与生产级内存上界仍需补测，不能把本记录写成 DS-06 全部完成。
+DS-06 的“真实笔记修订/过期/并发冲突/撤回”“Windows 长历史 Compact/重放测量”“64k 下 20 轮长任务中断/接管”已取得可复核证据；8k 收紧上下文的 Compact/接管在第 19 步失败（`DSH turn did not complete`），根因未定位，生产级内存上界也未验，不能把本记录写成 DS-06 全部完成。

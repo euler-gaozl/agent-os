@@ -787,7 +787,7 @@
       "status": "partial_notes_and_long_history",
       "doc": "windows-ds06-storage-lifecycle-20261017.md",
       "section": "DS-06",
-      "scope": "Real Runtime note revise/expire/stale-head conflict/retire verified on PostgreSQL, plus two simultaneous HTTP revisers where one succeeded (200) and one was rejected (409) without a second branch; the winner was retired. Installed source-Harness benchmark completed 128/512/2048 steps with compaction and fresh-process journal replay (max 50.5MB heap, 222.5MB RSS at 2048, 25MB events, zero provider calls). A 20-round synthetic long task was killed at step 8 and completed at step 21 under a second worker/fence with all 20 tool receipts; a 200k-token budget run failed at step 13 as a budget gate. DSH Compact-point interruption and service RSS bounds remain."
+      "scope": "Real Runtime note revise/expire/stale-head conflict/retire verified; two simultaneous revisers produced 200/409 without a second branch. Source-Harness benchmark passed 128/512/2048 steps with compaction and journal replay. A 64k-context 20-round task was killed at step 8 and completed at step 21 under fence 2. A tightened 8192-token context version was killed at step 10 and failed at step 19 with 'DSH turn did not complete'; root cause unknown, so Compact-point resume is not claimed. Service RSS bounds remain."
     },
     {
       "id": "task:faults-and-resources",
@@ -3755,7 +3755,7 @@
   "environment_policy": {
     "file": "environments.json",
     "default_execution_environment": null,
-    "current_execution_record": "windows-ds07-platform-load-20261017.md",
+    "current_execution_record": "windows-ds06-storage-lifecycle-20261017.md",
     "updated_at": "2026-10-17",
     "rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets."
   },
