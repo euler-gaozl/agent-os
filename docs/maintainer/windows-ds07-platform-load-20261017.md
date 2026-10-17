@@ -118,9 +118,17 @@
 - 证据：`local/evidence/ds07-pg-restart-8807c89b9c3449ffb204efc35deebc18/`（`result.json`、`meta.json`）。
 - 说明：辅助脚本在重启等待中超时被杀，未捕获 `pg_ctl` 输出；重启事实由 postmaster start time 与任务时间窗共同证明。只验证快速重启，不是网络分区、整机断电或主备切换，也未测量重连/恢复耗时。
 
+## Runtime 服务中断
+
+- 任务 `bd529d74…` 在第 2 步运行中，`Platform.ps1 stop -Service runtime`（退出码 0）后约 4 秒 `start`（退出码 0）。
+- 任务在第 3 步 **failed**：`service HTTP 503: {"error":"upstream service unavailable"}`；没有自动续跑或成功终态。
+- Runtime 重启后 `Platform.ps1 status` 恢复 `core_ready=true`、2 Worker；这是进程级恢复，不是任务透明续跑。
+- 证据：`local/evidence/ds07-runtime-outage-2026-10-17T12-43-04-858Z/`。
+- 结论：Runtime 中断会使在途 Worker 任务显式失败（503），需要重试/恢复流程；不能把“平台恢复”写成“任务无感续跑”。未验证 Runtime 断连重试、任务自动重放或 503 后的用户恢复路径。
+
 ## 结论与边界
 
-- 8 个并发合成任务没有触发连接耗尽、死锁、临时文件或 Worker 分配失衡；两个 Worker 均实际接单。32 秒双 Worker 负载 2/2 完成；3 分钟 12 任务 soak 12/12 完成；9.1 分钟 36 任务 soak 36/36 完成；30.1 分钟 24 任务 soak 24/24 完成，连接 13–18、deadlocks 0，RSS 峰值受控且结束回落。8 秒 `runs` 行锁使任务等待后恢复并 completed；30 秒行锁使任务在 step 6 显式失败；15 秒锁内取消、杀 owner 后取消、修复后的 30 秒锁内取消均落到 cancelled；终止 3 个 Worker DB 会话后任务仍 completed。
+- 8 个并发合成任务没有触发连接耗尽、死锁、临时文件或 Worker 分配失衡；两个 Worker 均实际接单。32 秒双 Worker 负载 2/2 完成；3 分钟 12 任务 soak 12/12 完成；9.1 分钟 36 任务 soak 36/36 完成；30.1 分钟 24 任务 soak 24/24 完成，连接 13–18、deadlocks 0，RSS 峰值受控且结束回落。8 秒 `runs` 行锁使任务等待后恢复并 completed；30 秒行锁使任务在 step 6 显式失败；15 秒锁内取消、杀 owner 后取消、修复后的 30 秒锁内取消均落到 cancelled；终止 3 个 Worker DB 会话后任务仍 completed；Runtime stop/start 使在途任务 step 3 显式 503 失败，平台进程恢复但任务未透明续跑。
 - 该负载没有真实模型延迟、工具网络、外部 Storage/Knowledge 或长历史，不能替代 10 万/百万级任务或服务器容量。
 - 30 分钟下限已达到；修复后 15/30 秒锁内取消均成功，但 60 秒上限仍不是异步取消，超过 60 秒的锁仍可能超时；仍未做 PG 重启/网络分区、慢查询计划、死锁注入、取消后的外部副作用清理/异步补偿和内存增长趋势，不能把 30 分钟合成 soak 写成生产容量验收。
 - 双 Worker 杀 owner 接管已在 DS-05 真实执行（合成模型，20 秒 lease 后接管），不等同于本负载的持续故障矩阵。
