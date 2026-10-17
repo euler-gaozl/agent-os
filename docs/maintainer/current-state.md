@@ -24,6 +24,8 @@ guarded-v6：29项Harness测试、85项Runtime测试事件、69项Worker相关�
 
 DS-01 增量（2026-10-17）：Futures `72d8e36` 增加可选 `statements` 与问题/解读 `statement_ids`，检查器升级为 `futures-report-check-v8`；说明只能绑定本任务留存原文，不能夹带市场报数（日期、页码、期数、样本家数等非报数计数除外），数值仍由 `facts` 检查。Go 测试/vet、26 项 Web 测试、TypeScript/Vite 构建通过；两次独立只读静态复核（无 blocker/high，第二次 MEDIUM）提出的日期误伤、说明限制数量、借用事实 ID、非法编号路径、README 版本等问题已修复。受管发布安装后 `Platform.ps1 status` 为 futures ready，旧任务 report-check 返回 v8，已安装 MCP 的纯说明草稿 `ready=true`/`revise=0`，含裸数量的说明草稿 `ready=false`/`statement_quantity`。详见 [DS-01 记录](windows-ds01-statements-20261017.md)。这不是 DS-03 真实研究通过。
 
+DS-02 增量（2026-10-17）：已从私有调用回执确认“未就绪稿 → 误提成稿 → Runtime 拒绝 → 模型以正文结束 → runner 失败”的完整序列，并记录单次续接、新引擎 guarded-v7 及五仓同步方案，见 [DS-02 调查](windows-ds02-finalization-investigation-20261017.md)。**尚未实现、未安装、未改任务**；不能写成已修复。
+
 guarded安装前完整备份已在隔离库实际恢复：1数据库、10角色、3项凭证解密和历史产物验证通过，隔离库已停。但该备份早于最新失败研究和v7安装，最终DS-08仍需捕获新的交付状态。
 
 ## 最新业务失败与下一步

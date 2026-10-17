@@ -5,7 +5,7 @@
 | 顺序 | 当前状态 | 本体任务 / Owner | 下一步 |
 | --- | --- | --- | --- |
 | DS-01 | 已完成（源码/测试/安装/静态复核） | task:qualitative-evidence / Futures | 非数值说明已绑定留存原文并安装；转入 DS-02，DS-03 真实内容复核仍待做 |
-| DS-02 | 待修复，实际序列已确认 | task:finalization-recovery / Harness、Runtime、Worker、业务方法 | 修正未就绪稿提前结束，准确冻结尝试信息，保留成稿与重放边界 |
+| DS-02 | 失败序列已确认；方案已记录，未实现 | task:finalization-recovery / Harness、Runtime、Worker、业务方法 | 按 [DS-02 调查](windows-ds02-finalization-investigation-20261017.md) 实现 guarded-v7 单次续接，并同步 Runtime/Worker/Console/集成发布；不得用 v6 静默改语义 |
 | DS-03 | 未通过 | task:research-completion、task:research-quality / Futures及集成 | 前两项离线验证后，一次有区别的真实四问研究，独立内容复核 |
 | DS-04 | 部分实现，完整页面未验收 | task:continuation-ui / Console、Futures、Runtime | 接续动作已有实现；补全部功能/错误状态/窄屏和原文回读浏览器矩阵 |
 | DS-05 | 部分完成 | task:service-retirement / 各Owner及集成 | 对照p2-linux-cutover逐行移交覆盖、权限和旧实现退役 |

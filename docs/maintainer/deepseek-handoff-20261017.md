@@ -2,7 +2,7 @@
 
 本文件是当前开工入口。用户要求把进度、待办、维护知识库和本体同步 GitHub，交接完成后暂停原 Codex Goal，由 DeepSeek 接续。**产品整体未交付，不能把修复报告校验器当作完成全部平台。** 原目标保留在 [objective.md](objective.md)，逐项验收为 [P0–P5/P2.5、W01–W14](../windows-single-machine-plan.md)。
 
-**2026-10-17 后续增量：DS-01 已实现、测试、独立静态复核并受管安装（futures `72d8e36`，检查器 `futures-report-check-v8`）。** 详见 [DS-01 记录](windows-ds01-statements-20261017.md)。DS-02 未就绪草稿提前结束、DS-03 真实研究复核仍按本文件继续，不能把 DS-01 安装当作 P5 通过。
+**2026-10-17 后续增量：DS-01 已实现、测试、独立静态复核并受管安装（futures `72d8e36`，检查器 `futures-report-check-v8`）。** 详见 [DS-01 记录](windows-ds01-statements-20261017.md)。DS-02 已确认失败序列并记录 guarded-v7 单次续接方案（[调查](windows-ds02-finalization-investigation-20261017.md)，未实现），DS-03 真实研究复核仍按本文件继续，不能把 DS-01 安装当作 P5 通过。
 
 ## 先拿到正确的源码与环境
 

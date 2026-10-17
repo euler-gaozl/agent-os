@@ -1629,9 +1629,16 @@
       "id": "task:finalization-recovery",
       "type": "task",
       "label": "未就绪草稿提前结束",
-      "status": "open",
-      "doc": "deepseek-handoff-20261017.md",
-      "section": "DS-02"
+      "status": "investigated_plan_ready_not_implemented",
+      "doc": "windows-ds02-finalization-investigation-20261017.md",
+      "section": "DS-02",
+      "scope": "Failure sequence and candidate guarded-v7 single continuation documented; no source, release, engine or task mutation yet"
+    },
+    {
+      "id": "evidence:windows-ds02-finalization-investigation-20261017",
+      "type": "evidence_document",
+      "label": "DS-02 未就绪草稿提前结束的失败序列与修复方案",
+      "doc": "windows-ds02-finalization-investigation-20261017.md"
     },
     {
       "id": "task:finding-diagnostics",
@@ -3604,7 +3611,12 @@
     {
       "from": "task:finalization-recovery",
       "relation": "documented_by",
-      "to": "evidence:deepseek-handoff-20261017"
+      "to": "evidence:windows-ds02-finalization-investigation-20261017"
+    },
+    {
+      "from": "evidence:windows-ds02-finalization-investigation-20261017",
+      "relation": "observed_in",
+      "to": "environment:owner-windows"
     },
     {
       "from": "project:agent-platform",
