@@ -64,6 +64,12 @@ Runtime 提交 `ba45965`（已推送）：`IsFinalEngine` 识别 v7 以便历史
 - 当前发布模型每个 guarded 引擎只有一个 artifact/profile；v7 需要第二套 Worker 产物/锁、Runtime `IsFinalEngine` 与 release-contract 候选、Console 引擎识别和集成发布检查。不能用替换 v6 的方式静默改语义。
 - 本调查没有付费模型调用、没有改任务状态、没有打开真实重跑，也没有安装 v7。
 
+## 本轮推送与验证
+
+- 四个相关仓库的本地分支已与远端同步：`agent-os` `f1171f1`、`agent-os-futures` `d0e2efc`、`agent-os-runtime` `ba45965`、`agent-os-harness` `c5d4e4e2d5`。
+- GitHub Git transport 间歇失败；提交通过 Git data API 上传，逐 blob/tree/commit/ref 校验 SHA，Actions 保持禁用。没有 force push，没有改写历史。
+- 本轮没有触发 CI、没有付费模型调用、没有修改旧任务或正式数据库。
+
 ## 提示层缓解（已随 Futures `d0e2efc` 安装，但不能替代 A）
 
 Futures `d0e2efc`（安装 `futures-7ddefba00ef2477983e240fee1dfd75e`）已在新任务 `reportInstructions` 和 `packs/futures/research-finalization.md` 中明确：`final_output_commit` 返回 `selected:false`/`continue` 时，必须按拒绝原因在本轮继续修订并重新送检；不得改以普通正文结束，也不得自行声称预算耗尽。此缓解只影响新任务提示，不改变 v6 执行器语义，不能把真实任务的提前结束标记为已修复；guarded-v7 候选仍未接入。
