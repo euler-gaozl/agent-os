@@ -24,11 +24,14 @@ function Stop-OwnerMigrationProcess([hashtable]$Layout,[string]$ID){
  if(-not $record){return}
  Stop-PlatformInstance $record.entry $record.layout {Write-OwnerMigrationJson $record.path $record.entry}
 }
-function Invoke-OwnedMigrationProcess([hashtable]$Layout,[string]$ID,[string]$Binary,[string]$Hash,[hashtable]$Connection,[string]$Role,[IO.FileStream]$Lock,[scriptblock]$Checkpoint={param($point)}){
+function Invoke-OwnedMigrationProcess([hashtable]$Layout,[string]$ID,[string]$Binary,[string]$Hash,[hashtable]$Connection,[string]$Role,[IO.FileStream]$Lock,[scriptblock]$Checkpoint={param($point)},[string]$WorkerRole=''){
  if(-not $Lock){throw 'Owner process requires the held maintenance lock.'}
  $null=Enter-PlatformMaintenance $Layout.state_root $Lock
  $journal=Read-OwnerMigrationJournal $Layout
  if($journal.id -cne $ID -or $journal.phase -cne 'mutation_requested'){throw 'Migration process requires a durable mutation intent.'}
+ if($journal.operation -ceq 'runtime-continuation-v1'){
+  if(-not $WorkerRole -or -not $Role -or $WorkerRole -ceq $Role){throw 'Runtime migration requires both distinct application identities.'}
+ }elseif($WorkerRole){throw 'Worker identity is only valid for Runtime migration.'}
  if((Get-FileHash -LiteralPath $Binary).Hash.ToLowerInvariant() -cne $Hash){throw 'Migration executable differs from rehearsal.'}
  $owned=Get-OwnerProcessLayout $Layout $ID
  $previous=Read-OwnerProcess $Layout $ID
@@ -46,7 +49,7 @@ function Invoke-OwnedMigrationProcess([hashtable]$Layout,[string]$ID,[string]$Bi
  if((Get-FileHash -LiteralPath $target).Hash.ToLowerInvariant() -cne $Hash){throw 'Owned migration artifact differs.'}
  $path=Join-Path $owned.state_root 'process.json';$configPath=Join-Path $owned.config_root ('launches/owner-'+$ID+'.json')
  $url='postgresql://'+[uri]::EscapeDataString($Connection.user)+':'+[uri]::EscapeDataString($Connection.password)+'@127.0.0.1:'+$Connection.port+'/'+[uri]::EscapeDataString($Connection.database)+'?sslmode=disable'
- try{Write-OwnerMigrationJson $configPath @{MIGRATION_DATABASE_URL=$url;ROLE=$Role}}finally{$url=$null}
+ try{$configuration=@{MIGRATION_DATABASE_URL=$url;ROLE=$Role};if($WorkerRole){$configuration.WORKER_ROLE=$WorkerRole};Write-OwnerMigrationJson $configPath $configuration}finally{$url=$null;$configuration=$null}
  $attempt=[guid]::NewGuid().ToString('N')
  $entry=@{id=('owner-'+$ID);attempt_id=$attempt;role='owner-migration';binary=$target;binary_sha256=$Hash;launch_config=$configPath;launch_config_sha256=(Get-FileHash -LiteralPath $configPath).Hash.ToLowerInvariant();job_name=('Global\AgentOS-'+$ID);job_created=$false;pid=0;started_at=$null;intent_at=[datetime]::UtcNow.ToString('o');status='launching'}
  Write-OwnerMigrationJson $path $entry

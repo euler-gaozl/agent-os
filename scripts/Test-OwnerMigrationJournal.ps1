@@ -1,4 +1,4 @@
-param([string]$CrashLayout='',[string]$CrashPhase='')
+param([string]$CrashLayout='',[string]$CrashPhase='', [ValidateSet('telemetry-inbox-v1','runtime-continuation-v1')][string]$MigrationOperation='telemetry-inbox-v1')
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 foreach($library in @('platform-paths','platform-lock','platform-processes','platform-releases','platform-release-operations')){. (Join-Path $PSScriptRoot ('lib/'+$library+'.ps1'))}
@@ -6,7 +6,7 @@ if($CrashLayout){
     if(-not(Test-PathWithin $CrashLayout 'D:\workspace\agent-platform\local\evidence')){throw 'Invalid test layout'}
     $layout=Get-PlatformLayout $repo $CrashLayout
     $lock=Enter-PlatformMaintenance $layout.state_root
-    $journal=New-OwnerMigrationJournal $layout 'telemetry-inbox-v1' @{fixture='no database';catalog_sha256=(Get-FileHash (Join-Path $layout.release_root 'current.json')).Hash} $lock
+    $journal=New-OwnerMigrationJournal $layout $MigrationOperation @{fixture='no database';catalog_sha256=(Get-FileHash (Join-Path $layout.release_root 'current.json')).Hash} $lock
     foreach($phase in @('prepared','mutation_requested','validating','validated')){
         if($phase -ne 'prepared'){$journal=Set-OwnerMigrationPhase $layout $journal.id $phase $lock}
         if($phase -ceq $CrashPhase){[Environment]::Exit(198)}
@@ -33,12 +33,12 @@ try{
         $layout.layout_path=Join-Path $root 'layout.json';Write-PlatformJson $layout.layout_path $layout
         $catalog=Join-Path $layout.release_root 'current.json';Write-PlatformJson $catalog @{format=2;generation=1;services=@{telemetry=@{current=@{fixture=$true};previous=$null;pending=$null}}}
         $before=(Get-FileHash $catalog).Hash
-        & (Get-Process -Id $PID).Path -NoProfile -File $PSCommandPath -CrashLayout $layout.layout_path -CrashPhase $phase
+        & (Get-Process -Id $PID).Path -NoProfile -File $PSCommandPath -CrashLayout $layout.layout_path -CrashPhase $phase -MigrationOperation $MigrationOperation
         if($LASTEXITCODE -ne 198){throw 'Child failed to reach its explicit process-exit fault'}
         $lock=Enter-PlatformMaintenance $layout.state_root
         $journal=Read-OwnerMigrationJournal $layout
         $ownsJournal=$true
-        if($journal.phase -cne $phase){throw 'Journal did not survive process exit'}
+        if($journal.phase -cne $phase -or $journal.operation -cne $MigrationOperation){throw 'Journal did not survive process exit'}
         $checks.Add($phase+'_journal_survives_process_exit_and_lock_releases')
         Deny {& (Join-Path $PSScriptRoot 'Start-Local.ps1') -LayoutPath $layout.layout_path -Service telemetry -MaintenanceLock $lock} ($phase+'_start_refused_before_database_or_process')
         Deny {Invoke-ReleaseChange $layout telemetry update @{} $PSScriptRoot $lock} ($phase+'_update_refused_before_catalog')
