@@ -98,10 +98,17 @@
 - 证据：`local/evidence/ds06-longtask-rss.json`。
 - 未观察到任务期间单调增长；但这只是一个 20 步任务的单次采样，不是 10 万步、百万任务或生产内存上界，也没有覆盖 Compact 前后。
 
+## 九、40/80 轮滚动
+
+- revision 6（32k context）分别跑 40、80 轮 `run_recall`，不杀 Worker：40 轮任务 `16e1648d…` **completed step 41**；80 轮任务 `5c0d35f4…` **completed step 81**。
+- Runtime 的 model 请求体从 5.5 KB 线性增长到 40 轮的 56.8 KB、80 轮的 108.3 KB；没有出现请求体下降或显式 Compact 事件。32k 的 `context_tokens` 并未阻止请求字节超过 32k，token 计量需要另取；不能把“completed”写成 Compact 通过。
+- 证据：`local/evidence/ds06-40round-nokill-2026-10-17T12-30-01-115Z/`、`ds06-80round-nokill-2026-10-17T12-30-38-326Z/`。
+- 这证明 81 步长任务可完成，但也暴露“32k 设置不是严格的请求字节上限/没有可见 Compact 标记”；需要从 DSH token 计量和交换记录确认 Compact，而不能只看 completed。
+
 ## 边界与仍未完成
 
 - 并发写者已完成两客户端真实竞争；未做更多写者、跨进程/跨实例或自动分支 resolver。
-- 已完成 32k/64k/最大限制下 20 轮长任务的强杀/接管；8k/16k 收紧上下文会失败，失败集中在过小上下文，但 Compact 点仍无显式成功证据。
+- 已完成 32k/64k/最大限制下 20/40/80 轮长任务的强杀/接管/完成；8k/16k 收紧上下文会失败，失败集中在过小上下文，但 Compact 点仍无显式成功证据。
 - 长历史基准使用合成 source-Harness/受控 journal，不是 10M 分块或服务器容量；8192 步达到 168.1 MB heap/339.5 MB RSS，已接近 192 MB heap 上限；20 步任务只做了一次服务 RSS 采样，不能当生产上界。
 - 自动 GC/删除策略未启用；不删除权威笔记/回执。
 - DS-07 仍需真实整平台资源、PG 连续负载和故障矩阵；DS-09 最后统一 CI。
