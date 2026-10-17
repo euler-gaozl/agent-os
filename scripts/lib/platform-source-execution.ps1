@@ -121,6 +121,18 @@ SELECT jsonb_build_object(
  'resumable_guarded_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-guarded-v7' AND status NOT IN('completed','cancelled')),
  'guarded_v6_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-guarded-v6'),
  'resumable_guarded_v6_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-guarded-v6' AND status NOT IN('completed','cancelled')),
+ 'source_v2_runs',count(*) FILTER (WHERE engine='dsh-source-687f282e-state-v1'),
+ 'resumable_source_v2_runs',count(*) FILTER (WHERE engine='dsh-source-687f282e-state-v1' AND status NOT IN('completed','cancelled')),
+ 'resident_v2_runs',count(*) FILTER (WHERE engine='dsh-source-687f282e-resident-v2'),
+ 'resumable_resident_v2_runs',count(*) FILTER (WHERE engine='dsh-source-687f282e-resident-v2' AND status NOT IN('completed','cancelled')),
+ 'budget_v2_runs',count(*) FILTER (WHERE engine='dsh-source-687f282e-budget-v3'),
+ 'resumable_budget_v2_runs',count(*) FILTER (WHERE engine='dsh-source-687f282e-budget-v3' AND status NOT IN('completed','cancelled')),
+ 'native_v2_runs',count(*) FILTER (WHERE engine='dsh-source-687f282e-native-v4'),
+ 'resumable_native_v2_runs',count(*) FILTER (WHERE engine='dsh-source-687f282e-native-v4' AND status NOT IN('completed','cancelled')),
+ 'final_v2_runs',count(*) FILTER (WHERE engine='dsh-source-687f282e-final-v5'),
+ 'resumable_final_v2_runs',count(*) FILTER (WHERE engine='dsh-source-687f282e-final-v5' AND status NOT IN('completed','cancelled')),
+ 'guarded_v2_runs',count(*) FILTER (WHERE engine='dsh-source-687f282e-guarded-v7'),
+ 'resumable_guarded_v2_runs',count(*) FILTER (WHERE engine='dsh-source-687f282e-guarded-v7' AND status NOT IN('completed','cancelled')),
  'working_state_ready',(SELECT CASE WHEN t.oid IS NULL THEN false ELSE
  has_table_privilege(current_user,t.oid,'SELECT') AND has_table_privilege(current_user,t.oid,'INSERT')
  AND NOT EXISTS(SELECT 1 FROM required_columns c WHERE NOT EXISTS(
