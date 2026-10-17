@@ -14,7 +14,7 @@ $newContract=Clone $oldContract;$newContract.http='agentos-http-v0.7-source-stat
 $runtimeOld=@{role='runtime';assets=@{binary='runtime.exe'};contract=$oldContract}
 $runtimeNew=@{role='runtime';assets=@{binary='runtime.exe'};contract=$newContract;source_execution=@{format=1;engine=(Get-SourceEngineName);execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';submission_protocol='source-root-default-v1';preview_protocol='source-recovery-preview-v1'}}
 $workerOld=@{role='worker';assets=@{binary='worker.exe';node='node.exe';harness='harness'};contract=$oldContract}
-$facts=@{source_runs=0;resumable_source_runs=0;resident_runs=0;resumable_resident_runs=0;budget_runs=0;resumable_budget_runs=0;native_runs=0;resumable_native_runs=0;final_runs=0;resumable_final_runs=0;guarded_runs=0;resumable_guarded_runs=0;guarded_v6_runs=0;resumable_guarded_v6_runs=0;working_state_ready=$false}
+$facts=@{source_runs=0;resumable_source_runs=0;resident_runs=0;resumable_resident_runs=0;budget_runs=0;resumable_budget_runs=0;native_runs=0;resumable_native_runs=0;final_runs=0;resumable_final_runs=0;guarded_runs=0;resumable_guarded_runs=0;working_state_ready=$false}
 $result=@{passed=$false;paid_model_calls=0;scope='Release compatibility policy, real pinned source artifact copy/export/restore, plus real PostgreSQL metadata probe on synthetic tables; no service activation';checks=@()}
 $fixture='D:\workspace\agent-platform\local\evidence\p2-first-services-85be4f84e89f47ad935b6ed8882093c0\postgres'
 $pg='D:\workspace\.tools\postgresql\pgsql\bin';$started=$false;$dbCreated=$false;$roleCreated=$false

@@ -3,8 +3,7 @@ function Get-SourceEngineName { return 'dsh-source-639ed015-state-v1' }
 function Get-ResidentEngineName { return 'dsh-source-639ed015-resident-v2' }
 function Get-BudgetEngineName { return 'dsh-source-639ed015-budget-v3' }
 function Get-NativeEngineName { return 'dsh-source-639ed015-native-v4' }
-function Get-GuardedEngineName { return 'dsh-source-639ed015-guarded-v7' }
-function Get-HistoricalGuardedEngineName { return 'dsh-source-639ed015-guarded-v6' }
+function Get-GuardedEngineName { return 'dsh-source-639ed015-guarded-v6' }
 function Get-FinalEngineName { return 'dsh-source-639ed015-final-v5' }
 function Get-SourceEngineProfiles {
     return @(
@@ -20,8 +19,7 @@ function Assert-SourceExecutionDescriptor([System.Collections.IDictionary]$Descr
     foreach($profile in (Get-SourceEngineProfiles)){
     $source=$Descriptor[$profile.metadata];$asset=$Descriptor.assets[$profile.asset]
     if(-not $source){if($asset){throw 'Source Harness asset has no execution provenance.'};continue}
-    $historicalGuarded=$profile.engine -ceq (Get-GuardedEngineName) -and $source.engine -ceq (Get-HistoricalGuardedEngineName)
-    if($source.format -ne 1 -or (-not $historicalGuarded -and $source.engine -cne $profile.engine) -or $source.execution_protocol -cne 'runtime-execution-v1'){throw 'Unsupported source execution metadata.'}
+    if($source.format -ne 1 -or $source.engine -cne $profile.engine -or $source.execution_protocol -cne 'runtime-execution-v1'){throw 'Unsupported source execution metadata.'}
     if($profile.engine -ceq (Get-BudgetEngineName) -and $source['model_receipt_protocol'] -cne 'budget-model-receipt-v1'){throw 'Budget engine requires durable model receipt protocol 1.'}
     if($profile.engine -cin @((Get-NativeEngineName),(Get-FinalEngineName),(Get-GuardedEngineName)) -and $source['model_receipt_protocol'] -cne 'native-model-receipt-v2'){throw 'Native engine requires durable model receipt protocol 2.'}
     if($profile.engine -cin @((Get-FinalEngineName),(Get-GuardedEngineName)) -and $source['final_output_protocol'] -cne 'receipt-field-v1'){throw 'Final engine requires receipt-field-v1.'}
@@ -66,16 +64,11 @@ function Assert-SourceExecutionPolicy([System.Collections.IDictionary]$Runtime,[
             if(($Facts[$key] -isnot [long] -and $Facts[$key] -isnot [int]) -or $Facts[$key] -lt 0){throw 'Invalid execution run count.'}
         }
         if($Facts[$profile.resumable] -gt $Facts[$profile.runs]){throw 'Invalid execution compatibility facts.'}
-        $runtimeSource=[bool]$Runtime[$profile.metadata] -and $Runtime[$profile.metadata].engine -ceq $profile.engine
-        $workerSource=[bool]$Worker[$profile.metadata] -and $Worker[$profile.metadata].engine -ceq $profile.engine
+        $runtimeSource=[bool]$Runtime[$profile.metadata];$workerSource=[bool]$Worker[$profile.metadata]
         if($runtimeSource -and -not $Facts.working_state_ready){throw 'Run the additive Runtime working-state migration before selecting this release.'}
         if(($workerSource -or $DefaultEngine -ceq $profile.engine -or $Facts[$profile.runs] -gt 0) -and -not $runtimeSource){throw ('Retained tasks or Worker capability require Runtime support for '+$profile.engine+'; downgrade refused.')}
         if(($DefaultEngine -ceq $profile.engine -or $Facts[$profile.resumable] -gt 0) -and -not $workerSource){throw ('Default or resumable tasks require a pinned Worker for '+$profile.engine+'; rollback refused.')}
     }
-    if(-not $Facts.Contains('guarded_v6_runs') -or ($Facts.guarded_v6_runs -isnot [int] -and $Facts.guarded_v6_runs -isnot [long]) -or $Facts.guarded_v6_runs -lt 0){throw 'Execution compatibility facts are incomplete.'}
-    if(-not $Facts.Contains('resumable_guarded_v6_runs') -or ($Facts.resumable_guarded_v6_runs -isnot [int] -and $Facts.resumable_guarded_v6_runs -isnot [long]) -or $Facts.resumable_guarded_v6_runs -lt 0){throw 'Execution compatibility facts are incomplete.'}
-    if($Facts.resumable_guarded_v6_runs -gt $Facts.guarded_v6_runs){throw 'Invalid execution compatibility facts.'}
-    if($Facts.resumable_guarded_v6_runs -gt 0){throw 'Resumable guarded-v6 tasks require the retained v6 Worker; v7 replacement refused.'}
 }
 function Get-SourceExecutionFacts([hashtable]$Layout,[System.Collections.IDictionary]$Configuration=$null){
     . (Join-Path $PSScriptRoot 'platform-recovery.ps1')
@@ -102,10 +95,8 @@ SELECT jsonb_build_object(
  'resumable_native_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-native-v4' AND status NOT IN('completed','cancelled')),
  'final_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-final-v5'),
  'resumable_final_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-final-v5' AND status NOT IN('completed','cancelled')),
- 'guarded_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-guarded-v7'),
- 'resumable_guarded_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-guarded-v7' AND status NOT IN('completed','cancelled')),
- 'guarded_v6_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-guarded-v6'),
- 'resumable_guarded_v6_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-guarded-v6' AND status NOT IN('completed','cancelled')),
+ 'guarded_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-guarded-v6'),
+ 'resumable_guarded_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-guarded-v6' AND status NOT IN('completed','cancelled')),
  'working_state_ready',(SELECT CASE WHEN t.oid IS NULL THEN false ELSE
  has_table_privilege(current_user,t.oid,'SELECT') AND has_table_privilege(current_user,t.oid,'INSERT')
  AND NOT EXISTS(SELECT 1 FROM required_columns c WHERE NOT EXISTS(
