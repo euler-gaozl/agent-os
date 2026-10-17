@@ -44,3 +44,16 @@ Platform.ps1 restore-check -BackupDirectory local/backups/ds08-final-20261017b -
 ## 结论
 
 DS-08 的“最终备份 + 隔离恢复”已由真实 PostgreSQL 集群验证通过。它关闭的是备份恢复项，不是 DS-05 剩余的双 Worker 接管、DS-06 存储生命周期、DS-07 整平台故障/资源或 DS-09 集中 CI。
+
+## 当前版本复验：ds08-final-20261017c
+
+- 在 Worker `1ac65212…`（19 秒 Runtime 中断恢复）、Futures `fdc9a7…`（同品种历史任务）和 Console `94f118…` 安装后重新创建备份 `local/backups/ds08-final-20261017c`；备份期间停止并重启 12 个正式进程，PostgreSQL 保持运行。
+- 隔离恢复 `local/restore-checks/77c551dec1784f66bc185be671124352/result.json`：`status=passed`。
+  - **46** 个表/序列关系指纹、schema/ACL 匹配；
+  - **10** 个服务角色实际登录成功；
+  - **5** 条密封凭据成功解密（不输出明文）；
+  - 2 个归档 Worker bundle（`worker-1ac65212…`、`worker-8e77e8cb…`）检查通过；
+  - 离屏 Harness 重建 3 项测试通过；
+  - 完整发布 186 代、25 引用、3,073 文件全部校验；
+  - `isolated_cluster_stopped=true`，`provider_calls=0`。
+- 边界仍同前：单物理库、临时集群、不启动业务/不调用模型/不访问外部服务；不证明恢复后真实任务成功、服务器/HA 或百万文档容量。

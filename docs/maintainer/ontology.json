@@ -802,10 +802,10 @@
       "id": "task:latest-recovery",
       "type": "task",
       "label": "最新备份实际恢复",
-      "status": "final_snapshot_restore_passed",
+      "status": "current_snapshot_restore_passed",
       "doc": "windows-ds08-restore-20261017.md",
       "section": "DS-08",
-      "scope": "Post-DS05 backup ds08-final-20261017b restored into a disposable random-port PostgreSQL cluster: 46 relations, metadata/ACL/schema and content fingerprints match, 10 service logins, identity index, 3 sealed credential decryptions, 2 archived Worker bundles, offline Harness reconstruction and 3 Node checks pass; cluster stopped. Not server/HA, eight physical databases or external Milvus/LightRAG/Langfuse."
+      "scope": "Current-release backup ds08-final-20261017c (after Worker 1ac65212, Futures fdc9a7, Console 94f118) restored into a disposable random-port PostgreSQL cluster: 46 relations, 10 service logins, 5 sealed credential decryptions, 2 archived Worker bundles (1ac65212/8e77e8cb), offline Harness reconstruction, complete release generation 186 with 3073 files; isolated cluster stopped, provider calls 0. Earlier ds08-final-20261017b with 3 credentials also passed. Not server/HA, eight physical databases or external Milvus/LightRAG/Langfuse."
     },
     {
       "id": "task:final-ci",
@@ -3766,9 +3766,9 @@
   "environment_policy": {
     "file": "environments.json",
     "default_execution_environment": null,
-    "current_execution_record": "windows-ds07-platform-load-20261017.md",
+    "current_execution_record": "windows-ds08-restore-20261017.md",
     "updated_at": "2026-10-17",
     "rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets."
   },
-  "current_execution_record": "windows-ds07-platform-load-20261017.md"
+  "current_execution_record": "windows-ds08-restore-20261017.md"
 }
