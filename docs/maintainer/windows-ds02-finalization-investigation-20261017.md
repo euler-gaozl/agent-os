@@ -63,6 +63,6 @@ Harness 提交 `c5d4e4e2d5`：
 - 当前发布模型每个 guarded 引擎只有一个 artifact/profile；v7 需要第二套 Worker 产物/锁、Runtime `IsFinalEngine` 与 release-contract 候选、Console 引擎识别和集成发布检查。不能用替换 v6 的方式静默改语义。
 - 本调查没有付费模型调用、没有改任务状态、没有打开真实重跑，也没有安装 v7。
 
-## 提示层缓解（可在不改引擎时先做，但不能替代 A）
+## 提示层缓解（已随 Futures `d0e2efc` 安装，但不能替代 A）
 
-在新任务方法包和成稿说明中明确：`final_output_commit` 返回 `selected:false`/`continue` 时，必须按拒绝原因在本轮继续修订并重新送检；不得改以普通正文结束，也不得自行声称预算耗尽。此缓解只影响新任务提示，不改变 v6 执行器语义，不能把真实任务的提前结束标记为已修复。
+Futures `d0e2efc`（安装 `futures-7ddefba00ef2477983e240fee1dfd75e`）已在新任务 `reportInstructions` 和 `packs/futures/research-finalization.md` 中明确：`final_output_commit` 返回 `selected:false`/`continue` 时，必须按拒绝原因在本轮继续修订并重新送检；不得改以普通正文结束，也不得自行声称预算耗尽。此缓解只影响新任务提示，不改变 v6 执行器语义，不能把真实任务的提前结束标记为已修复；guarded-v7 候选仍未接入。

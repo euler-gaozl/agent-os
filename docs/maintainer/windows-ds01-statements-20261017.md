@@ -27,6 +27,8 @@
 
 构建与安装使用受管入口 `scripts/Platform.ps1 build/update -Service futures`，未直接覆盖运行中的 exe，未修改正式数据库。
 
+同日后继安装：Futures `d0e2efc` 安装为 `futures-7ddefba00ef2477983e240fee1dfd75e`，只增加“`final_output_commit` 被拒后继续修订、不得以普通正文结束或自行声称预算耗尽”的新任务提示；`statements` 字段、v8 检查规则和本记录的其他验收不变。
+
 ## 离线验证
 
 - `go test -mod=vendor ./futures ./cmd/...`：通过。

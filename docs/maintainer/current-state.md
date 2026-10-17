@@ -16,13 +16,13 @@
 
 ## 当前安装与工程验证
 
-默认引擎 guarded-v6，两个 Worker，最近只读 core_ready=true。Runtime 1e17aae、Worker 029cc2b、Console a5f8c59、Registry 2f7f836、Futures 72d8e36；Futures 报告检查器为 `futures-report-check-v8`。其他安装及完整 SHA 以 [仓库清单](repositories.json) 的 installed 为准。其来源是原 Windows release catalog，不是远端用户的可用服务。
+默认引擎 guarded-v6，两个 Worker，最近只读 core_ready=true。Runtime 1e17aae、Worker 029cc2b、Console a5f8c59、Registry 2f7f836、Futures d0e2efc；Futures 报告检查器为 `futures-report-check-v8`。其他安装及完整 SHA 以 [仓库清单](repositories.json) 的 installed 为准。其来源是原 Windows release catalog，不是远端用户的可用服务。
 
 核对发现Telemetry源码HEAD为6f9f539、集成pin为c2a02e2、正式安装为fcaca2e；Indexer/Sandbox/Sources/ToolHub也有HEAD领先pin的情况。清单分别保留，DS-05先调查差异再决定部署，不能用全量build/update把当前安装静默换成pin。Harness产物随Worker固定，SDK随编译依赖固定，不按独立进程计数。
 
 guarded-v6：29项Harness测试、85项Runtime测试事件、69项Worker相关测试、实际进程/隔离PG的9个联合场景，以及发布/回滚检查通过；供应商为合成夹具的场景明确不是真实模型。Futures v7：Go futures/cmd回归和vet、独立Go/Web构建、引用位置及改错解读的回归通过，独立静态复核无阻断。真实末稿只读检查精确定位第三条finding第一处引用；旧v6反馈与原稿哈希不变。详见 [发布、验证及失败记录](windows-guarded-release-20261017.md)。
 
-DS-01 增量（2026-10-17）：Futures `72d8e36` 增加可选 `statements` 与问题/解读 `statement_ids`，检查器升级为 `futures-report-check-v8`；说明只能绑定本任务留存原文，不能夹带市场报数（日期、页码、期数、样本家数等非报数计数除外），数值仍由 `facts` 检查。Go 测试/vet、27 项 Web 测试、TypeScript/Vite 构建通过；两次独立只读静态复核（无 blocker/high，第二次 MEDIUM）提出的日期误伤、说明限制数量、借用事实 ID、非法编号路径、README 版本等问题已修复。受管发布安装后 `Platform.ps1 status` 为 futures ready，旧任务 report-check 返回 v8，已安装 MCP 的纯说明草稿 `ready=true`/`revise=0`，含裸数量的说明草稿 `ready=false`/`statement_quantity`。详见 [DS-01 记录](windows-ds01-statements-20261017.md)。这不是 DS-03 真实研究通过。
+DS-01 增量（2026-10-17）：Futures `72d8e36` 增加可选 `statements` 与问题/解读 `statement_ids`，检查器升级为 `futures-report-check-v8`；说明只能绑定本任务留存原文，不能夹带市场报数（日期、页码、期数、样本家数等非报数计数除外），数值仍由 `facts` 检查。Go 测试/vet、27 项 Web 测试、TypeScript/Vite 构建通过；两次独立只读静态复核（无 blocker/high，第二次 MEDIUM）提出的日期误伤、说明限制数量、借用事实 ID、非法编号路径、README 版本等问题已修复。受管发布安装后 `Platform.ps1 status` 为 futures ready，旧任务 report-check 返回 v8，已安装 MCP 的纯说明草稿 `ready=true`/`revise=0`，含裸数量的说明草稿 `ready=false`/`statement_quantity`。详见 [DS-01 记录](windows-ds01-statements-20261017.md)。随后 `d0e2efc` 又安装为 `futures-7ddefba…`，只增加“final_output_commit 被拒后继续修订、不得以正文结束或自称预算耗尽”的新任务提示，检查器仍为 v8；这不是 DS-03 真实研究通过。
 
 DS-02 增量（2026-10-17）：已从私有调用回执确认“未就绪稿 → 误提成稿 → Runtime 拒绝 → 模型以正文结束 → runner 失败”的完整序列；Harness 提交 `c5d4e4e2d5` 已实现 guarded-v7 单次续接，31 项本地测试通过，含“拒绝后正文结束 → 一次续接 → 成功”和“第二次文本结束即终止”。**尚未接入 Runtime/Worker/Console、未安装、未改任务**；不能写成已修复。方案见 [DS-02 调查](windows-ds02-finalization-investigation-20261017.md)。
 
