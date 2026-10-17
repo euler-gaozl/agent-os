@@ -7,7 +7,7 @@
 | DS-01 | 已完成（源码/测试/安装/静态复核） | task:qualitative-evidence / Futures | 非数值说明已绑定留存原文并安装；转入 DS-02，DS-03 真实内容复核仍待做 |
 | DS-02 | 已完成（双产物安装，默认 v7；DS-03 已在 v7 上跑通真实任务） | task:finalization-recovery / Harness、Runtime、Worker、业务方法 | v6 任务 continuation context=`manual_review`/`unsupported_checkpoint`，保留重放/读取但不能直接续跑；不得删 v6 runner 或改旧任务；真实恢复/故障重放归 DS-07 |
 | DS-03 | 已完成（真实四问报告 + 独立内容复核 ACCEPT） | task:research-quality / Agent 22、Skill 10、Futures 检查器 | 仅覆盖库存/区域/合同三份资料；旧供给/进口/压榨失败任务未回填；保留 s1 引文拼接 minor；下一步 DS-04 |
-| DS-04 | 浏览器矩阵通过；业务入口已修复安装；Console 运行详情已加“查看源任务”并浏览器验证；Futures 业务记录跨任务溯源仍开放 | task:continuation-ui / Console、Futures、Runtime | 跟进 v6 失败任务“不足以直接续跑”的评估；在 Futures 记录页补来源任务/证据链；补浏览器自动化可重复入口；不把浏览器通过写成后端恢复/故障通过 |
+| DS-04 | 浏览器矩阵通过；业务入口已修复安装；Console 运行详情“查看源任务”与 Futures 同品种历史任务均已浏览器验证；精确跨任务证据链仍开放 | task:continuation-ui / Console、Futures、Runtime | 跟进 v6 失败任务“不足以直接续跑”的评估；在 Futures 记录页补精确来源任务/证据链；补浏览器自动化可重复入口；不把启发式同品种入口写成自动溯源 |
 | DS-05 | 正式 ACL 已收缩；撤权后合成任务/双 Worker 接管通过；临时 Telemetry 导出 3,992 事件到 mock；真实 Langfuse/managed 实例、旧实现/Linux 未完成 | task:service-retirement / 各Owner及集成 | 接真实 Langfuse 或受控 OTLP 并验证 managed 实例；逐行删除旧实现；最终 CI 另做 |
 | DS-06 | 部分完成（笔记修订/过期/并发 200+409/撤回 + 128–8192 步 Compact/重放（8192 步 168.1MB heap/339.5MB RSS）+ 32k/64k/最大限制下 20 轮强杀/接管 + 20 轮 RSS 采样；8k/16k step 13/19 失败；Compact 点无显式成功证据） | task:storage-lifecycle / Harness、Runtime、Worker、Storage | 定位 8k/16k 与 32k 的 Compact 差异；补真实 Compact 点强杀续跑、10M 分块/生产 RSS 上界；不删权威资料，不以合成基准代替生产容量 |
 | DS-07 | 部分完成（8 并发 8/8、30.1 分钟 24/24 soak、8 秒锁恢复、30 秒锁失败、15/30 秒锁内取消、杀 owner 后取消；30 秒 cancel 504 已由 Runtime 55dc3cd 修复并复验 202/cancelled；60 秒上限；慢查询/死锁/异步补偿/内存趋势未做） | task:faults-and-resources / 集成及相关Owner | 补 PG 慢查询计划/死锁注入、超过 60 秒锁的异步取消、外部副作用补偿、内存趋势和整平台资源口径；合成 soak/锁故障不能写成生产容量验收 |

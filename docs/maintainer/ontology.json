@@ -3766,9 +3766,9 @@
   "environment_policy": {
     "file": "environments.json",
     "default_execution_environment": null,
-    "current_execution_record": "windows-local-acceptance-20261017.md",
+    "current_execution_record": "windows-ds04-ui-browser-20261017.md",
     "updated_at": "2026-10-17",
     "rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets."
   },
-  "current_execution_record": "windows-local-acceptance-20261017.md"
+  "current_execution_record": "windows-ds04-ui-browser-20261017.md"
 }
