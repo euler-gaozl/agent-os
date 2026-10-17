@@ -40,8 +40,9 @@
 ## 双版本打包（已生成，未安装）
 
 - 平台脚本已支持 `-SourceV2Artifact`/`-ResidentV2Artifact`/`-BudgetV2Artifact`/`-NativeV2Artifact`/`-FinalV2Artifact`/`-GuardedV2Artifact`，把新旧目录放进同一 Worker release，并写入六个 `*_v2_execution` 描述。
-- 已实际生成 staged Worker `worker-76038f18…`：同时含旧 `639ed015` 资产和六个 `687f282e` V2 资产；描述中的 manifest/engine/protocol 均正确。
-- **未安装**：Worker 自带的 vendored Runtime 仍是旧版本，`execution.NewSourceVersions` 不识别新的 engine 字符串；若此时启动，V2 环境变量会让 Worker 启动失败。必须先把 Worker 的 Runtime owner module 更新到 `69b9e62` 并重新 vendor/测试，然后才能安装这个 release。
+- 已实际生成 staged Worker `worker-76038f18…` / `worker-26bb66a5…`：同时含旧 `639ed015` 资产和六个 `687f282e` V2 资产；描述中的 manifest/engine/protocol 均正确。
+- Worker `64a31b9` 已把 vendored Runtime 更新到 `69b9e62`（新引擎识别），`go test ./worker ./cmd/worker` 通过；`64a31b9` 同步 source provenance。
+- **安装仍被拒绝**：`Platform.ps1 update` 报 `Retained tasks or Worker capability require Runtime support for dsh-source-687f282e-state-v1; downgrade refused.` 当前安装的 Runtime `57ce21ba…` 仍是旧代码/旧 descriptor，不能支持 V2。必须先构建/安装 Runtime `69b9e62` 并给 Runtime descriptor 增加同一组 V2 metadata，然后才能安装双版本 Worker。
 - 旧任务仍由当前 `worker-52356bed…` 运行，平台未改变。
 
 ## 下一步
