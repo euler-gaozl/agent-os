@@ -72,7 +72,7 @@
       "url": "https://github.com/euler-gaozl/agent-os-futures",
       "clone_url": "https://github.com/euler-gaozl/agent-os-futures.git",
       "branch": "feat/native-task-transport",
-      "source_head_at_audit": "d0e2efc2614303ccc3a8dac31063f4fa3ce2f2d0",
+      "source_head_at_audit": "5be0b1a9d9c571678878879bd63661b83e92d73d",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -90,8 +90,8 @@
       "installed": [
         {
           "role": "futures",
-          "commit": "d0e2efc2614303ccc3a8dac31063f4fa3ce2f2d0",
-          "manifest": "descriptors/futures-7ddefba00ef2477983e240fee1dfd75e.json",
+          "commit": "5be0b1a9d9c571678878879bd63661b83e92d73d",
+          "manifest": "descriptors/futures-7b35c150c8c0402b8ebfd3dac64492a6.json",
           "sdk": {
             "version": "v0.1.0-rc.4",
             "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
@@ -101,8 +101,8 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T08:43:24Z",
-          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
+          "observed_at": "2026-10-17T09:39:06Z",
+          "observation": "Actual owner Windows release catalog; Futures 5be0b1a rejected-final turn handoff installed."
         }
       ],
       "remote_main_head_at_audit": "fc080b691bb95f2b78d8fd7890d4dd66efe48974"
