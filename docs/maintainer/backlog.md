@@ -10,7 +10,7 @@
 | DS-04 | 浏览器矩阵通过（7 中台页 + 5 编辑器标签 + ToolHub/知识库/运行/服务 + 业务首页/记录/失败/移动端）；业务入口已修复安装；2 项跟进 | task:continuation-ui / Console、Futures、Runtime | 跟进 v6 失败任务“不足以直接续跑”的评估与跨任务证据溯源；补浏览器自动化的可重复入口；不把浏览器通过写成后端恢复/故障通过 |
 | DS-05 | 正式 ACL 已收缩；撤权后合成任务完成 note_save/run_recall，双 Worker 接管通过；Telemetry 导出/旧实现/Linux 未完成 | task:service-retirement / 各Owner及集成 | 配置有效导出端点后跑 Telemetry 接收/导出；逐行删除旧实现；隔离恢复已完成，最终 CI 另做 |
 | DS-06 | 部分完成（真实笔记修订/过期/冲突/撤回 + Windows 128/512/2048 步 Compact/重放测量通过） | task:storage-lifecycle / Harness、Runtime、Worker、Storage | 补真实长任务 Compact 中断续跑、真正并发写者、Runtime/Worker/DB RSS 上界；不删权威资料，不以合成基准代替生产容量 |
-| DS-07 | 部分完成（撤权后 8 并发合成任务 8/8，PG/Runtime/Worker RSS 快照；持续负载/慢查询/故障组合未做） | task:faults-and-resources / 集成及相关Owner | 做持续 30–60 分钟负载、PG 锁等待/慢查询、内存增长趋势和缺失故障组合；不能把短并发烟测写成容量或生产资源验收 |
+| DS-07 | 部分完成（撤权后 8 并发 8/8 + 32 秒双 Worker 持续负载 2/2；PG/RSS 快照；30–60 分钟 soak/慢查询/故障组合未做） | task:faults-and-resources / 集成及相关Owner | 做持续 30–60 分钟负载、PG 锁等待/慢查询、内存增长趋势和缺失故障组合；不能把短负载写成容量或生产资源验收 |
 | DS-08 | 已完成（最终快照备份 + 隔离恢复 passed） | task:latest-recovery / 原Windows集成 | 备份 `ds08-final-20261017b`，46 表/序列、10 服务登录、3 密封凭据、2 Worker bundle、离线 Harness 重建全部通过；不替代服务器/HA 或外部服务恢复 |
 | DS-09 | 未执行最终CI | task:final-ci / 集成 | 全部本机验收后唯一一次集中CI及独立逐条完工审查 |
 
