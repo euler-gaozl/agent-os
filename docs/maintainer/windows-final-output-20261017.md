@@ -1,5 +1,20 @@
 # Windows 确定性交付候选（2026-10-17）
 
+## 后续：中台编辑与业务就绪协议已接通
+
+2026-10-17 14:08：新增 Console `6baf4e03820e35c00666e5b49a6a942f893edf8f`、Futures `8b948636e10bc0d435aed21cd8f3843b6f669f23`，均固定 SDK rc.4。两个仓的开发分支与 `main` 已同步，GitHub API 核对提交/树哈希一致且 Actions 禁用。本轮仍未改变正式安装组合、数据库或 Agent 资源，没有付费模型调用或 GitHub Actions。
+
+- Console 的“模型与执行”增加交付方式编辑：模型直接回答，或绑定检查工具、原始输入字段和布尔就绪路径。读取精确 MCP 版本，异步读取失败不清空策略；编辑、模型转换、保存/回读保留完整配置。Registry 必须同时声明原生模型和 `receipt-field-v1`，否则保存前返回 503，避免旧服务静默丢字段。编译后实际 CLI 声明与 release-contract 一致。
+- Console 显式识别固定 final-v5 的工作状态及归档清单，失败任务使用已有幂等接续预览/请求入口，不显示 legacy resume。识别新引擎不授予服务端许可；v5 Owner 模型失败接续仍待实现，不称作已能续跑。
+- Futures 的 MCP 在原文字反馈之外返回 `futures-draft-readiness-v1`。`structuredContent.ready` 仅代表结构允许交付，`scope=structure_only`，`source_review_required=true`；原文摘要包含换行与尾空白。状态先判定再截短反馈，不能因解释被裁剪而把失败改成就绪。原 MCP HTTP 鉴权、无外部访问和 5,900 字节反馈边界保留。
+- 新提交指令在 final_output_commit 可用时引用已提交原文，在历史引擎上保留旧复制要求；移除“两轮检查”提示，仍遵守任务冻结步骤预算。旧任务和已完成 R2 原稿未改；就绪及字节一致不能消除已经发现的内容错误。
+
+验证：Console 后端 41 项、Web 40 项；Futures 后端 138 项、Web 25 项，全部通过、零测试跳过。两仓 vet、原生 exe、TypeScript/Vite 构建和泄漏扫描通过。BFF 测试经实际 HTTP handler 验证旧 Registry 拒绝、新配置请求和固定版本读取不丢字段；业务测试经实际 MCP handler 验证原文摘要和结构/来源边界。没有将这些测试记为真实供应商或全栈部署验收。
+
+独立 Agent 只读复核未发现 P1/P2，并实际运行 18 项纯 Web 测试通过。浏览器交互夹具 `web/test/final-output-ui.html` 已准备；本机 `Start-Process` 启动临时 loopback Vite 验收服务被自动审批拒绝，仅返回 `blocked by policy`，没有绕过。**这一轮浏览器点击、延迟回复、窄屏实测未执行**；静态渲染/受控测试不替代它。证据入口 `ops/final-control-futures.path` 指向 `final-control-futures-543e7dcd0826442bbccf11c9d4eaddb6`。
+
+下一顺序：v5 Owner 模型失败显式接续及真实独立 Worker 验证 → 发布器支持新的 Registry/Console 策略能力及 final-v5 组合门槛 → 配套固定资源/安装/浏览器验收 → 修复 R2 内容缺陷并离线预检后做一次有界真实业务任务。最新源代码可以先同步 GitHub，`deploy/service-sources.json` 不提前切换。完整 P0–P5/P2.5、W01–W14 和其余 UI/权限/生命周期/故障/恢复/最终 CI 保持开放。
+
 ## 后续：Worker 完整包与 Registry 已接通
 
 2026-10-17 13:50：本次增加独立 Worker 集成及资源发布校验，正式配置/数据库/运行版本保持原组合。未做付费调用，Actions 仍禁用。此前“尚未接入 Worker”是下方首轮记录的当时状态。
