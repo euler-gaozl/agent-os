@@ -10,7 +10,7 @@
 | DS-04 | 浏览器矩阵通过（7 中台页 + 5 编辑器标签 + ToolHub/知识库/运行/服务 + 业务首页/记录/失败/移动端）；业务入口已修复安装；2 项跟进 | task:continuation-ui / Console、Futures、Runtime | 跟进 v6 失败任务“不足以直接续跑”的评估与跨任务证据溯源；补浏览器自动化的可重复入口；不把浏览器通过写成后端恢复/故障通过 |
 | DS-05 | 正式 ACL 已收缩；撤权后合成任务/双 Worker 接管通过；临时 Telemetry 导出 3,992 事件到 mock；真实 Langfuse/managed 实例、旧实现/Linux 未完成 | task:service-retirement / 各Owner及集成 | 接真实 Langfuse 或受控 OTLP 并验证 managed 实例；逐行删除旧实现；最终 CI 另做 |
 | DS-06 | 部分完成（笔记修订/过期/并发 200+409/撤回 + 128/512/2048 Compact/重放 + 32k/64k/最大限制下 20 轮强杀/接管通过 + 20 轮任务 RSS 采样；8k/16k step 13/19 失败；Compact 点无显式成功证据） | task:storage-lifecycle / Harness、Runtime、Worker、Storage | 定位 8k/16k 与 32k 的 Compact 差异；补真实 Compact 点强杀续跑、长期/生产 RSS 上界；不删权威资料，不以合成基准代替生产容量 |
-| DS-07 | 部分完成（8 并发 8/8、30.1 分钟 24/24 soak、8 秒锁恢复、30 秒锁失败、15 秒锁内取消、杀 owner 后取消；连接 13–18、deadlocks 0；慢查询计划/死锁注入/自动补偿/内存趋势未做） | task:faults-and-resources / 集成及相关Owner | 补 PG 慢查询计划/死锁注入、取消失败/补偿、内存增长趋势和整平台资源口径；合成 soak/锁故障不能写成生产容量验收 |
+| DS-07 | 部分完成（8 并发 8/8、30.1 分钟 24/24 soak、8 秒锁恢复、30 秒锁失败、15 秒锁内取消、杀 owner 后取消；30 秒锁内取消 504 未生效；连接 13–18、deadlocks 0；慢查询/死锁/取消补偿/内存趋势未做） | task:faults-and-resources / 集成及相关Owner | 修锁内 cancel 超时/异步化并复验；补 PG 慢查询计划/死锁注入、取消补偿、内存增长趋势和整平台资源口径；合成 soak/锁故障不能写成生产容量验收 |
 | DS-08 | 已完成（最终快照备份 + 隔离恢复 passed） | task:latest-recovery / 原Windows集成 | 备份 `ds08-final-20261017b`，46 表/序列、10 服务登录、3 密封凭据、2 Worker bundle、离线 Harness 重建全部通过；不替代服务器/HA 或外部服务恢复 |
 | DS-09 | 未执行最终CI | task:final-ci / 集成 | 全部本机验收后唯一一次集中CI及独立逐条完工审查 |
 
