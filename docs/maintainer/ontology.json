@@ -787,7 +787,7 @@
       "status": "partial_notes_and_long_history",
       "doc": "windows-ds06-storage-lifecycle-20261017.md",
       "section": "DS-06",
-      "scope": "Real Runtime note revise/expire/stale-head conflict/retire verified; two simultaneous revisers produced 200/409 without a second branch. Source-Harness benchmark passed 128/512/2048 steps with compaction and journal replay. A 64k-context 20-round task was killed at step 8 and completed at step 21 under fence 2. A tightened 8192-token context version was killed at step 10 and failed at step 19 with 'DSH turn did not complete'; root cause unknown, so Compact-point resume is not claimed. Service RSS bounds remain."
+      "scope": "Real Runtime note revise/expire/stale-head conflict/retire verified; two simultaneous revisers produced 200/409 without a second branch. Source-Harness benchmark passed 128/512/2048 steps with compaction and journal replay. A 64k-context 20-round task completed after step-8 kill/fence-2 takeover. Tight 8192/16384 contexts failed at step 19/13 with 'DSH turn did not complete' even without a kill. Re-running the same task at schema maxima (1M context/bytes, 100 steps, 500 attempts, 10M budget) completed step 21 both without a kill and after a step-10 fence-2 takeover, showing the tight limits caused the failure; this bypasses Compact. Compact-point resume and service RSS bounds remain."
     },
     {
       "id": "task:faults-and-resources",
