@@ -39,20 +39,21 @@
 ## 已实现候选（Harness）
 
 Harness 提交 `c5d4e4e2d5`：
-
 - `src/final-protocol.ts` 的 `FinalTurnSelection` 记录 Runtime 返回的有效 `selected:false` + 有界 `continue` 拒绝，绑定其 turn；`rejected(end)` 只在当前 turn 已结束时返回它。成功选择或新 turn 会清除拒绝。
 - `guarded-runner.mjs` 在没有成功选择但存在有效拒绝时，**只续接一次**：把 Runtime 的 `continue` 和固定说明交回同一 DSH loop；第二次仍无成功选择则明确失败，不增加 harness 重试计数。
 - `src/guarded-kernel.ts` 与 `scripts/build-guarded.mjs` 使用 `dsh-source-639ed015-guarded-v7`；v6 产物保留在历史提交和发布包中。
 - 本地 31 项 guarded 检查通过，新增：拒绝后模型以正文结束 → 一次续接 → 重新检查并成功；以及第二次文本结束即终止、不死循环。强杀/丢回包重放测试仍通过。
 - README 明确 v7 是候选，未接入 Runtime/Worker/Console，未部署。
 
+Runtime 提交 `ba45965`（本地，未推送）：`IsFinalEngine` 识别 v7 以便历史回放/只读，但 `NewSourceVersions` 仍只准入 v6，v7 不能被领取；`deploy/release-contract.json` 保持 v6。Runtime 单测与 vet 通过。这样旧 v6 默认和发布流程不被半接入改坏。
+
 ## 需要同步的 Owner 与入口（尚未修改）
 
 | 层 | 入口 | 需要的工作 |
 | --- | --- | --- |
 | Harness | `src/final-protocol.ts`、`guarded-runner.mjs`、`src/guarded-kernel.ts`、`scripts/build-guarded.mjs`、`tests/guarded/*` | 记录拒绝、单次续接、新引擎 ID、构建/测试/README |
-| Runtime | `internal/runstate/harness_archive.go`、`deploy/release-contract.json` | 增加 v7 常量与 `IsFinalEngine` 准入，保留 v6；候选引擎枚举 |
-| Worker | `worker/source_harness.go`、`guarded-harness-lock.json`、`scripts/Package-Worker.ps1`、`scripts/kernel-smoke.mjs`、`deploy/release-contract.json` | 同时保留 v6 与 v7 产物/锁，或明确的可回退方案；v7 显式启用 |
+| Runtime | `internal/runstate/harness_archive.go`、`deploy/release-contract.json` | v7 回放识别已完成（`ba45965`）；v7 领取准入、默认引擎和候选枚举仍未做，v6 保持默认 |
+| Worker | `worker/source_harness.go`、`guarded-harness-lock.json`、`scripts/Package-Worker.ps1`、`scripts/kernel-smoke.mjs`、`deploy/release-contract.json` | 需要 v7 artifact/lock 与 v6 历史策略；未修改，v7 不可领取 |
 | Console | `web/src/working-state.tsx`、`web/src/continuation-client.ts`、`deploy/release-contract.json`、`console/model_capabilities.go` | 识别 v7，保留 v6；发布能力/回滚门禁 |
 | 集成 | `scripts/lib/platform-source-execution.ps1`、`platform-model-management.ps1`、`scripts/Test-GuardedRelease.ps1` | 默认引擎、候选枚举、发布/回滚检查 |
 | 业务方法 | `packs/futures/research-finalization.md`、`reportInstructions` | 拒绝后必须修订并重新送检，不得以正文结束或自行声称预算耗尽 |
