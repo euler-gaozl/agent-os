@@ -2,7 +2,7 @@
 
 **2026-10-17 最新交接：** 用户要求交给 DeepSeek，交接后暂停原 Codex Goal。先读 [DeepSeek详细接续](deepseek-handoff-20261017.md) 和 [开工提示词](deepseek-start-prompt.txt)。进度、仓库清单、本体已按本次现场核对更新；执行机器尚未指定，先识别环境。下方早期“当前Mac/继续Windows”均按时间作为历史，不构成本次环境选择。
 
-**2026-10-17 DSH 上游更新：** 源码基线已更新到 `dsh-v0.2.1-rc.2`（687f282e），六种引擎构建/测试通过；**尚未安装**，等待双版本 Worker/replay 验收，见 [DSH 更新记录](dsh-upstream-0.2.1-rc.2-20261017.md)。 双版本注册脚手架已提交（Runtime `69b9e62`、Worker `ac2a166`），尚未启用。
+**2026-10-17 DSH 上游更新：** 源码基线已更新到 `dsh-v0.2.1-rc.2`（687f282e），六种引擎构建/测试通过；**尚未安装**，等待双版本 Worker/replay 验收，见 [DSH 更新记录](dsh-upstream-0.2.1-rc.2-20261017.md)。 双版本注册脚手架已提交（Runtime `69b9e62`、Worker `d2c30b6`，含六个 V2 lock 与 `DSH_*_V2_RUNNER` wiring），发布打包尚未接入，仍未启用。
 
 **2026-10-17 交付状态审计：** [差距清单](windows-delivery-status-20261017.md) 汇总已完成项与真实 Langfuse、旧实现删除、真实 Compact 夹具等外部阻塞；整体未完成。
 
