@@ -55,6 +55,16 @@ try{
             $sourceV2Execution=$null;$residentV2Execution=$null;$budgetV2Execution=$null;$nativeV2Execution=$null;$finalV2Execution=$null;$guardedV2Execution=$null
             if($role -eq 'runtime' -and $owner -and $owner.release['source_submission_protocol']){
                 $sourceExecution=@{format=1;engine=$owner.release.source_engine_candidate;execution_protocol=$owner.release.execution_protocol;state_protocol=$owner.release.source_management_protocol;submission_protocol=$owner.release.source_submission_protocol;preview_protocol=$owner.release.source_management_preview_protocol}
+                $sourceV2Execution=$sourceExecution.Clone();$sourceV2Execution.engine=Get-SourceEngineNameV2
+                $residentV2Execution=$sourceV2Execution.Clone();$residentV2Execution.engine=Get-ResidentEngineNameV2
+                $budgetV2Execution=$sourceV2Execution.Clone();$budgetV2Execution.engine=Get-BudgetEngineNameV2
+                $budgetV2Execution.model_receipt_protocol='budget-model-receipt-v1'
+                $nativeV2Execution=$sourceV2Execution.Clone();$nativeV2Execution.engine=Get-NativeEngineNameV2
+                $nativeV2Execution.model_receipt_protocol='native-model-receipt-v2'
+                $finalV2Execution=$sourceV2Execution.Clone();$finalV2Execution.engine=Get-FinalEngineNameV2
+                $finalV2Execution.model_receipt_protocol='native-model-receipt-v2';$finalV2Execution.final_output_protocol='receipt-field-v1';$finalV2Execution.continuation_protocol='final-model-continuation-v1'
+                $guardedV2Execution=$finalV2Execution.Clone();$guardedV2Execution.engine=Get-GuardedEngineNameV2
+                $guardedV2Execution.tool_input_protocol=1
                 if($owner.release['source_engine_candidates']){
                     $candidates=@($owner.release.source_engine_candidates)
                     if($candidates.Count -ne @($candidates|Sort-Object -Unique).Count -or @($candidates|Where-Object{$_ -cnotin @((Get-SourceEngineProfiles).engine)}).Count){throw 'Runtime declares unsupported or duplicate source engines.'}
