@@ -1,0 +1,49 @@
+param([Parameter(Mandatory)][string]$Artifact)
+$ErrorActionPreference='Stop'
+$root=Split-Path -Parent $PSScriptRoot
+foreach($name in @('platform-paths','platform-releases','platform-processes','platform-release-operations')){. (Join-Path $PSScriptRoot ('lib/'+$name+'.ps1'))}
+$layout=Get-PlatformLayout $root
+$catalog=Read-ReleaseCatalog $layout
+$runtime=Read-ReleaseDescriptor $layout $catalog.services.runtime.current -Verify
+$worker=Read-ReleaseDescriptor $layout $catalog.services.worker.current -Verify
+function Clone($x){return ($x|ConvertTo-Json -Depth 30|ConvertFrom-Json -AsHashtable)}
+$count=0
+function Check([bool]$v,[string]$name){if(-not $v){throw $name};$script:count++}
+function Reject([scriptblock]$f,[string]$name){$rejected=$false;try{& $f|Out-Null}catch{$rejected=$true};Check $rejected $name}
+$runtime=Clone $runtime;$worker=Clone $worker
+$facts=@{working_state_ready=$true};foreach($p in Get-SourceEngineProfiles){$facts[$p.runs]=0;$facts[$p.resumable]=0}
+$proof=Join-Path (Split-Path -Parent $layout.state_root) ('evidence/guarded-release-'+[guid]::NewGuid().ToString('N'))
+$pin=Join-Path (Split-Path -Parent $root) 'agent-os-worker/worker/guarded-harness-lock.json'
+$metadata=Copy-PinnedSourceHarness $Artifact (Join-Path $proof 'guarded-harness') $pin (Get-GuardedEngineName)
+$nextRuntime=Clone $runtime;$nextWorker=Clone $worker
+$nextRuntime.guarded_execution=Clone $nextRuntime.final_execution
+$nextRuntime.guarded_execution.engine=Get-GuardedEngineName;$nextRuntime.guarded_execution.tool_input_protocol=1
+$nextWorker.guarded_execution=$metadata;$nextWorker.assets.guarded_harness='guarded-harness'
+Assert-SourceExecutionPolicy $nextRuntime $worker (Get-FinalEngineName) $facts;Check $true 'Runtime first with final default'
+Reject {Assert-SourceExecutionPolicy $runtime $nextWorker (Get-FinalEngineName) $facts} 'Worker requires Runtime capability'
+Reject {Assert-SourceExecutionPolicy $nextRuntime $worker (Get-GuardedEngineName) $facts} 'Default requires capable Worker'
+Assert-SourceExecutionPolicy $nextRuntime $nextWorker (Get-GuardedEngineName) $facts;Check $true 'Matching pair'
+Check ((Get-SubmissionEngine @{DEFAULT_RUN_ENGINE=(Get-GuardedEngineName)}) -ceq (Get-GuardedEngineName)) 'Default recognized'
+foreach($role in @('runtime','worker')){
+ $candidate=if($role -eq 'runtime'){$nextRuntime}else{$nextWorker}
+ foreach($field in @('tool_input_protocol','model_receipt_protocol','final_output_protocol')){
+  $bad=Clone $candidate;$null=$bad.guarded_execution.Remove($field)
+  Reject {Assert-SourceExecutionDescriptor $bad} ($role+' requires '+$field)
+ }
+ $bad=Clone $candidate;$null=$bad.Remove('final_execution')
+ Reject {Assert-SourceExecutionDescriptor $bad} ($role+' retains v5')
+}
+$facts.guarded_runs=2;$facts.resumable_guarded_runs=1
+Reject {Assert-SourceExecutionPolicy $nextRuntime $worker (Get-FinalEngineName) $facts} 'Active v6 prevents Worker rollback'
+$facts.resumable_guarded_runs=0
+Assert-SourceExecutionPolicy $nextRuntime $worker (Get-FinalEngineName) $facts;Check $true 'Terminal v6 permits Worker rollback'
+Reject {Assert-SourceExecutionPolicy $runtime $worker (Get-FinalEngineName) $facts} 'History prevents Runtime rollback'
+foreach($key in @('guarded_runs','resumable_guarded_runs')){
+ $bad=Clone $facts;$null=$bad.Remove($key)
+ Reject {Assert-SourceExecutionPolicy $nextRuntime $nextWorker (Get-FinalEngineName) $bad} ('Missing '+$key)
+ foreach($value in @(-1,'0',0.5)){$bad=Clone $facts;$bad[$key]=$value;Reject {Assert-SourceExecutionPolicy $nextRuntime $nextWorker (Get-FinalEngineName) $bad} ('Invalid '+$key)}
+}
+Reject {Copy-PinnedSourceHarness $Artifact (Join-Path $proof 'wrong-pin') (Join-Path (Split-Path -Parent $pin) 'final-harness-lock.json') (Get-FinalEngineName)} 'v6 cannot satisfy v5 pin'
+$report=@{passed=$true;checks=$count;scope='Real pinned artifact and installed release provenance; compatibility/default/rollback policy only, no service mutation';provider_calls=0}
+Write-PlatformJson (Join-Path $proof 'result.json') $report
+$report.proof=$proof;$report|ConvertTo-Json

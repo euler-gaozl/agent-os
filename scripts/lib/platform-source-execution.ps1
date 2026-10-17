@@ -3,6 +3,7 @@ function Get-SourceEngineName { return 'dsh-source-639ed015-state-v1' }
 function Get-ResidentEngineName { return 'dsh-source-639ed015-resident-v2' }
 function Get-BudgetEngineName { return 'dsh-source-639ed015-budget-v3' }
 function Get-NativeEngineName { return 'dsh-source-639ed015-native-v4' }
+function Get-GuardedEngineName { return 'dsh-source-639ed015-guarded-v6' }
 function Get-FinalEngineName { return 'dsh-source-639ed015-final-v5' }
 function Get-SourceEngineProfiles {
     return @(
@@ -10,7 +11,8 @@ function Get-SourceEngineProfiles {
         @{engine=(Get-ResidentEngineName);metadata='resident_execution';asset='resident_harness';environment='DSH_RESIDENT_RUNNER';runs='resident_runs';resumable='resumable_resident_runs'},
         @{engine=(Get-BudgetEngineName);metadata='budget_execution';asset='budget_harness';environment='DSH_BUDGET_RUNNER';runs='budget_runs';resumable='resumable_budget_runs'},
         @{engine=(Get-NativeEngineName);metadata='native_execution';asset='native_harness';environment='DSH_NATIVE_RUNNER';runs='native_runs';resumable='resumable_native_runs'},
-        @{engine=(Get-FinalEngineName);metadata='final_execution';asset='final_harness';environment='DSH_FINAL_RUNNER';runs='final_runs';resumable='resumable_final_runs'}
+        @{engine=(Get-FinalEngineName);metadata='final_execution';asset='final_harness';environment='DSH_FINAL_RUNNER';runs='final_runs';resumable='resumable_final_runs'},
+        @{engine=(Get-GuardedEngineName);metadata='guarded_execution';asset='guarded_harness';environment='DSH_GUARDED_RUNNER';runs='guarded_runs';resumable='resumable_guarded_runs'}
     )
 }
 function Assert-SourceExecutionDescriptor([System.Collections.IDictionary]$Descriptor){
@@ -19,9 +21,10 @@ function Assert-SourceExecutionDescriptor([System.Collections.IDictionary]$Descr
     if(-not $source){if($asset){throw 'Source Harness asset has no execution provenance.'};continue}
     if($source.format -ne 1 -or $source.engine -cne $profile.engine -or $source.execution_protocol -cne 'runtime-execution-v1'){throw 'Unsupported source execution metadata.'}
     if($profile.engine -ceq (Get-BudgetEngineName) -and $source['model_receipt_protocol'] -cne 'budget-model-receipt-v1'){throw 'Budget engine requires durable model receipt protocol 1.'}
-    if($profile.engine -cin @((Get-NativeEngineName),(Get-FinalEngineName)) -and $source['model_receipt_protocol'] -cne 'native-model-receipt-v2'){throw 'Native engine requires durable model receipt protocol 2.'}
-    if($profile.engine -ceq (Get-FinalEngineName) -and $source['final_output_protocol'] -cne 'receipt-field-v1'){throw 'Final engine requires receipt-field-v1.'}
-    if($profile.engine -ceq (Get-FinalEngineName) -and $Descriptor.role -ceq 'runtime' -and $source['continuation_protocol'] -cne 'final-model-continuation-v1'){throw 'Final Runtime requires explicit final model continuation.'}
+    if($profile.engine -cin @((Get-NativeEngineName),(Get-FinalEngineName),(Get-GuardedEngineName)) -and $source['model_receipt_protocol'] -cne 'native-model-receipt-v2'){throw 'Native engine requires durable model receipt protocol 2.'}
+    if($profile.engine -cin @((Get-FinalEngineName),(Get-GuardedEngineName)) -and $source['final_output_protocol'] -cne 'receipt-field-v1'){throw 'Final engine requires receipt-field-v1.'}
+    if($profile.engine -cin @((Get-FinalEngineName),(Get-GuardedEngineName)) -and $Descriptor.role -ceq 'runtime' -and $source['continuation_protocol'] -cne 'final-model-continuation-v1'){throw 'Final Runtime requires explicit final model continuation.'}
+    if($profile.engine -ceq (Get-GuardedEngineName) -and $source['tool_input_protocol'] -ne 1){throw 'Guarded engine requires input validation protocol 1.'}
     switch($Descriptor.role){
         runtime {
             if($asset -or $source.state_protocol -cne 'source-state-recovery-v1' -or $source.submission_protocol -cne 'source-root-default-v1' -or $source.preview_protocol -cne 'source-recovery-preview-v1' -or $Descriptor.contract.http -cne 'agentos-http-v0.7-source-state-v1' -or $Descriptor.contract.data -cne 'execution-v0.7-working-state'){throw 'Runtime source protocols are incomplete.'}
@@ -35,6 +38,7 @@ function Assert-SourceExecutionDescriptor([System.Collections.IDictionary]$Descr
     if($Descriptor.role -ceq 'runtime' -and $Descriptor['resident_execution'] -and -not $Descriptor['source_execution']){throw 'Resident Runtime must retain the v1 source protocols.'}
     if($Descriptor.role -ceq 'runtime' -and $Descriptor['budget_execution'] -and (-not $Descriptor['source_execution'] -or -not $Descriptor['resident_execution'])){throw 'Budget Runtime must retain v1/v2 source protocols.'}
     if($Descriptor.role -ceq 'runtime' -and $Descriptor['native_execution'] -and (-not $Descriptor['source_execution'] -or -not $Descriptor['resident_execution'] -or -not $Descriptor['budget_execution'])){throw 'Native Runtime must retain v1/v2/v3 protocols.'}
+    if($Descriptor['guarded_execution'] -and -not $Descriptor['final_execution']){throw 'Guarded release must retain final-v5 support.'}
     if($Descriptor.role -ceq 'runtime' -and $Descriptor['final_execution'] -and (-not $Descriptor['source_execution'] -or -not $Descriptor['resident_execution'] -or -not $Descriptor['budget_execution'] -or -not $Descriptor['native_execution'])){throw 'Final Runtime must retain v1/v2/v3/v4 protocols.'}
 }
 function Test-SourceRuntimeTransition([System.Collections.IDictionary]$Previous,[System.Collections.IDictionary]$Next){
@@ -52,7 +56,7 @@ function Assert-SourceExecutionPolicy([System.Collections.IDictionary]$Runtime,[
     if($DefaultEngine -cnotin @('dsh-0.2.0-rc.2-evidence-v1')+@((Get-SourceEngineProfiles).engine)){throw 'Unknown configured submission engine.'}
     if(-not $Facts.Contains('working_state_ready') -or $Facts.working_state_ready -isnot [bool]){throw 'Execution compatibility facts are incomplete.'}
     if($Runtime.contract.data -ceq 'execution-v0.7-working-state' -and -not $Runtime['source_execution']){throw 'New Runtime data contract lacks source protocol provenance.'}
-    if($DefaultEngine -cin @((Get-NativeEngineName),(Get-FinalEngineName)) -and -not $Worker['budget_execution']){throw 'Native default requires budget-v3 Worker support for frozen legacy Agent revisions.'}
+    if($DefaultEngine -cin @((Get-NativeEngineName),(Get-FinalEngineName),(Get-GuardedEngineName)) -and -not $Worker['budget_execution']){throw 'Native default requires budget-v3 Worker support for frozen legacy Agent revisions.'}
     if($DefaultEngine -ceq (Get-FinalEngineName) -and -not $Worker['native_execution']){throw 'Final default requires native-v4 Workers for Agent trees without final policy.'}
     foreach($profile in (Get-SourceEngineProfiles)){
         foreach($key in @($profile.runs,$profile.resumable)){
@@ -91,6 +95,8 @@ SELECT jsonb_build_object(
  'resumable_native_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-native-v4' AND status NOT IN('completed','cancelled')),
  'final_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-final-v5'),
  'resumable_final_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-final-v5' AND status NOT IN('completed','cancelled')),
+ 'guarded_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-guarded-v6'),
+ 'resumable_guarded_runs',count(*) FILTER (WHERE engine='dsh-source-639ed015-guarded-v6' AND status NOT IN('completed','cancelled')),
  'working_state_ready',(SELECT CASE WHEN t.oid IS NULL THEN false ELSE
  has_table_privilege(current_user,t.oid,'SELECT') AND has_table_privilege(current_user,t.oid,'INSERT')
  AND NOT EXISTS(SELECT 1 FROM required_columns c WHERE NOT EXISTS(
@@ -232,7 +238,8 @@ function Copy-PinnedSourceHarness([string]$Artifact,[string]$Destination,[string
     Copy-Item -LiteralPath $PinFile -Destination (Join-Path $Destination 'source-lock.json')
     $metadata=@{format=1;engine=$pin.engine;execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';manifest_sha256=$pin.manifest_sha256;harness_commit=$pin.commit}
     if($Engine -ceq (Get-BudgetEngineName)){$metadata.model_receipt_protocol='budget-model-receipt-v1'}
-    if($Engine -cin @((Get-NativeEngineName),(Get-FinalEngineName))){$metadata.model_receipt_protocol='native-model-receipt-v2'}
-    if($Engine -ceq (Get-FinalEngineName)){$metadata.final_output_protocol='receipt-field-v1'}
+    if($Engine -cin @((Get-NativeEngineName),(Get-FinalEngineName),(Get-GuardedEngineName))){$metadata.model_receipt_protocol='native-model-receipt-v2'}
+    if($Engine -cin @((Get-FinalEngineName),(Get-GuardedEngineName))){$metadata.final_output_protocol='receipt-field-v1'}
+    if($Engine -ceq (Get-GuardedEngineName)){if($manifest.tool_input_protocol -ne 1){throw 'Guarded artifact lacks input validation protocol.'};$metadata.tool_input_protocol=1}
     return $metadata
 }

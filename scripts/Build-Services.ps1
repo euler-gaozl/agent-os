@@ -1,6 +1,6 @@
 param(
     [string[]]$Service=@('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','sources'),
-    [string]$LayoutPath='', [string]$Pnpm='pnpm', [string]$NodeBinary='', [string]$SourceArtifact='', [string]$ResidentArtifact='', [string]$BudgetArtifact='', [string]$NativeArtifact='', [string]$FinalArtifact='', [switch]$AllowDirty
+    [string]$LayoutPath='', [string]$Pnpm='pnpm', [string]$NodeBinary='', [string]$SourceArtifact='', [string]$ResidentArtifact='', [string]$BudgetArtifact='', [string]$NativeArtifact='', [string]$FinalArtifact='', [string]$GuardedArtifact='', [switch]$AllowDirty
 )
 $ErrorActionPreference='Stop'
 $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -20,6 +20,7 @@ try{
     if($BudgetArtifact -and 'worker' -notin $Service){throw 'BudgetArtifact requires a selected Worker build.'}
     if($NativeArtifact -and 'worker' -notin $Service){throw 'NativeArtifact requires a selected Worker build.'}
     if($FinalArtifact -and 'worker' -notin $Service){throw 'FinalArtifact requires a selected Worker build.'}
+    if($GuardedArtifact -and 'worker' -notin $Service){throw 'GuardedArtifact requires a selected Worker build.'}
     foreach($role in $Service){if($role -notin $allowed){throw ('Unknown service: '+$role)}}
     if(Test-Path -LiteralPath (Join-Path $layout.release_root 'current.json')){Assert-NoPendingRelease (Read-ReleaseCatalog $layout)}
     $revision=(& git -C $repoRoot rev-parse HEAD).Trim();if($LASTEXITCODE){throw 'Cannot identify build source.'}
@@ -43,7 +44,7 @@ try{
             $contract=Get-ServiceReleaseContract $repoRoot $role
             $owner=Get-SelectedServiceSource $repoRoot $role $contract
             if($owner){$contract=$owner.contract}
-            $sourceExecution=$null;$residentExecution=$null;$budgetExecution=$null;$nativeExecution=$null;$finalExecution=$null
+            $sourceExecution=$null;$residentExecution=$null;$budgetExecution=$null;$nativeExecution=$null;$finalExecution=$null;$guardedExecution=$null
             if($role -eq 'runtime' -and $owner -and $owner.release['source_submission_protocol']){
                 $sourceExecution=@{format=1;engine=$owner.release.source_engine_candidate;execution_protocol=$owner.release.execution_protocol;state_protocol=$owner.release.source_management_protocol;submission_protocol=$owner.release.source_submission_protocol;preview_protocol=$owner.release.source_management_preview_protocol}
                 if($owner.release['source_engine_candidates']){
@@ -68,6 +69,10 @@ try{
                         $finalExecution=$sourceExecution.Clone();$finalExecution.engine=Get-FinalEngineName
                         $finalExecution.model_receipt_protocol='native-model-receipt-v2';$finalExecution.final_output_protocol='receipt-field-v1'
                         $finalExecution.continuation_protocol='final-model-continuation-v1'
+                    }
+                    if((Get-GuardedEngineName) -cin $candidates){
+                        if(-not $finalExecution -or $owner.release['tool_input_protocol'] -ne 1){throw 'Guarded Runtime protocols are incomplete.'}
+                        $guardedExecution=$finalExecution.Clone();$guardedExecution.engine=Get-GuardedEngineName;$guardedExecution.tool_input_protocol=1
                     }
                 }
             }
@@ -155,6 +160,12 @@ try{
                     $finalExecution=Copy-PinnedSourceHarness $FinalArtifact $finalPath (Join-Path $owner.root 'worker/final-harness-lock.json') (Get-FinalEngineName)
                     $assets.final_harness=Get-ReleaseRelative $layout.release_root $finalPath
                 }
+                if($GuardedArtifact){
+                    if(-not $owner -or $owner.release['guarded_engine_candidate'] -cne (Get-GuardedEngineName) -or $owner.release['tool_input_protocol'] -ne 1){throw 'Guarded Harness requires a compatible independent Worker.'}
+                    $guardedPath=Join-Path $directory 'guarded-harness'
+                    $guardedExecution=Copy-PinnedSourceHarness $GuardedArtifact $guardedPath (Join-Path $owner.root 'worker/guarded-harness-lock.json') (Get-GuardedEngineName)
+                    $assets.guarded_harness=Get-ReleaseRelative $layout.release_root $guardedPath
+                }
             }
             if($role -in @('control','futures')){
                 $webSource=Join-Path $owner.root 'web'
@@ -179,7 +190,7 @@ try{
             $modelManagement=$null;if($owner){$modelManagement=Get-DeclaredModelManagement $owner.release}
             if($null -ne $modelManagement){Assert-ModelManagementBinary $binary @{role=$role;model_management=$modelManagement}}
             $continuationManagement=if($owner){$owner.release['continuation_management']}else{$null}
-            $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance $sourceExecution $residentExecution $receiptManagement $executionAccess $knowledgeArchives -BudgetExecution $budgetExecution -NativeExecution $nativeExecution -FinalExecution $finalExecution -ModelManagement $modelManagement -ContinuationManagement $continuationManagement
+            $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance $sourceExecution $residentExecution $receiptManagement $executionAccess $knowledgeArchives -BudgetExecution $budgetExecution -NativeExecution $nativeExecution -FinalExecution $finalExecution -GuardedExecution $guardedExecution -ModelManagement $modelManagement -ContinuationManagement $continuationManagement
         }
     }finally{Pop-Location}
     $staged=Join-Path $layout.release_root ('staged/'+$buildId+'.json')

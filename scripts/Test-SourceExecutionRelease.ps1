@@ -14,7 +14,7 @@ $newContract=Clone $oldContract;$newContract.http='agentos-http-v0.7-source-stat
 $runtimeOld=@{role='runtime';assets=@{binary='runtime.exe'};contract=$oldContract}
 $runtimeNew=@{role='runtime';assets=@{binary='runtime.exe'};contract=$newContract;source_execution=@{format=1;engine=(Get-SourceEngineName);execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';submission_protocol='source-root-default-v1';preview_protocol='source-recovery-preview-v1'}}
 $workerOld=@{role='worker';assets=@{binary='worker.exe';node='node.exe';harness='harness'};contract=$oldContract}
-$facts=@{source_runs=0;resumable_source_runs=0;resident_runs=0;resumable_resident_runs=0;budget_runs=0;resumable_budget_runs=0;native_runs=0;resumable_native_runs=0;final_runs=0;resumable_final_runs=0;working_state_ready=$false}
+$facts=@{source_runs=0;resumable_source_runs=0;resident_runs=0;resumable_resident_runs=0;budget_runs=0;resumable_budget_runs=0;native_runs=0;resumable_native_runs=0;final_runs=0;resumable_final_runs=0;guarded_runs=0;resumable_guarded_runs=0;working_state_ready=$false}
 $result=@{passed=$false;paid_model_calls=0;scope='Release compatibility policy, real pinned source artifact copy/export/restore, plus real PostgreSQL metadata probe on synthetic tables; no service activation';checks=@()}
 $fixture='D:\workspace\agent-platform\local\evidence\p2-first-services-85be4f84e89f47ad935b6ed8882093c0\postgres'
 $pg='D:\workspace\.tools\postgresql\pgsql\bin';$started=$false;$dbCreated=$false;$roleCreated=$false
@@ -200,7 +200,7 @@ try{
     $layout=@{release_root=(Join-Path $proof 'releases')}
     $launchRuntime=@{DATABASE_URL='postgres://runtime:fixture-only@127.0.0.1:55591/release?sslmode=disable&search_path=public';LISTEN='127.0.0.1:18094';SERVICE_PEERS=('{"worker":"'+[Convert]::ToHexStringLower([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes('fixture-only')))+'"}')}
     $launch=@{DATABASE_URL='postgres://worker:fixture-only@127.0.0.1:55591/release?sslmode=disable&search_path=public';RUNTIME_URL='http://127.0.0.1:18094';SERVICE_TOKEN='fixture-only';AGENTOS_NODE=(Resolve-ReleasePath $layout.release_root $workerFive.assets.node)}
-    foreach($p in (Get-SourceEngineProfiles)){$launch[$p.environment]=Join-Path (Resolve-ReleasePath $layout.release_root $workerFive.assets[$p.asset]) 'source-runner.mjs'}
+    foreach($p in (Get-SourceEngineProfiles | Where-Object {$workerFive.assets.Contains($_.asset)})){$launch[$p.environment]=Join-Path (Resolve-ReleasePath $layout.release_root $workerFive.assets[$p.asset]) 'source-runner.mjs'}
     Assert-SourceWorkerLaunch $layout $workerFive $launch $launchRuntime;$checks.Add('actual_launch_binding_accepts_five_pinned_runners')
     foreach($key in @('DSH_FINAL_RUNNER','DSH_NATIVE_RUNNER','DSH_BUDGET_RUNNER','AGENTOS_NODE','RUNTIME_URL','DATABASE_URL','SERVICE_TOKEN')){
         $bad=Clone $launch;$bad[$key]='wrong-fixture-target'

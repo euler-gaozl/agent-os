@@ -43,7 +43,7 @@ function Assert-ModelManagementPolicy([System.Collections.IDictionary]$Registry,
     if($finalRegistry -and $HasRuntime -and -not $Runtime['final_execution']){throw 'Final Registry requires capable Runtime before enabling final Agent writes.'}
     if($Facts.final_agents -and (-not $finalRegistry -or ($HasControl -and -not $finalControl) -or ($HasRuntime -and -not $Runtime['final_execution']))){throw 'Retained final Agent revisions require final-aware readers; downgrade refused.'}
     if($finalControl -and (-not $finalRegistry -or -not $HasRuntime -or -not $Runtime['final_execution'])){throw 'Final Console requires capable Registry and Runtime. Upgrade those services before Console.'}
-    if($HasControl -and ($FinalRuns -or $DefaultEngine -ceq (Get-FinalEngineName)) -and -not $finalControl){throw 'Final tasks or default require final Console transport; downgrade refused.'}
+    if($HasControl -and ($FinalRuns -or $DefaultEngine -cin @((Get-FinalEngineName),(Get-GuardedEngineName))) -and -not $finalControl){throw 'Final tasks or default require final Console transport; downgrade refused.'}
 }
 function Assert-LegacyConsoleWriterStopped([bool]$SelectingControl,[System.Collections.IDictionary]$Registry,[System.Collections.IDictionary]$Control,[bool]$RegistryRunning){
     # A save initiated by the old Console process can finish in Registry after
@@ -149,10 +149,10 @@ function Assert-ModelManagementDeployment([hashtable]$Layout,[System.Collections
         if($RegistryStopped -and $live.Count){throw 'Registry is still running after stop.'}
         Assert-LegacyConsoleWriterStopped ($Overrides.Contains('control')) $pair.registry $pair.control ($live.Count -gt 0)
         $facts=if($hasRegistry){Get-ModelManagementFacts $Layout $registry -Stopped:($RegistryStopped -or $live.Count -eq 0)}else{@{format=1;leaf_identity=$true;native_agents=$false;final_agents=$false;invalid_agents=$false}}
-        $runs=if($hasRuntime){Get-SourceExecutionFacts $Layout $runtime}else{@{native_runs=0;final_runs=0}}
-        foreach($key in @('native_runs','final_runs')){if(-not $runs.Contains($key) -or ($runs[$key] -isnot [int] -and $runs[$key] -isnot [long]) -or $runs[$key] -lt 0){throw 'Invalid native/final run compatibility count.'}}
+        $runs=if($hasRuntime){Get-SourceExecutionFacts $Layout $runtime}else{@{native_runs=0;final_runs=0;guarded_runs=0}}
+        foreach($key in @('native_runs','final_runs','guarded_runs')){if(-not $runs.Contains($key) -or ($runs[$key] -isnot [int] -and $runs[$key] -isnot [long]) -or $runs[$key] -lt 0){throw 'Invalid native/final run compatibility count.'}}
         $effectiveDefault=if($DefaultEngine){$DefaultEngine}elseif($runtime){[string]$runtime['DEFAULT_RUN_ENGINE']}else{''}
-        Assert-ModelManagementPolicy $pair.registry $pair.control $pair.runtime $facts ($runs.native_runs -gt 0) $effectiveDefault $hasControl $hasRuntime ($runs.final_runs -gt 0)
+        Assert-ModelManagementPolicy $pair.registry $pair.control $pair.runtime $facts ($runs.native_runs -gt 0) $effectiveDefault $hasControl $hasRuntime (($runs.final_runs + $runs.guarded_runs) -gt 0)
         if($pair.control.Contains('model_management')){Assert-ModelManagementTarget $registry $control;Assert-ReceiptManagementTarget $runtime $control}
         foreach($role in @('registry','control')){if($pair[$role].Contains('model_management')){Assert-ModelManagementBinary (Resolve-ReleasePath $Layout.release_root $pair[$role].assets.binary) $pair[$role]}}
     }finally{$registry=$null;$control=$null;$runtime=$null}

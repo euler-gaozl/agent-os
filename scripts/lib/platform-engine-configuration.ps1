@@ -4,7 +4,7 @@
 function Get-SubmissionEngine([System.Collections.IDictionary]$Config){
     $engine=[string]$Config['DEFAULT_RUN_ENGINE']
     if(-not $engine){return 'dsh-0.2.0-rc.2-evidence-v1'}
-    if($engine -cnotin @('dsh-0.2.0-rc.2-evidence-v1',(Get-SourceEngineName),(Get-ResidentEngineName),(Get-BudgetEngineName),(Get-NativeEngineName),(Get-FinalEngineName))){throw 'Unknown submission engine in configuration.'}
+    if($engine -cnotin @('dsh-0.2.0-rc.2-evidence-v1',(Get-SourceEngineName),(Get-ResidentEngineName),(Get-BudgetEngineName),(Get-NativeEngineName),(Get-FinalEngineName),(Get-GuardedEngineName))){throw 'Unknown submission engine in configuration.'}
     return $engine
 }
 function Get-EngineChangeDirectory([hashtable]$Layout,[string]$ID){
@@ -121,7 +121,7 @@ function Restore-PendingEngineConfiguration([hashtable]$Layout,[string]$Scripts,
 }
 function Set-DefaultEngine([hashtable]$Layout,[string]$Engine,[string]$Scripts,[IO.FileStream]$Lock,[int]$TimeoutSeconds=30,[scriptblock]$Checkpoint={param($point)}){
     Assert-NoPendingOwnerMigration $Layout
-    $nextEngine=switch -CaseSensitive ($Engine){source {Get-SourceEngineName};resident {Get-ResidentEngineName};budget {Get-BudgetEngineName};native {Get-NativeEngineName};final {Get-FinalEngineName};historical {'dsh-0.2.0-rc.2-evidence-v1'};default {throw 'Choose source, resident, budget, native, final or historical.'}}
+    $nextEngine=switch -CaseSensitive ($Engine){source {Get-SourceEngineName};resident {Get-ResidentEngineName};budget {Get-BudgetEngineName};native {Get-NativeEngineName};final {Get-FinalEngineName};guarded {Get-GuardedEngineName};historical {'dsh-0.2.0-rc.2-evidence-v1'};default {throw 'Choose source, resident, budget, native, final, guarded or historical.'}}
     $catalog=Read-ReleaseCatalog $Layout
     if($catalog.format -ne 2){throw 'Default changes require a versioned deployment.'}
     Assert-NoPendingRelease $catalog

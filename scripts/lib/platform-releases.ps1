@@ -61,7 +61,7 @@ function Get-ReleaseInventory([string]$Root,[System.Collections.IDictionary]$Ass
     }
     return @{files=@($files.Keys|Sort-Object|ForEach-Object{$files[$_]});links=@($links.Keys|Sort-Object|ForEach-Object{$links[$_]})}
 }
-function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Assets,[System.Collections.IDictionary]$Contract,[System.Collections.IDictionary]$Provenance,[System.Collections.IDictionary]$SourceExecution=$null,[System.Collections.IDictionary]$ResidentExecution=$null,[System.Collections.IDictionary]$ReceiptManagement=$null,[System.Collections.IDictionary]$ExecutionAccess=$null,[System.Collections.IDictionary]$KnowledgeArchives=$null,[System.Collections.IDictionary]$BudgetExecution=$null,[System.Collections.IDictionary]$NativeExecution=$null,[System.Collections.IDictionary]$ModelManagement=$null,[System.Collections.IDictionary]$ContinuationManagement=$null,[System.Collections.IDictionary]$FinalExecution=$null){
+function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Assets,[System.Collections.IDictionary]$Contract,[System.Collections.IDictionary]$Provenance,[System.Collections.IDictionary]$SourceExecution=$null,[System.Collections.IDictionary]$ResidentExecution=$null,[System.Collections.IDictionary]$ReceiptManagement=$null,[System.Collections.IDictionary]$ExecutionAccess=$null,[System.Collections.IDictionary]$KnowledgeArchives=$null,[System.Collections.IDictionary]$BudgetExecution=$null,[System.Collections.IDictionary]$NativeExecution=$null,[System.Collections.IDictionary]$ModelManagement=$null,[System.Collections.IDictionary]$ContinuationManagement=$null,[System.Collections.IDictionary]$FinalExecution=$null,[System.Collections.IDictionary]$GuardedExecution=$null){
     Assert-ReleaseAssets $Role $Assets
     $identifier=$Role+'-'+[guid]::NewGuid().ToString('N')
     $inventory=Get-ReleaseInventory $Layout.release_root $Assets
@@ -71,6 +71,7 @@ function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collecti
     if($BudgetExecution){$descriptor.budget_execution=$BudgetExecution}
     if($NativeExecution){$descriptor.native_execution=$NativeExecution}
     if($FinalExecution){$descriptor.final_execution=$FinalExecution}
+    if($GuardedExecution){$descriptor.guarded_execution=$GuardedExecution}
     if($null -ne $ReceiptManagement){$descriptor.receipt_management=$ReceiptManagement}
     if($null -ne $ExecutionAccess){$descriptor.execution_access=$ExecutionAccess}
     if($null -ne $KnowledgeArchives){$descriptor.source_archives=$KnowledgeArchives}
@@ -197,6 +198,7 @@ function Assert-ReleaseAssets([string]$Role,[System.Collections.IDictionary]$Ass
     if($Role -eq 'worker' -and $Assets.Contains('budget_harness')){$expected+='budget_harness'}
     if($Role -eq 'worker' -and $Assets.Contains('native_harness')){$expected+='native_harness'}
     if($Role -eq 'worker' -and $Assets.Contains('final_harness')){$expected+='final_harness'}
+    if($Role -eq 'worker' -and $Assets.Contains('guarded_harness')){$expected+='guarded_harness'}
     if(@(Compare-Object @($Assets.Keys|Sort-Object) @($expected|Sort-Object)).Count){throw 'Release does not contain the complete role-specific asset set.'}
 }
 function Assert-CompatibleRelease([System.Collections.IDictionary]$Previous,[System.Collections.IDictionary]$Next){

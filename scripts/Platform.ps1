@@ -12,7 +12,8 @@ param(
     [string]$BudgetArtifact='',
     [string]$NativeArtifact='',
     [string]$FinalArtifact='',
-    [ValidateSet('source','resident','budget','native','final','historical')][string]$Engine='',
+    [string]$GuardedArtifact='',
+    [ValidateSet('source','resident','budget','native','final','guarded','historical')][string]$Engine='',
     [switch]$WithDatabase
 )
 $ErrorActionPreference='Stop'
@@ -44,8 +45,8 @@ switch($Action){
     }
     doctor {& (Join-Path $PSScriptRoot 'Doctor-Local.ps1') -LayoutPath $LayoutPath}
     build {
-        if($Service.Count){& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Service $Service -Pnpm $Pnpm -SourceArtifact $SourceArtifact -ResidentArtifact $ResidentArtifact -BudgetArtifact $BudgetArtifact -NativeArtifact $NativeArtifact -FinalArtifact $FinalArtifact}
-        else{& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Pnpm $Pnpm -SourceArtifact $SourceArtifact -ResidentArtifact $ResidentArtifact -BudgetArtifact $BudgetArtifact -NativeArtifact $NativeArtifact -FinalArtifact $FinalArtifact}
+        if($Service.Count){& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Service $Service -Pnpm $Pnpm -SourceArtifact $SourceArtifact -ResidentArtifact $ResidentArtifact -BudgetArtifact $BudgetArtifact -NativeArtifact $NativeArtifact -FinalArtifact $FinalArtifact -GuardedArtifact $GuardedArtifact}
+        else{& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Pnpm $Pnpm -SourceArtifact $SourceArtifact -ResidentArtifact $ResidentArtifact -BudgetArtifact $BudgetArtifact -NativeArtifact $NativeArtifact -FinalArtifact $FinalArtifact -GuardedArtifact $GuardedArtifact}
     }
     'restore-check' {
         if(-not $BackupDirectory){throw 'restore-check requires -BackupDirectory.'}
