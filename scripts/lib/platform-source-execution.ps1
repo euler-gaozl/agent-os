@@ -33,7 +33,7 @@ function Assert-SourceExecutionDescriptor([System.Collections.IDictionary]$Descr
     $guardedEngines=@((Get-GuardedEngineName),(Get-HistoricalGuardedEngineName),(Get-GuardedEngineNameV2))
     foreach($profile in (Get-SourceEngineProfiles)){
     $source=$Descriptor[$profile.metadata];$asset=$Descriptor.assets[$profile.asset]
-    if(-not $source){if($asset){throw 'Source Harness asset has no execution provenance.'};continue}
+    if(-not $source){if($asset){throw ('Source Harness asset has no execution provenance: '+$profile.engine)};continue}
     $historicalGuarded=$profile.engine -ceq (Get-GuardedEngineName) -and $source.engine -ceq (Get-HistoricalGuardedEngineName)
     if($source.format -ne 1 -or (-not $historicalGuarded -and $source.engine -cne $profile.engine) -or $source.execution_protocol -cne 'runtime-execution-v1'){throw 'Unsupported source execution metadata.'}
     if($profile.engine -in @((Get-BudgetEngineName),(Get-BudgetEngineNameV2)) -and $source['model_receipt_protocol'] -cne 'budget-model-receipt-v1'){throw 'Budget engine requires durable model receipt protocol 1.'}
