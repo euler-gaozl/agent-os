@@ -42,14 +42,23 @@
 - 证据：`local/evidence/ds06-note-concurrency-2026-10-17T10-30-42-489Z/result.json`。
 - 这是两个并发 HTTP 写者的真实 PostgreSQL 竞争，不是只靠 stale expected head 的顺序冲突；仍未做多进程/多实例下的更高并发或 resolver 分支策略。
 
+## 四、真实长任务中断/接管
+
+- 新建受控 Agent `ds06-long-task`（revision 2）：`run_recall` 单工具、20 轮、`max_steps=45`、`max_model_attempts=80`、`model_token_budget=2,000,000`；模型为本机合成 `evidence-recall-fixture`，每轮 1 秒。
+- 任务 `9d8ff9e3…` 在第 8 步时强杀首任 owner `worker-cde4b1c1…`（PID 2636）；约 18 秒 lease 到期后 `worker-f55e948e…` 以 fence 2 接管。
+- 接管后继续到第 **21** 步 **completed**，20 个 `run_recall` 工具回执全部存在，最终 checkpoint `result=LONG_TASK_OK: 20 recall rounds completed.`；从接管到完成约 12 秒。
+- 首轮 revision 1（预算 200,000）在同一位置接管后到第 13 步失败：`family model token budget exhausted (accounted=188857, next_reservation=22232, limit=200000)`。这是预算门禁生效，不是接管丢任务；失败证据保留。
+- 证据：`local/evidence/ds06-long-task-takeover-2026-10-17T10-57-37-128Z/`；首轮失败 `local/evidence/ds06-long-task-takeover-2026-10-17T10-52-56-844Z/`。
+- 这是 20 轮长任务的中断/接管，**不是 DSH Compact 的长历史强杀续跑**；也没有证明 10 万步或生产内存上界。
+
 ## 边界与仍未完成
 
 - 并发写者已完成两客户端真实竞争；未做更多写者、跨进程/跨实例或自动分支 resolver。
-- 未做真实长任务在 Compact 中被强杀后由另一 Worker 续跑；DS-05 的接管是短任务，不是 W08 长历史。
+- 已完成 20 轮长任务的强杀/接管；未做真实 DSH Compact 长历史在 Compact 点被强杀后的续跑。
 - 长历史基准使用合成 source-Harness/受控 journal，不是 Runtime/Worker/DB 进程 RSS，也不是 10M 分块或服务器容量。
 - 自动 GC/删除策略未启用；不删除权威笔记/回执。
 - DS-07 仍需真实整平台资源、PG 连续负载和故障矩阵；DS-09 最后统一 CI。
 
 ## 结论
 
-DS-06 的“真实笔记修订/过期/并发冲突/撤回”和“Windows 长历史 Compact/重放测量”已取得可复核证据；W08 的长任务中断续跑与生产级内存上界仍需补测，不能把本记录写成 DS-06 全部完成。
+DS-06 的“真实笔记修订/过期/并发冲突/撤回”“Windows 长历史 Compact/重放测量”和“20 轮长任务中断/接管”已取得可复核证据；DSH Compact 点的真实强杀续跑与生产级内存上界仍需补测，不能把本记录写成 DS-06 全部完成。
