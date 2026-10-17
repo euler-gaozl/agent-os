@@ -796,7 +796,7 @@
       "status": "short_burst_load_passed_continuous_open",
       "doc": "windows-ds07-platform-load-20261017.md",
       "section": "DS-07",
-      "scope": "Eight concurrent post-retirement synthetic fixture tasks completed 8/8 on two workers in 1.5s wall; PostgreSQL xact_commit +1611, connections 22→24, no temp files/deadlocks. A 32.6s sustained run completed 2/2 with connections stable; a 3-minute soak submitted 12 tasks, all completed 12/12 step 6 across six per worker, connections 16–18, xact_commit +8068, no deadlocks, Runtime/Worker/PostgreSQL RSS peaks recorded and ending lower. Short soak only; 30–60min load, slow queries/locks, memory trend and fault combinations remain."
+      "scope": "Eight concurrent post-retirement synthetic fixture tasks completed 8/8 on two workers in 1.5s wall; PostgreSQL xact_commit +1611, connections 22→24, no temp files/deadlocks. A 32.6s run completed 2/2; a 3-minute soak completed 12/12; a 9.1-minute soak submitted 36 tasks, all completed 36/36 step 6 with 18 per worker, connections 13–18, xact_commit +27637, no deadlocks, and Runtime/Worker/PostgreSQL RSS peaks with lower end values. Still below the required 30–60min soak; slow queries/locks, memory trend and fault combinations remain."
     },
     {
       "id": "task:latest-recovery",
@@ -3755,7 +3755,7 @@
   "environment_policy": {
     "file": "environments.json",
     "default_execution_environment": null,
-    "current_execution_record": "windows-ds05-access-retirement-20261017.md",
+    "current_execution_record": "windows-ds07-platform-load-20261017.md",
     "updated_at": "2026-10-17",
     "rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets."
   },
