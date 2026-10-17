@@ -35,10 +35,20 @@
 - 证据：`local/evidence/ds07-sustained-2026-10-17T10-27-59-840Z/`。
 - 首次同形负载因夹具使用 `run_recall(kind=events, query=sustained-load)` 被 Runtime 400 拒绝，任务 step 1 失败；改为 `kind=tools` 后成功。这是夹具参数问题，不是平台容量/权限问题；失败目录保留为证据。
 
+## 三分钟 12 任务 soak
+
+- 12 个合成任务一次提交，每任务 5 轮 `run_recall`（每轮模型延迟 6 秒）；每 Worker 接 6 个，**12/12 completed**，step 6，墙钟 **183.1 秒**（约 3 分钟）。
+- 采样 120 次、覆盖约 248 秒（`local/evidence/ds07-soak-samples.json`）：
+  - PostgreSQL 连接 16–18（结束 16），`xact_commit` +8,068，`blks_read` +15，deadlocks 0。
+  - Runtime RSS 24.8→26.2 MB（峰值 26.8）；两个 Worker 42.9→42.1 MB（峰值 49.4）；PostgreSQL 528.9→512.1 MB（峰值 556.3）。
+  - Runtime/Worker/PostgreSQL CPU 累计增量 2.92/1.78/4.08 秒。
+- 证据：`local/evidence/ds07-soak-2026-10-17T10-32-22-458Z/`。
+- 这是 3 分钟合成 soak，不是 30–60 分钟、真实模型/工具网络或容量验收；没有观察到连接泄漏、死锁或 RSS 单调增长，但不能据此断言长期无泄漏。
+
 ## 结论与边界
 
-- 8 个并发合成任务没有触发连接耗尽、死锁、临时文件或 Worker 分配失衡；两个 Worker 均实际接单。32 秒双 Worker 负载同样 2/2 完成，连接数稳定、无死锁。
+- 8 个并发合成任务没有触发连接耗尽、死锁、临时文件或 Worker 分配失衡；两个 Worker 均实际接单。32 秒双 Worker 负载 2/2 完成；3 分钟 12 任务 soak 12/12 完成，连接 16–18、deadlocks 0，RSS 峰值受控且结束回落。
 - 该负载没有真实模型延迟、工具网络、外部 Storage/Knowledge 或长历史，不能替代持续 30–60 分钟负载、10 万/百万级任务或服务器容量。
-- 未做 PG 慢查询/锁等待、内存增长趋势、故障注入组合；这些仍是 DS-07 的缺口。32 秒只是短持续样本，不是生产 soak。
+- 未做 PG 慢查询/锁等待、内存增长趋势、故障注入组合；这些仍是 DS-07 的缺口。3 分钟只是短 soak，不是生产 soak。
 - 双 Worker 杀 owner 接管已在 DS-05 真实执行（合成模型，20 秒 lease 后接管），不等同于本负载的持续故障矩阵。
 - 无付费模型调用、无 CI、无任务删除；合成任务产生了受控笔记与运行记录，保留供复核。
