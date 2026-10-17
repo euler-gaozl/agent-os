@@ -2,6 +2,7 @@
 # descriptors are relative so a verified backup can reconstruct the same bundle.
 . (Join-Path $PSScriptRoot 'platform-source-execution.ps1')
 . (Join-Path $PSScriptRoot 'platform-receipts.ps1')
+. (Join-Path $PSScriptRoot 'platform-continuation.ps1')
 . (Join-Path $PSScriptRoot 'platform-execution-access.ps1')
 . (Join-Path $PSScriptRoot 'platform-knowledge-archives.ps1')
 . (Join-Path $PSScriptRoot 'platform-model-management.ps1')
@@ -60,7 +61,7 @@ function Get-ReleaseInventory([string]$Root,[System.Collections.IDictionary]$Ass
     }
     return @{files=@($files.Keys|Sort-Object|ForEach-Object{$files[$_]});links=@($links.Keys|Sort-Object|ForEach-Object{$links[$_]})}
 }
-function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Assets,[System.Collections.IDictionary]$Contract,[System.Collections.IDictionary]$Provenance,[System.Collections.IDictionary]$SourceExecution=$null,[System.Collections.IDictionary]$ResidentExecution=$null,[System.Collections.IDictionary]$ReceiptManagement=$null,[System.Collections.IDictionary]$ExecutionAccess=$null,[System.Collections.IDictionary]$KnowledgeArchives=$null,[System.Collections.IDictionary]$BudgetExecution=$null,[System.Collections.IDictionary]$NativeExecution=$null,[System.Collections.IDictionary]$ModelManagement=$null){
+function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collections.IDictionary]$Assets,[System.Collections.IDictionary]$Contract,[System.Collections.IDictionary]$Provenance,[System.Collections.IDictionary]$SourceExecution=$null,[System.Collections.IDictionary]$ResidentExecution=$null,[System.Collections.IDictionary]$ReceiptManagement=$null,[System.Collections.IDictionary]$ExecutionAccess=$null,[System.Collections.IDictionary]$KnowledgeArchives=$null,[System.Collections.IDictionary]$BudgetExecution=$null,[System.Collections.IDictionary]$NativeExecution=$null,[System.Collections.IDictionary]$ModelManagement=$null,[System.Collections.IDictionary]$ContinuationManagement=$null){
     Assert-ReleaseAssets $Role $Assets
     $identifier=$Role+'-'+[guid]::NewGuid().ToString('N')
     $inventory=Get-ReleaseInventory $Layout.release_root $Assets
@@ -73,8 +74,10 @@ function New-ReleaseDescriptor([hashtable]$Layout,[string]$Role,[System.Collecti
     if($null -ne $ExecutionAccess){$descriptor.execution_access=$ExecutionAccess}
     if($null -ne $KnowledgeArchives){$descriptor.source_archives=$KnowledgeArchives}
     if($null -ne $ModelManagement){$descriptor.model_management=$ModelManagement}
+    if($null -ne $ContinuationManagement){$descriptor.continuation_management=$ContinuationManagement}
     Assert-SourceExecutionDescriptor $descriptor
     Assert-ReceiptManagementDescriptor $descriptor
+    Assert-ContinuationDescriptor $descriptor
     Assert-ExecutionAccessDescriptor $descriptor
     Assert-KnowledgeArchiveDescriptor $descriptor
     Assert-ModelManagementDescriptor $descriptor
@@ -94,6 +97,7 @@ function Read-ReleaseDescriptor([hashtable]$Layout,[System.Collections.IDictiona
     Assert-ReleaseAssets $descriptor.role $descriptor.assets
     Assert-SourceExecutionDescriptor $descriptor
     Assert-ReceiptManagementDescriptor $descriptor
+    Assert-ContinuationDescriptor $descriptor
     Assert-ExecutionAccessDescriptor $descriptor
     Assert-KnowledgeArchiveDescriptor $descriptor
     Assert-ModelManagementDescriptor $descriptor

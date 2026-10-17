@@ -80,6 +80,7 @@ function Restore-PendingRelease([hashtable]$Layout,[string]$Role,[string]$Script
         if($Role -cne 'runtime'){throw 'Unknown configuration migration role.'}
         return Restore-PendingEngineConfiguration $Layout $Scripts $Lock $TimeoutSeconds $Checkpoint
     }
+    if($Role -in @('runtime','worker','control')){$priorDescriptor=Read-ReleaseDescriptor $Layout $pending.prior -Verify;Assert-ContinuationDeployment $Layout @{$Role=$priorDescriptor}}
     $othersBefore=Get-ReleaseProcessSnapshot $Layout $Role -AllowStopped
     # Validation happens before stopping anything. A missing/tampered old bundle
     # stays pending for repair; silently picking a third version is forbidden.
@@ -97,6 +98,7 @@ function Restore-PendingRelease([hashtable]$Layout,[string]$Role,[string]$Script
     $pending=Save-ReleasePhase $Layout $Role $pending.id 'reverting'
     & $Checkpoint 'reverting'
     & (Join-Path $Scripts 'Stop-Local.ps1') -LayoutPath $Layout.layout_path -Service @($Role) -MaintenanceLock $Lock
+    if($Role -in @('runtime','worker','control')){Assert-ContinuationDeployment $Layout @{$Role=$priorDescriptor} -RuntimeStopped:($Role -eq 'runtime')}
     if($Role -eq 'knowledge'){Assert-KnowledgeArchiveDeployment $Layout $priorDescriptor -Stopped}
     if($Role -in @('registry','runtime','control')){Assert-ModelManagementDeployment $Layout @{$Role=$priorDescriptor} -RegistryStopped:($Role -eq 'registry')}
     if($pending.replicas -gt 0){
@@ -131,6 +133,7 @@ function Invoke-ReleaseChange([hashtable]$Layout,[string]$Role,[string]$Action,[
     if($before.role -cne $Role -or $after.role -cne $Role){throw 'Descriptor does not match selected service.'}
     if($after.provenance['dirty']){throw 'Development builds cannot be activated as managed releases. Commit and rebuild first.'}
     Assert-CompatibleRelease $before $after
+    if($Role -in @('runtime','worker','control')){Assert-ContinuationDeployment $Layout @{$Role=$after}}
     if($Role -eq 'knowledge'){Assert-KnowledgeArchiveDeployment $Layout $after}
     if($Role -in @('worker','telemetry')){Assert-ExecutionAccessDeployment $Layout @($Role) @{$Role=$after}}
     if($Role -in @('runtime','control')){Assert-ReceiptManagementDeployment $Layout @{$Role=$after}}
@@ -154,6 +157,7 @@ function Invoke-ReleaseChange([hashtable]$Layout,[string]$Role,[string]$Action,[
     try{
         & $Checkpoint 'prepared'
         & (Join-Path $Scripts 'Stop-Local.ps1') -LayoutPath $Layout.layout_path -Service @($Role) -MaintenanceLock $Lock
+        if($Role -in @('runtime','worker','control')){Assert-ContinuationDeployment $Layout @{$Role=$after} -RuntimeStopped:($Role -eq 'runtime')}
         $null=Save-ReleasePhase $Layout $Role $pending.id 'stopped'
         & $Checkpoint 'stopped'
         if($Role -eq 'knowledge'){Assert-KnowledgeArchiveDeployment $Layout $after -Stopped}

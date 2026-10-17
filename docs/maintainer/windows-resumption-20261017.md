@@ -56,3 +56,13 @@ Windows Go 复测使用新建的隔离 PostgreSQL，测试后已停止。Runtime
 重启后首次只读 status 显示服务均未启动、`core_ready=false`。随后用统一维护入口启动原有已安装版本和原 PostgreSQL，12 个服务实例恢复，status 为 `core_ready=true`；唯一提示是既有 Sandbox 隔离执行未配置。没有用 Mac 候选包替换 Windows 服务，没有重新初始化正式数据库。测试与接回过程没有迁移正式任务、凭证或发布 catalog；没有新增研究提交或 GitHub Actions。
 
 独立评审 Agent 对 Runtime 接续事务/权限、Console 请求恢复和本次计划进行了只读静态检查，在该范围未发现阻断 Windows 安装的 P1/P2 问题；提出的旧环境文档入口歧义已修正。评审未运行测试、操作正式数据库或访问 Mac，不替代 R1 的部署与浏览器验收。
+
+## R1 发布准备增量
+
+接回后发现 Worker 的 go.mod/go.sum/vendor 已升级 execution 固定版本，但来源清单仍指向旧 rc.5。已修正来源元数据，并把 vendored Owner 的 11 个文件与 `1f6c4c29` 的 Git 对象逐一核对一致，没有再变更 Worker 执行依赖。Windows 构建选定的新来源为 Worker `03b1794`、Runtime `217f2ae`、Console `34094b1`、Futures `f5e7bd2`。
+
+新增独立的接续管理发布能力，未更改历史引擎名或固定回放协议。受管启动、更新、回滚及未完成发布恢复都检查 Worker → Owner 迁移 → Runtime → Console 的组合。Runtime 启用新动作前，逐实例检查全部 Worker 的进程归属、配置、二进制、实际 current/pending 引用及规则守卫。任一永久接续回执（含拒绝）阻止降级到不能查询它的 Runtime；Runtime 停止后先排除同账号残留数据库连接，再重新读取回执，避免预检查之后晚提交被遗漏。旧完整组合仍保持兼容。
+
+本机检查：接续发布 28 项通过，使用真实描述文件/catalog/操作前置检查及显式受控进程、数据库观测；另在新建隔离 PostgreSQL 上使用实际 Owner DDL 和非 Owner Runtime 账号，7 项检查通过，覆盖缺表、最小权限、已保留拒绝、撤权、错误表结构、存活/关闭的 Runtime 连接。原回执发布 41 项和来源锁检查也通过。数据库夹具已经停止，没有访问正式任务正文、迁移正式数据库或调用供应商。独立 Agent 复核修复后未发现新的 P1/P2 阻断；其为只读静态评审，不替代后续安装和浏览器验收。
+
+上述是构建前准备；最新 Windows 包的构建、备份/隔离恢复、正式迁移、激活及页面实测仍须继续，不能由源码同步或本节测试推断已交付。Actions 继续禁用。

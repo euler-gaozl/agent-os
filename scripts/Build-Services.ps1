@@ -165,7 +165,8 @@ try{
             if($null -ne $knowledgeArchives){Assert-KnowledgeArchiveBinary $binary @{role=$role;contract=$contract;source_archives=$knowledgeArchives}}
             $modelManagement=$null;if($owner){$modelManagement=Get-DeclaredModelManagement $owner.release}
             if($null -ne $modelManagement){Assert-ModelManagementBinary $binary @{role=$role;model_management=$modelManagement}}
-            $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance $sourceExecution $residentExecution $receiptManagement $executionAccess $knowledgeArchives -BudgetExecution $budgetExecution -NativeExecution $nativeExecution -ModelManagement $modelManagement
+            $continuationManagement=if($owner){$owner.release['continuation_management']}else{$null}
+            $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance $sourceExecution $residentExecution $receiptManagement $executionAccess $knowledgeArchives -BudgetExecution $budgetExecution -NativeExecution $nativeExecution -ModelManagement $modelManagement -ContinuationManagement $continuationManagement
         }
     }finally{Pop-Location}
     $staged=Join-Path $layout.release_root ('staged/'+$buildId+'.json')
