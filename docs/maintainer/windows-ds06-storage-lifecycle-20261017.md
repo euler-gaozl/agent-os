@@ -34,9 +34,17 @@
 
 证据：`local/evidence/ds06-note-lifecycle-251bec3dd12644829ffeefee2a0c61d4/result.json`；真实 PostgreSQL、零模型调用。
 
+## 三、真正并发写者
+
+- 对同一 active head `a58a4695…` 同时发出两个 `POST /v1/notes/revise`（不同 request_id、不同标题/正文，相同 expected_current_id）。
+- 结果：一个 **200** 成功，另一个 **409** `note is no longer the active head...`（带 `note_rejected_request_id`）；旧 head 的 `current_id` 更新到唯一新版本 `7aecbc9e…`，`is_current=false`、`effective=false`，没有产生第二个分支。
+- 该唯一新版本随后被撤回，`state=retired`、`effective=false`；正文保留。零模型调用。
+- 证据：`local/evidence/ds06-note-concurrency-2026-10-17T10-30-42-489Z/result.json`。
+- 这是两个并发 HTTP 写者的真实 PostgreSQL 竞争，不是只靠 stale expected head 的顺序冲突；仍未做多进程/多实例下的更高并发或 resolver 分支策略。
+
 ## 边界与仍未完成
 
-- 未做两个真正并发写者的同时提交；409 是 stale expected head 的顺序冲突，不是并发 race。
+- 并发写者已完成两客户端真实竞争；未做更多写者、跨进程/跨实例或自动分支 resolver。
 - 未做真实长任务在 Compact 中被强杀后由另一 Worker 续跑；DS-05 的接管是短任务，不是 W08 长历史。
 - 长历史基准使用合成 source-Harness/受控 journal，不是 Runtime/Worker/DB 进程 RSS，也不是 10M 分块或服务器容量。
 - 自动 GC/删除策略未启用；不删除权威笔记/回执。
@@ -44,4 +52,4 @@
 
 ## 结论
 
-DS-06 的“真实笔记修订/过期/冲突/撤回”和“Windows 长历史 Compact/重放测量”已取得可复核证据；W08 的长任务中断续跑、真正并发写者与生产级内存上界仍需补测，不能把本记录写成 DS-06 全部完成。
+DS-06 的“真实笔记修订/过期/并发冲突/撤回”和“Windows 长历史 Compact/重放测量”已取得可复核证据；W08 的长任务中断续跑与生产级内存上界仍需补测，不能把本记录写成 DS-06 全部完成。
