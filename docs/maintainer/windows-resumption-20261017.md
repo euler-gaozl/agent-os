@@ -1,5 +1,7 @@
 # Windows 接回与交付续做（2026-10-17）
 
+**同日最新：** R1 已完成下述正式迁移/升级；R2 的一次真实研究已成稿但独立内容验收未通过。Futures `9e928cb` 已安装，实际页面能提示最终回答被送检后改动。具体结果、未关闭问题及下一步见 [Windows 研究记录](windows-research-20261017.md)，不重复下文历史待办。
+
 用户要求接回朋友 Mac 上未推送的成果，在原 Windows 继续完整单机目标，并及时更新 GitHub。本文件更新执行顺序与环境归属，不重新定义或缩小 P0–P5、P2.5 和 W01–W14。
 
 当前开发根为 `D:\workspace\agent-platform`，集成仓为 `repos\agent-os`。Mac 是本次恢复来源；它的通过记录不能代替 Windows 安装、浏览器、DPAPI 或备份恢复验收。旧 `D:\workspace\agent-os` 仍只作迁移提示。Goal 卡片的旧文字属于历史目标，当前路径和用户后续约束以这里和 [objective.md](objective.md) 为准。
