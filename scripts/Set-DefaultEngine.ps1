@@ -1,4 +1,4 @@
-param([Parameter(Mandatory)][ValidateSet('source','resident','budget','native','final','guarded','historical')][string]$Engine,[string]$LayoutPath='',[ValidateRange(1,120)][int]$TimeoutSeconds=30)
+param([Parameter(Mandatory)][ValidateSet('source','resident','budget','native','final','guarded','historical','source-v2','resident-v2','budget-v2','native-v2','final-v2','guarded-v2')][string]$Engine,[string]$LayoutPath='',[ValidateRange(1,120)][int]$TimeoutSeconds=30)
 $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 foreach($library in @('platform-paths','platform-lock','platform-processes','platform-releases','platform-release-operations')){. (Join-Path $PSScriptRoot ('lib/'+$library+'.ps1'))}

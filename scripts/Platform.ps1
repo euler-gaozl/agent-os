@@ -20,7 +20,7 @@ param(
     [string]$NativeV2Artifact='',
     [string]$FinalV2Artifact='',
     [string]$GuardedV2Artifact='',
-    [ValidateSet('source','resident','budget','native','final','guarded','historical')][string]$Engine='',
+    [ValidateSet('source','resident','budget','native','final','guarded','historical','source-v2','resident-v2','budget-v2','native-v2','final-v2','guarded-v2')][string]$Engine='',
     [switch]$WithDatabase
 )
 $ErrorActionPreference='Stop'

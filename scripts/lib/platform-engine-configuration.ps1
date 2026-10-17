@@ -121,7 +121,7 @@ function Restore-PendingEngineConfiguration([hashtable]$Layout,[string]$Scripts,
 }
 function Set-DefaultEngine([hashtable]$Layout,[string]$Engine,[string]$Scripts,[IO.FileStream]$Lock,[int]$TimeoutSeconds=30,[scriptblock]$Checkpoint={param($point)}){
     Assert-NoPendingOwnerMigration $Layout
-    $nextEngine=switch -CaseSensitive ($Engine){source {Get-SourceEngineName};resident {Get-ResidentEngineName};budget {Get-BudgetEngineName};native {Get-NativeEngineName};final {Get-FinalEngineName};guarded {Get-GuardedEngineName};historical {'dsh-0.2.0-rc.2-evidence-v1'};default {throw 'Choose source, resident, budget, native, final, guarded or historical.'}}
+    $nextEngine=switch -CaseSensitive ($Engine){source {Get-SourceEngineName};resident {Get-ResidentEngineName};budget {Get-BudgetEngineName};native {Get-NativeEngineName};final {Get-FinalEngineName};guarded {Get-GuardedEngineName};source-v2 {Get-SourceEngineNameV2};resident-v2 {Get-ResidentEngineNameV2};budget-v2 {Get-BudgetEngineNameV2};native-v2 {Get-NativeEngineNameV2};final-v2 {Get-FinalEngineNameV2};guarded-v2 {Get-GuardedEngineNameV2};historical {'dsh-0.2.0-rc.2-evidence-v1'};default {throw 'Choose source, resident, budget, native, final, guarded, historical or their -v2 variants.'}}
     $catalog=Read-ReleaseCatalog $Layout
     if($catalog.format -ne 2){throw 'Default changes require a versioned deployment.'}
     Assert-NoPendingRelease $catalog
