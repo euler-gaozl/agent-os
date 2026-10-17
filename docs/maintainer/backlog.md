@@ -12,7 +12,7 @@
 | DS-06 | 部分完成（笔记修订/过期/并发 200+409/撤回 + 128–8192 步 Compact/重放（8192 步 168.1MB heap/339.5MB RSS）+ 32k/64k/最大限制下 20 轮强杀/接管 + 20 轮 RSS 采样；8k/16k step 13/19 失败；Compact 点无显式成功证据） | task:storage-lifecycle / Harness、Runtime、Worker、Storage | 定位 8k/16k 与 32k 的 Compact 差异；补真实 Compact 点强杀续跑、10M 分块/生产 RSS 上界；不删权威资料，不以合成基准代替生产容量 |
 | DS-07 | 部分完成（8 并发 8/8、30.1 分钟 24/24 soak、8 秒锁恢复、30 秒锁失败、15/30 秒锁内取消、杀 owner 后取消；30 秒 cancel 504 已由 Runtime 55dc3cd 修复并复验 202/cancelled；60 秒上限；慢查询/死锁/异步补偿/内存趋势未做） | task:faults-and-resources / 集成及相关Owner | 补 PG 慢查询计划/死锁注入、超过 60 秒锁的异步取消、外部副作用补偿、内存趋势和整平台资源口径；合成 soak/锁故障不能写成生产容量验收 |
 | DS-08 | 已完成（最终快照备份 + 隔离恢复 passed） | task:latest-recovery / 原Windows集成 | 备份 `ds08-final-20261017b`，46 表/序列、10 服务登录、3 密封凭据、2 Worker bundle、离线 Harness 重建全部通过；不替代服务器/HA 或外部服务恢复 |
-| DS-09 | 未执行最终CI | task:final-ci / 集成 | 全部本机验收后唯一一次集中CI及独立逐条完工审查 |
+| DS-09 | 本机全套扫描通过（Runtime/Console/Worker/Futures/Telemetry/Harness；40+27 Web、16+31 Harness，0 skip）；最终 hosted CI 未执行 | task:final-ci / 集成 | 全部本机验收后唯一一次集中 hosted CI 及独立逐条完工审查；本机扫描不能替代 Actions |
 
 已完成不重做：Mac成果接回、接续回执迁移/安装、final-v5确定性成稿协议、guarded-v6工具参数纠正、Futures v7精确引用诊断、DS-01非数值说明绑定与v8检查器、DS-02双引擎v7单次续接安装、15仓同步。它们不等于最终业务和平台验收通过。
 

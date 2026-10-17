@@ -811,9 +811,9 @@
       "id": "task:final-ci",
       "type": "task",
       "label": "一次统一验收与交付",
-      "status": "open",
-      "doc": "backlog.md",
-      "scope": "原目标余项"
+      "status": "local_sweep_passed_hosted_ci_open",
+      "doc": "windows-local-acceptance-20261017.md",
+      "scope": "Windows local full suite passed: Runtime, Console Go+Web (40), Worker, Futures Go+Web (27), Telemetry, Harness core 16 and guarded 31, with zero reported skips. Hosted GitHub Actions, external Langfuse, production RSS and old implementation retirement remain."
     },
     {
       "id": "task:fresh-windows-bootstrap",
@@ -1666,6 +1666,12 @@
       "type": "evidence_document",
       "label": "DS-07 撤权后 8 并发合成任务与 PostgreSQL/进程资源快照",
       "doc": "windows-ds07-platform-load-20261017.md"
+    },
+    {
+      "id": "evidence:windows-local-acceptance-20261017",
+      "type": "evidence_document",
+      "label": "Windows 本机集中验收扫描（非 GitHub Actions）",
+      "doc": "windows-local-acceptance-20261017.md"
     },
     {
       "id": "task:finalization-recovery",
@@ -2732,6 +2738,11 @@
     },
     {
       "from": "task:final-ci",
+      "relation": "documented_by",
+      "to": "evidence:windows-local-acceptance-20261017"
+    },
+    {
+      "from": "task:final-ci",
       "relation": "affects",
       "to": "service:control"
     },
@@ -3755,9 +3766,9 @@
   "environment_policy": {
     "file": "environments.json",
     "default_execution_environment": null,
-    "current_execution_record": "windows-ds04-ui-browser-20261017.md",
+    "current_execution_record": "windows-local-acceptance-20261017.md",
     "updated_at": "2026-10-17",
     "rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets."
   },
-  "current_execution_record": "windows-ds04-ui-browser-20261017.md"
+  "current_execution_record": "windows-local-acceptance-20261017.md"
 }
