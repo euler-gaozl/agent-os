@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "latest_recovery_audit": "windows-source-recovery-20261017.json",
-  "current_execution_record": "deepseek-handoff-20261017.md",
-  "as_of": "2026-10-17T08:09:21.828Z",
+  "current_execution_record": "windows-ds01-statements-20261017.md",
+  "as_of": "2026-10-17T08:32:53Z",
   "project_id": "project:agent-platform",
   "source_baseline": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe",
   "integration_handoff_branch": "feat/end-to-end-delivery",
@@ -72,7 +72,7 @@
       "url": "https://github.com/euler-gaozl/agent-os-futures",
       "clone_url": "https://github.com/euler-gaozl/agent-os-futures.git",
       "branch": "feat/native-task-transport",
-      "source_head_at_audit": "fc080b691bb95f2b78d8fd7890d4dd66efe48974",
+      "source_head_at_audit": "72d8e3631fb2d872b38c5c977d7f5049d56e60b8",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -83,15 +83,15 @@
       "integration_pins": [
         {
           "role": "futures",
-          "commit": "fc080b691bb95f2b78d8fd7890d4dd66efe48974",
+          "commit": "72d8e3631fb2d872b38c5c977d7f5049d56e60b8",
           "owner_modules": []
         }
       ],
       "installed": [
         {
           "role": "futures",
-          "commit": "fc080b691bb95f2b78d8fd7890d4dd66efe48974",
-          "manifest": "descriptors/futures-f62fd89042604ec889a5fba607d571f1.json",
+          "commit": "72d8e3631fb2d872b38c5c977d7f5049d56e60b8",
+          "manifest": "descriptors/futures-4d6499a45f204bd281feca5caa650bf7.json",
           "sdk": {
             "version": "v0.1.0-rc.4",
             "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
@@ -101,7 +101,7 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T08:09:21.828Z",
+          "observed_at": "2026-10-17T08:32:53Z",
           "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
         }
       ],

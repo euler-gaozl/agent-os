@@ -4,7 +4,7 @@
 
 | 顺序 | 当前状态 | 本体任务 / Owner | 下一步 |
 | --- | --- | --- | --- |
-| DS-01 | 待实现，已读代码 | task:qualitative-evidence / Futures | 非数值论据独立绑定真实留存原文，类型/校验/提示/UI/兼容测试一并完成 |
+| DS-01 | 已完成（源码/测试/安装/静态复核） | task:qualitative-evidence / Futures | 非数值说明已绑定留存原文并安装；转入 DS-02，DS-03 真实内容复核仍待做 |
 | DS-02 | 待修复，实际序列已确认 | task:finalization-recovery / Harness、Runtime、Worker、业务方法 | 修正未就绪稿提前结束，准确冻结尝试信息，保留成稿与重放边界 |
 | DS-03 | 未通过 | task:research-completion、task:research-quality / Futures及集成 | 前两项离线验证后，一次有区别的真实四问研究，独立内容复核 |
 | DS-04 | 部分实现，完整页面未验收 | task:continuation-ui / Console、Futures、Runtime | 接续动作已有实现；补全部功能/错误状态/窄屏和原文回读浏览器矩阵 |
@@ -14,7 +14,7 @@
 | DS-08 | 最近备份真实还原已通过，最终快照待做 | task:latest-recovery / 原Windows集成 | 新最终任务/安装组合稳定后备份与隔离恢复 |
 | DS-09 | 未执行最终CI | task:final-ci / 集成 | 全部本机验收后唯一一次集中CI及独立逐条完工审查 |
 
-已完成不重做：Mac成果接回、接续回执迁移/安装、final-v5确定性成稿协议、guarded-v6工具参数纠正、Futures v7精确引用诊断、15仓同步。它们不等于最终业务和平台验收通过。
+已完成不重做：Mac成果接回、接续回执迁移/安装、final-v5确定性成稿协议、guarded-v6工具参数纠正、Futures v7精确引用诊断、DS-01非数值说明绑定与v8检查器、15仓同步。它们不等于最终业务和平台验收通过。
 
 task:fresh-windows-bootstrap仍保留为用户以后要求新Windows时的条件任务；新维护者可先在独立环境做便携代码测试，不能把环境不同当作伪造原Windows验收的理由。服务器/机器HA/最终全量容量和全品种后续范围见objective.md。
 
