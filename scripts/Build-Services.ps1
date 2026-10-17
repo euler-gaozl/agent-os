@@ -52,6 +52,7 @@ try{
             $owner=Get-SelectedServiceSource $repoRoot $role $contract
             if($owner){$contract=$owner.contract}
             $sourceExecution=$null;$residentExecution=$null;$budgetExecution=$null;$nativeExecution=$null;$finalExecution=$null;$guardedExecution=$null;$guardedV6Execution=$null
+            $sourceV2Execution=$null;$residentV2Execution=$null;$budgetV2Execution=$null;$nativeV2Execution=$null;$finalV2Execution=$null;$guardedV2Execution=$null
             if($role -eq 'runtime' -and $owner -and $owner.release['source_submission_protocol']){
                 $sourceExecution=@{format=1;engine=$owner.release.source_engine_candidate;execution_protocol=$owner.release.execution_protocol;state_protocol=$owner.release.source_management_protocol;submission_protocol=$owner.release.source_submission_protocol;preview_protocol=$owner.release.source_management_preview_protocol}
                 if($owner.release['source_engine_candidates']){
@@ -244,6 +245,12 @@ try{
             if($null -ne $modelManagement){Assert-ModelManagementBinary $binary @{role=$role;model_management=$modelManagement}}
             $continuationManagement=if($owner){$owner.release['continuation_management']}else{$null}
             $references[$role]=New-ReleaseDescriptor $layout $role $assets $contract $provenance $sourceExecution $residentExecution $receiptManagement $executionAccess $knowledgeArchives -BudgetExecution $budgetExecution -NativeExecution $nativeExecution -FinalExecution $finalExecution -GuardedExecution $guardedExecution -GuardedV6Execution $guardedV6Execution -ModelManagement $modelManagement -ContinuationManagement $continuationManagement
+            if($sourceV2Execution){$references[$role].source_v2_execution=$sourceV2Execution}
+            if($residentV2Execution){$references[$role].resident_v2_execution=$residentV2Execution}
+            if($budgetV2Execution){$references[$role].budget_v2_execution=$budgetV2Execution}
+            if($nativeV2Execution){$references[$role].native_v2_execution=$nativeV2Execution}
+            if($finalV2Execution){$references[$role].final_v2_execution=$finalV2Execution}
+            if($guardedV2Execution){$references[$role].guarded_v2_execution=$guardedV2Execution}
         }
     }finally{Pop-Location}
     $staged=Join-Path $layout.release_root ('staged/'+$buildId+'.json')

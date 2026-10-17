@@ -30,16 +30,16 @@ function Get-SourceEngineProfiles {
     )
 }
 function Assert-SourceExecutionDescriptor([System.Collections.IDictionary]$Descriptor){
-    $guardedEngines=@((Get-GuardedEngineName),(Get-HistoricalGuardedEngineName))
+    $guardedEngines=@((Get-GuardedEngineName),(Get-HistoricalGuardedEngineName),(Get-GuardedEngineNameV2))
     foreach($profile in (Get-SourceEngineProfiles)){
     $source=$Descriptor[$profile.metadata];$asset=$Descriptor.assets[$profile.asset]
     if(-not $source){if($asset){throw 'Source Harness asset has no execution provenance.'};continue}
     $historicalGuarded=$profile.engine -ceq (Get-GuardedEngineName) -and $source.engine -ceq (Get-HistoricalGuardedEngineName)
     if($source.format -ne 1 -or (-not $historicalGuarded -and $source.engine -cne $profile.engine) -or $source.execution_protocol -cne 'runtime-execution-v1'){throw 'Unsupported source execution metadata.'}
-    if($profile.engine -ceq (Get-BudgetEngineName) -and $source['model_receipt_protocol'] -cne 'budget-model-receipt-v1'){throw 'Budget engine requires durable model receipt protocol 1.'}
-    if($profile.engine -cin @((Get-NativeEngineName),(Get-FinalEngineName))+$guardedEngines -and $source['model_receipt_protocol'] -cne 'native-model-receipt-v2'){throw 'Native engine requires durable model receipt protocol 2.'}
-    if($profile.engine -cin @((Get-FinalEngineName))+$guardedEngines -and $source['final_output_protocol'] -cne 'receipt-field-v1'){throw 'Final engine requires receipt-field-v1.'}
-    if($profile.engine -cin @((Get-FinalEngineName))+$guardedEngines -and $Descriptor.role -ceq 'runtime' -and $source['continuation_protocol'] -cne 'final-model-continuation-v1'){throw 'Final Runtime requires explicit final model continuation.'}
+    if($profile.engine -in @((Get-BudgetEngineName),(Get-BudgetEngineNameV2)) -and $source['model_receipt_protocol'] -cne 'budget-model-receipt-v1'){throw 'Budget engine requires durable model receipt protocol 1.'}
+    if($profile.engine -cin @((Get-NativeEngineName),(Get-NativeEngineNameV2),(Get-FinalEngineName),(Get-FinalEngineNameV2))+$guardedEngines -and $source['model_receipt_protocol'] -cne 'native-model-receipt-v2'){throw 'Native engine requires durable model receipt protocol 2.'}
+    if($profile.engine -cin @((Get-FinalEngineName),(Get-FinalEngineNameV2))+$guardedEngines -and $source['final_output_protocol'] -cne 'receipt-field-v1'){throw 'Final engine requires receipt-field-v1.'}
+    if($profile.engine -cin @((Get-FinalEngineName),(Get-FinalEngineNameV2))+$guardedEngines -and $Descriptor.role -ceq 'runtime' -and $source['continuation_protocol'] -cne 'final-model-continuation-v1'){throw 'Final Runtime requires explicit final model continuation.'}
     if($profile.engine -cin $guardedEngines -and $source['tool_input_protocol'] -ne 1){throw 'Guarded engine requires input validation protocol 1.'}
     switch($Descriptor.role){
         runtime {
@@ -261,9 +261,9 @@ function Copy-PinnedSourceHarness([string]$Artifact,[string]$Destination,[string
     }
     Copy-Item -LiteralPath $PinFile -Destination (Join-Path $Destination 'source-lock.json')
     $metadata=@{format=1;engine=$pin.engine;execution_protocol='runtime-execution-v1';state_protocol='source-state-recovery-v1';manifest_sha256=$pin.manifest_sha256;harness_commit=$pin.commit}
-    if($Engine -ceq (Get-BudgetEngineName)){$metadata.model_receipt_protocol='budget-model-receipt-v1'}
-    if($Engine -cin @((Get-NativeEngineName),(Get-FinalEngineName),(Get-GuardedEngineName),(Get-HistoricalGuardedEngineName))){$metadata.model_receipt_protocol='native-model-receipt-v2'}
-    if($Engine -cin @((Get-FinalEngineName),(Get-GuardedEngineName),(Get-HistoricalGuardedEngineName))){$metadata.final_output_protocol='receipt-field-v1'}
-    if($Engine -cin @((Get-GuardedEngineName),(Get-HistoricalGuardedEngineName))){if($manifest.tool_input_protocol -ne 1){throw 'Guarded artifact lacks input validation protocol.'};$metadata.tool_input_protocol=1}
+    if($Engine -in @((Get-BudgetEngineName),(Get-BudgetEngineNameV2))){$metadata.model_receipt_protocol='budget-model-receipt-v1'}
+    if($Engine -in @((Get-NativeEngineName),(Get-NativeEngineNameV2),(Get-FinalEngineName),(Get-FinalEngineNameV2),(Get-GuardedEngineName),(Get-GuardedEngineNameV2),(Get-HistoricalGuardedEngineName))){$metadata.model_receipt_protocol='native-model-receipt-v2'}
+    if($Engine -in @((Get-FinalEngineName),(Get-FinalEngineNameV2),(Get-GuardedEngineName),(Get-GuardedEngineNameV2),(Get-HistoricalGuardedEngineName))){$metadata.final_output_protocol='receipt-field-v1'}
+    if($Engine -in @((Get-GuardedEngineName),(Get-GuardedEngineNameV2),(Get-HistoricalGuardedEngineName))){if($manifest.tool_input_protocol -ne 1){throw 'Guarded artifact lacks input validation protocol.'};$metadata.tool_input_protocol=1}
     return $metadata
 }
