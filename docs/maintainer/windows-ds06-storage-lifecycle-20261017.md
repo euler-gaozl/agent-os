@@ -116,3 +116,11 @@
 ## 结论
 
 DS-06 的“真实笔记修订/过期/并发冲突/撤回”“Windows 128–8192 步长历史 Compact/重放测量”“32k/64k/最大限制下 20 轮长任务中断/接管”已取得可复核证据；8k/16k 收紧上下文在 step 13/19 失败，32k 起通过，但 Compact 点仍无显式成功证据；8192 步已接近 192 MB heap 上限，生产级内存上界未验，不能把本记录写成 DS-06 全部完成。
+
+## 新引擎 Compact 探针（2026-10-17 后续，未通过）
+
+- 受控 Agent `ds06-compact-probe`：新 budget-v3、32k context、`note_save` 每轮约 5KB 内容，目标 15 轮。
+- 任务 `7619d600…`（engine `dsh-source-687f282e-budget-v3`）在 **step 12** 失败：`DSH failed: {"error":"DSH turn did not complete"}`；11 次 model 调用、9 个 tool_completed，**没有 compact 事件**。
+- 首次 `7f059c23…` 因 `note_save` 缺 `kind/source` 被 ToolHub 400，修正后复跑得到上述结果。
+- 证据：`local/evidence/ds06-compact-probe-2026-10-17T15-55-07-534Z/`。
+- 这说明“简单 40 轮小回执”不足以覆盖 Compact；需要更大的上下文压力、可见 compact 事件、Compact 点 kill/resume 和恢复后回执校验。当前不能写成 Compact 已验收。
