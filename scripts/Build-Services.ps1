@@ -1,6 +1,6 @@
 param(
     [string[]]$Service=@('control','registry','runtime','worker','toolhub','knowledge','indexer','storage','sandbox','futures','telemetry','sources'),
-    [string]$LayoutPath='', [string]$Pnpm='pnpm', [string]$NodeBinary='', [string]$SourceArtifact='', [string]$ResidentArtifact='', [string]$BudgetArtifact='', [string]$NativeArtifact='', [string]$FinalArtifact='', [string]$GuardedArtifact='', [string]$GuardedV6Artifact='', [switch]$AllowDirty
+    [string]$LayoutPath='', [string]$Pnpm='pnpm', [string]$NodeBinary='', [string]$SourceArtifact='', [string]$ResidentArtifact='', [string]$BudgetArtifact='', [string]$NativeArtifact='', [string]$FinalArtifact='', [string]$GuardedArtifact='', [string]$GuardedV6Artifact='', [string]$SourceV2Artifact='', [string]$ResidentV2Artifact='', [string]$BudgetV2Artifact='', [string]$NativeV2Artifact='', [string]$FinalV2Artifact='', [string]$GuardedV2Artifact='', [switch]$AllowDirty
 )
 $ErrorActionPreference='Stop'
 $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -22,6 +22,12 @@ try{
     if($FinalArtifact -and 'worker' -notin $Service){throw 'FinalArtifact requires a selected Worker build.'}
     if($GuardedArtifact -and 'worker' -notin $Service){throw 'GuardedArtifact requires a selected Worker build.'}
     if($GuardedV6Artifact -and 'worker' -notin $Service){throw 'GuardedV6Artifact requires a selected Worker build.'}
+    if($SourceV2Artifact -and 'worker' -notin $Service){throw 'SourceV2Artifact requires a selected Worker build.'}
+    if($ResidentV2Artifact -and 'worker' -notin $Service){throw 'ResidentV2Artifact requires a selected Worker build.'}
+    if($BudgetV2Artifact -and 'worker' -notin $Service){throw 'BudgetV2Artifact requires a selected Worker build.'}
+    if($NativeV2Artifact -and 'worker' -notin $Service){throw 'NativeV2Artifact requires a selected Worker build.'}
+    if($FinalV2Artifact -and 'worker' -notin $Service){throw 'FinalV2Artifact requires a selected Worker build.'}
+    if($GuardedV2Artifact -and 'worker' -notin $Service){throw 'GuardedV2Artifact requires a selected Worker build.'}
     foreach($role in $Service){if($role -notin $allowed){throw ('Unknown service: '+$role)}}
     if(Test-Path -LiteralPath (Join-Path $layout.release_root 'current.json')){Assert-NoPendingRelease (Read-ReleaseCatalog $layout)}
     $revision=(& git -C $repoRoot rev-parse HEAD).Trim();if($LASTEXITCODE){throw 'Cannot identify build source.'}
@@ -176,6 +182,42 @@ try{
                     $guardedV6Path=Join-Path $directory 'guarded-v6-harness'
                     $guardedV6Execution=Copy-PinnedSourceHarness $GuardedV6Artifact $guardedV6Path (Join-Path $owner.root 'worker/guarded-v6-harness-lock.json') (Get-HistoricalGuardedEngineName)
                     $assets.guarded_v6_harness=Get-ReleaseRelative $layout.release_root $guardedV6Path
+                }
+                if($SourceV2Artifact){
+                    if(-not $owner){throw 'Source V2 Harness requires an independently pinned Worker source.'}
+                    $sourceV2Path=Join-Path $directory 'source-harness-v2'
+                    $sourceV2Execution=Copy-PinnedSourceHarness $SourceV2Artifact $sourceV2Path (Join-Path $owner.root 'worker/source-v2-harness-lock.json') (Get-SourceEngineNameV2)
+                    $assets.source_v2_harness=Get-ReleaseRelative $layout.release_root $sourceV2Path
+                }
+                if($ResidentV2Artifact){
+                    if(-not $owner){throw 'Resident V2 Harness requires an independently pinned Worker source.'}
+                    $residentV2Path=Join-Path $directory 'resident-harness-v2'
+                    $residentV2Execution=Copy-PinnedSourceHarness $ResidentV2Artifact $residentV2Path (Join-Path $owner.root 'worker/resident-v2-harness-lock.json') (Get-ResidentEngineNameV2)
+                    $assets.resident_v2_harness=Get-ReleaseRelative $layout.release_root $residentV2Path
+                }
+                if($BudgetV2Artifact){
+                    if(-not $owner){throw 'Budget V2 Harness requires an independently pinned Worker source.'}
+                    $budgetV2Path=Join-Path $directory 'budget-harness-v2'
+                    $budgetV2Execution=Copy-PinnedSourceHarness $BudgetV2Artifact $budgetV2Path (Join-Path $owner.root 'worker/budget-v2-harness-lock.json') (Get-BudgetEngineNameV2)
+                    $assets.budget_v2_harness=Get-ReleaseRelative $layout.release_root $budgetV2Path
+                }
+                if($NativeV2Artifact){
+                    if(-not $owner){throw 'Native V2 Harness requires an independently pinned Worker source.'}
+                    $nativeV2Path=Join-Path $directory 'native-harness-v2'
+                    $nativeV2Execution=Copy-PinnedSourceHarness $NativeV2Artifact $nativeV2Path (Join-Path $owner.root 'worker/native-v2-harness-lock.json') (Get-NativeEngineNameV2)
+                    $assets.native_v2_harness=Get-ReleaseRelative $layout.release_root $nativeV2Path
+                }
+                if($FinalV2Artifact){
+                    if(-not $owner){throw 'Final V2 Harness requires an independently pinned Worker source.'}
+                    $finalV2Path=Join-Path $directory 'final-harness-v2'
+                    $finalV2Execution=Copy-PinnedSourceHarness $FinalV2Artifact $finalV2Path (Join-Path $owner.root 'worker/final-v2-harness-lock.json') (Get-FinalEngineNameV2)
+                    $assets.final_v2_harness=Get-ReleaseRelative $layout.release_root $finalV2Path
+                }
+                if($GuardedV2Artifact){
+                    if(-not $owner){throw 'Guarded V2 Harness requires an independently pinned Worker source.'}
+                    $guardedV2Path=Join-Path $directory 'guarded-harness-v2'
+                    $guardedV2Execution=Copy-PinnedSourceHarness $GuardedV2Artifact $guardedV2Path (Join-Path $owner.root 'worker/guarded-v2-harness-lock.json') (Get-GuardedEngineNameV2)
+                    $assets.guarded_v2_harness=Get-ReleaseRelative $layout.release_root $guardedV2Path
                 }
             }
             if($role -in @('control','futures')){

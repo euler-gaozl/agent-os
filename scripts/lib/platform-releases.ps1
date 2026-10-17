@@ -201,6 +201,12 @@ function Assert-ReleaseAssets([string]$Role,[System.Collections.IDictionary]$Ass
     if($Role -eq 'worker' -and $Assets.Contains('final_harness')){$expected+='final_harness'}
     if($Role -eq 'worker' -and $Assets.Contains('guarded_harness')){$expected+='guarded_harness'}
     if($Role -eq 'worker' -and $Assets.Contains('guarded_v6_harness')){$expected+='guarded_v6_harness'}
+    if($Role -eq 'worker' -and $Assets.Contains('source_v2_harness')){$expected+='source_v2_harness'}
+    if($Role -eq 'worker' -and $Assets.Contains('resident_v2_harness')){$expected+='resident_v2_harness'}
+    if($Role -eq 'worker' -and $Assets.Contains('budget_v2_harness')){$expected+='budget_v2_harness'}
+    if($Role -eq 'worker' -and $Assets.Contains('native_v2_harness')){$expected+='native_v2_harness'}
+    if($Role -eq 'worker' -and $Assets.Contains('final_v2_harness')){$expected+='final_v2_harness'}
+    if($Role -eq 'worker' -and $Assets.Contains('guarded_v2_harness')){$expected+='guarded_v2_harness'}
     if(@(Compare-Object @($Assets.Keys|Sort-Object) @($expected|Sort-Object)).Count){throw 'Release does not contain the complete role-specific asset set.'}
 }
 function Assert-CompatibleRelease([System.Collections.IDictionary]$Previous,[System.Collections.IDictionary]$Next){

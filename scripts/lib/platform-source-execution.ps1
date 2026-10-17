@@ -6,6 +6,12 @@ function Get-NativeEngineName { return 'dsh-source-639ed015-native-v4' }
 function Get-GuardedEngineName { return 'dsh-source-639ed015-guarded-v7' }
 function Get-HistoricalGuardedEngineName { return 'dsh-source-639ed015-guarded-v6' }
 function Get-FinalEngineName { return 'dsh-source-639ed015-final-v5' }
+function Get-SourceEngineNameV2 { return 'dsh-source-687f282e-state-v1' }
+function Get-ResidentEngineNameV2 { return 'dsh-source-687f282e-resident-v2' }
+function Get-BudgetEngineNameV2 { return 'dsh-source-687f282e-budget-v3' }
+function Get-NativeEngineNameV2 { return 'dsh-source-687f282e-native-v4' }
+function Get-GuardedEngineNameV2 { return 'dsh-source-687f282e-guarded-v7' }
+function Get-FinalEngineNameV2 { return 'dsh-source-687f282e-final-v5' }
 function Get-SourceEngineProfiles {
     return @(
         @{engine=(Get-SourceEngineName);metadata='source_execution';asset='source_harness';environment='DSH_SOURCE_RUNNER';runs='source_runs';resumable='resumable_source_runs'},
@@ -14,7 +20,13 @@ function Get-SourceEngineProfiles {
         @{engine=(Get-NativeEngineName);metadata='native_execution';asset='native_harness';environment='DSH_NATIVE_RUNNER';runs='native_runs';resumable='resumable_native_runs'},
         @{engine=(Get-FinalEngineName);metadata='final_execution';asset='final_harness';environment='DSH_FINAL_RUNNER';runs='final_runs';resumable='resumable_final_runs'},
         @{engine=(Get-GuardedEngineName);metadata='guarded_execution';asset='guarded_harness';environment='DSH_GUARDED_RUNNER';runs='guarded_runs';resumable='resumable_guarded_runs'},
-        @{engine=(Get-HistoricalGuardedEngineName);metadata='guarded_v6_execution';asset='guarded_v6_harness';environment='DSH_GUARDED_V6_RUNNER';runs='guarded_v6_runs';resumable='resumable_guarded_v6_runs'}
+        @{engine=(Get-HistoricalGuardedEngineName);metadata='guarded_v6_execution';asset='guarded_v6_harness';environment='DSH_GUARDED_V6_RUNNER';runs='guarded_v6_runs';resumable='resumable_guarded_v6_runs'},
+        @{engine=(Get-SourceEngineNameV2);metadata='source_v2_execution';asset='source_v2_harness';environment='DSH_SOURCE_V2_RUNNER';runs='source_v2_runs';resumable='resumable_source_v2_runs'},
+        @{engine=(Get-ResidentEngineNameV2);metadata='resident_v2_execution';asset='resident_v2_harness';environment='DSH_RESIDENT_V2_RUNNER';runs='resident_v2_runs';resumable='resumable_resident_v2_runs'},
+        @{engine=(Get-BudgetEngineNameV2);metadata='budget_v2_execution';asset='budget_v2_harness';environment='DSH_BUDGET_V2_RUNNER';runs='budget_v2_runs';resumable='resumable_budget_v2_runs'},
+        @{engine=(Get-NativeEngineNameV2);metadata='native_v2_execution';asset='native_v2_harness';environment='DSH_NATIVE_V2_RUNNER';runs='native_v2_runs';resumable='resumable_native_v2_runs'},
+        @{engine=(Get-FinalEngineNameV2);metadata='final_v2_execution';asset='final_v2_harness';environment='DSH_FINAL_V2_RUNNER';runs='final_v2_runs';resumable='resumable_final_v2_runs'},
+        @{engine=(Get-GuardedEngineNameV2);metadata='guarded_v2_execution';asset='guarded_v2_harness';environment='DSH_GUARDED_V2_RUNNER';runs='guarded_v2_runs';resumable='resumable_guarded_v2_runs'}
     )
 }
 function Assert-SourceExecutionDescriptor([System.Collections.IDictionary]$Descriptor){

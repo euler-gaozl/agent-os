@@ -14,6 +14,12 @@ param(
     [string]$FinalArtifact='',
     [string]$GuardedArtifact='',
     [string]$GuardedV6Artifact='',
+    [string]$SourceV2Artifact='',
+    [string]$ResidentV2Artifact='',
+    [string]$BudgetV2Artifact='',
+    [string]$NativeV2Artifact='',
+    [string]$FinalV2Artifact='',
+    [string]$GuardedV2Artifact='',
     [ValidateSet('source','resident','budget','native','final','guarded','historical')][string]$Engine='',
     [switch]$WithDatabase
 )
@@ -46,8 +52,8 @@ switch($Action){
     }
     doctor {& (Join-Path $PSScriptRoot 'Doctor-Local.ps1') -LayoutPath $LayoutPath}
     build {
-        if($Service.Count){& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Service $Service -Pnpm $Pnpm -SourceArtifact $SourceArtifact -ResidentArtifact $ResidentArtifact -BudgetArtifact $BudgetArtifact -NativeArtifact $NativeArtifact -FinalArtifact $FinalArtifact -GuardedArtifact $GuardedArtifact -GuardedV6Artifact $GuardedV6Artifact}
-        else{& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Pnpm $Pnpm -SourceArtifact $SourceArtifact -ResidentArtifact $ResidentArtifact -BudgetArtifact $BudgetArtifact -NativeArtifact $NativeArtifact -FinalArtifact $FinalArtifact -GuardedArtifact $GuardedArtifact -GuardedV6Artifact $GuardedV6Artifact}
+        if($Service.Count){& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Service $Service -Pnpm $Pnpm -SourceArtifact $SourceArtifact -ResidentArtifact $ResidentArtifact -BudgetArtifact $BudgetArtifact -NativeArtifact $NativeArtifact -FinalArtifact $FinalArtifact -GuardedArtifact $GuardedArtifact -GuardedV6Artifact $GuardedV6Artifact -SourceV2Artifact $SourceV2Artifact -ResidentV2Artifact $ResidentV2Artifact -BudgetV2Artifact $BudgetV2Artifact -NativeV2Artifact $NativeV2Artifact -FinalV2Artifact $FinalV2Artifact -GuardedV2Artifact $GuardedV2Artifact}
+        else{& (Join-Path $PSScriptRoot 'Build-Services.ps1') -LayoutPath $LayoutPath -Pnpm $Pnpm -SourceArtifact $SourceArtifact -ResidentArtifact $ResidentArtifact -BudgetArtifact $BudgetArtifact -NativeArtifact $NativeArtifact -FinalArtifact $FinalArtifact -GuardedArtifact $GuardedArtifact -GuardedV6Artifact $GuardedV6Artifact -SourceV2Artifact $SourceV2Artifact -ResidentV2Artifact $ResidentV2Artifact -BudgetV2Artifact $BudgetV2Artifact -NativeV2Artifact $NativeV2Artifact -FinalV2Artifact $FinalV2Artifact -GuardedV2Artifact $GuardedV2Artifact}
     }
     'restore-check' {
         if(-not $BackupDirectory){throw 'restore-check requires -BackupDirectory.'}
