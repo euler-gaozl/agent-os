@@ -34,7 +34,7 @@
       "repository": "agent-os-sources"
     },
     "knowledge": {
-      "commit": "ed54550f15e115956fc30e08e0e8121b976ee796",
+      "commit": "81a817f0f218be76274e85c7713f95d1e4f2a06f",
       "repository": "agent-os-knowledge"
     },
     "indexer": {
