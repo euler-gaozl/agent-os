@@ -37,6 +37,13 @@
 - Worker `f499e2a`：生成/嵌入六个 V2 compiled lock，增加 `DSH_*_V2_RUNNER` 启动 wiring、`sourceForEngine` 映射和 budget 路由；`go test ./worker ./cmd/worker` 通过。**平台发布脚本尚未打包这些 V2 目录/环境变量，所以线上仍无法启用新引擎。**
 - 下一步仍需：给 Build-Services/Platform 增加 V2 artifact 参数和 release 描述字段、打包同时含旧/新目录的 Worker release，再做 replay/activation。
 
+## 双版本打包（已生成，未安装）
+
+- 平台脚本已支持 `-SourceV2Artifact`/`-ResidentV2Artifact`/`-BudgetV2Artifact`/`-NativeV2Artifact`/`-FinalV2Artifact`/`-GuardedV2Artifact`，把新旧目录放进同一 Worker release，并写入六个 `*_v2_execution` 描述。
+- 已实际生成 staged Worker `worker-76038f18…`：同时含旧 `639ed015` 资产和六个 `687f282e` V2 资产；描述中的 manifest/engine/protocol 均正确。
+- **未安装**：Worker 自带的 vendored Runtime 仍是旧版本，`execution.NewSourceVersions` 不识别新的 engine 字符串；若此时启动，V2 环境变量会让 Worker 启动失败。必须先把 Worker 的 Runtime owner module 更新到 `69b9e62` 并重新 vendor/测试，然后才能安装这个 release。
+- 旧任务仍由当前 `worker-52356bed…` 运行，平台未改变。
+
 ## 下一步
 
 1. 设计并实现双版本 Worker 打包（旧/新 engine 目录+manifest 列表）。
