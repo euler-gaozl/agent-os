@@ -132,7 +132,9 @@
 - 第三次修复：Worker `1802936` 将 ToolHub `/invoke` 5xx 重试扩到 10 次（250ms–3s，总约 19 秒），安装为 `worker-1ac65212…`；复验任务 `d5fbaf41…` 在 Runtime stop/start 后 **completed step 6**，owner 未切换，5 个回执完整。
 - 成功证据：`local/evidence/ds07-runtime-outage-2026-10-17T12-55-59-068Z/`。
 - 长停机边界：另一次任务 `80c0eef4…` 在 Runtime 停止 **25 秒**后重启，仍 **step 3 failed** `service HTTP 503`；平台恢复 `core_ready=true`、2 Worker，但任务没有恢复。证据：`local/evidence/ds07-runtime-outage-2026-10-17T13-07-06-275Z/`。
-- 结论：约 19 秒的同 operation ToolHub 退避可覆盖约 4 秒 stop/start，但 **25 秒停机仍失败**；这修复的是有限窗口，不是网络分区/长停机/任务级恢复。超过重试窗口仍需要任务级重试或用户重试。
+- 第四次修复：Worker `e45c9fb` 将 ToolHub `/invoke` 5xx 重试扩到 24 次（约 60 秒），安装为 `worker-79f0e9d1…`；复验任务 `bc43eb95…` 在同样的 **25 秒** stop/start 下 **completed step 6**，owner 未切换，5 个回执完整。
+- 成功证据：`local/evidence/ds07-runtime-outage-2026-10-17T13-13-54-136Z/`。
+- 结论：约 60 秒的同 operation ToolHub 退避可覆盖 25 秒停机 + Runtime 启动窗口；这修复的是有限窗口，不是网络分区/无限长停机/任务级恢复。超过约 60 秒的停机仍会失败，需要任务级重试或用户重试。
 
 ## PostgreSQL 死锁注入
 

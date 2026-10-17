@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "latest_recovery_audit": "windows-source-recovery-20261017.json",
-  "current_execution_record": "windows-local-acceptance-20261017.md",
-  "as_of": "2026-10-17T13:08:00Z",
+  "current_execution_record": "windows-ds08-restore-20261017.md",
+  "as_of": "2026-10-17T13:18:29Z",
   "project_id": "project:agent-platform",
   "source_baseline": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe",
   "integration_handoff_branch": "feat/end-to-end-delivery",
@@ -534,7 +534,7 @@
       "url": "https://github.com/euler-gaozl/agent-os-worker",
       "clone_url": "https://github.com/euler-gaozl/agent-os-worker.git",
       "branch": "feat/model-native-limits",
-      "source_head_at_audit": "180293621c950e2dd661ec1f16dead571eebf153",
+      "source_head_at_audit": "e45c9fbf48e0308df647853bb85abc812ac68aae",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -545,7 +545,7 @@
       "integration_pins": [
         {
           "role": "worker",
-          "commit": "180293621c950e2dd661ec1f16dead571eebf153",
+          "commit": "e45c9fbf48e0308df647853bb85abc812ac68aae",
           "owner_modules": [
             {
               "module": "github.com/euler-gaozl/agent-os-runtime",
@@ -562,8 +562,8 @@
       "installed": [
         {
           "role": "worker",
-          "commit": "180293621c950e2dd661ec1f16dead571eebf153",
-          "manifest": "descriptors/worker-1ac65212df0144e3ad1261f74ee06bbd.json",
+          "commit": "e45c9fbf48e0308df647853bb85abc812ac68aae",
+          "manifest": "descriptors/worker-79f0e9d1dd22469b88c0aa9781092d57.json",
           "sdk": {
             "version": "v0.1.0-rc.4",
             "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
@@ -583,11 +583,11 @@
             }
           ],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T12:55:59Z",
-          "observation": "Actual owner Windows release catalog; 10-attempt ~19s ToolHub 5xx retry carried task d5fbaf41 through Runtime stop/start to completed step 6."
+          "observed_at": "2026-10-17T13:13:54Z",
+          "observation": "Actual owner Windows release catalog; 24-attempt ~60s ToolHub 5xx retry carried task bc43eb95 through a 25s Runtime stop/start to completed step 6."
         }
       ],
-      "remote_main_head_at_audit": "180293621c950e2dd661ec1f16dead571eebf153"
+      "remote_main_head_at_audit": "e45c9fbf48e0308df647853bb85abc812ac68aae"
     }
   ],
   "environment_policy": {
