@@ -66,3 +66,15 @@ Windows Go 复测使用新建的隔离 PostgreSQL，测试后已停止。Runtime
 本机检查：接续发布 28 项通过，使用真实描述文件/catalog/操作前置检查及显式受控进程、数据库观测；另在新建隔离 PostgreSQL 上使用实际 Owner DDL 和非 Owner Runtime 账号，7 项检查通过，覆盖缺表、最小权限、已保留拒绝、撤权、错误表结构、存活/关闭的 Runtime 连接。原回执发布 41 项和来源锁检查也通过。数据库夹具已经停止，没有访问正式任务正文、迁移正式数据库或调用供应商。独立 Agent 复核修复后未发现新的 P1/P2 阻断；其为只读静态评审，不替代后续安装和浏览器验收。
 
 上述是构建前准备；最新 Windows 包的构建、备份/隔离恢复、正式迁移、激活及页面实测仍须继续，不能由源码同步或本节测试推断已交付。Actions 继续禁用。
+
+## R1 Windows 实际交付进展（同日后续）
+
+- 集成源码 `dc43234` 已构建四个完整 Windows 包：Worker `03b1794`、Runtime `217f2ae`、Console `34094b1`、Futures `f5e7bd2`。Worker 包包含固定 Node 和全部五个历史/源码 Harness 入口，未仅复制 exe。构建产物校验通过，源码与本轮修复均已推送对应 GitHub `main` 和开发分支，Actions 关闭。
+- 新完整备份在 `local/backups/before-continuation-20261017-114745`。实际隔离恢复 `8def733f2b474f98a43d38d431b820b6` 为 passed：一个数据库、10 个角色登录、3 项密钥解密及离线 Harness 重建成功；隔离 PostgreSQL 已停止，未启动 Worker 或调用供应商。密钥内容没有输出或提交。备份后的原 12 个实例恢复。
+- Windows 独立 Worker 测试执行 1 顶层/3 子场景，零 skip：旧 rc.5 在约束变更后重发、新 guard 阻止重发、同规则下重试成功。使用实际新旧二进制、固定 Node runner、真实 Runtime HTTP/隔离 PostgreSQL；模型/Storage 为夹具。独立复核修正 Windows 退出判断竞态后再次全通过。没有 race、真实模型或在途崩溃测试；Linux 仅交叉编译。测试源码已纳入 Runtime `96fbf63`，集成 pin 随之更新；已构建 Runtime `217f2ae` 与它的生产代码相同，但不应混写其源码提交号。
+- 两个正式 Worker 已更新至 `worker-ecb2580cd97f40ee94da679428dc53e4`，期货端更新至 `futures-2b4f2b3749394b9ea5f6928f5cc405c2`。两次发布的 readiness 验证通过、非目标实例保持不变。更新后为 11 种服务、12 个进程实例，`core_ready=true`；仍有既知的 Sandbox 隔离执行未配置提示。
+- 在真实浏览器打开新版期货端首页、历史完成任务、资料回查与保存的原文，并切换 `1–1200` 到 `1201–2009` 字符片段，均能显示。旧报告仍有 63 项待核记录，不能把可展示/可回读当作研究事实已验收。未创建新研究或调用模型；未覆盖窄屏、Console 接续点击或丢回复联合交互。
+
+私有执行证据入口为 `ops/windows-continuation-build.path`；其中 `delivery-progress.json`、各更新回执、status、构建/恢复日志、`worker-revision/rechecked-result.json` 分别保存真实结果。当前 staged set 为 `local/releases/staged/23f52f591485425598e3e10883a52f2b.json`，其 Runtime 是 `217f2ae`、Console 是 `34094b1`。正式 Runtime 和 Console **尚未更新**，正式回执表 **尚未迁移**。
+
+下一步继续 R1：按新固定 Runtime `96fbf63` 构建迁移/Runtime 包，复用 Owner 迁移日志机制加入可恢复的接续迁移，先在恢复副本排练并核对旧表/序列/权限，再执行正式迁移和 Runtime → Console 发布。迁移 gate 当前只识别 telemetry/runtime-access/sources 三种操作，不能绕过它或借别的 operation 名称套用。备份早于本轮两次发布；正式迁移计划必须明确这一差异并验证最新停止后的数据基线，不能谎称 catalog 与旧备份一致。完成后才进入 R2 的有界真实研究验收。

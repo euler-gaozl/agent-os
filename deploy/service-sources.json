@@ -54,7 +54,7 @@
     },
     "runtime": {
       "repository": "agent-os-runtime",
-      "commit": "217f2ae8b640e20406ba5281dcf17c8b43378e99"
+      "commit": "96fbf63af2e0d701d877cc396a90ffec6ee9580c"
     },
     "worker": {
       "owner_modules": [
