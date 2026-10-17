@@ -127,3 +127,15 @@ DS-06 的“真实笔记修订/过期/并发冲突/撤回”“Windows 128–819
 - 低 token 变体 `ds06-compact-probe2`（context_tokens 8192、context_bytes 1MB）任务 `c9233fa2…` 在 **step 4** 即失败：`DSH turn did not complete`，3 次 model 调用、1 个 tool_completed，仍**没有 compact 事件**。降低 token 预算没有触发压缩，而是提前失败。
 - 结论加强：当前新 budget-v3 路径没有可观测/可恢复的 Compact；需要实现/修复 Compact 满足 DS-06，而不是调参。
 - 进一步修正 fixture 的 token usage（按消息字节/4 报 prompt_tokens），新引擎任务 `47213de2…` 仍在 **step 4** 失败：3 次 model 调用（prompt_tokens 448/576/3535）、仅 1 个 tool_completed，仍无 compact 事件；证据 `local/evidence/ds06-compact-probe2-2026-10-17T15-58-28-178Z/`。这说明不是简单的 token 计量问题，Compact 仍未实现/可观测。
+
+## Compact 点 kill/resume 已通过（2026-10-17 后续）
+
+- 关键修复：compaction 请求是模型摘要请求；此前 fixture 对它返回 `note_save` 工具调用，导致 `DSH turn did not complete`。改为返回摘要文本后，Compact 正常执行。
+- 任务 `549c3295b1c6d5deb737db87c02a11eb`：
+  - engine `dsh-source-687f282e-budget-v3`；
+  - 在 compaction 后、step 4 杀掉 owner `worker-2f9730…`；
+  - Runtime 以 **fence 2** 由 `worker-8141…` 接管；
+  - 恢复后重试同一 `call_id` `549c…/dsh/18`；
+  - **completed step 5**，结果 `COMPACT_DONE`。
+- 证据：`local/evidence/ds06-compact-probe3-2026-10-17T16-04-33-497Z/`；4 次 model 调用中有 2 次 continuity checkpoint 摘要请求。
+- 这关闭“Compact 点 kill/resume”验收；仍是受控 fixture，不代表生产长任务或真实供应商内容质量。

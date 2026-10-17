@@ -805,7 +805,7 @@
       "status": "current_snapshot_restore_passed",
       "doc": "windows-ds08-restore-20261017.md",
       "section": "DS-08",
-      "scope": "Latest backup ds08-final-20261017h (after guarded-v2 controlled task a4063a81) restored into a disposable random-port PostgreSQL cluster: 46 relations, 10 service logins, 5 sealed credential decryptions, 2 archived Worker bundles (52356bed/806b411d), complete release generation 203 with 3103 files; isolated cluster stopped, provider calls 0. Not server/HA, eight physical databases or external Milvus/LightRAG/Langfuse."
+      "scope": "Latest backup ds08-final-20261017i (after Compact-point kill/resume task 549c3295) restored into a disposable random-port PostgreSQL cluster: 46 relations, 10 service logins, 5 sealed credential decryptions, 2 archived Worker bundles (52356bed/806b411d), complete release generation 211 with 3103 files; isolated cluster stopped, provider calls 0. Not server/HA, eight physical databases or external Milvus/LightRAG/Langfuse."
     },
     {
       "id": "task:final-ci",
@@ -813,7 +813,7 @@
       "label": "一次统一验收与交付",
       "status": "local_sweep_passed_hosted_ci_open",
       "doc": "windows-local-acceptance-20261017.md",
-      "scope": "Windows local full suite passed after the dual-engine DSH install (Runtime cd1436ca/Worker 806b411d): five Go repos, Console Web 40, Futures Web 27, Harness core 16 and guarded 31, all exit 0 with zero skips; evidence ds09-local-suite-edbd10d0ca27421bb5fac4d93a972ac2. Guarded-v2 final, hosted CI, external Langfuse, Compact-point recovery and old implementation retirement remain."
+      "scope": "Windows local full suite passed after the dual-engine DSH install (Runtime cd1436ca/Worker 806b411d): five Go repos, Console Web 40, Futures Web 27, Harness core 16 and guarded 31, all exit 0 with zero skips; evidence ds09-local-suite-edbd10d0ca27421bb5fac4d93a972ac2. Guarded-v2 final, hosted CI, external Langfuse, Compact-point kill/resume passed (task 549c3295, fence 2 takeover, same call_id retry); old implementation retirement and hosted CI remain."
     },
     {
       "id": "task:fresh-windows-bootstrap",
