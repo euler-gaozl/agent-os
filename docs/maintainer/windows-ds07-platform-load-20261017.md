@@ -163,6 +163,13 @@
 - 证据：`local/evidence/ds07-large-query-ds07bench_911211dc/plans.txt`。
 - 这是**合成表**，不是生产数据，也不含并发/锁竞争；它说明 `runs(status,created_at)` 在百万行时可能需要索引，但不能替代真实平台 100 万任务容量验收。
 
+## 网络分区尝试（未执行）
+
+- 尝试在本机起 TCP 代理 18094→8094，并把 ToolHub 的 `RUNTIME_URL` 指向代理，以在 ToolHub→Runtime 链路制造断网。
+- `Platform.ps1 start -Service toolhub` 以 **`Configuration differs from the registered deployment for toolhub`** 拒绝启动，未形成分区；配置已恢复，ToolHub 重新启动。
+- 证据：`local/evidence/ds07-network-partition-attempt-ec9733db24884f9c8d3d111d0982761f/result.json`。
+- 这证明配置漂移守卫会阻止未登记变更，但**没有网络分区证据**；分区仍需管理员防火墙或独立网络实验环境。
+
 ## 结论与边界
 
 - 8 个并发合成任务没有触发连接耗尽、死锁、临时文件或 Worker 分配失衡；两个 Worker 均实际接单。32 秒双 Worker 负载 2/2 完成；3 分钟 12 任务 soak 12/12 完成；9.1 分钟 36 任务 soak 36/36 完成；30.1 分钟 24 任务 soak 24/24 完成，连接 13–18、deadlocks 0，RSS 峰值受控且结束回落。8 秒 `runs` 行锁使任务等待后恢复并 completed；30 秒行锁使任务在 step 6 显式失败；15 秒锁内取消、杀 owner 后取消、修复后的 30 秒锁内取消均落到 cancelled；终止 3 个 Worker DB 会话后任务仍 completed；PG 快速重启期间任务 completed；Runtime stop/start 在 Worker 19 秒同 operation 退避下也 completed（此前较短退避均失败）。
