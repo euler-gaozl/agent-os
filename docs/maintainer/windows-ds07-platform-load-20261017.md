@@ -111,6 +111,13 @@
 - 证据：`local/evidence/ds07-db-connection-loss-2026-10-17T12-34-03-769Z/`。
 - 这只验证单次 Worker 连接中断后的恢复；不是 PostgreSQL 重启、网络分区或整机故障，也未测量连接池重连耗时。
 
+## PostgreSQL 重启
+
+- 任务 `d72c345f…` 运行中执行 `pg_ctl restart -m fast`；PostgreSQL 的 `pg_postmaster_start_time()` 为 **20:36:20**，落在任务事件窗口 **20:36:07–20:36:37** 内，证明确实发生重启。
+- 任务仍 **completed step 6**，5 个 `run_recall` 回执完整；`Platform.ps1 status` 随后恢复 `core_ready=true`、2 Worker。
+- 证据：`local/evidence/ds07-pg-restart-8807c89b9c3449ffb204efc35deebc18/`（`result.json`、`meta.json`）。
+- 说明：辅助脚本在重启等待中超时被杀，未捕获 `pg_ctl` 输出；重启事实由 postmaster start time 与任务时间窗共同证明。只验证快速重启，不是网络分区、整机断电或主备切换，也未测量重连/恢复耗时。
+
 ## 结论与边界
 
 - 8 个并发合成任务没有触发连接耗尽、死锁、临时文件或 Worker 分配失衡；两个 Worker 均实际接单。32 秒双 Worker 负载 2/2 完成；3 分钟 12 任务 soak 12/12 完成；9.1 分钟 36 任务 soak 36/36 完成；30.1 分钟 24 任务 soak 24/24 完成，连接 13–18、deadlocks 0，RSS 峰值受控且结束回落。8 秒 `runs` 行锁使任务等待后恢复并 completed；30 秒行锁使任务在 step 6 显式失败；15 秒锁内取消、杀 owner 后取消、修复后的 30 秒锁内取消均落到 cancelled；终止 3 个 Worker DB 会话后任务仍 completed。
