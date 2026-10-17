@@ -813,7 +813,7 @@
       "label": "一次统一验收与交付",
       "status": "local_sweep_passed_hosted_ci_open",
       "doc": "windows-local-acceptance-20261017.md",
-      "scope": "Windows local full suite passed after the dual-engine DSH install (Runtime cd1436ca/Worker 806b411d): five Go repos, Console Web 40, Futures Web 27, Harness core 16 and guarded 31, all exit 0 with zero skips; evidence ds09-local-suite-edbd10d0ca27421bb5fac4d93a972ac2. Guarded-v2 final, hosted CI, external Langfuse, Compact-point kill/resume passed (task 549c3295, fence 2 takeover, same call_id retry); old implementation retirement and hosted CI remain."
+       "scope": "Hosted concentrated CI dispatched once on 13 service repos: 12 passed, agent-os-knowledge failed its Linux race assertion TestArchiveReaderRequirementRejectsIncompleteOrUnknownState (missing marker accepted). Actions were disabled again after the run. Not capacity/server/HA. See windows-final-ci-20261018.md."
     },
     {
       "id": "task:fresh-windows-bootstrap",
@@ -3766,7 +3766,7 @@
   "environment_policy": {
     "file": "environments.json",
     "default_execution_environment": null,
-    "current_execution_record": "windows-ds08-restore-20261017.md",
+    "current_execution_record": "windows-final-ci-20261018.md",
     "updated_at": "2026-10-17",
     "rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets."
   },
