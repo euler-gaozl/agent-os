@@ -127,7 +127,9 @@
 - 修复尝试：Worker `0be7f2f` 将 SourceState 5xx 重试扩到 6 次（250ms–3s，总约 6.75 秒），安装为 `worker-894fcadc…`。
 - 复验任务 `8f80b4f5…`：同样的 Runtime stop/start 仍在 **step 3 failed**，错误仍为 `service HTTP 503`；该重试没有覆盖实际失败路径或重启窗口仍超预算。
 - 复验证据：`local/evidence/ds07-runtime-outage-2026-10-17T12-48-14-410Z/`。
-- 结论：Runtime 中断会使在途 Worker 任务显式失败（503）；本次 Worker 重试尝试**未修复**。需要定位 503 的具体调用/延长重试或做任务级恢复；不能把“平台恢复”写成“任务无感续跑”。
+- 第二次修复尝试：Worker `f623f30` 对 ToolHub `/invoke` 的 5xx 做 5 次、250ms–2s 退避（同一 operation ID），安装为 `worker-8e77e8cb…`；复验任务 `e4c57c1f…` 仍 **step 3 failed**，503 未消除。
+- 复验证据：`local/evidence/ds07-runtime-outage-2026-10-17T12-52-08-061Z/`。
+- 结论：Runtime 中断会使在途 Worker 任务显式失败（503）；SourceState 与 ToolHub 两条重试均**未修复**，503 的具体调用仍未定位。需要任务级恢复或更准确的调用级重试；不能把“平台恢复”写成“任务无感续跑”。
 
 ## 结论与边界
 
