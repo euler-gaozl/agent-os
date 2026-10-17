@@ -31,7 +31,7 @@
 
 - `go test -mod=vendor ./futures ./cmd/...`：通过。
 - `go vet -mod=vendor ./futures ./cmd/...`：通过，exit 0。
-- Web：`node --import tsx --test` 全部 26 项通过；TypeScript `--noEmit` 与 Vite `--mode futures` 构建通过。Vite 只出现既有 `lucide-react` `"use client"` 非阻断警告。
+- Web：`node --import tsx --test` 全部 27 项通过；TypeScript `--noEmit` 与 Vite `--mode futures` 构建通过。Vite 只出现既有 `lucide-react` `"use client"` 非阻断警告。
 - 新增 Go 测试覆盖：纯说明支持 finding、数值/全宽数字/倍数/说明限制的数量拦截、引用存在性与重复、问题归属、非法说明编号、来源性质与限制、回执身份与分段、旧报告兼容、说明数量上限、比较只允许数值事实、`reportInstructions` 字段、严格 JSON。
 - 新增 Web 测试覆盖：说明卡渲染、说明引文回查、AI 摘要警示、非法说明编号问题仍显示在卡片、旧报告无说明区。
 
