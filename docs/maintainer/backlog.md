@@ -11,7 +11,7 @@
 | DS-05 | 正式 ACL 已收缩；撤权后合成任务/双 Worker 接管通过；临时 Telemetry 导出 3,992 事件到 mock；真实 Langfuse/managed 实例、旧实现/Linux 未完成 | task:service-retirement / 各Owner及集成 | 接真实 Langfuse 或受控 OTLP 并验证 managed 实例；逐行删除旧实现；最终 CI 另做 |
 | DS-06 | 部分完成（笔记修订/过期/并发 200+409/撤回 + 128–8192 步 Compact/重放（8192 步 168.1MB heap/339.5MB RSS）+ 32k/64k/最大限制下 20/40/80 轮强杀/接管/完成 + 20 轮 RSS 采样；8k/16k step 13/19 失败；40/80 轮无可见 Compact，请求体线性增长） | task:storage-lifecycle / Harness、Runtime、Worker、Storage | 从 token/交换记录确认 Compact 是否触发；定位 8k/16k 与 32k 差异；补真实 Compact 点强杀续跑、10M 分块/生产 RSS 上界；不删权威资料，不以合成基准代替生产容量 |
 | DS-07 | 部分完成（8 并发 8/8、30.1 分钟 24/24 soak、8 秒锁恢复、30 秒锁失败、15/30 秒锁内取消、杀 owner 后取消、终止 3 个 Worker DB 会话后完成、PG 快速重启后完成、DB 层死锁注入 0→1、任务级死锁未复现、小数据量查询计划基线（events 0.10ms、calls 0.05ms、runs seq 0.35ms）、Runtime stop/start 4 秒/25 秒在 60 秒退避下完成；网络分区/任务级死锁/大数据量慢查询/异步补偿/内存趋势未做） | task:faults-and-resources / 集成及相关Owner | 补网络分区、更长 Runtime 停机/任务级恢复、任务级死锁、大数据量慢查询计划、超过 60 秒锁的异步取消、外部副作用补偿、内存趋势和整平台资源口径 |
-| DS-08 | 已完成（当前版本快照备份 + 隔离恢复 passed） | task:latest-recovery / 原Windows集成 | 备份 `ds08-final-20261017d`（Worker 79f0e9d1/Futures fdc9a7/Console 94f118 后）：46 表/序列、10 服务登录、5 密封凭据、2 Worker bundle、离线 Harness 重建全部通过；不替代服务器/HA 或外部服务恢复 |
+| DS-08 | 已完成（当前版本快照备份 + 隔离恢复 passed） | task:latest-recovery / 原Windows集成 | 备份 `ds08-final-20261017e`（Worker 52356bed/Futures fdc9a7/Console 94f118 后）：46 表/序列、10 服务登录、5 密封凭据、2 Worker bundle、离线 Harness 重建全部通过；不替代服务器/HA 或外部服务恢复 |
 | DS-09 | 本机全套扫描通过（Runtime/Console/Worker/Futures/Telemetry/Harness；40+27 Web、16+31 Harness，0 skip）；最终 hosted CI 未执行 | task:final-ci / 集成 | 全部本机验收后唯一一次集中 hosted CI 及独立逐条完工审查；本机扫描不能替代 Actions |
 
 已完成不重做：Mac成果接回、接续回执迁移/安装、final-v5确定性成稿协议、guarded-v6工具参数纠正、Futures v7精确引用诊断、DS-01非数值说明绑定与v8检查器、DS-02双引擎v7单次续接安装、15仓同步。它们不等于最终业务和平台验收通过。

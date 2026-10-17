@@ -134,7 +134,9 @@
 - 长停机边界：另一次任务 `80c0eef4…` 在 Runtime 停止 **25 秒**后重启，仍 **step 3 failed** `service HTTP 503`；平台恢复 `core_ready=true`、2 Worker，但任务没有恢复。证据：`local/evidence/ds07-runtime-outage-2026-10-17T13-07-06-275Z/`。
 - 第四次修复：Worker `e45c9fb` 将 ToolHub `/invoke` 5xx 重试扩到 24 次（约 60 秒），安装为 `worker-79f0e9d1…`；复验任务 `bc43eb95…` 在同样的 **25 秒** stop/start 下 **completed step 6**，owner 未切换，5 个回执完整。
 - 成功证据：`local/evidence/ds07-runtime-outage-2026-10-17T13-13-54-136Z/`。
-- 结论：约 60 秒的同 operation ToolHub 退避可覆盖 25 秒停机 + Runtime 启动窗口；这修复的是有限窗口，不是网络分区/无限长停机/任务级恢复。超过约 60 秒的停机仍会失败，需要任务级重试或用户重试。
+- 第五次：Worker `3e8eec3` 对显式 503 **不再冻结为 failed**，而是保留 durable run 等租约到期接管；安装为 `worker-52356bed…`。任务 `d0abfb0d…` 在 Runtime 停止 **70 秒**后重启：先 fence 1，随后同 Worker 以 **fence 2** 重新 claim，最终 **completed step 6**，5 个回执完整。
+- 证据：`local/evidence/ds07-runtime-outage-2026-10-17T13-44-37-698Z/`。
+- 结论：约 60 秒 ToolHub 退避 + 503 租约重排队可覆盖 70 秒停机并完成任务；这是任务级恢复，但仍不是网络分区/无限长停机。永久 503 会反复重排队（未加上限），需要后续限次/告警，不能写成无限可用。
 
 ## PostgreSQL 死锁注入
 

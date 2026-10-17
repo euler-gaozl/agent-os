@@ -33,7 +33,7 @@
   - Futures Web **27/27**，0 skip；
   - Harness core **16/16**，0 skip；
   - Harness guarded **31/31**，0 skip。
-- 后续 Worker `79f0e9d1…` 仅把 5xx 退避扩到约 60 秒；`go test ./worker` 通过，其他仓库未因此重跑。DS-08 `ds08-final-20261017d` 已用该 Worker 重新恢复验证。
+- 后续 Worker `79f0e9d1…`（约 60 秒退避）与 `52356bed…`（503 租约重排队）只改 Worker；`go test ./worker` 均通过，其他仓库未因此重跑。DS-08 `ds08-final-20261017e` 已用 `52356bed…` 重新恢复验证。
 - 这是当前安装版本的**本机集中复跑**，不是 GitHub Actions，也不是最终 hosted CI。
 
 ## 覆盖含义
