@@ -44,6 +44,15 @@ foreach($key in @('guarded_runs','resumable_guarded_runs')){
  foreach($value in @(-1,'0',0.5)){$bad=Clone $facts;$bad[$key]=$value;Reject {Assert-SourceExecutionPolicy $nextRuntime $nextWorker (Get-FinalEngineName) $bad} ('Invalid '+$key)}
 }
 Reject {Copy-PinnedSourceHarness $Artifact (Join-Path $proof 'wrong-pin') (Join-Path (Split-Path -Parent $pin) 'final-harness-lock.json') (Get-FinalEngineName)} 'v6 cannot satisfy v5 pin'
+$registry=Read-ReleaseDescriptor $layout $catalog.services.registry.current -Verify
+$console=Read-ReleaseDescriptor $layout $catalog.services.control.current -Verify
+$modelFacts=@{format=1;leaf_identity=$true;native_agents=$true;final_agents=$true;invalid_agents=$false}
+Reject {Assert-ModelManagementPolicy $registry $console $nextRuntime $modelFacts $true (Get-GuardedEngineName)} 'Old Console blocked for v6 default'
+Reject {Assert-ModelManagementPolicy $registry $console $nextRuntime $modelFacts $true (Get-FinalEngineName) -GuardedRuns $true} 'Retained v6 blocks Console rollback'
+$console=Clone $console;$console.model_management.guarded_transport='guarded-v6'
+Assert-ModelManagementPolicy $registry $console $nextRuntime $modelFacts $true (Get-GuardedEngineName);Check $true 'Guarded Console allowed'
+$console.model_management.guarded_transport='unknown'
+Reject {Assert-ModelManagementDescriptor $console} 'Unknown guarded transport denied'
 $report=@{passed=$true;checks=$count;scope='Real pinned artifact and installed release provenance; compatibility/default/rollback policy only, no service mutation';provider_calls=0}
 Write-PlatformJson (Join-Path $proof 'result.json') $report
 $report.proof=$proof;$report|ConvertTo-Json

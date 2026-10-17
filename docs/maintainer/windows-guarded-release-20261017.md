@@ -22,3 +22,5 @@ guarded-v6 在 DSH 调用工具前验证冻结 JSON Schema，将确定的参数�
 源码已进入独立仓库；本文件初次提交时尚未安装 v6、尚未执行真实供应商重跑。正式默认仍为 final-v5，历史失败记录保留。安装与业务验收结果随后追加，不能将上述合成供应商验证写成真实研究完成。
 
 私有证据入口：`ops/guarded-v6.path`、`ops/guarded-runtime.path`、`ops/guarded-worker-joint.path`；路径属于原 Windows。Actions 继续关闭。完整 P0–P5/P2.5 和未验收 UI/平台项目保持，不因本次修复缩减。
+
+发布前独立评审补充：旧 Console 无法识别 v6 的接续及工作状态。已新增显式 UI 支持和 guarded_transport 能力，默认/留存任务阻止回滚到旧 Console；新增 4 项门禁检查，总计 29 项。14 项 Console Web 测试及 Go/TypeScript 检查通过。
