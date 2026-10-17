@@ -45,7 +45,7 @@ Harness 提交 `c5d4e4e2d5`：
 - 本地 31 项 guarded 检查通过，新增：拒绝后模型以正文结束 → 一次续接 → 重新检查并成功；以及第二次文本结束即终止、不死循环。强杀/丢回包重放测试仍通过。
 - README 明确 v7 是候选，未接入 Runtime/Worker/Console，未部署。
 
-Runtime 提交 `ba45965`（本地，未推送）：`IsFinalEngine` 识别 v7 以便历史回放/只读，但 `NewSourceVersions` 仍只准入 v6，v7 不能被领取；`deploy/release-contract.json` 保持 v6。Runtime 单测与 vet 通过。这样旧 v6 默认和发布流程不被半接入改坏。
+Runtime 提交 `ba45965`（已推送）：`IsFinalEngine` 识别 v7 以便历史回放/只读，但 `NewSourceVersions` 仍只准入 v6，v7 不能被领取；`deploy/release-contract.json` 保持 v6。Runtime 单测与 vet 通过。这样旧 v6 默认和发布流程不被半接入改坏。
 
 ## 需要同步的 Owner 与入口（尚未修改）
 
