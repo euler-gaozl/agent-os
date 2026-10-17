@@ -34,7 +34,7 @@
 ## 双版本注册脚手架（未启用）
 
 - Runtime `69b9e62`：识别新 `687f282e` 六种 engine、增加 claim/reap 成员和 budget 路由；旧 engine 路径保持不变。`go test ./internal/runstate ./execution ./runtime` 通过。
-- Worker `d2c30b6`：生成/嵌入六个 V2 compiled lock，增加 `DSH_*_V2_RUNNER` 启动 wiring、`sourceForEngine` 映射和 budget 路由；`go test ./worker ./cmd/worker` 通过。**平台发布脚本尚未打包这些 V2 目录/环境变量，所以线上仍无法启用新引擎。**
+- Worker `f499e2a`：生成/嵌入六个 V2 compiled lock，增加 `DSH_*_V2_RUNNER` 启动 wiring、`sourceForEngine` 映射和 budget 路由；`go test ./worker ./cmd/worker` 通过。**平台发布脚本尚未打包这些 V2 目录/环境变量，所以线上仍无法启用新引擎。**
 - 下一步仍需：给 Build-Services/Platform 增加 V2 artifact 参数和 release 描述字段、打包同时含旧/新目录的 Worker release，再做 replay/activation。
 
 ## 下一步
