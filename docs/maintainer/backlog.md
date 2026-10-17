@@ -8,7 +8,7 @@
 | DS-02 | 已完成（双产物安装，默认 v7；DS-03 已在 v7 上跑通真实任务） | task:finalization-recovery / Harness、Runtime、Worker、业务方法 | v6 任务 continuation context=`manual_review`/`unsupported_checkpoint`，保留重放/读取但不能直接续跑；不得删 v6 runner 或改旧任务；真实恢复/故障重放归 DS-07 |
 | DS-03 | 已完成（真实四问报告 + 独立内容复核 ACCEPT） | task:research-quality / Agent 22、Skill 10、Futures 检查器 | 仅覆盖库存/区域/合同三份资料；旧供给/进口/压榨失败任务未回填；保留 s1 引文拼接 minor；下一步 DS-04 |
 | DS-04 | 浏览器矩阵通过（7 中台页 + 5 编辑器标签 + ToolHub/知识库/运行/服务 + 业务首页/记录/失败/移动端）；业务入口已修复安装；2 项跟进 | task:continuation-ui / Console、Futures、Runtime | 跟进 v6 失败任务“不足以直接续跑”的评估与跨任务证据溯源；补浏览器自动化的可重复入口；不把浏览器通过写成后端恢复/故障通过 |
-| DS-05 | 正式 ACL 已收缩；撤权后合成任务完成 note_save/run_recall，双 Worker 接管通过；Telemetry 导出/旧实现/Linux 未完成 | task:service-retirement / 各Owner及集成 | 配置有效导出端点后跑 Telemetry 接收/导出；逐行删除旧实现；隔离恢复已完成，最终 CI 另做 |
+| DS-05 | 正式 ACL 已收缩；撤权后合成任务/双 Worker 接管通过；临时 Telemetry 导出 3,992 事件到 mock；真实 Langfuse/managed 实例、旧实现/Linux 未完成 | task:service-retirement / 各Owner及集成 | 接真实 Langfuse 或受控 OTLP 并验证 managed 实例；逐行删除旧实现；最终 CI 另做 |
 | DS-06 | 部分完成（真实笔记修订/过期/并发写者 200+409/撤回 + Windows 128/512/2048 步 Compact/重放测量通过） | task:storage-lifecycle / Harness、Runtime、Worker、Storage | 补真实长任务 Compact 中断续跑、生产 Runtime/Worker/DB RSS 上界；不删权威资料，不以合成基准代替生产容量 |
 | DS-07 | 部分完成（8 并发 8/8 + 32 秒 2/2 + 3 分钟 12/12 soak；连接 16–18、deadlocks 0、RSS 峰值回落；30–60 分钟 soak/慢查询/故障组合未做） | task:faults-and-resources / 集成及相关Owner | 做 30–60 分钟负载、PG 锁等待/慢查询、内存增长趋势和缺失故障组合；不能把 3 分钟合成 soak 写成容量或生产资源验收 |
 | DS-08 | 已完成（最终快照备份 + 隔离恢复 passed） | task:latest-recovery / 原Windows集成 | 备份 `ds08-final-20261017b`，46 表/序列、10 服务登录、3 密封凭据、2 Worker bundle、离线 Harness 重建全部通过；不替代服务器/HA 或外部服务恢复 |

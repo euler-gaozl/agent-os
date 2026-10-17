@@ -73,14 +73,18 @@ Worker 仍可领取任务、写心跳/回执；Runtime 自身权限未缩减；T
 - 观察记录：`local/evidence/ds05-dual-worker-takeover-2026-10-17T10-19-47-143Z/`（31 次采样，owner 在 10:20:08Z 切换，10:20:18Z 完成）。
 - 接管后已停止并重启两个 Worker，`core_ready=true`、2 Worker 恢复。该测试使用合成模型，不是真实供应商；证明的是撤权后的 lease 接管和笔记/回执链路，不是模型质量。
 
-## Telemetry 启动检查
+## Telemetry 实际接收/导出（受控 mock）
 
-- 已安装 `telemetry-http-v1`，但尝试启动时服务退出：`valid HTTP(S) endpoint without credentials required`。当前 Telemetry 配置没有可用的 `LANGFUSE_URL`/导出端点，因此保持 **0 实例** 是配置缺口，不是 ACL 或程序能力失败。
-- 未执行实际接收/导出；不能把 profile 声明或 inbox 授权写成 Telemetry 端到端通过。
+- 正式配置没有 `LANGFUSE_URL`，因此 managed Telemetry 仍为 **0 实例**；启动裸配置会退出 `valid HTTP(S) endpoint without credentials required`，这是配置缺口。
+- 为验证代码路径，另起临时 Telemetry 实例：`LISTEN=127.0.0.1:18099`、`LANGFUSE_URL=http://127.0.0.1:8135`，并在本机 Registry 写入**测试用假** `LANGFUSE_PUBLIC_KEY`/`LANGFUSE_SECRET_KEY`；未修改 managed 配置/发布。
+- 临时 mock Langfuse 接收 `POST /api/public/otel/v1/traces` 并返回 `{"partialSuccess":{}}`；临时 Telemetry `/readyz` 为 true。
+- 通过 Runtime HTTP claim/ack 消费事件并落盘 inbox：**3,992** 条事件全部 `exported_at` 非空，`telemetry_exports` **3,992** 行；mock 收到 **125** 次 POST、**3,992** 个 span、覆盖 **73** 个 run，Basic auth 存在、`x-langfuse-ingestion-version: 4`。
+- 证据：`local/evidence/ds05-telemetry-export-a1d3a80ff6be4bc3affef7dbb48ad01d/`（`result.json`、`requests/`）。
+- 这证明独立 Telemetry 的真实启动、Runtime claim/ack、inbox 落盘和 OTLP 导出路径；**不是真实 Langfuse**、不是 managed 实例、也不是外部供应商送达验收。假凭证仅在本机，未进入 Git/日志。
 
 ## 仍待完成
 
-1. Telemetry 配置有效导出端点后实际启动/接收/导出（Langfuse 或受控 OTLP），不能只凭 profile 声明。
+1. 真实 Langfuse/受控 OTLP 外部端点与 managed Telemetry 实例仍未验；本次只完成临时实例 + 本机 mock 导出，不能写成供应商送达。
 2. 旧实现覆盖逐行移交与删除（P2 清单）、Linux 组合、W01–W14 剩余项。
 3. DS-08 已用 post-DS05 快照 `ds08-final-20261017b` 通过隔离恢复；本 pre-DS05 快照保留为历史保护点，未单独恢复。
 4. 最终统一 CI 仅在全部本机验收后执行一次。
