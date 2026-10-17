@@ -124,7 +124,10 @@
 - 任务在第 3 步 **failed**：`service HTTP 503: {"error":"upstream service unavailable"}`；没有自动续跑或成功终态。
 - Runtime 重启后 `Platform.ps1 status` 恢复 `core_ready=true`、2 Worker；这是进程级恢复，不是任务透明续跑。
 - 证据：`local/evidence/ds07-runtime-outage-2026-10-17T12-43-04-858Z/`。
-- 结论：Runtime 中断会使在途 Worker 任务显式失败（503），需要重试/恢复流程；不能把“平台恢复”写成“任务无感续跑”。未验证 Runtime 断连重试、任务自动重放或 503 后的用户恢复路径。
+- 修复尝试：Worker `0be7f2f` 将 SourceState 5xx 重试扩到 6 次（250ms–3s，总约 6.75 秒），安装为 `worker-894fcadc…`。
+- 复验任务 `8f80b4f5…`：同样的 Runtime stop/start 仍在 **step 3 failed**，错误仍为 `service HTTP 503`；该重试没有覆盖实际失败路径或重启窗口仍超预算。
+- 复验证据：`local/evidence/ds07-runtime-outage-2026-10-17T12-48-14-410Z/`。
+- 结论：Runtime 中断会使在途 Worker 任务显式失败（503）；本次 Worker 重试尝试**未修复**。需要定位 503 的具体调用/延长重试或做任务级恢复；不能把“平台恢复”写成“任务无感续跑”。
 
 ## 结论与边界
 
