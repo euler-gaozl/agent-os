@@ -21,6 +21,7 @@
 | Telemetry | `go test -mod=vendor ./...` | `cmd/telemetry`、`telemetry` 全部 `ok` |
 | Harness | `pnpm test` | **16/16** 通过，0 跳过 |
 | Harness guarded | `pnpm test:guarded` | **31/31** 通过，0 跳过 |
+| Go vet | Runtime/Console/Worker/Futures/Telemetry 各 `go vet -mod=vendor ./...` | 五仓全部无输出（通过） |
 
 ## 覆盖含义
 
@@ -31,6 +32,7 @@
 ## 未覆盖
 
 - 真实 Langfuse/managed Telemetry、真实外部 OTLP 端点。
+- Go `-race` 未执行：本机 `gcc.bat`（Anaconda）链接 Go race runtime 时缺少 `WaitOnAddress/WakeByAddress*`，构建失败；这是本机 C 工具链限制，不计为 race 通过，也不计为代码竞态失败。
 - DSH Compact 点的真实强杀续跑（本机只有 32k/64k 长任务接管与 8192 步合成基准）。
 - 慢查询计划、死锁注入、锁内异步取消、长期/生产 RSS 上界。
 - 旧主仓业务实现的逐行退役与 Linux 组合。
