@@ -155,6 +155,14 @@
 - 证据：`local/evidence/ds07-query-plans-926c6486fb484849a429a83c4c9f85a8/plans.txt`。
 - 这不是慢查询故障：数据量很小，Seq Scan 仍为亚毫秒；未做大数据量、统计信息偏差、锁等待或 `pg_stat_statements` 长窗口分析。`runs(status, created_at)` 是否需要在规模上升后加索引，需用真实数据量验证。
 
+## 1M 行合成查询计划
+
+- 在独立临时数据库（用后即删）建 `events` 1,000,000 行 + `(run_id,seq)` 索引、`runs` 1,000,000 行：
+  - `events` 按 `run_id/seq`：**Index Scan 0.562 ms**；
+  - `runs` 按 `status='completed' ORDER BY created_at DESC LIMIT 50`：**Parallel Seq Scan 86.4 ms**，top-N heapsort 28 kB。
+- 证据：`local/evidence/ds07-large-query-ds07bench_911211dc/plans.txt`。
+- 这是**合成表**，不是生产数据，也不含并发/锁竞争；它说明 `runs(status,created_at)` 在百万行时可能需要索引，但不能替代真实平台 100 万任务容量验收。
+
 ## 结论与边界
 
 - 8 个并发合成任务没有触发连接耗尽、死锁、临时文件或 Worker 分配失衡；两个 Worker 均实际接单。32 秒双 Worker 负载 2/2 完成；3 分钟 12 任务 soak 12/12 完成；9.1 分钟 36 任务 soak 36/36 完成；30.1 分钟 24 任务 soak 24/24 完成，连接 13–18、deadlocks 0，RSS 峰值受控且结束回落。8 秒 `runs` 行锁使任务等待后恢复并 completed；30 秒行锁使任务在 step 6 显式失败；15 秒锁内取消、杀 owner 后取消、修复后的 30 秒锁内取消均落到 cancelled；终止 3 个 Worker DB 会话后任务仍 completed；PG 快速重启期间任务 completed；Runtime stop/start 在 Worker 19 秒同 operation 退避下也 completed（此前较短退避均失败）。
