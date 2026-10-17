@@ -17,7 +17,15 @@ Runtime `b723081` 只读投影合法的留存 original_hash；其他 metadata �
 - Web 25 项、TypeScript 与 Vite 构建通过；新增跨回执回读验证及坏范围/哈希/版本/原文拒绝。构建保留既有 lucide 的非阻断指令提示。
 - 真实任务升级前读取已留存：v5、26/27 引用匹配、108 项提示、最终稿仍与最后送检稿不同。私有证据入口 `ops/cross-receipt.path`。
 
-源码已提交并推送 Runtime、Futures 的 main 和开发分支，推送前核对 Actions 禁用。正式安装、实际任务回查和浏览器结果在执行后补充，不能用上述夹具代替。
+源码已提交并推送 Runtime、Futures 的 main 和开发分支，推送前核对 Actions 禁用。独立评审复核两个提交，未发现阻断本次修复发布的 P1/P2；该结论为静态审查，没有冒充代跑测试。
+
+## 正式安装与真实回读
+
+完整包由正式构建入口生成，依次单独切换：Runtime `runtime-697540f92e0b48049345dce298d1675e`，操作 `3da438745c3f4bef87f3fdc9f8531c7c`；Futures `futures-c05c74aa4f3f4e28b1bc53cf88b2aace`，操作 `6f2dcfa2bf284a7a84e400d48b9c9e67`。均 committed/readiness verified，非目标实例不变，旧包保留为 previous。
+
+同一真实任务按 v6 回查：27/27 引文匹配，107 项提示。脚本严格比较确认只消除 f3 的 `retained_quote` 误报，其余提示逐项不变；最终结果哈希、completed 状态和 `draft-match=changed` 均不变。两条原回执按各自版本重读并截取 Unicode 范围，连续文字与引用完全一致。
+
+实际浏览器刷新已安装 Web、打开该任务和 f3 原文：页面显示两份阅读片段，各自范围与高亮，未用当前知识库补替。截图 `live-composite-quote.png` 与前后 API 结果保存在上述私有证据目录。这是本次桌面路径验收，不是完整逐页/窄屏验收。更新后核心服务就绪；既有 Sandbox 隔离执行未配置提示保留。本轮模型调用和 Actions 执行均为零。
 
 ## 后续范围
 
