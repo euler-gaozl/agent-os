@@ -126,3 +126,4 @@ DS-06 的“真实笔记修订/过期/并发冲突/撤回”“Windows 128–819
 - 这说明“简单 40 轮小回执”不足以覆盖 Compact；需要更大的上下文压力、可见 compact 事件、Compact 点 kill/resume 和恢复后回执校验。当前不能写成 Compact 已验收。
 - 低 token 变体 `ds06-compact-probe2`（context_tokens 8192、context_bytes 1MB）任务 `c9233fa2…` 在 **step 4** 即失败：`DSH turn did not complete`，3 次 model 调用、1 个 tool_completed，仍**没有 compact 事件**。降低 token 预算没有触发压缩，而是提前失败。
 - 结论加强：当前新 budget-v3 路径没有可观测/可恢复的 Compact；需要实现/修复 Compact 满足 DS-06，而不是调参。
+- 进一步修正 fixture 的 token usage（按消息字节/4 报 prompt_tokens），新引擎任务 `47213de2…` 仍在 **step 4** 失败：3 次 model 调用（prompt_tokens 448/576/3535）、仅 1 个 tool_completed，仍无 compact 事件；证据 `local/evidence/ds06-compact-probe2-2026-10-17T15-58-28-178Z/`。这说明不是简单的 token 计量问题，Compact 仍未实现/可观测。
