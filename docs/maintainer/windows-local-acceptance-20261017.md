@@ -23,6 +23,18 @@
 | Harness guarded | `pnpm test:guarded` | **31/31** 通过，0 跳过 |
 | Go vet | Runtime/Console/Worker/Futures/Telemetry 各 `go vet -mod=vendor ./...` | 五仓全部无输出（通过） |
 
+## 当前版本复跑（2026-10-17 后续）
+
+- 触发版本：Worker `1ac65212…`（ToolHub 19 秒退避）、Futures `fdc9a7…`、Console `94f118…`、Runtime `57ce21ba…`。
+- 证据：`local/evidence/ds09-local-suite-ff7f6d242fba4d25ad73d855d8bebf6c/`。
+- 五个 Go 仓库 `go test -mod=vendor ./...` 全部 exit 0：Runtime、Console、Worker、Futures、Telemetry。
+- Web/Harness：
+  - Console Web **40/40**，0 skip；
+  - Futures Web **27/27**，0 skip；
+  - Harness core **16/16**，0 skip；
+  - Harness guarded **31/31**，0 skip。
+- 这是当前安装版本的**本机集中复跑**，不是 GitHub Actions，也不是最终 hosted CI。
+
 ## 覆盖含义
 
 - Runtime 测试包含 cancel 事务、笔记生命周期、continuation、worker 归档/恢复、执行协议等；Console Web 测试包含业务入口、运行详情、continuation、证据/回执分页、恢复指针等；Futures Web 包含报告投影、草稿/失败语义、轮询竞态等。
