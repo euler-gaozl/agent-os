@@ -47,6 +47,7 @@
 - 旧引擎回归：任务 `59a78329…` 仍用 `dsh-source-639ed015-budget-v3` 完成 step 6，证明旧任务路径未断。
 - **新引擎任务已跑通**：把默认临时切到 `dsh-source-687f282e-budget-v3` 后，任务 `da77e711…` **completed step 6**，5 个工具回执，engine 为 `dsh-source-687f282e-budget-v3`；证据 `local/evidence/dsh-0.2.1-new-engine-smoke-c63c82b360d54063b14a50e5f6a1e095/`。随后默认恢复为 `dsh-source-687f282e-guarded-v7`。
 - guarded-v2 的 final-capable Agent 任务尚未跑（现有 final Agent 使用真实 provider/MCP，未调用付费模型）。这不能写成 guarded-v2 已验收，但新引擎的 budget-v3 路径已有真实 Runtime/Worker/DB 证据。
+- 新引擎 40 轮：任务 `7ceb0cf2…` 在 `dsh-source-687f282e-budget-v3` 上 **completed step 41**（40 个 recall 回执）；证据 `local/evidence/ds06-80round-nokill-2026-10-17T14-47-34-495Z/`（文件名沿用旧脚本，内容为 40 轮 COMPACT40_OK）。这验证了新引擎的长历史路径，但不等于 guarded-v2/final 验收。
 - 安装后已生成 `ds08-final-20261017f` 并隔离恢复通过（46 关系、10 角色、5 凭据、2 Worker bundle、192 代/3,103 文件）；临时集群停止。
 
 ## 下一步
