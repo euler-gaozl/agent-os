@@ -24,5 +24,5 @@
 
 ## main 同步
 
-- 2026-10-18：`agent-os` main fast-forward 到 `b35dde6`，`agent-os-futures` main fast-forward 到 `665ff73`；开发分支与 main 一致。
+- 2026-10-18：`agent-os` main fast-forward 到 `969fd9a`，`agent-os-futures` main fast-forward 到 `2b729c3`；开发分支与 main 一致。
 - Actions 仍全部禁用，未触发 CI。
