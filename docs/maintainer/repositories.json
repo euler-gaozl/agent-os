@@ -74,7 +74,7 @@
       "url": "https://github.com/euler-gaozl/agent-os-futures",
       "clone_url": "https://github.com/euler-gaozl/agent-os-futures.git",
       "branch": "feat/native-task-transport",
-      "source_head_at_audit": "f3c25eaf30282c177db505f1a6d58c3601b1104f",
+      "source_head_at_audit": "84c17f2ca4e271c8ef1d25f4ab3404efce0124a6",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -85,17 +85,17 @@
       "integration_pins": [
         {
           "role": "futures",
-          "commit": "f3c25eaf30282c177db505f1a6d58c3601b1104f",
+          "commit": "84c17f2ca4e271c8ef1d25f4ab3404efce0124a6",
           "owner_modules": []
         }
       ],
       "installed": [
         {
           "role": "futures",
-          "commit": "ca174c9212cd616c4ac65c977ba8d544aea04d9f",
+          "commit": "84c17f2ca4e271c8ef1d25f4ab3404efce0124a6",
           "repository": "agent-os-futures",
-          "manifest": "descriptors/futures-8900799e0a64431aabbdc5824a87c6d1.json",
-          "release_id": "futures-8900799e0a64431aabbdc5824a87c6d1",
+          "manifest": "descriptors/futures-f2821dd46b8f490b8fa1d25c580b8ff8.json",
+          "release_id": "futures-f2821dd46b8f490b8fa1d25c580b8ff8",
           "sdk": {
             "version": "v0.1.0-rc.4",
             "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
@@ -105,11 +105,11 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-18T03:12:45.549Z",
-          "observation": "Read from current catalog and immutable descriptor after two service updates."
+          "observed_at": "2026-10-18T07:17:38.701Z",
+          "observation": "Managed single-service update; readiness verified; original Windows before user-requested shutdown. See month-role-fix-20261018.md."
         }
       ],
-      "remote_main_head_at_audit": "ca174c9212cd616c4ac65c977ba8d544aea04d9f"
+      "remote_main_head_at_audit": "84c17f2ca4e271c8ef1d25f4ab3404efce0124a6"
     },
     {
       "id": "repo:agent-os-harness",

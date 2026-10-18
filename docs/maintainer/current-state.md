@@ -1,5 +1,7 @@
 # 当前状态 · 2026-10-18 复核收尾
 
+**最新定向修复**：Futures `84c17f2` 已同步 main/开发分支，原 Windows 安装 `futures-f2821dd46b8f490b8fa1d25c580b8ff8`。月份按明确统计/元数据/不确定用途处理，不再以是否带年份决定硬拦；15 个新增场景、Go 全包/vet 和发布构建通过。R3d 原结果哈希未变、26 facts/12 statements 仍可回查，旧报告措辞仍待新修订。见 [修复与验证记录](month-role-fix-20261018.md)。下方旧 SHA/发布是历史快照，以此条及 repositories.json 的 Futures 项为准。用户要求交付后关机，服务在线状态须开机后重新确认。
+
 **2026-10-18 供给四问复核增量**：Futures 报告检查器 `2b729c3` 已安装；真实修订任务 `1949dad2…`、`f223a76f…`、`71c55643…` 均 completed 且 draft-match=matched，R3d 任务 `2434822c…` 已 completed、draft-match=matched，26 facts/12 statements 全部可回查，未再出现 retained_quote/quote_normalized/finding_period_borrow；内容仍需独立复核，不能写成研究已验收。
 
 这是原 Windows 的实测快照，不是接手者机器的可用状态。代码/现场发布优先于文档；本页替换了历史中混杂的“尚未安装/已经安装”，旧内容保存在 [历史快照](current-state-before-review-20261018.md)。

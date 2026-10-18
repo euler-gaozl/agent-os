@@ -1766,6 +1766,13 @@
       "type": "evidence_document",
       "label": "三项复核收尾与真实失败保留",
       "doc": "review-followup-20261018.md"
+    },
+    {
+      "id": "evidence:month-role-fix-20261018",
+      "type": "evidence_document",
+      "label": "解读月份角色修复与原 Windows 安装",
+      "file": "docs/maintainer/month-role-fix-20261018.md",
+      "status": "targeted_fix_verified_content_revision_pending"
     }
   ],
   "edges": [
@@ -3856,6 +3863,11 @@
       "from": "task:ds-r3",
       "relation": "depends_on",
       "to": "task:ds-r2"
+    },
+    {
+      "from": "service:futures",
+      "relation": "documented_by",
+      "to": "evidence:month-role-fix-20261018"
     }
   ],
   "environment_policy": {

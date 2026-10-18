@@ -2,6 +2,8 @@
 
 ## 当前结论
 
+最新代码缺口已由 Codex 按用户要求修复并安装：Futures `84c17f2`，见 [月份角色修复](month-role-fix-20261018.md)。原“发布日期误拦”代码问题不再待办；旧 R3d 报告措辞仍待明确的新修订，不自动重新发起付费试跑。
+
 三项中，GitHub main 同步和持久化证据关联已交付。第三项完成了真实执行，但**研究内容没有通过**。不要把 completed、结构 ready、逐字匹配任一项当作研究正确。见 [证据链交付](evidence-binding-delivery-20261018.md)、[当前状态](current-state.md)。
 
 先识别实际机器，读 AGENTS.md、environment.md。原 Windows 根为 `D:\workspace\agent-platform`；自己的 Mac 用自己的 `~/workspace/agent-platform`。原电脑端口、DPAPI、数据库、任务 ID、资料及访问授权不随克隆转移，不自动远程连接。没有原资料时先做合成夹具，真实复验标待原环境执行。密钥、原始资料和私有数据库不提交。
