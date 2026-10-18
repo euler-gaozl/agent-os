@@ -27,3 +27,7 @@ task:fresh-windows-bootstrap仍保留为用户以后要求新Windows时的条件
 - 网络分区（已通过）不需要用户配置；改用本机可控 TCP 代理/测试 Worker 方式制造分区；首次手工 Worker 未 claim，需改用测试布局或受管 Worker 可配置 Runtime 端点。
 - 最终只执行一次集中 hosted CI；在本机剩余项收口后启用，失败先本机修复，不循环重跑。
 - 服务器、跨机 HA、24 小时生产长稳、1000 万块规模继续显式延后。
+
+## 2026-10-18 单机交付收口
+
+用户确认收口当前 Windows 单机交付：13/13 hosted CI、最终备份 l、旧单体入口退役完成。DS-04 自动跨任务证据链、DS-07 任务级死锁/异步补偿/内存趋势、服务器/HA/10M 与真实 Langfuse 不再阻塞本次收口；详见 [收口记录](windows-single-machine-delivery-close-20261018.md)。

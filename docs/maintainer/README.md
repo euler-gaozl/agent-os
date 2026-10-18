@@ -1,3 +1,5 @@
+**2026-10-18 单机交付收口：** 13/13 hosted CI、最终备份 l、旧单体入口退役完成；交付后增强与延后范围见 [单机交付收口](windows-single-machine-delivery-close-20261018.md)。
+
 # 项目群维护知识库
 
 **2026-10-17 最新交接：** 用户要求交给 DeepSeek，交接后暂停原 Codex Goal。先读 [DeepSeek详细接续](deepseek-handoff-20261017.md) 和 [开工提示词](deepseek-start-prompt.txt)。进度、仓库清单、本体已按本次现场核对更新；执行机器尚未指定，先识别环境。下方早期“当前Mac/继续Windows”均按时间作为历史，不构成本次环境选择。
