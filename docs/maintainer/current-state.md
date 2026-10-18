@@ -1,6 +1,6 @@
 # 当前状态 · 2026-10-18 复核收尾
 
-**2026-10-18 供给四问复核增量**：Futures 报告检查器 `2b729c3` 已安装；真实修订任务 `1949dad2…`、`f223a76f…`、`71c55643…` 均 completed 且 draft-match=matched，R3d 任务 `2434822c…` 已 completed、draft-match=matched，25 facts/12 statements 全部可回查，未再出现 retained_quote/quote_normalized/finding_period_borrow；内容仍需独立复核，不能写成研究已验收。
+**2026-10-18 供给四问复核增量**：Futures 报告检查器 `2b729c3` 已安装；真实修订任务 `1949dad2…`、`f223a76f…`、`71c55643…` 均 completed 且 draft-match=matched，R3d 任务 `2434822c…` 已 completed、draft-match=matched，26 facts/12 statements 全部可回查，未再出现 retained_quote/quote_normalized/finding_period_borrow；内容仍需独立复核，不能写成研究已验收。
 
 这是原 Windows 的实测快照，不是接手者机器的可用状态。代码/现场发布优先于文档；本页替换了历史中混杂的“尚未安装/已经安装”，旧内容保存在 [历史快照](current-state-before-review-20261018.md)。
 

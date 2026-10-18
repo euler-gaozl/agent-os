@@ -91,3 +91,11 @@ Runtime `76237d3`、Futures `f3c25ea` 已在原 Windows 安装，DB 15 项/Web 2
 - 新增测试：`TestJointQuoteWhitespaceAcrossSegments`、`TestFindingMonthMustRespectYear`；连同三个说明反例均通过。
 - 最新源码 `2b729c3`，安装 `futures-1d09d1ef7b47426cb3940a3772026c45`；R3d 复检仍为 25 facts/12 statements、无 retained/borrow。
 - main 已同步：agent-os `6c3cc69`，agent-os-futures `2b729c3`；Actions 未开启。
+
+## R3d 独立复核后的收尾（2026-10-18）
+
+- 事实数是 **26 facts / 12 statements**，不是 25；全部精确匹配。旧任务结果不改。
+- 月份规则已区分统计期与发布/采集时间：`2026年10月8日发布的报告披露9月数据` 不再被 `finding_period_borrow` 误拦；无法判定角色的月份进入 `finding_period_review` source review，只有明确年份的统计月份才硬拦。
+- 提示词新增：不得仅凭“全国主要油厂”断定同一监测口径；不得仅因数字不同断定样本不同；整理者备注/采集元数据不是 publisher_text；s1/s2 引文必须包含“转载/暂无详文”本身；分类基准日不是采集时间下限；单月与累计差额幅度不必相等。
+- 冻结报告仍需新修订的措辞：q2 的“同一监测口径/样本范围不同”、s12 整理者备注归因、s16 采集元数据层级、s1/s2 引文范围、q3 时间下限、q1 量级表述。旧结果保留，不追改历史。
+- 按用户要求不做新一轮付费同题试跑；下一次报告应作为明确的新修订产生。
