@@ -57,3 +57,19 @@ Runtime `76237d3`、Futures `f3c25ea` 已在原 Windows 安装，DB 15 项/Web 2
 本次不需要服务器。多机 HA、千万块、24小时长稳仍属原计划的延后阶段；任务级死锁/异步取消/外部副作用补偿等旧增强见 backlog 历史。真实 Langfuse 在单机收口记录中为用户放弃项，不自动配置购买。
 
 原 Windows doctor 仍报 sandbox_execution_unavailable：隔离代码执行尚未配置。不要因 API 存活或此次研究通过就宣称沙箱隔离运行已验收；这项旧限制没有在本轮被实现。
+
+## DS-R1/R2 代码修复（Futures 939e9b6）
+
+- 新增检查：AI 摘要不得标为 reported 实绩；说明中的转引/调查方法/暂无详文断言必须有支持句。
+- 收紧提示：一个 fact 一个独立观测；累计区间可一个 fact；同一连续原文可支持已拆分的多个事实；缺正文保留 missing，不得补句；发布日/标题日不当统计日；讨论大豆压榨不得写成压缩机。
+- 测试：Go 全包通过、vet 通过；Web 29/29、构建 exit 0。独立审查提出的 quote-wide 多月、地区关键词、压缩机硬拦截已移除，避免误伤已拆分比较和合法设备文本。
+- 已安装 `futures-8dfe9e178eee4c3ea441b8523907fe91`（源码 `939e9b6`）。
+
+## DS-R3 真实修订结果（未通过内容验收）
+
+- 任务 `1949dad2…`：基于 690 的修订，completed；report-check 仍有 **2 条 retained_quote**（f14/f15，均指向 `bcb1b3d…` 的 9月18日 869/113）。
+- 任务 `f223a76f…`：基于 1949 再次修订，completed step 8，draft-match=matched；report-check 仍是同样 2 条 retained_quote，内容未通过。
+- 任务 `71c55643…`：在问题中明确要求 bcb1 页面未读到 869/113 正文时放入 missing；completed，但 f14/f15 仍保留相同 quote，retained_quote=2，另有 6 条 retained_statement_quote；仍未通过。
+- 证据：`local/evidence/original-supply-review-20261018-r3-2026-10-18T03-27-41-199Z/`、`...r3b-...`、`...r3c-...`。
+- 根因：`bcb1...` 的本任务读取页只含导航/标题/出处，未读到库存正文；模型仍把“监测显示…”拼接成引用。最终 `check_research_draft_v2` 没有任务 read receipt，只做结构检查，无法在 final 前阻止该引用。
+- 下一修复方向：让最终检查或 Runtime final policy 能按 run_id 读取本任务 receipt，或在任务完成前拒绝未匹配 quote；当前不能宣称供给四问内容通过。

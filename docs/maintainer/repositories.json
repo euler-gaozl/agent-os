@@ -92,10 +92,10 @@
       "installed": [
         {
           "role": "futures",
-          "commit": "f3c25eaf30282c177db505f1a6d58c3601b1104f",
+          "commit": "939e9b665f920993bdb56ba54828eb244c757304",
           "repository": "agent-os-futures",
-          "manifest": "descriptors/futures-bb58c4f2bf6949cdb0358a7128084d28.json",
-          "release_id": "futures-bb58c4f2bf6949cdb0358a7128084d28",
+          "manifest": "descriptors/futures-8dfe9e178eee4c3ea441b8523907fe91.json",
+          "release_id": "futures-8dfe9e178eee4c3ea441b8523907fe91",
           "sdk": {
             "version": "v0.1.0-rc.4",
             "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
@@ -109,7 +109,7 @@
           "observation": "Read from current catalog and immutable descriptor after two service updates."
         }
       ],
-      "remote_main_head_at_audit": "f3c25eaf30282c177db505f1a6d58c3601b1104f"
+      "remote_main_head_at_audit": "939e9b665f920993bdb56ba54828eb244c757304"
     },
     {
       "id": "repo:agent-os-harness",
