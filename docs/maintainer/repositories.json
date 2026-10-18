@@ -2,7 +2,7 @@
   "schema_version": 1,
   "latest_recovery_audit": "windows-source-recovery-20261017.json",
   "current_execution_record": "windows-final-ci-20261018.md",
-  "as_of": "2026-10-17T16:48:30Z",
+  "as_of": "2026-10-18T02:08:15Z",
   "project_id": "project:agent-platform",
   "source_baseline": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe",
   "integration_handoff_branch": "feat/end-to-end-delivery",
@@ -208,8 +208,8 @@
       "installed": [
         {
           "role": "knowledge",
-          "commit": "ed54550f15e115956fc30e08e0e8121b976ee796",
-          "manifest": "descriptors/knowledge-2e2adfc94eb24d4ba1e9c927035d32f6.json",
+          "commit": "ff58a037b667203531234e00f244724738e94f1b",
+          "manifest": "descriptors/knowledge-e1d6ed1d618c4c9b87980038afc03473.json",
           "sdk": {
             "version": "v0.1.0-rc.2",
             "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
@@ -223,7 +223,7 @@
           "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
         }
       ],
-      "remote_main_head_at_audit": "ed54550f15e115956fc30e08e0e8121b976ee796"
+      "remote_main_head_at_audit": "ff58a037b667203531234e00f244724738e94f1b"
     },
     {
       "id": "repo:agent-os-registry",

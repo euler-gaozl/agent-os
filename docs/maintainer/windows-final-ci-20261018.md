@@ -36,3 +36,11 @@
 
 - 这是 hosted CI，不是服务器/跨机 HA 或 10M 块容量；没有运行 capacity workflow。
 - 所有仓库 Actions 已在本次后重新禁用；没有提交触发 CI。
+
+## 修复后定向重跑（2026-10-18）
+
+- 根因：`archiveFloorQuery` 用区域边界 `r.root >= 'knowledge-source:' AND r.root < 'knowledge-source;'`，在 Linux locale 数据库上标点排序与 Windows/C locale 不同，导致 source manifest 被排除，`has_manifest=false`，缺 marker 被接受。
+- 修复：边界改为 `COLLATE "C"`，并让 floor 审计在存在任何 source manifest 时拒绝缺 marker；测试显式保留该场景。
+- Knowledge 源码 `ff58a037…`，构建安装为 `knowledge-e1d6ed1d618c4c9b87980038afc03473`。
+- 定向 CI `39088673132`：**success**（Linux race 与 Windows 均通过）。Actions 随后再次禁用。
+- 最终结果：13/13 仓库通过。
