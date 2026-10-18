@@ -21,3 +21,8 @@
 ## 开始维护
 
 先确认 OS/目录和授权，读 environment.md、目标服务 AGENTS.md，再做 [当前待办](backlog.md)。不用复读全部历史，不重跑已完成迁移，不从旧路径启动服务，不把原电脑端口/密钥/资料当作接手环境已有资源。
+
+## main 同步
+
+- 2026-10-18：`agent-os` main fast-forward 到 `9e31ec8`，`agent-os-futures` main fast-forward 到 `665ff73`；开发分支与 main 一致。
+- Actions 仍全部禁用，未触发 CI。

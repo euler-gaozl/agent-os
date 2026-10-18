@@ -15,7 +15,7 @@
       "url": "https://github.com/euler-gaozl/agent-os",
       "clone_url": "https://github.com/euler-gaozl/agent-os.git",
       "branch": "feat/end-to-end-delivery",
-      "source_head_at_audit": "76a4f22f0bc794b17ddac7aa0ee06d5cde11596d",
+      "source_head_at_audit": "9e31ec8f1e489e634c5218a289086f11f05f4a21",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -23,7 +23,7 @@
       "roles": [],
       "integration_pins": [],
       "installed": [],
-      "remote_main_head_at_audit": "76a4f22f0bc794b17ddac7aa0ee06d5cde11596d"
+      "remote_main_head_at_audit": "9e31ec8f1e489e634c5218a289086f11f05f4a21"
     },
     {
       "id": "repo:agent-os-console",
