@@ -15,7 +15,7 @@ $env:GOCACHE = 'D:\workspace\.tools\gocache'
 $env:PATH = 'D:\workspace\.tools\go\bin;C:\Users\MSI\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin;' + $env:PATH
 $pnpmCommand = 'C:\Users\MSI\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\fallback\pnpm.cmd'
 ./scripts/Initialize-Local.ps1
-go build -trimpath -o bin/agentos.exe ./cmd/agentos
+go build -trimpath -o bin/healthcheck.exe ./cmd/healthcheck
 & $pnpmCommand --dir harness install --frozen-lockfile
 & $pnpmCommand --dir web install --frozen-lockfile
 & $pnpmCommand --dir web run build
