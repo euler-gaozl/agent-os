@@ -1,14 +1,38 @@
 # Agent OS 工作约定
 
+## 2026-10-18 复核后三项收尾（当前授权）
+
+用户授权完成 GitHub main 同步、修订任务证据链、原供给四问复验，至少保留 40% 账户额度；接近 45% 时留出交接余量。计划见 `docs/maintainer/review-followup-20261018.md`。这是 DeepSeek 收口后的增量，不复活原无限自动目标。Actions 保持关闭，已通过的集中 CI 不重复。下方旧交接暂停指令不阻止本次明确授权的工作。
+
+本轮结果：前两项已交付；原供给四问已正常成稿，但内容复核未通过。当前接手入口是 `docs/maintainer/deepseek-followup-20261018.md`（DS-R1/R2/R3）及同目录 `current-state.md`。先识别实际机器，不能把旧环境指令当现状；不重做已安装的证据链或重跑集中 CI。
+
+## 2026-10-17 DeepSeek交接（最新）
+
+用户要求更新GitHub进度、维护知识库与本体，由DeepSeek接续；交接完成后暂停本聊天Goal。当前入口为 docs/maintainer/deepseek-handoff-20261017.md。新执行机器未指定，须先识别OS/路径/授权，不沿用下方旧会话的环境或继续指令。完整目标不变，Actions保持关闭，密钥及私有资料不提交。
+
+## 2026-10-17 回到原 Windows 继续交付
+
+用户已要求接回 Mac 成果并继续、更新 GitHub。当前执行环境是原 Windows，有效主仓为 `D:\workspace\agent-platform\repos\agent-os`。先读 `docs/maintainer/windows-resumption-20261017.md`；恢复的 Mac 提交/证据与 Windows 安装事实分开。下方“朋友在 Mac”“本次只交接”和“保持暂停”属于当时交接约束，不再禁止本聊天按用户新指令继续开发。旧 Goal 卡片恢复由用户界面控制；不可因此伪造状态或另建缩减目标。P0–P5/P2.5、W01–W14 完整范围保留，日常 Actions 继续禁用。
+
+## 2026-10-15 接手者在 Mac 上开发
+
+用户已明确：朋友使用她自己的 Mac，知识库必须避免误用原所有者的 Windows 环境。接手先读 `docs/maintainer/environment.md` 和 `environments.json`。朋友的工作根默认 `~/workspace/agent-platform`，源码、配置、数据库、日志及证据全部独立。下文及服务仓历史文档中的 D 盘路径、Windows 维护命令、安装版本、127.0.0.1 地址、DPAPI 和私有证据指针仅属于原电脑，不是 Mac 的执行指令或已有状态。不得自动连接、映射、恢复或修改原电脑环境；GitHub 交接不授予这种访问权限。
+
+本次是更换开发环境，不自动把产品目标改成“Mac 已验收交付”。Mac 上先做可移植代码、独立测试及必要的开发适配；Windows 专属用例继续列为待目标环境复验。原聊天 Goal 保持暂停，本次只更新交接资料。
+
+## 2026-10-14 维护者交接
+
+接手先读 `HANDOFF.md` 和 `docs/maintainer/README.md`，其中保留完整 Goal、P0–P5/W01–W14、当前失败、后续待办、15 仓分支/源码/安装差异及本体映射。用户要求交接完成后暂停原聊天 Goal，由朋友的 Codex 继续；接手聊天建立等价完整目标，不能缩减验收范围。交接快照不替代实际代码、发布 manifest 和原始证据，后续更新按事实修订。当前全原生能力 Agent 树的新任务使用固定源码 DSH native-v4，全 legacy 树仍回落 budget-v3，混合树拒绝；下方“默认官方核心包”等旧描述为历史基线。原电脑私有配置/资料和权限不会随 GitHub 克隆转移。
+
 ## 项目状态
 
 先读 README.md、docs/architecture/contracts-v0.5.md、harness/README.md、docs/validation-v0.5.md 和 docs/production-readiness.md；v0.4 执行恢复契约和 v0.1 独立评审保留为历史基线。
 
-当前为 v0.5 服务生产化增量，默认执行器为 DSH 官方核心包。不能将真实 Harness + 模型协议夹具写成真实供应商已验证，不能将设计目标写成生产能力。目标是 Linux 2 核 / 4 GB 平台预算（外部模型/RAG 单独计量）、100 万文档 / 1000 万块；容量和物理节点 HA 未验收。
+当前为 v0.6 端到端交付增量，默认执行器为 DSH 官方核心包。进展以 docs/delivery-v0.6.md 和 docs/independent-deployment.md 为准。不能将真实 Harness + 模型协议夹具写成真实供应商已验证，不能将设计目标写成生产能力。目标是 Linux 2 核 / 4 GB 平台预算（外部模型/RAG 单独计量）、100 万文档 / 1000 万块；容量和物理节点 HA 未验收。
 
 ## 本地布局与技术选型
 
-- 本机正式项目统一放在 `D:\workspace`，本仓库为 `D:\workspace\agent-os`；不要在 C 盘或聊天输出目录另建项目副本。H 盘和 J 盘可能调整或合并，不作为项目工作区。
+- 本机正式项目统一放在 `D:\workspace\agent-platform`：本仓库为 `repos\agent-os`，配置/数据/运行文件归 `local`，维护入口归 `ops`。完整路径为 `D:\workspace\agent-platform\repos\agent-os`；旧 `D:\workspace\agent-os` 仅留迁移提示，勿在那里开发。不要在 C 盘或聊天输出目录另建项目副本。H 盘和 J 盘可能调整或合并，不作为项目工作区。
 - 以性能和模块适用性为主要依据，兼顾正确性、资源成本、部署和维护。优先评估 Rust、Go、TypeScript；原则上避免 Python，不能因为开发简单就默认采用 Python。
 - 按模块选合适语言，不预先强制单一语言，也不为了使用多种语言引入跨进程或跨语言边界。
 - 为关键路径明确工作负载与延迟、吞吐、内存预算，通过可重复测量支撑选型，不以语言标签代替性能证据。
@@ -16,9 +40,16 @@
 
 ## 架构边界
 
+- 2026-10-12 最新执行优先级：先按 `docs/windows-single-machine-plan.md` 完成 Windows 单机交付，再推进服务器阶段。P0/P1 已通过：源码和原数据库迁入分组目录，统一维护入口、完整发布包、单服务更新/回滚/恢复、新格式备份和实际隔离恢复完成；见 `docs/windows-release-recovery-20261012.md`。数据库为 `local\data\postgres`，未重新初始化。正式 catalog 为 format2，禁止再按旧扁平索引读写或用 Start -Migrate 重写配置。下一阶段 P2 正式拆仓及每域迁移责任仍待完成，不能把 P1 写成整个系统已交付。多机 HA/生产容量后续验收，不阻塞单机目标；安全边界和任务恢复不能省略。
+
+- 2026-10-12 用户补充：整体 Web UI 是交付验收项。中台与业务端分别设计，统一字号、间距、状态与交互；覆盖导航、Agent 编辑和试运行、ToolHub 检测、知识库、运行详情、服务状态和移动端。必须以真实页面逐页验收，不能只交一张首页效果图。
+
+- 2026-10-11 用户补充的硬性验收：每个后端服务必须可独立构建、配置、部署、扩缩容、升级及回滚；共用一套中台 Web。独立期货业务前端仍单独部署。需要真实的单服务发布与故障验证，不以目录或镜像数量验收。
+- 后续交付必须列出服务依赖、数据所有权、迁移责任和版本兼容边界；Runtime/Worker 和 Knowledge/Indexer 各自组成同一数据域，不能通过破坏回执原子性来换取表面独立。
+
 - 核心 Runtime 和 ToolHub 不写入期货专属规则；业务逻辑以独立能力包实现。
-- 中台统一管理资源和 Agent；知识库、ToolHub、Runtime、Registry 是独立服务。期货前端和业务 BFF 单独部署，不把基础设施配置暴露给业务用户。
-- ToolHub 和 Knowledge 各自拥有 schema/账号；Console/Futures 不访问数据库。Runtime/Worker/Storage/Sandbox 仍共享部分执行事务表，必须如实记录，不能宣称数据库已完全解耦。
+- 中台统一管理资源和 Agent；知识库、ToolHub、Runtime、Registry 等服务独立部署。期货前端和业务 BFF 单独部署，不把基础设施配置暴露给业务用户。
+- ToolHub、Knowledge、Sources 各自拥有 schema/账号；Console/Futures 不访问数据库。Sandbox 通过 HTTP 校验 Runtime 权威状态，仅需自己的作业表。Telemetry 通过带租约/fence 的事件投递接口写入本域 inbox，落盘后才确认，不能读执行库；Runtime 事件是事务性 outbox，不能用最大序号游标跳过晚提交事件。Runtime/Worker 同属执行数据域，持久化 Agent 笔记与回执原子提交。Storage 只拥有 artifacts/artifact_refs，通过 HTTP 对接；2026-10-12 的新边界已通过本机独立数据库测试，Linux 全链路与旧权限退役必须分别验收。
 - 明确运行状态权威、重试策略拥有者和 Compact 决策者，避免框架之间重复管理。
 - DSH 版本及重放可见的适配行为必须固定；升级前验证未完成任务兼容。旧 Go 循环仅供迁移前历史任务恢复。
 - 执行前登记调用意图，结果不确定时先核对；不能将无回执直接等同于未执行。
@@ -27,6 +58,8 @@
 - 生命周期协议未确定前，不启用会删除正式资料的自动 GC。
 
 ## 验证与留存
+
+- 2026-10-13 成本约束：用户指出 GitHub Actions 额度接近耗尽。平台原 14 个仓库及新 Harness 仓（共 15 仓）Actions 已在远端禁用。用户随后明确要求：日常提交不跑 CI；交付内容完成、本机验收通过后，集中执行一次统一 CI 作最终验收。这一次已有授权，不重复询问；此前默认本机验证，推送前检查禁用状态。最终执行前移除自动提交触发、合并必要检查并明确 runner 分钟预算，不能让各仓库重复跑全套；失败先本机修复，不自动循环全量重跑。审计及原设置见 `D:\workspace\agent-platform\local\evidence\actions-cost-20261013`。已取消结果不得算通过，不以继续目标或全面测试为无限 CI 授权。
 
 - v0.1 架构图和独立评审是历史基线，后续改进使用新版本，不覆盖评审原文。
 - 明确区分待设计、已实现、模拟验证、真实故障验证和生产观测。

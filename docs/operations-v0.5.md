@@ -1,8 +1,32 @@
 # v0.5 构建、部署和恢复
 
-本机正式目录 `D:\workspace\agent-os`，原始资料和配置保持在 D 盘。使用 Go / TypeScript；Worker 加载固定版本的官方 DSH 核心包。
+本机正式源码目录 `D:\workspace\agent-platform\repos\agent-os`，原始资料和配置保持在 D 盘的 `agent-platform\local`。使用 Go / TypeScript；Worker 加载固定版本的官方 DSH 核心包。
+
+本文件的 v0.5 历史部署示例仍保留；当前服务所有权、单服务升级顺序见[独立部署契约](independent-deployment.md)，最新真实供应商、容量与故障结果见[交付账本](delivery-v0.6.md)。历史“未完成”描述以该账本中较新的明确复验为准。
 
 ## Windows
+
+### 当前本机维护入口（2026-10-12 更新）
+
+源码、数据库和运行文件已完成物理迁移：源码在 `repos\agent-os`，原 PostgreSQL 集群在 `local\data\postgres`。稳定入口为 `D:\workspace\agent-platform\ops\Platform.ps1`，可在任意工作目录调用；下方相对入口需先进入新的源码目录。迁移与失败证据见[本机迁移验收](windows-workspace-migration-20261012.md)。旧 `.state` 报告位于 `local\legacy-state\20261012-102142`。
+
+```powershell
+./scripts/Platform.ps1 status
+./scripts/Platform.ps1 doctor
+./scripts/Platform.ps1 start -Workers 2
+./scripts/Platform.ps1 stop                 # 保留数据库
+./scripts/Platform.ps1 stop -WithDatabase   # 所有登记部署停下后才停本机数据库
+./scripts/Platform.ps1 backup -Pnpm $pnpmCommand
+./scripts/Platform.ps1 restore-check -BackupDirectory 'D:\workspace\agent-platform\local\backups\<备份名>' -Pnpm $pnpmCommand
+```
+
+源码中的 `.local/layout.path` 被 Git 忽略，指向本机 `ops/layout-<uuid>.json`。也可给脚本传 `-LayoutPath`。不要覆盖旧布局文件；切换用 `Activate-WorkspaceLayout.ps1`，准备路径用 `Prepare-WorkspaceLayout.ps1`，二者会验证已恢复备份、固定版本与配置。当前准备脚本是本次从旧目录分离状态的迁移入口，并非新用户的一键安装器。
+
+`backup` 在共同维护锁中停止当前实例，备份全部配置所指向的同一 PostgreSQL 集群内权威数据库，保留 DPAPI 配置密钥和离线运行依赖，再恢复原角色与 Worker 数。失败与重启失败分开报告。`restore-check` 新建隔离集群，核对数据、权限、账号和加密凭证，不启动 Worker、不调用模型。DPAPI 需要原 Windows 用户配置文件；它不覆盖重装系统后恢复。不要在维护期间手工直连写库。
+
+单服务 update/rollback 的本机统一入口仍待实现；下面是保留的历史操作流程，不把手工更换二进制计为已经完成新的发布闭环。
+
+### 历史初始化与发布示例
 
 首次环境初始化仍使用 `Initialize-Local.ps1`；它不覆盖已有密码。先安装 `harness`、`web` 的 lockfile 依赖，构建前端，然后：
 
@@ -77,3 +101,11 @@ go test -count=1 ./...
 备份覆盖 PostgreSQL 中的全部 schema 和原文件；不包含 Milvus/LightRAG 外部索引。恢复到隔离数据库验 hash 后再决定切换，不能清空原库。服务配置和 MASTER_KEY 单独保护，PostgreSQL 角色也需要在新集群重建；同盘备份不能抵御磁盘故障。
 
 CI 的 `scripts/smoke-services.mjs` 专用于一次性 Compose 测试项目，里面会终止进程、停止数据库；禁止对正式本机实例或生产数据运行。Linux CI artifact 提供原始检查结果和 Docker 资源采样。真实节点/数据库 HA 仍需服务器环境验收。
+
+## 磁盘容量故障处理（v0.6 增量）
+
+已识别的数据库容量/连接故障返回 503，查询超时返回 504；503 的 Retry-After 是服务恢复提示，不证明刚才的写入没有提交。Runtime 的笔记效果与回执仍以同库事务为权威；Storage 同内容/引用根重传幂等。外部工具 UNKNOWN 必须查证效果后核对，不能因恢复了磁盘就直接重复执行。
+
+处理顺序：暂停受影响域的新写入和批量导入 → 检查实际挂载卷、配额与数据库错误 → 扩容或清理明确归属的临时资料 → 等待每个独立数据库连接池重新就绪 → 在任何重试前只读核对故障前的资料、哈希、引用和回执 → 按原逻辑操作 ID 恢复。不要删除 PostgreSQL 数据文件、WAL、正式来源、仍被引用的产物或未决任务记录来腾空间。Runtime 与 Storage 两个连接池都要重新就绪；只验证其中一个不能代表另一个已经重新连接。
+
+`Persistent storage faults` 工作流使用一次性 192 MiB tmpfs 卷，检查实际 ENOSPC，并在同卷恢复 PostgreSQL 后检查旧资料和重试。这项测试不挂载宿主资料目录，只允许在 disposable GitHub CI 运行。不得在正式数据上复用填充磁盘步骤，也不能将其当作物理断电、数据库损坏、跨机 HA 或特定环境 RPO/RTO 的证据。

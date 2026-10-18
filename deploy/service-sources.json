@@ -1,0 +1,75 @@
+{
+  "format": 1,
+  "services": {
+    "control": {
+      "repository": "agent-os-console",
+      "commit": "4b0520f34ee03be79db9c6870aad464b91de3611"
+    },
+    "futures": {
+      "repository": "agent-os-futures",
+      "commit": "84c17f2ca4e271c8ef1d25f4ab3404efce0124a6"
+    },
+    "registry": {
+      "repository": "agent-os-registry",
+      "commit": "2f7f8364e972a54d65414bcebb5f77738eced586"
+    },
+    "sandbox": {
+      "repository": "agent-os-sandbox",
+      "commit": "9348b8e6ead28da5e1585ee69e469e4b10620d08"
+    },
+    "telemetry": {
+      "repository": "agent-os-telemetry",
+      "commit": "6f9f539125431bebbf88ddbdbb6840f3dd426068"
+    },
+    "toolhub": {
+      "commit": "98f8fecc5a139b3f1b0e4d76f4a11c9d8e0c0d07",
+      "repository": "agent-os-toolhub"
+    },
+    "storage": {
+      "commit": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c",
+      "repository": "agent-os-storage"
+    },
+    "sources": {
+      "commit": "29fe0860d424a6f263ed9b274673590d0d8694c2",
+      "repository": "agent-os-sources"
+    },
+    "knowledge": {
+      "commit": "ff58a037b667203531234e00f244724738e94f1b",
+      "repository": "agent-os-knowledge"
+    },
+    "indexer": {
+      "repository": "agent-os-indexer",
+      "owner_modules": [
+        {
+          "protocol": "knowledge-indexing-v1",
+          "version": "v0.1.0-rc.1",
+          "module": "github.com/euler-gaozl/agent-os-knowledge",
+          "module_sum": "h1:HZnGpJI81snXYP0mLiI+Wim+IGDrKXnONVhCsqsHG8M=",
+          "commit": "e26584df4f1df22da6f3ee9101933dae8f48d164",
+          "go_mod_sum": "h1:lviyaS6yKk3K9HbzBQp4QEzIbZDhgdWymiUEa12/pZc=",
+          "package": "indexing"
+        }
+      ],
+      "commit": "ccbfbd206f13e10619898ddb52b84e5c1109c7f8"
+    },
+    "runtime": {
+      "repository": "agent-os-runtime",
+      "commit": "76237d34993cf26d91a7bec65765623fdf220034"
+    },
+    "worker": {
+      "owner_modules": [
+        {
+          "module": "github.com/euler-gaozl/agent-os-runtime",
+          "version": "v0.1.0-rc.5.0.20261017141655-69b9e62b2315",
+          "commit": "69b9e62b23155596a5c1b36b488ad0e9b1d5941c",
+          "module_sum": "h1:Zr1G1JTdgSdn3SImpnQK2G44QDLwv/G2hjYySFUA6Eg=",
+          "go_mod_sum": "h1:FGT+LijN16Y7wtJwBy2qB07OtfQXi+/4wuf2xG9bQQw=",
+          "protocol": "runtime-execution-v1",
+          "package": "execution"
+        }
+      ],
+      "commit": "64a31b9989dba5597fb85477c15cfe48a7240f27",
+      "repository": "agent-os-worker"
+    }
+  }
+}

@@ -1,0 +1,78 @@
+# 新采集入库：服务候选与发布门槛
+
+后续状态：Sources `29fe086` 已完成本域迁移和正式独立发布，捕获协议入口已可用，见 [Sources 迁移与恢复](sources-owner-migration-20261014.md)。Console `1b4b4e4` 已正式安装，一份真实网页通过采集、保存、原文下载、检索及实际备份恢复，见[中台采集验收](console-capture-acceptance-20261014.md)；研究报告语义仍未通过。下方早期未迁移/未配置描述保留其历史含义。
+
+2026-10-14。本文件按增量记录 Sources 资料进入 Knowledge 的实现和验收。最新 Knowledge writer 已正式部署；Sources 迁移和 Console 表单仍未完成，不能称真实新来源端到端交付。下面旧候选段落保留其当时状态。
+
+## 最新：真实 writer 发布故障已验证，Knowledge 已安装
+
+先安装 `794780c` reader bridge，再安装 `09e3b29` writer；两次正式更新均认证就绪，非目标进程身份保持。当前发布为 `knowledge-8c5d74a885f942929b9eaf5d07bba3a5`，恢复目标为 reader bridge `knowledge-497ae91186f0483aa4a15cd47891e7f8`。生产路径已编译开放并报告 `configured:true`，数据契约为 `knowledge-v0.7-source-archives`。Indexer 的既有索引协议和表结构未改变。
+
+升级前协调备份 `local/backups/pre-capture-reader-20261014` 实际隔离恢复通过：44 关系、10 角色、2 凭证、25 发布引用/3018 文件；恢复报告 `local/restore-checks/1a710b6314424e0b8e01d75d18dcbf84/result.json`，隔离集群已停止。新写入版安装后复核原五份来源附件，完整成员、关联和清单集合哈希仍为 `f0d47f87c51c54852e132e7d53e579417eb9436ceda43dea790cc9e423dfd3ff`；没有创建正式格式 2 数据，读取下限仍为 1。
+
+证据 `local/evidence/capture-writer-release-1791910342804`：
+
+- Knowledge 30 顶层、24 子测试通过，5 项外部后端/Indexer opt-in 跳过；vet 与独立构建通过。HTTP 去重/权限测试改走实际生产路由。
+- `Test-CaptureWriterRelease.ps1` 使用真正的 legacy、reader、writer 程序、真实 Windows 发布管理入口及隔离 PostgreSQL，7 项通过：写入前实际升级回退；writer 成功导入后故意令发布失败；自动恢复 reader 后三成员 HTTP 哈希及完整数据库关联一致；再次退旧版拒绝且进程/catalog 不变；重装 writer 后相同请求不重复建文件；回退 reader 保持可读；不兼容 pending 恢复保留进程和 journal。
+- HTTP Sources/Registry 是明确的受控夹具，没有抓取真实站点，也没有模型调用。发布失败是导入返回后在 `started` checkpoint 抛错，不声称 writer SIGKILL、网络分区或真实资料采集验收。
+- 独立源码评审确认实际 writer/reader 回读证据，指出 pending 进程身份断言缺失和清理前误设成功，两处已修复并重跑。最终 `process-release-reviewed/result.json` 同时 `checks_passed:true`、`cleanup_passed:true`、`passed:true`；评审代理未代跑测试。
+- 初次被跨布局同角色守卫拒绝，第二次夹具缺自身身份配置导致退出，失败记录保留。最终回归没有绕过守卫，而是在维护锁内临时停止正式 Knowledge/Sources；每次 finally 后恢复这两个服务。完整备份也曾协调停启全部实例，不能把本轮描述为正式进程零变动。
+
+结束时正式 12 个实例核心就绪、pending 为零。新 Sources 功能仍未部署，control 查询正式 `/capture-capabilities` 返回 403；仅 Knowledge 已具备导入能力，真实采集到保存的完整功能尚不可用。后续先完成 Sources 的可恢复 Owner 迁移和独立升级，再补 Console 流程及实际新来源验收。七份迁移草稿保留，完整 P2–P5 未关闭；本增量零付费模型调用、零 Actions。
+
+## 本轮实现
+
+- Sources `b7655e8`：control 身份通过预先生成的采集 ID 提交 URL，丢回复后可按 ID 查回；相同 ID/URL 返回原观察，不重新抓取已提交记录；相同 ID/不同 URL 拒绝。受控并发首写只提交一份记录和对应原始响应，但可能发生多次只读 HTTP 请求，不能称网络恰好一次。按精确 URL 查询 20 项历史页。
+- Sources 通过固定认证接口向 Knowledge 导出保留原文、提取文本、哈希、实际采集时刻及提取版本。Knowledge 身份不能发起抓取。导出限定原始响应及文本各 1 MiB，编码响应最多 4 MiB；超限明确拒绝，不截掉正式原文。来源 URL 不成为服务间下载地址。
+- Knowledge `d1954b7`：新采集生成确定性资料正文，明确采集时间不等于发布或统计时间。文件、正文、分块、原始响应、提取文本和来源清单同一事务提交。重复入库也核对已有正文并保存完整附件；服务/模型调用不占用此事务的连接。外部索引仍标 queued，不能报成可检索。
+- 新来源清单 format 2 明确认证 Sources 的记录 ID、请求/最终地址、提取版本和导入格式；既有人工归档保持 format 1 及原清单不变。原始响应指 HTTP 客户端经过传输/内容解码后留存的响应体，不声称网络线上的原字节。
+
+## 当前是只读兼容过渡版
+
+Knowledge 已能读格式 1/2，但生产导入路径的编译常量关闭，能力接口返回 `configured:false`；没有配置开关或导出的入库写接口可绕开。旧附件接口仍只写格式 1。主分支可以保存这一候选，**不能因此声称新采集入库已可用**。集成版本锁现固定读取下限过渡版 `794780c`，Sources 仍保持原安装版本锁；尚未升级正式服务。
+
+独立评审发现：旧 Knowledge 只接受格式 1，直接开启格式 2 会破坏回滚可读性。仅先装过渡版也不充分，必须阻止“新写入版 → 过渡版 → 旧读取版”的跨次回退。后续已实现持久读取下限及 Windows 发布守卫并通过隔离验证，见下节；正式过渡版安装和真实 writer 发布故障验收仍未完成。不能只比较相邻两个版本，也不能只在文档中限制。
+
+## 后续增量：持久读取下限及数据库停机屏障
+
+Knowledge 将固定协议标记与格式 2 入库放入同一事务；普通上传相同字节不能提升下限，移除清单不能降低下限。缺标记、损坏或多个标记、未知清单格式明确拒绝。启动审计全部来源清单，日常 readiness 仅读固定根。实际二进制通过 `--source-archive-profile` 报告 reader 2 / writer 1，独立发布描述与构建程序必须匹配；生产 writer 仍编译关闭。
+
+Windows start/update/rollback/pending 恢复都检查受绑定配置、实际数据库及真实二进制。新 writer 的恢复目标必须能读格式 2；历史数据库中存在永久下限时，即使当前回退到过渡版，也不能再退到旧读取版。恢复校验同时要求格式 2 的永久标记完整，不进行猜测性补写。
+
+独立复审发现额外窗口：客户端进程停止，不保证 PostgreSQL backend 已完成发出的 COMMIT。现在停止所有 Knowledge 实例后有界等待同库、同 LOGIN 的其他 backend 退出，再用下一条 READ COMMITTED 查询的新快照读取下限；超时保留 pending。冷启动和零副本操作同样检查。未修改数据库连接权限，没有强制终止正式数据库连接。
+
+本增量证据：`local/evidence/archive-reader-floor-1791908247355`。
+
+- Knowledge 30 个顶层、24 个子测试通过，5 项既有外部/Indexer opt-in 跳过；vet/build 通过。
+- 部署检查 25 项通过：实际 Owner 迁移、受限 LOGIN、真实管理入口，包含旧版拒绝、跨次回退、配置偏移、标记损坏及 pending 保留。真实 psql 客户端在延迟约两秒的 COMMIT 中被强制结束，数据库 backend 仍存在；探针等待 1981 ms 后看见已提交的格式 2，并拒绝旧读取版。这是 PostgreSQL 故障复现；服务副本数为零，不冒充实际 Knowledge writer 进程发布故障。
+- 恢复校验 17 项合成隔离库检查通过，覆盖两种格式及标记/JSON 类型/原文损坏；不是新的正式备份还原。
+- 通用 Windows 发布回归 17 项通过，实际独立夹具进程覆盖升级、回滚、就绪失败和八处 launcher 中断；证据 `local/evidence/windows-releases-eafeb7bea2d349edb4abb0ef97eacd8f/result.json`。非 Knowledge 夹具不能代替真实 capture writer 发布验收。
+- 独立代理仅进行源码复审，确认 backend 窗口的检查顺序，无新增阻断；上述测试由执行者实际运行。两次部署测试夹具错误（闭包作用域、空数组计数）和修正重试结果均保留。
+
+正式服务、配置和数据库尚未改动；本增量零模型调用、零 Actions。
+
+Sources 新列 `source_captures.extraction_version` 需要 Owner 迁移，旧记录标 `unrecorded`，不补造历史提取版本。迁移双次执行和旧记录保留已测试，但尚未操作正式库。正式实施仍需新的完整备份、受控迁移和旧服务回滚验证。
+
+## 已执行的验证
+
+本地原始证据：`D:\workspace\agent-platform\local\evidence\capture-import-1791906296644`。
+
+| 范围 | 真实结果与边界 |
+| --- | --- |
+| Sources | 12 个顶层测试通过，无跳过；包含隔离 PostgreSQL、受限角色、两次 HTTP GET 强制同时到达的并发首写、回复正文丢弃后重试、版本迁移、权限与长度检查；vet/build 通过 |
+| Knowledge | 28 个顶层、24 个子测试通过；5 项既有外部后端/Indexer 二进制 opt-in 明确跳过；vet/build 通过。新测试包含提交末尾延迟触发失败后所有文件/文档/索引/附件回滚、三连接池下六并发去重、缺附件补齐、资料损坏拒绝、revision 隔离、HTTP 回复正文丢弃后重试、外部索引保持 queued |
+| 恢复校验 | 标准来源恢复校验扩展逐格式来源与 JSON 类型检查。新隔离 PostgreSQL 合成夹具 12 项通过：格式 1/2 Unicode 对应段、未知格式、字符串/指数形式格式号、数值采集 ID、字符串字节长度、错误来源说明、最终地址、提取版本、采集 ID、对应段及损坏响应拒绝。不是本轮正式备份恢复 |
+| 独立评审 | 只读源码评审指出格式回退与旧 Sources 能力误判；能力预检已修复，并加强首写竞争测试。复核恢复脚本时发现 SQL 可能接受 Go 无法解析的 JSON 类型，已补显式类型和数字词法约束并执行四项新反例。正式 writer 的持久能力下限仍待完成。评审没有替执行者代跑测试 |
+
+第一次 Knowledge 全量检查因测试集群误起在 5432、测试连接 55591 而失败，原始结果保存为 `knowledge-fixture-port-failure*`；停止集群后明确指定隔离端口重跑通过。没有把该失败删掉或算成通过。所有测试集群已停止。
+
+“丢回复”夹具是收到成功 HTTP 响应头后丢弃正文，不是进程强杀或真实断网。后续故障验收仍须分别覆盖，不扩大本轮结论。
+
+## 接续顺序
+
+1. 读取下限过渡版与 writer 已按顺序正式安装，实际进程发布故障门槛已通过；保留 reader bridge 作为恢复目标，不能回退 legacy。
+2. Sources 正式备份/Owner 迁移/独立发布，核对 Knowledge 对 Sources 的固定地址及最小身份授权。
+3. Console 资料页完成“采集、预览、保存、原文回读”；请求前保留采集 ID 与固定知识库 revision，关闭后可找回，切换库后迟到回复不串写界面。
+4. 用实际新采集来源执行完整流程、重复提交、来源回读与标准隔离恢复；之后继续纠正真实研究成稿中的时间分类和过强表述。原 P2–P5 剩余项不因本功能而取消。
+
+本轮零付费模型调用、零 GitHub Actions，未改动七份既有 Telemetry 迁移草稿。

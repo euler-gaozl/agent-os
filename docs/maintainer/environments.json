@@ -1,0 +1,707 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-17",
+  "purpose": "区分可移植项目知识与环境绑定观测，避免在 Mac 误用原所有者 Windows 环境",
+  "default_execution_environment": null,
+  "current_execution_record": "deepseek-handoff-20261017.md",
+  "environment_selection_rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets.",
+  "environments": [
+    {
+      "id": "environment:maintainer-macos",
+      "label": "朋友自己的 Mac",
+      "os": "macOS",
+      "role": "isolated_development",
+      "root_hint": "~/workspace/agent-platform",
+      "root_status": "observed_new_workspace_2026-10-15",
+      "cpu_architecture": "arm64",
+      "provisioning_status": "isolated_development_tools_and_test_database_verified_not_product_acceptance",
+      "data_policy": "fresh_local_config_databases_tasks_and_evidence",
+      "allowed_scope": [
+        "read_public_source",
+        "modify_checkouts_in_own_workspace",
+        "build_for_detected_architecture",
+        "run_isolated_tests",
+        "document_platform_gaps"
+      ],
+      "inherits_owner_installation": false,
+      "inherits_owner_credentials": false,
+      "observations": [
+        {
+          "observed_at": "2026-10-15",
+          "timezone": "Asia/Shanghai",
+          "os_version": "15.3",
+          "os_build": "24D2059",
+          "source_audit": "macos-source-audit-20261015.json",
+          "record": "macos-development-20261015.md"
+        },
+        {
+          "observed_at": "2026-10-15",
+          "timezone": "Asia/Shanghai",
+          "os_version": "15.3",
+          "os_build": "24D2059",
+          "cpu_architecture": "arm64",
+          "record": "macos-research-and-storage-20261015.md",
+          "scope": "Fresh isolated development stack, two bounded real-provider tasks on synthetic sources, independent code and real Storage reply-loss verification; Windows and complete UI/business acceptance remain open."
+        },
+        {
+          "observed_at": "2026-10-15",
+          "timezone": "Asia/Shanghai",
+          "os_version": "15.3",
+          "os_build": "24D2059",
+          "cpu_architecture": "arm64",
+          "record": "macos-package-enospc-and-answer-contract-20261015.md",
+          "scope": "Matching Futures/Console BFF and Web packages installed; authenticated readiness only, browser not executed. Storage-only bounded-volume ENOSPC passed. Third synthetic task failed on provider HTTP 503 with one unknown usage; no new quality conclusion."
+        },
+        {
+          "observed_at": "2026-10-15",
+          "timezone": "Asia/Shanghai",
+          "os_version": "15.3",
+          "os_build": "24D2059",
+          "cpu_architecture": "arm64",
+          "record": "macos-runtime-enospc-20261015.md",
+          "status": "passed_limited_owner_transaction_scope",
+          "scope": "Runtime Owner in-process transaction test with real isolated PostgreSQL ENOSPC; NOLOGIN SET ROLE pools, in-memory archive and synthetic native receipts; no independent Runtime/Worker/Node/Storage process, real provider, Compact, complete note lifecycle, Windows or host-disk exhaustion."
+        },
+        {
+          "observed_at": "2026-10-15",
+          "timezone": "Asia/Shanghai",
+          "os_version": "15.3",
+          "os_build": "24D2059",
+          "cpu_architecture": "arm64",
+          "record": "macos-research-verification-and-ui-20261015.md",
+          "status": "provider_failed_ui_installed_browser_pending",
+          "scope": "One new same-input synthetic research task failed on first provider HTTP 503 with no report; frozen Agent 4/Skill 3, native-v4 engine and existing 12-step/12-model-attempt budget verified, reviewer criteria fixed before submission and excluded from input, three old tasks unchanged. Reviewed read-failure UI installed as a matching Futures BFF/Web package; nine other instances unchanged. No browser or Windows acceptance."
+        },
+        {
+          "observed_at": "2026-10-15",
+          "timezone": "Asia/Shanghai",
+          "os_version": "15.3",
+          "os_build": "24D2059",
+          "cpu_architecture": "arm64",
+          "record": "macos-telemetry-owner-20261015.md",
+          "status": "passed_limited_owner_coverage_not_deployed",
+          "scope": "Mac isolated PostgreSQL Owner coverage: Telemetry exporter receipt red-green and Runtime outbox protocol; HTTP fixtures; only the five new exporter tests and two Runtime tests use NOLOGIN SET ROLE application pools, not separate login or real Langfuse, continuous-loop liveness or cross-service composition. No installed service, source protocol or deployment pin change."
+        },
+        {
+          "observed_at": "2026-10-15",
+          "timezone": "Asia/Shanghai",
+          "os_version": "15.3",
+          "os_build": "24D2059",
+          "cpu_architecture": "arm64",
+          "record": "macos-native-notes-and-unknown-20261015.md",
+          "status": "passed_two_limited_fixture_layers_not_deployed",
+          "scope": "Two separate Mac fixture layers: Runtime note lifecycle/real PostgreSQL Owner coverage, and native process external-effect reply-loss/cancel/explicit reconcile with real Storage. No production change, installed service replacement, deployment pin change, real provider, Windows or full resource/business acceptance.",
+          "notes_owner": {
+            "scope": "Owner in-process native protocol with real isolated PostgreSQL; NOLOGIN SET ROLE pools, synthetic NativeReceipt and per-task memory archive; post-commit callback return loss, not network or official DSH process",
+            "tests": {
+              "top_level_passed": 2,
+              "subtests_passed": 2,
+              "failed": 0,
+              "skipped": 0,
+              "race": true,
+              "package_elapsed_seconds": 10.533,
+              "exit_code": 0
+            },
+            "test_source_sha256": "5413703e61005d17fb75c36d5ee17d0261b83016234471f1a69015f2a37e590c",
+            "source_base_commit": "ff3fa220df331f698c99b260005cc222d0dcdb1c",
+            "source_commit": "c02e12307e214b59dc02e18ca807a3c1ae762023"
+          },
+          "native_process": {
+            "scope": "Independent Runtime/Worker/Storage with fixed official native-v4 Node, two fresh databases and three LOGIN roles; Registry/ToolHub/model/MCP protocol fixtures, fsynced synthetic external effect and actual TCP reply loss, controlled explicit operator reconciliation",
+            "tests": {
+              "top_level_passed": 1,
+              "failed": 0,
+              "skipped": 0,
+              "race_test_driver_only": true,
+              "service_binaries_race": false,
+              "package_elapsed_seconds": 5.417,
+              "exit_code": 0
+            },
+            "test_source_sha256": "317ca63f5c5a31dcba4dea44348efe49a55912d1bc45e37eca7d40ecda453ef7",
+            "integration_source_base_commit": "9f3c3785869927796e57a59059b3df840dbf13bf",
+            "effects": 1,
+            "model_fixture_requests": 2,
+            "synthetic_accounted_tokens_per_run": 1900,
+            "real_provider_calls": 0,
+            "unknown_model_usage_attempts": 0,
+            "cost_estimate": null,
+            "archive_manifests": 12,
+            "archive_bytes": 15829
+          }
+        },
+        {
+          "observed_at": "2026-10-15",
+          "timezone": "Asia/Shanghai",
+          "os_version": "15.3",
+          "os_build": "24D2059",
+          "cpu_architecture": "arm64",
+          "record": "macos-console-native-and-state-recovery-20261015.md",
+          "status": "console_package_installed_owner_recovery_fixture_passed_browser_pending",
+          "scope": "Console exact fixed-engine evidence UI corrected and matching local BFF/Web package installed; Runtime native source-state recovery covered separately with Owner PostgreSQL/HTTP fixtures. No browser, official Node recovery, general failed-run continuation, real provider or Windows acceptance.",
+          "console_ui": {
+            "source_base_commit": "a2bca748d1bd6f0de0e52e1e0a59070e790d5fbc",
+            "source_commit": "58c511f3f2a29ca5a99a121e2197e74e5272ac90",
+            "web_tests": {
+              "passed": 27,
+              "failed": 0,
+              "skipped": 0
+            },
+            "typescript_exit": 0,
+            "author_red": {
+              "passed": 2,
+              "failed": 3,
+              "skipped": 0
+            },
+            "author_focused": {
+              "passed": 7,
+              "failed": 0,
+              "skipped": 0
+            },
+            "scope": "SSR initial rendering and direct archive-download callback; actual Console uses the components. No browser, DOM/fetch recovery-response interaction or automatic continuation claim."
+          },
+          "runtime_owner": {
+            "source_base_commit": "c02e12307e214b59dc02e18ca807a3c1ae762023",
+            "source_commit": "606fbc8a0e785d013f39e2cadcfca2fb1fb268f3",
+            "test_source_sha256": "cfc3899decd622b0b74d85efc2dfc0e8c3a1878a07af19fc74dd3438f9091c0e",
+            "tests": {
+              "top_level_passed": 3,
+              "subtests_passed": 4,
+              "failed": 0,
+              "skipped": 0,
+              "race": true,
+              "package_elapsed_seconds": 2.427,
+              "exit_code": 0
+            },
+            "scope": "In-process Owner with real PostgreSQL and SourceState HTTP policy, NOLOGIN SET ROLE application pools, synthetic model receipt, memory archive and callback-level reply loss; no SQL-fabricated run state, actual TCP loss, Worker retry loop, official Node or Storage process. Archive lost-ack naturally failed/not_waiting; archive_unconfirmed diagnostic and external-tool unknown not added."
+          }
+        },
+        {
+          "observed_at": "2026-10-15",
+          "timezone": "Asia/Shanghai",
+          "os_version": "15.3",
+          "os_build": "24D2059",
+          "cpu_architecture": "arm64",
+          "record": "macos-continuation-preview-20261015.md",
+          "status": "readonly_preview_installed_owner_tested_continuation_open",
+          "scope": "Control-only read-only failed continuation preview v1 implemented and locally installed in Runtime; Owner PostgreSQL/HTTP fixtures plus read-only observations of existing Mac failures. No new execution action, generic resume guard, UI integration, provider retry or business/Windows acceptance.",
+          "api": {
+            "protocol": "failed-run-continuation-preview-v1",
+            "method": "GET",
+            "route": "/v1/runs/{id}/continuation",
+            "authorized_role": "control",
+            "read_only": true,
+            "action_available": false,
+            "positive_assessment": "same_run_candidate is an observation, never execution authorization",
+            "legacy_resume_changed": false,
+            "ui_integrated": false
+          },
+          "runtime_owner": {
+            "source_base_commit": "606fbc8a0e785d013f39e2cadcfca2fb1fb268f3",
+            "source_commit": "879c5034ad556e37f1c987312eb4124b3c4806b6",
+            "source_set_sha256": "2c49c04472b5b9a32f28959e7a1c91776b3839c480628a6c27cea75e5d45a313",
+            "tests": {
+              "top_level_passed": 7,
+              "new_top_level_tests": 6,
+              "existing_peer_policy_tests": 1,
+              "subtests_passed": 17,
+              "failed": 0,
+              "skipped": 0,
+              "race": true,
+              "package_elapsed_seconds": 4.327,
+              "exit_code": 0
+            },
+            "vet_exit": 0,
+            "build_exit": 0,
+            "scope": "Owner in-process real isolated PostgreSQL and servicehttp authorization, NOLOGIN SET ROLE pools, synthetic native receipt and memory archive. Positive paths use normal APIs; five corrupt-record negative fixtures are deliberate injections. Separate actor invokes old resume in consistency test; GET never performs that action. No official Node/independent Worker/Storage or provider."
+          },
+          "installed_observation": {
+            "read_only": true,
+            "action_available": false,
+            "named_table_snapshots_equal": true,
+            "named_tables": 12,
+            "complete_task_lists_equal": true,
+            "terminal_tasks": 4,
+            "comparison_includes_instances": false,
+            "continuous_immutability_proven": false,
+            "preinstall_observed_at": "2026-10-15T07:25:50.728Z",
+            "postinstall_observed_at": "2026-10-15T07:26:30.050Z",
+            "tables_sha256": "cb618c38d0bd8933b658c3cbfc9e6c78ccbcecf982cd125906a6a3305a7136f6",
+            "tasks_sha256": "72d29da5eeab6c528ce5bf63b7e5cebba03536c9e724c4e007c339b576f2febf",
+            "observer_script_sha256": "e5824b1cbc4ab9a5988529c6d6b02769852f9eb685cee73468cb69ee9cbe25d1",
+            "preview_gets": 4,
+            "successful_phase_http_gets": 8,
+            "successful_phase_database_read_transactions": 4,
+            "provider_calls": 0,
+            "resumes_performed": 0,
+            "tasks_submitted": 0,
+            "assessments": [
+              {
+                "status": "completed",
+                "count": 2,
+                "assessment": "not_applicable",
+                "reason": "already_completed"
+              },
+              {
+                "status": "failed",
+                "count": 2,
+                "assessment": "same_run_candidate",
+                "reason": "retained_transient_model_failure",
+                "each_basis": {
+                  "model_rounds": 1,
+                  "max_steps": 12,
+                  "family_model_attempts": 1,
+                  "max_model_attempts": 12,
+                  "retry_http_status": 503
+                }
+              }
+            ],
+            "scope": "Twelve named execution/notes table row digests and full terminal task metadata agree at observation endpoints across installation and GETs. HTTP and SQL snapshots are separate; no admission lock or continuous immutability proof. Excludes instances, app_runs, business_runs and all other tables; no live provider retry, Storage-byte validation, UI, business or Windows acceptance."
+          }
+        },
+        {
+          "observed_at": "2026-10-15",
+          "timezone": "Asia/Shanghai",
+          "os_version": "15.3",
+          "os_build": "24D2059",
+          "cpu_architecture": "arm64",
+          "environment_id": "environment:maintainer-macos",
+          "record": "macos-native-attempt-revision-20261015.md",
+          "status": "native_revision_guard_two_workers_installed_continuation_open",
+          "scope": "Native BeginModel admission guard rejects a new stale-revision attempt while preserving completed receipts and frozen history. Owner and actual old/new Worker plus fixed official Node/synthetic TLS fixtures verified; both own-Mac Workers updated. Runtime HTTP remains 879c5034; continuation action/UI, real provider/business and Windows acceptance remain open.",
+          "source_versions": {
+            "runtime_core_execution_commit": "1f6c4c29c62bac3ad6d674b7797a7410f373bf00",
+            "runtime_tests_commit": "5017de09c37f50da270b1873c2dcf73439330653",
+            "worker_source_commit": "94d605910e0c3da011bb1213b516150ecb5fe1ba",
+            "worker_runtime_module_version": "v0.1.0-rc.5.0.20261015080014-1f6c4c29c62b",
+            "worker_runtime_module_sum": "h1:Ht2GnqP3SC9BPodtn85eJ+vm6ZfZjc46g/1mQM8cGhg=",
+            "runtime_http_installed_commit": "879c5034ad556e37f1c987312eb4124b3c4806b6",
+            "runtime_http_reinstalled": false
+          },
+          "runtime_owner": {
+            "core_commit": "1f6c4c29c62bac3ad6d674b7797a7410f373bf00",
+            "guard_sha256": "24ca3d033e23723bb23f4113be56fc0b79757bbd56e8b2b1310de0fec2cf042f",
+            "test_sha256": "2df2cbaa6fd3289fbbd18a3b06cb4b0dcca8343f0e40529faac3f7b6a98fadd4",
+            "tests": {
+              "red": {
+                "top_pass": 2,
+                "top_fail": 2,
+                "sub_pass": 0,
+                "skip": 0,
+                "exit_code": 1,
+                "package_elapsed_seconds": 1.089,
+                "stdout_sha256": "555dd0be6ab5397ab7e59bfaa53c59f5432f27cfe240961c374bdfbbb18ec8b9"
+              },
+              "green": {
+                "top_pass": 4,
+                "top_fail": 0,
+                "sub_pass": 0,
+                "skip": 0,
+                "exit_code": 0,
+                "package_elapsed_seconds": 2.09,
+                "stdout_sha256": "4e65695d9d92f37d7f8f3c9f3947547864f51d1cb251c87a516187a4ddf2fe46"
+              },
+              "regression": {
+                "top_pass": 32,
+                "top_fail": 0,
+                "sub_pass": 38,
+                "skip": 0,
+                "exit_code": 0,
+                "package_elapsed_seconds": 34,
+                "stdout_sha256": "1dd9d27d66ac223e885918f7da6eaba578e2349d810997cff9903ef953d97866"
+              }
+            },
+            "vet_exit": 0,
+            "build_exit": 0,
+            "original_instances_unchanged": 10,
+            "cleanup": {
+              "fixture_databases": 0,
+              "fixture_roles": 0,
+              "fixture_connections": 0
+            },
+            "provider_calls": 0,
+            "scope": "Owner real isolated PG and execution APIs with synthetic callbacks/memory archives, no actual Worker/Node/provider execution"
+          },
+          "worker_fixture": {
+            "runs": {
+              "worker-fixture": {
+                "exit_code": 1,
+                "top_pass": 0,
+                "top_fail": 1,
+                "sub_pass": 1,
+                "sub_fail": 2,
+                "skip": 0,
+                "package_elapsed_seconds": 4.146,
+                "stdout_sha256": "246d389378cab82682cd450ec656c14ae63244cd217aa8397c6193b08b630559"
+              },
+              "worker-fixture-v2": {
+                "exit_code": 0,
+                "top_pass": 1,
+                "top_fail": 0,
+                "sub_pass": 3,
+                "sub_fail": 0,
+                "skip": 0,
+                "package_elapsed_seconds": 4.917,
+                "stdout_sha256": "1b006354a12c723ee1cacc04bdb7bff224d4a796c6ff01b902a2cbed4f0e33b6"
+              }
+            },
+            "test_driver_race": true,
+            "worker_binaries_race": false,
+            "fixture_source_sha256": "13988cc825980dcee7d82d409e1a9c69cd5a816f23cd15dbf5be1d2d4ab33079",
+            "harness_manifest_sha256": "d76588bae0edd1d7f13cdb4d01423ac8fc14da240fba682bcec4a1fb08f8ba7f",
+            "original_instances_unchanged": 10,
+            "fixture_pids_remaining": 0,
+            "fixture_databases_roles_connections_remaining": {
+              "fixture_databases": 0,
+              "fixture_roles": 0,
+              "fixture_connections": 0
+            },
+            "model_http_scope": "Synthetic loopback TLS only; actual independent Worker binaries and fixed official Node runner, real Runtime HTTP and PG, archive fixture.",
+            "real_provider_calls": 0,
+            "cases": [
+              {
+                "name": "old_pin_stale",
+                "synthetic_http_requests": 2,
+                "model_attempts": 2,
+                "unknown_usage_attempts": 2,
+                "status": "failed"
+              },
+              {
+                "name": "new_pin_stale",
+                "synthetic_http_requests": 1,
+                "model_attempts": 1,
+                "unknown_usage_attempts": 1,
+                "status": "failed"
+              },
+              {
+                "name": "new_pin_same_revision",
+                "synthetic_http_requests": 2,
+                "model_attempts": 2,
+                "unknown_usage_attempts": 1,
+                "status": "completed"
+              }
+            ],
+            "request_equality": "Complete canonical JSON values agree with original frozen intent and every call/attempt; raw wire hashes are preserved and differ for replay requests."
+          },
+          "worker_installation": {
+            "installed": true,
+            "at": "2026-10-15T08:38:46.658Z",
+            "package_manifest_sha256": "384952564182170e6d12ff4bebf6bc4967d133413f2916a73cabf347f9ac1766",
+            "worker_binary_sha256": "7ec002f581b5dfd785db3fcfc6228595bd2f6c23e400ace7cc39f722452353f8",
+            "changed_instances": [
+              "worker",
+              "worker-2"
+            ],
+            "non_target_instances_unchanged": 8,
+            "all_configuration_hashes_unchanged": true,
+            "fixed_harness_unchanged": true,
+            "old_workers_exit_confirmed": true,
+            "final_observed_at": "2026-10-15T08:40:20.497Z",
+            "total_live_instances": 10,
+            "new_workers_authenticated_ready_status": 200,
+            "read_only_sql_transactions": 8,
+            "authenticated_ready_gets": 8,
+            "observed_scalar_counts": {
+              "runs": 4,
+              "nonterminal": 0,
+              "calls": 21,
+              "model_attempts": 11,
+              "exchanges": 70,
+              "archives": 70
+            },
+            "whole_row_immutability_proven": false,
+            "whole_database_immutability_proven": false,
+            "migrations_executed": false,
+            "release_package": false,
+            "provider_calls": 0,
+            "task_mutations": 0,
+            "scope": "Scalar observations and process checks are separate, not an atomic admission lock or full-row comparison; normal instance heartbeats remain possible. A later root live observation confirmed both new workers and eight unchanged peers."
+          },
+          "execution_action_added": false,
+          "ui_integrated": false,
+          "real_provider_calls": 0,
+          "browser_executed": false,
+          "windows_acceptance": false,
+          "integration_deployment_pins_changed": false,
+          "retained_failures": [
+            {
+              "stage": "worker-offline-vendor-first",
+              "result": "Initial verify/vendor failed because locked testify 1.3.0 go.mod metadata was absent; later fixed-graph metadata preparation and offline verify/vendor/build succeeded. Fixed metadata was actually fetched via goproxy.cn; not a wholly offline or checksum-database-verified flow."
+            },
+            {
+              "stage": "worker-build-preflight-first",
+              "result": "Incorrect root LICENSE assumption stopped before package creation or build; corrected exact source inventory and retained failure."
+            },
+            {
+              "stage": "worker-fixture-first",
+              "result": "One subcase passed and two failed due to raw JSON key-order equality assertion. V2 compares complete canonical JSON against frozen exchange and calls/attempts, retaining raw wire hashes; production source, module pin and binaries unchanged."
+            }
+          ]
+        },
+        {
+          "observed_at": "2026-10-15",
+          "timezone": "Asia/Shanghai",
+          "os_version": "15.3",
+          "os_build": "24D2059",
+          "cpu_architecture": "arm64",
+          "environment_id": "environment:maintainer-macos",
+          "record": "macos-continuation-action-20261015.md",
+          "status": "explicit_continuation_source_tested_not_installed",
+          "scope": "Explicit manual continuation action, durable Owner receipt and Console recovery-pointer source implemented and locally committed. Isolated Owner and independent Worker/official Node/synthetic TLS plus Console source checks passed with explicit skips/limits. No live schema migration, service deployment, mounted/browser flow, real provider/business or Windows acceptance.",
+          "source_versions": {
+            "runtime_source_commit": "dbf99dca784c849f0386da1c3de219aa10142a8e",
+            "console_source_commit": "8e8186c07467897410f5a94973c7c4d36d99490e",
+            "runtime_installed_commit": "879c5034ad556e37f1c987312eb4124b3c4806b6",
+            "console_installed_commit": "58c511f3f2a29ca5a99a121e2197e74e5272ac90",
+            "worker_installed_commit": "94d605910e0c3da011bb1213b516150ecb5fe1ba",
+            "worker_execution_commit": "1f6c4c29c62bac3ad6d674b7797a7410f373bf00",
+            "worker_runtime_module": "v0.1.0-rc.5.0.20261015080014-1f6c4c29c62b",
+            "worker_pin_changed": false,
+            "harness_manifest_sha256": "d76588bae0edd1d7f13cdb4d01423ac8fc14da240fba682bcec4a1fb08f8ba7f"
+          },
+          "contract": {
+            "context_protocol": "failed-run-continuation-action-context-v1",
+            "receipt_protocol": "failed-run-continuation-receipt-v1",
+            "authorized_identity": "named control",
+            "manual_action_source_implemented": true,
+            "console_source_implemented": true,
+            "native_legacy_resume_source_rejected": true,
+            "preview_v1_unchanged": true,
+            "execution_protocol_unchanged": true,
+            "receipt_owner_table": "run_continuation_receipts",
+            "receipt_retention": "Permanent Owner decision history, no TTL; Runtime SELECT/INSERT, no new Worker grant"
+          },
+          "runtime_tests": {
+            "focused": {
+              "top_pass": 19,
+              "sub_pass": 42,
+              "top_skip": 0,
+              "sub_skip": 0,
+              "fail": 0,
+              "exit_code": 0,
+              "launcher_elapsed_ms": 13459,
+              "stdout_sha256": "2700b81fa0eb862b31d66a68d37af7b812e8787b5efb4ce8c01b131d4ccba9bc",
+              "new_owner_top_level": 7,
+              "new_owner_subtests": 11,
+              "pure_http_top_level": 2,
+              "pure_http_subtests": 14,
+              "preview_top_level": 6,
+              "preview_subtests": 17,
+              "native_guard_top_level": 4,
+              "package_seconds": 11.375,
+              "race": true
+            },
+            "broad_regression": {
+              "top_pass": 112,
+              "sub_pass": 195,
+              "top_skip": 14,
+              "sub_skip": 13,
+              "fail": 0,
+              "exit_code": 0,
+              "launcher_elapsed_ms": 104943,
+              "stdout_sha256": "93ece91b944de5d5472cfa5284095ed24b9f6bc2358069a9fce8fe361fac552a",
+              "package_seconds": 104.443,
+              "skipped_tests": [
+                "TestRuntimeDiskFullPreservesNotesAndModelReceipts",
+                "TestWorkerBinaryCompatibilityAfterCommittedEffect",
+                "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/serialized_overflow",
+                "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/rejection_kill",
+                "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/compaction_kill",
+                "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/usage_pressure",
+                "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/usage_control",
+                "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/irreducible",
+                "TestIndependentBudgetWorkerFinalRequestAndUsageRecovery/summary_overflow",
+                "TestIndependentWorkerEvidencePastFourMiBRecallsOmittedSourceAfterProcessInterruption",
+                "TestIndependentNativeWorkerRevisionGuard",
+                "TestIndependentNativeWorkerDurableProviderAndLongText/large",
+                "TestIndependentNativeWorkerDurableProviderAndLongText/completion_kill",
+                "TestIndependentNativeWorkerDurableProviderAndLongText/rejection_kill",
+                "TestIndependentNativeWorkerDurableProviderAndLongText/compaction_kill",
+                "TestIndependentNativeWorkerDurableProviderAndLongText/cancel",
+                "TestIndependentNativeWorkerDurableProviderAndLongText/partial",
+                "TestIndependentSourceWorkerRecoversCommittedStateAfterCompactionAndLostReply",
+                "TestIndependentSourceWorkerSurvivesLostStateHTTPReplyWithoutProcessDeath",
+                "TestIndependentSourceWorkerExhaustedReplyRetriesRequireSafeOperatorRecovery",
+                "TestIndependentResidentWorkerRecoversCommittedStateAfterCompactionAndLostReply",
+                "TestIndependentResidentWorkerSurvivesLostStateHTTPReplyWithoutProcessDeath",
+                "TestIndependentResidentWorkerExhaustedReplyRetriesRequireSafeOperatorRecovery",
+                "TestIndependentBudgetWorkerRecoversCommittedStateAfterCompactionAndLostReply",
+                "TestIndependentBudgetWorkerSurvivesLostStateHTTPReplyWithoutProcessDeath",
+                "TestIndependentBudgetWorkerExhaustedReplyRetriesRequireSafeOperatorRecovery",
+                "TestIndependentSourceWorkerUpgradesV1AcrossCommittedStateInterruption"
+              ],
+              "scope": "Top-level passes can include grouping tests whose opt-in leaves skip; 27 explicit skip events are retained. The independent revision Worker run is covered separately, not relabelled in this invocation."
+            },
+            "source_set_sha256": "bcfc25c2d9a029abc2f0a3761a575b6099817208402f95b2e525b9e5b9a17e1c",
+            "internal_runstate_race_exit": 0,
+            "vet_exit": 0,
+            "build_exit": 0,
+            "permissions": "Isolated real PG with NOLOGIN/SET ROLE; not credential-authenticated login acceptance",
+            "reply_loss": "External HTTP connection dropped after Handler committed; PostgreSQL COMMIT response loss not injected"
+          },
+          "worker_tests": {
+            "top_pass": 1,
+            "sub_pass": 3,
+            "top_skip": 0,
+            "sub_skip": 0,
+            "fail": 0,
+            "exit_code": 0,
+            "launcher_elapsed_ms": 5489,
+            "stdout_sha256": "c5ce744fb8c2869358e90ad0fab2fc243ebf0cc107301938633b0267c2d72404",
+            "package_seconds": 4.779,
+            "race_test_driver": true,
+            "worker_binary_race_build": false,
+            "cases": [
+              {
+                "name": "old_pin_stale",
+                "revise": true,
+                "sends": 2,
+                "attempts": 2,
+                "unknown_usage_attempts": 2,
+                "status": "failed",
+                "complete_canonical_frozen_binding": true
+              },
+              {
+                "name": "new_pin_stale",
+                "revise": true,
+                "sends": 1,
+                "attempts": 1,
+                "unknown_usage_attempts": 1,
+                "status": "failed",
+                "complete_canonical_frozen_binding": true
+              },
+              {
+                "name": "new_pin_same_revision",
+                "revise": false,
+                "sends": 2,
+                "attempts": 2,
+                "unknown_usage_attempts": 1,
+                "status": "completed",
+                "complete_canonical_frozen_binding": true
+              }
+            ],
+            "source_actor": "Explicit action at R1, then optional Constraints R2 before second Worker Claim",
+            "scope": "Actual separate old/new Worker binaries and pinned official Node adaptation; real isolated Runtime HTTP/PG, synthetic loopback TLS model and archive fixture. Complete canonical bodies bind frozen exchanges/calls/attempts; raw wire hashes may differ.",
+            "actual_provider_calls": 0
+          },
+          "console_tests": {
+            "go_race_exit": 0,
+            "vet_exit": 0,
+            "build_exit": 0,
+            "web_tests_passed": 36,
+            "new_continuation_web_tests": 9,
+            "web_failed": 0,
+            "web_skipped": 0,
+            "tsc_exit": 0,
+            "vite_exit": 0,
+            "vite_nonfatal_warnings": [
+              "lucide-react use client directives",
+              "chunks over 500 kB"
+            ],
+            "scope": "MemoryStorage/fake fetch, static render and upstream proxy fixtures; no mounted React hook/click/unmount, real cross-tab StorageEvents or browser acceptance."
+          },
+          "installed_services_changed": false,
+          "live_schema_migration_executed": false,
+          "live_task_mutations": 0,
+          "actual_provider_calls": 0,
+          "browser_executed": false,
+          "automatic_continuation_complete": false,
+          "windows_acceptance": false,
+          "fixture_cleanup": {
+            "prefix": "p2_runtime_",
+            "fixture_databases": 0,
+            "fixture_roles": 0,
+            "fixture_connections": 0,
+            "recorded_fixture_worker_pids_absent": 6
+          },
+          "baseline_service_objects_unchanged": 10,
+          "integration_deployment_pins_changed": false,
+          "pushed": false,
+          "github_actions_triggered": false
+        }
+      ]
+    },
+    {
+      "id": "environment:owner-windows",
+      "label": "原所有者 Windows",
+      "os": "Windows",
+      "role": "active_owner_development_and_target_validation",
+      "current_authorization": "2026-10-17 owner requested recovery from Mac and continuation on original Windows; historic restrictions below describe access from the earlier Mac handoff only",
+      "current_execution_record": "windows-resumption-20261017.md",
+      "current_authorized_scope": [
+        "maintain_original_local_owner_workspace_under_existing_user_authorization"
+      ],
+      "root_hint": "D:\\workspace\\agent-platform",
+      "observation_date": "2026-10-14",
+      "access_for_mac_handoff": "not_authorized",
+      "allowed_scope": [
+        "read_public_historical_documentation"
+      ],
+      "not_authorized_by_handoff": [
+        "connect",
+        "mount",
+        "synchronize_private_state",
+        "start_or_stop",
+        "update_or_rollback",
+        "restore_database",
+        "resume_historical_run"
+      ],
+      "local_urls_are": "relative_to_owner_windows_not_maintainer_mac",
+      "private_evidence_availability": "not_in_git"
+    },
+    {
+      "id": "environment:future-linux",
+      "label": "后续 Linux 服务器目标",
+      "os": "Linux",
+      "role": "future_delivery_target",
+      "provisioning_status": "no_server_provided",
+      "not_implied_by_mac_tests": [
+        "physical_node_ha",
+        "production_capacity",
+        "native_windows_validation"
+      ]
+    }
+  ],
+  "knowledge_classes": [
+    {
+      "id": "portable_source_knowledge",
+      "examples": [
+        "repository_urls",
+        "source_commits",
+        "interfaces",
+        "logical_data_ownership",
+        "backlog"
+      ],
+      "usage": "可阅读与用于开发，平台特定实现仍须实际验证"
+    },
+    {
+      "id": "environment_bound_observation",
+      "examples": [
+        "installed_manifests",
+        "running_instances",
+        "localhost_urls",
+        "historic_run_ids",
+        "private_evidence_paths"
+      ],
+      "required_metadata": [
+        "environment_id",
+        "observed_at"
+      ],
+      "usage": "只能解释归属环境的历史状态，不能跨机器推定"
+    },
+    {
+      "id": "target_environment_validation",
+      "examples": [
+        "Windows_DPAPI",
+        "Windows_release_recovery",
+        "owner_database_restore"
+      ],
+      "usage": "保留范围和条件，Mac 上未执行则仍待目标环境复验"
+    }
+  ],
+  "maintenance_rules": [
+    "Mac 新证据独立记录环境、OS/CPU、提交、命令、数据来源、结果和跳过项",
+    "原 Windows 观测不覆盖，Mac 结果不写成 Windows 通过",
+    "旧 Goal 仍暂停；接手者在自己的聊天建立完整范围目标",
+    "禁止从仓库路径或历史本机状态推导出访问授权"
+  ]
+}

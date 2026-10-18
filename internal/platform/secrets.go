@@ -26,7 +26,7 @@ func secretCipher() (cipher.AEAD, error) {
 	return cipher.NewGCM(block)
 }
 func (s *Store) PutSecret(ctx context.Context, name, value string) error {
-	if !secretName.MatchString(name) || value == "" || len(value) > 16000 {
+	if (!secretName.MatchString(name) || reservedCredentialName(name)) || value == "" || len(value) > 16000 {
 		return errors.New("invalid credential name or value")
 	}
 	a, e := secretCipher()
@@ -48,10 +48,10 @@ func (s *Store) Secret(ctx context.Context, name string) (string, error) {
 	if name == "" {
 		return "", nil
 	}
-	if !secretName.MatchString(name) {
+	if !secretName.MatchString(name) || reservedCredentialName(name) {
 		return "", errors.New("invalid credential reference")
 	}
-	if v := os.Getenv(name); v != "" {
+	if v := credentialEnvironment(name); v != "" {
 		return v, nil
 	}
 	a, e := secretCipher()
@@ -70,4 +70,21 @@ func (s *Store) Secret(ctx context.Context, name string) (string, error) {
 		return "", errors.New("credential decryption failed")
 	}
 	return string(raw), nil
+}
+
+// Environment compatibility is deliberately limited to existing provider keys.
+// Never expose arbitrary process environment variables through credential RPC.
+func credentialEnvironment(name string) string {
+	switch name {
+	case "DEEPSEEK_API_KEY", "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY":
+		return os.Getenv(name)
+	}
+	return ""
+}
+func reservedCredentialName(name string) bool {
+	switch name {
+	case "MASTER_KEY", "DATABASE_URL", "MIGRATION_DATABASE_URL", "SERVICE_TOKEN", "SERVICE_PEERS", "ADMIN_TOKEN", "BUSINESS_TOKEN", "PGPASSWORD":
+		return true
+	}
+	return false
 }

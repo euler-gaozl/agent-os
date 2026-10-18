@@ -2,7 +2,6 @@ package platform
 
 import (
 	"context"
-	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,12 +12,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-//go:embed schema.sql
-var schema string
-
 type Store struct {
 	DB         *pgxpool.Pool
 	CatalogURL string
+	StorageURL string
 	Remote     *serviceclient.Client
 }
 
@@ -47,8 +44,14 @@ func (s *Store) Migrate(ctx context.Context) error {
 	if _, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(8843921)"); err != nil {
 		return err
 	}
-	if _, err = tx.Exec(ctx, schema); err != nil {
-		return err
+	for _, domain := range []string{"legacy_versions", "registry", "runtime", "notes", "storage", "sandbox", "telemetry", "legacy_knowledge"} {
+		body, err := migrationSQL.ReadFile("migrations/" + domain + ".sql")
+		if err != nil {
+			return err
+		}
+		if _, err = tx.Exec(ctx, string(body)); err != nil {
+			return err
+		}
 	}
 	if err = migratePublications(ctx, tx); err != nil {
 		return err
@@ -100,19 +103,32 @@ func (s *Store) Resource(ctx context.Context, kind string, r Ref, dst any) error
 	}
 	return json.Unmarshal(b, dst)
 }
-func (s *Store) Resources(ctx context.Context) ([]Resource, error) {
-	rows, e := s.DB.Query(ctx, "SELECT DISTINCT ON(kind,id) kind,id,revision,spec FROM resources ORDER BY kind,id,revision DESC")
+func (s *Store) Resources(ctx context.Context, after ...string) ([]Resource, error) {
+	cursor := ""
+	if len(after) > 0 {
+		cursor = after[0]
+	}
+	rows, e := s.DB.Query(ctx, `SELECT kind,id,revision,spec FROM resources a WHERE kind!='action'
+ AND ($2 OR kind NOT IN ('skill','connector')) AND (kind||':'||id) COLLATE "C">$1
+ AND revision=(SELECT max(b.revision) FROM resources b WHERE b.kind=a.kind AND b.id=a.id)
+ ORDER BY (kind||':'||id) COLLATE "C" LIMIT 100`, cursor, s.CatalogURL == "")
 	if e != nil {
 		return nil, e
 	}
 	defer rows.Close()
 	out := []Resource{}
+	size := 0
 	for rows.Next() {
 		var r Resource
 		if e = rows.Scan(&r.Kind, &r.ID, &r.Revision, &r.Spec); e != nil {
 			return nil, e
 		}
 		if s.CatalogURL == "" || (r.Kind != "skill" && r.Kind != "connector") {
+			n := len(JSON(r))
+			if len(out) > 0 && size+n > 2<<20 {
+				break
+			}
+			size += n
 			out = append(out, r)
 		}
 	}
@@ -179,8 +195,14 @@ func insertRun(ctx context.Context, tx pgx.Tx, key, task string, snap Snapshot, 
 	inputHash := Hash(JSON([]any{task, snap, parent, pinned}))
 	state := RunState{Pinned: pinned, Messages: []Message{{Role: "user", Content: task}}}
 	var actual, oldHash string
-	e := tx.QueryRow(ctx, `INSERT INTO runs(id,submission_key,input_hash,parent_id,snapshot,task,state,constraints) VALUES($1,$2,$3,$4,$5,$6,$7,$8)
- ON CONFLICT(submission_key) DO UPDATE SET submission_key=EXCLUDED.submission_key RETURNING id,input_hash`, id, key, inputHash, parent, JSON(snap), task, JSON(state), JSON(constraints)).Scan(&actual, &oldHash)
+	engine := EngineDSHEvidence
+	if parent != nil {
+		if e := tx.QueryRow(ctx, "SELECT engine FROM runs WHERE id=$1", *parent).Scan(&engine); e != nil {
+			return "", e
+		}
+	}
+	e := tx.QueryRow(ctx, `INSERT INTO runs(id,submission_key,input_hash,parent_id,snapshot,task,state,constraints,engine) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
+ ON CONFLICT(submission_key) DO UPDATE SET submission_key=EXCLUDED.submission_key RETURNING id,input_hash`, id, key, inputHash, parent, JSON(snap), task, JSON(state), JSON(constraints), engine).Scan(&actual, &oldHash)
 	if e != nil {
 		return "", e
 	}
@@ -251,7 +273,7 @@ func (s *Store) Claim(ctx context.Context, owner string, lease time.Duration) (R
 	}
 	defer tx.Rollback(ctx)
 	r, e := scanRun(tx.QueryRow(ctx, `UPDATE runs SET status='running',owner=$1,fence=fence+1,lease_until=clock_timestamp()+$2::interval,updated_at=now()
- WHERE id=(SELECT id FROM runs r WHERE status='queued' OR (status='running' AND lease_until<clock_timestamp()) OR (status='waiting_children' AND NOT EXISTS(SELECT 1 FROM runs c WHERE c.parent_id=r.id AND c.status NOT IN('completed','failed','cancelled'))) ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING `+runColumns, owner, fmt.Sprintf("%f seconds", lease.Seconds())))
+ WHERE id=(SELECT id FROM runs r WHERE engine=ANY($3) AND (status='queued' OR (status='running' AND lease_until<clock_timestamp()) OR (status='waiting_children' AND NOT EXISTS(SELECT 1 FROM runs c WHERE c.parent_id=r.id AND c.status NOT IN('completed','failed','cancelled')))) ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING `+runColumns, owner, fmt.Sprintf("%f seconds", lease.Seconds()), []string{"legacy-go", "dsh-0.2.0-rc.2", EngineDSHEvidence}))
 	if e != nil {
 		return r, e
 	}

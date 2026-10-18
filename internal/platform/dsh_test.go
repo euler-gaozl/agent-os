@@ -71,7 +71,7 @@ func TestDSHParentYieldsWorkerAndReplaysAfterChild(t *testing.T) {
 	}
 }
 
-func TestDSHCompactionRetainsEvidenceAndReplays(t *testing.T) {
+func TestDSHLegacyCompactionRetainsEvidenceAndReplays(t *testing.T) {
 	setupDSH(t)
 	s, _ := testStore(t)
 	ctx := context.Background()
@@ -102,6 +102,9 @@ func TestDSHCompactionRetainsEvidenceAndReplays(t *testing.T) {
 	snap := basicSnapshot(model.URL)
 	snap.Agent.ContextTokens = 8192
 	id := submit(t, s, snap)
+	if _, e := s.DB.Exec(ctx, "UPDATE runs SET engine='dsh-0.2.0-rc.2' WHERE id=$1", id); e != nil {
+		t.Fatal(e)
+	}
 	r := claim(t, s, "one")
 	worker := Worker{Store: s, Lease: 10 * time.Second, ToolHubURL: hub.URL, Token: testToken}
 	if e := worker.driveDSH(ctx, &r); e != nil {
@@ -222,7 +225,7 @@ func TestDSHConstraintRevisionSkipsOldToolPlan(t *testing.T) {
 
 func TestDSHCommittedToolRecoveryBeforeBridgeReceipt(t *testing.T) {
 	setupDSH(t)
-	s, _ := testStore(t)
+	s, _ := artifactPair(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var models, hits atomic.Int32

@@ -1,0 +1,11 @@
+请接手 Agent Platform 的具体收尾。克隆/更新 https://github.com/euler-gaozl/agent-os 的 main，先读 AGENTS.md、HANDOFF.md、docs/maintainer/current-state.md、docs/maintainer/deepseek-followup-20261018.md，仓库/版本与本体见同目录 repositories.json、ontology.json。
+
+先确认实际机器。原 Windows 工作根是 D:\workspace\agent-platform；自己的 Mac 使用自己的 ~/workspace/agent-platform。原电脑 localhost、DPAPI、数据库、任务、私有证据不随克隆转移，无授权不得自动连接原电脑。无原资料先做合成夹具，真实验收标为未执行。
+
+只继续 DS-R1/R2/R3：供给/进口/压榨/库存四问已完成运行，但内容未通过。任务 6908846d5d9684999371ca19a2192b6f 的最终稿与检查稿一致，22/24 事实引用匹配，仍有跨月/跨指标借事实、统计日误用、AI 摘要混入事实、说明引用支持不足。接续文档已有具体 fact/statement、文件、复现路径和验收步骤。不能改成较窄的库存四问，不删关键资料换绿，不直接改历史结果或原文。
+
+主要修改 https://github.com/euler-gaozl/agent-os-futures，先读该仓 AGENTS.md。GitHub 同步及持久化证据链已完成，Runtime 76237d3、Futures f3c25ea 已在原 Windows 安装；真实 UI 新修订的11条事实、9条说明全部逐字匹配，不重写这两项。只在需要协议改动时再取 Runtime/Harness 等仓。
+
+先给简短计划，再定向修代码和测试，最后完整真实修订验收，更新知识库/本体/进度并提交推送。Actions 继续关闭，不重复13仓集中CI。密钥/私有原文/数据库不提交；按适用性用Go/TS/Rust，不为图省事使用Python。保持服务独立、Futures只经HTTP、冻结引擎和旧任务回放、幂等及权限边界。
+
+只收集校验基本面、分类留存，预测和交易由用户负责。结构ready、任务completed、逐字匹配都不能单独证明研究正确。缺环境或原资料时交付代码并明确待复验，不虚构通过、不无限重复付费调用。

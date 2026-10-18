@@ -17,3 +17,4 @@ CREATE TABLE IF NOT EXISTS asset_files(
  kind text NOT NULL,id text NOT NULL,revision integer NOT NULL,path text NOT NULL,
  hash text NOT NULL,body bytea NOT NULL,PRIMARY KEY(kind,id,revision,path),
  FOREIGN KEY(kind,id,revision) REFERENCES assets(kind,id,revision));
+CREATE INDEX IF NOT EXISTS assets_catalog_key ON assets (((kind||':'||id) COLLATE "C"), revision DESC);

@@ -38,11 +38,17 @@ lines.on("line", (line) => {
 // A dead supervisor must never leave an orphan executing or calling a provider.
 lines.on("close", () => process.exit(0));
 const cfg = await initialized;
+let eventCursor = 0;
 function rpc(method, params) {
   const id = ++seq;
   return new Promise((resolve) => {
     pending.set(id, resolve);
-    send({ id, method, params, events: agent?.session.snapshotEvents() ?? [] });
+    const events = agent?.session.snapshotEvents() ?? [];
+    if (cfg.evidence_protocol === 1) {
+      if (events.length < eventCursor) throw new Error("DSH event history shrank");
+      send({ id, method, params, events: events.slice(eventCursor), event_start: eventCursor, event_end: events.length });
+      eventCursor = events.length;
+    } else send({ id, method, params, events });
   });
 }
 function wireMessage(m) {
@@ -248,11 +254,9 @@ while (true) {
     !answer ||
     answer.content.some((b) => b.type === "tool-call")
   ) {
-    send({
-      method: "failed",
-      params: { error: "DSH turn did not complete", reason: end?.data.reason },
-      events,
-    });
+    const failure = { error: "DSH turn did not complete", reason: end?.data.reason };
+    if (cfg.evidence_protocol === 1) await rpc("failed", failure);
+    else send({ method: "failed", params: failure, events });
     break;
   }
   const receipt = await rpc("finish", {

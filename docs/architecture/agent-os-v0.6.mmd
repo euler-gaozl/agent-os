@@ -1,0 +1,53 @@
+flowchart TB
+  subgraph interfaces[独立前端与网关]
+    Console[管理中台 · Console]
+    Futures[期货研究工作台 · Futures]
+  end
+  subgraph catalog[资源与治理]
+    Registry[Registry · 版本与加密凭证]
+    Hub[ToolHub · Skill / MCP 注册、检查、验活]
+    RegistryDB[(资源与凭证库)]
+    HubDB[(ToolHub 数据域)]
+    Registry --> RegistryDB
+    Hub --> HubDB
+  end
+  subgraph execution[执行数据域 · 两个独立部署单位]
+    Runtime[Runtime · 授权、回执、取消、恢复]
+    Worker[Worker 多实例 · 固定 DSH 核心]
+    ExecutionDB[(运行 / 调用 / 检查点 / Agent 持久化笔记)]
+    Runtime --> ExecutionDB
+    Worker --> ExecutionDB
+  end
+  subgraph evidence[资料与产物]
+    Knowledge[Knowledge · 上传与绑定检索]
+    Indexer[Indexer · 持久化索引队列]
+    KnowledgeDB[(知识资料与分块)]
+    Storage[Storage · 哈希产物与引用]
+    ArtifactDB[(产物库)]
+    Sources[Sources · 许可域名公开资料采集]
+    SourceDB[(原始响应与来源)]
+    Knowledge --> KnowledgeDB
+    Indexer --> KnowledgeDB
+    Storage --> ArtifactDB
+    Sources --> SourceDB
+  end
+  subgraph operations[隔离与观测]
+    Sandbox[Sandbox · 授权与限时容器]
+    SandboxDB[(沙箱作业)]
+    Telemetry[Telemetry · 落盘接收与导出]
+    TelemetryDB[(Inbox / 导出状态)]
+    Sandbox --> SandboxDB
+    Telemetry --> TelemetryDB
+  end
+  Console --> Registry & Hub & Runtime & Knowledge & Storage & Sources
+  Futures --> Registry & Runtime
+  Worker --> Registry & Hub & Storage
+  Hub -->|调用转交，保留回执事务| Runtime
+  Runtime -->|HTTP| Registry & Hub & Knowledge & Storage & Sandbox
+  Runtime -->|已绑定 MCP| Sources
+  Knowledge & Sandbox -->|HTTP 权威授权| Runtime
+  Telemetry -->|HTTP 领取 / 确认事件| Runtime
+  Telemetry --> Langfuse[Langfuse · 至少一次观测]
+  Worker --> Model[外部模型 API]
+  Indexer --> RAG[可选 Milvus / LightRAG / Embedding]
+  Knowledge --> RAG

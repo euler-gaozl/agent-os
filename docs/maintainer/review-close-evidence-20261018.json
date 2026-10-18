@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-10-18",
+  "environment_id": "environment:owner-windows",
+  "scope": "Three review follow-ups; not production HA or full research acceptance",
+  "github": {"repositories": 15, "main_and_development_synced": true, "actions_enabled": false, "new_ci_runs": 0, "private_proof": "local/evidence/review-close-20261018/github-before-docs.json", "note": "Audit precedes this documentation commit; exact main/dev ref publication is verified after commit."},
+  "tests": {"runtime_targeted_postgres_passed": 15, "runtime_targeted_postgres_skipped": 0, "futures_web_passed": 29, "futures_go_packages_passed": true, "independent_builds_passed": true},
+  "ui_revision": {"task": "e15e8f85a1af0d0dfd9cff1b23f31aea", "status": "completed", "step": 6, "facts_matched": 11, "facts_total": 11, "statements_matched": 9, "statements_total": 9, "draft_match": "matched", "content_acceptance": "not_implied_by_quote_matching"},
+  "original_supply": {"first_run": "e3317f1441ceff16c3541d48a0105351", "first_status": "failed", "second_run": "6908846d5d9684999371ca19a2192b6f", "second_status": "completed", "step": 10, "draft_match": "matched", "facts_matched": 22, "facts_total": 24, "statements_matched": 10, "statements_total": 10, "report_check": "needs_review", "content_acceptance": "failed", "handoff": ["DS-R1", "DS-R2", "DS-R3"]},
+  "recovery": {"backup": "post-evidence-binding-20261018", "report": "local/restore-checks/c79423131f2d459dad8a5b303d67bdd1/result.json", "status": "passed", "relations": 47, "all_fingerprints_match": true, "schema_and_acl_match": true, "release_generation": 217, "release_references": 25, "release_files": 3103, "isolated_cluster_stopped": true, "provider_calls": 0},
+  "post_recovery": {"core_ready": true, "remaining_warning": "sandbox_execution_unavailable", "warning_scope": "Isolated code execution not configured on the owner Windows host"},
+  "private_evidence_policy": "Paths are owner-host references, not downloadable artifacts or authorization to access that host. No credentials or raw source documents are included."
+}

@@ -8,7 +8,7 @@ x-service: &service
   cap_drop: [ALL]
   pids_limit: 128
   mem_limit: 128m
-  cpus: 0.10
+  cpus: 0.08
   stop_grace_period: 15s
   healthcheck: &health
     test: [CMD, /app/healthcheck]
@@ -54,9 +54,10 @@ services:
       KNOWLEDGE_URL: http://knowledge:8095
       STORAGE_URL: http://storage:8092
       SANDBOX_URL: http://sandbox:8093
+      SOURCES_URL: http://sources:8101
       DSH_RUNNER: /app/harness/runner.mjs
       AGENTOS_NODE: /usr/local/bin/node
-      MCP_ALLOWED_HOSTS: ${MCP_ALLOWED_HOSTS:-}
+      MCP_ALLOWED_HOSTS: sources:8101,${MCP_ALLOWED_HOSTS:-}
     depends_on:
       postgres: {condition: service_healthy}
   control:
@@ -68,6 +69,7 @@ services:
       LISTEN: 0.0.0.0:8090
       HEALTH_URL: http://127.0.0.1:8090/readyz
       HEALTH_TOKEN_KEY: ADMIN_TOKEN
+      SOURCES_URL: http://sources:8101
     ports: ['127.0.0.1:8090:8090']
   toolhub:
     <<: *service
@@ -148,7 +150,7 @@ services:
       LISTEN: 0.0.0.0:8099
       HEALTH_URL: http://127.0.0.1:8099/readyz
     mem_limit: 384m
-    cpus: 0.40
+    cpus: 0.375
     deploy: {replicas: 2}
   telemetry:
     <<: *service
@@ -159,5 +161,14 @@ services:
       LISTEN: 0.0.0.0:8100
       HEALTH_URL: http://127.0.0.1:8100/readyz
     profiles: [telemetry]
+  sources:
+    <<: *service
+    build: {context: ., target: service, args: {SERVICE: sources}}
+    image: agent-os-sources:0.6.0
+    volumes: ['./.state/services/sources.json:/run/service.json:ro']
+    cpus: 0.05
+    environment:
+      LISTEN: 0.0.0.0:8101
+      HEALTH_URL: http://127.0.0.1:8101/readyz
 volumes:
   postgres-data:

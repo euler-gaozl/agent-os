@@ -19,6 +19,8 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 var Client = &http.Client{Timeout: 90 * time.Second, Transport: &http.Transport{
@@ -33,6 +35,7 @@ type Config struct {
 	DevLocal                bool
 	MaxConcurrent           int
 	RequestTimeout          time.Duration
+	Readiness               func(context.Context) error
 }
 type StatusError struct {
 	Status  int
@@ -62,6 +65,21 @@ func Wrap(h func(http.ResponseWriter, *http.Request) error) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if e := h(w, r); e != nil {
 			status := 400
+			message := e.Error()
+			var pg *pgconn.PgError
+			var connect *pgconn.ConnectError
+			var network net.Error
+			if errors.As(e, &pg) {
+				if strings.HasPrefix(pg.Code, "08") || strings.HasPrefix(pg.Code, "53") || pg.Code == "57P01" || pg.Code == "57P02" || pg.Code == "57P03" {
+					status, message = 503, "database temporarily unavailable"
+				} else if pg.Code == "57014" {
+					status, message = 504, "database operation timed out"
+				} else if pg.Code == "P4090" {
+					status, message = 409, "note is no longer the active head, is retired, or has unresolved branches"
+				}
+			} else if errors.Is(e, io.ErrUnexpectedEOF) || errors.Is(e, pgconn.ErrConnClosed) || errors.As(e, &connect) || errors.As(e, &network) {
+				status, message = 503, "upstream temporarily unavailable"
+			}
 			if errors.Is(e, contracts.ErrFence) {
 				status = 412
 			}
@@ -71,11 +89,16 @@ func Wrap(h func(http.ResponseWriter, *http.Request) error) http.HandlerFunc {
 			var se *StatusError
 			if errors.As(e, &se) {
 				status = se.Status
+				message = se.Message
 			}
 			if errors.Is(e, context.DeadlineExceeded) {
 				status = 504
+				message = "operation timed out"
 			}
-			JSONResponse(w, status, map[string]string{"error": e.Error()})
+			if status == 503 {
+				w.Header().Set("Retry-After", "1")
+			}
+			JSONResponse(w, status, map[string]string{"error": message})
 		}
 	}
 }
@@ -109,6 +132,9 @@ func authorized(c Config, r *http.Request) bool {
 	return ok && (r.Method == "GET" || r.Method == "HEAD" || r.Header.Get("X-AgentOS-Client") == "web")
 }
 func New(c Config, ready func(context.Context) error, routes func(*http.ServeMux)) http.Handler {
+	if c.Readiness != nil {
+		ready = c.Readiness
+	}
 	if c.MaxConcurrent < 1 {
 		c.MaxConcurrent = 16
 	}

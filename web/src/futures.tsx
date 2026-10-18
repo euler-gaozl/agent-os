@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { Answer } from "./markdown";
 import {
   ArrowLeft,
   ArrowUp,
@@ -19,7 +20,16 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { api, Badge, date, Empty, Login, Spinner } from "./shared";
+import {
+  api,
+  Badge,
+  date,
+  Empty,
+  labels,
+  Login,
+  Modal,
+  Spinner,
+} from "./shared";
 import "./futures.css";
 type Action = {
   id: string;
@@ -42,7 +52,9 @@ function Futures() {
     [ready, setReady] = useState<any>(null),
     [showScope, setShowScope] = useState(false),
     [mobileNav, setMobileNav] = useState(false),
-    [notice, setNotice] = useState("");
+    [notice, setNotice] = useState(""),
+    [historySearch, setHistorySearch] = useState(""),
+    [authRequired, setAuthRequired] = useState(false);
   const key = useRef(crypto.randomUUID()),
     input = useRef<HTMLTextAreaElement>(null);
   const load = useCallback(async () => {
@@ -61,12 +73,21 @@ function Futures() {
     setTasks(t);
     setReady(r);
     setConnected(true);
+    setError("");
+    setAuthRequired(false);
   }, []);
+  const connectionError = (e: any) => {
+    setError(e.message);
+    if (e.status === 401) {
+      setAuthRequired(true);
+      setConnected(false);
+    }
+  };
   useEffect(() => {
-    void load().catch((e) => setError(e.message));
+    void load().catch(connectionError);
   }, [load]);
   useEffect(() => {
-    const id = setInterval(() => void load().catch(() => {}), 6000);
+    const id = setInterval(() => void load().catch(connectionError), 6000);
     return () => clearInterval(id);
   }, [load]);
   useEffect(() => {
@@ -75,23 +96,32 @@ function Futures() {
       return;
     }
     let alive = true;
+    setResult(null);
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const poll = async () => {
       try {
         const r = await api("/tasks/" + selected);
-        if (alive) setResult(r);
+        if (alive) {
+          setResult(r);
+          if (!["completed", "failed", "cancelled"].includes(r.status))
+            timer = setTimeout(poll, 2500);
+        }
       } catch (e) {
-        if (alive) setNotice((e as Error).message);
+        if (alive) {
+          setNotice((e as Error).message);
+          timer = setTimeout(poll, 6000);
+        }
       }
     };
     void poll();
-    const id = setInterval(() => void poll(), 1800);
     return () => {
       alive = false;
-      clearInterval(id);
+      clearTimeout(timer);
     };
   }, [selected]);
   const choose = (a: Action) => {
     setAction(a);
+    key.current = crypto.randomUUID();
     input.current?.focus();
   };
   const fresh = () => {
@@ -124,51 +154,53 @@ function Futures() {
       setBusy(false);
     }
   };
-  if (!connected)
-    return error ? (
-      <Login
-        error={error}
-        retry={() => void load().catch((e) => setError(e.message))}
-      />
-    ) : (
-      <div className="loading-screen">
-        <Spinner />
-        打开研究工作台…
-      </div>
-    );
-  return (
-    <div className="research-shell">
-      <aside className={"research-sidebar " + (mobileNav ? "open" : "")}>
-        <a
-          href="#"
-          className="research-brand"
-          onClick={(e) => {
-            e.preventDefault();
-            fresh();
-          }}
-        >
-          <span className="research-mark">
-            <Layers size={23} />
-          </span>
-          <b>
-            研序<small>RESEARCH WORKSPACE</small>
-          </b>
-        </a>
-        <button className="new-research" onClick={fresh}>
-          <Plus size={17} />
-          开始新研究<span>↗</span>
+  const sidebar = (
+    <>
+      <a
+        href="#"
+        className="research-brand"
+        onClick={(e) => {
+          e.preventDefault();
+          fresh();
+        }}
+      >
+        <span className="research-mark">
+          <Layers size={23} />
+        </span>
+        <b>
+          研序<small>中国期货研究</small>
+        </b>
+      </a>
+      <button className="new-research" onClick={fresh}>
+        <Plus size={17} />
+        开始新研究<span>↗</span>
+      </button>
+      <div className="research-nav">
+        <button className={!selected ? "active" : ""} onClick={fresh}>
+          <Compass size={17} />
+          研究工作台
         </button>
-        <div className="research-nav">
-          <button className={!selected ? "active" : ""} onClick={fresh}>
-            <Compass size={17} />
-            研究工作台
-          </button>
-          <div className="history-label">
-            最近研究 <span>{tasks.length}</span>
-          </div>
-          {tasks.length ? (
-            <div className="task-history">
-              {tasks.map((t) => (
+        <div className="history-label">
+          研究记录 <span>{tasks.length}</span>
+        </div>
+        <label className="history-search">
+          <Search size={15} />
+          <input
+            aria-label="搜索研究记录"
+            placeholder="按品种或时间查找"
+            value={historySearch}
+            onChange={(e) => setHistorySearch(e.target.value)}
+          />
+        </label>
+        {tasks.length ? (
+          <div className="task-history">
+            {tasks
+              .filter((t) =>
+                (t.commodity + " " + date(t.created_at)).includes(
+                  historySearch.trim(),
+                ),
+              )
+              .map((t) => (
                 <button
                   key={t.id}
                   className={selected === t.id ? "selected" : ""}
@@ -180,38 +212,78 @@ function Futures() {
                   <FileText size={15} />
                   <span>
                     {t.commodity} · 基本面研究
-                    <small>{date(t.created_at)}</small>
+                    <small>
+                      {date(t.created_at)} · {labels[t.status] || t.status}
+                    </small>
                   </span>
                   <i className={"task-dot " + t.status} />
                 </button>
               ))}
-            </div>
-          ) : (
-            <p className="history-empty">你的研究记录会保存在这里。</p>
-          )}
-        </div>
-        <div className="research-sidebar-footer">
-          <div className="private-note">
-            <BookOpen size={16} />
-            <p>
-              每一次研究，都有迹可循
-              <small>原始资料与研究记录保存在你的工作区</small>
-            </p>
+            {!tasks.some((t) =>
+              (t.commodity + " " + date(t.created_at)).includes(
+                historySearch.trim(),
+              ),
+            ) && <p className="history-empty">没有匹配的记录</p>}
           </div>
-          <div className="research-profile">
-            <span>G</span>
-            <p>
-              我的研究空间<small>个人工作区</small>
-            </p>
-            <ChevronDown size={14} />
-          </div>
+        ) : (
+          <p className="history-empty">你的研究记录会保存在这里。</p>
+        )}
+      </div>
+      <div className="research-sidebar-footer">
+        <div className="private-note">
+          <BookOpen size={16} />
+          <p>
+            资料与研究记录
+            <small>来源、统计口径与历史变化，留在工作区以便回溯。</small>
+          </p>
         </div>
-      </aside>
+        <div className="research-profile">
+          <span>G</span>
+          <p>
+            我的研究空间<small>个人工作区</small>
+          </p>
+        </div>
+      </div>
+    </>
+  );
+  if (!connected)
+    return authRequired ? (
+      <Login error={error} retry={() => void load().catch(connectionError)} />
+    ) : error ? (
+      <div className="connection-screen">
+        <Layers size={32} />
+        <h1>工作台暂时无法连接</h1>
+        <p>{error}</p>
+        <button
+          className="button primary"
+          onClick={() => void load().catch(connectionError)}
+        >
+          重新连接
+        </button>
+      </div>
+    ) : (
+      <div className="loading-screen">
+        <Spinner />
+        打开研究工作台…
+      </div>
+    );
+  return (
+    <div className="research-shell">
+      <a className="skip-link" href="#research-content">
+        跳转到研究内容
+      </a>
+      <aside className="research-sidebar">{sidebar}</aside>
+      {mobileNav && (
+        <Modal title="研究工作区" close={() => setMobileNav(false)}>
+          <div className="modal-body research-drawer">{sidebar}</div>
+        </Modal>
+      )}
       <div className="research-main">
         <header className="research-topbar">
           <button
             className="mobile-menu icon-button"
             aria-label="展开导航"
+            aria-expanded={mobileNav}
             onClick={() => setMobileNav(!mobileNav)}
           >
             <Menu size={19} />
@@ -227,20 +299,29 @@ function Futures() {
             </button>
           </div>
         </header>
+        {error && (
+          <div className="connection-banner" role="alert">
+            {error}
+            <button
+              className="text-button"
+              onClick={() => void load().catch(connectionError)}
+            >
+              重试连接
+            </button>
+          </div>
+        )}
         {!selected ? (
-          <main className="research-home">
-            <div className="hero-orbit">
-              <span>
-                <Compass size={30} />
-              </span>
-              <i />
-              <i />
-              <i />
+          <main className="research-home" id="research-content" tabIndex={-1}>
+            <div className="research-greeting">
+              <span /> 你的基本面研究工作台
             </div>
-            <div className="research-greeting">把资料留住，把问题弄清楚</div>
-            <h1>今天，想研究什么？</h1>
+            <h1>
+              从一个问题，
+              <br />
+              开始这次研究。
+            </h1>
             <p className="hero-subtitle">
-              从真实数据出发，整理证据与变化。判断留给你。
+              收集真实资料，核对关键变化，保留每一份证据。
             </p>
             <section className="research-composer">
               <textarea
@@ -255,22 +336,29 @@ function Futures() {
               />
               <div className="composer-bottom">
                 <div className="composer-tags">
-                  <button onClick={() => setShowScope(!showScope)}>
+                  <button
+                    aria-expanded={showScope}
+                    onClick={() => setShowScope(!showScope)}
+                  >
                     <span className="commodity-dot" />
                     {commodity}
                     <ChevronDown size={12} />
                   </button>
                   <button onClick={() => setShowScope(!showScope)}>
                     <Clock3 size={13} />
-                    时间范围
+                    {period || "设置时间范围"}
                   </button>
-                  {action && (
+                  {(action || actions[0]) && (
                     <button
                       className="selected-action"
-                      onClick={() => setAction(null)}
+                      title="当前研究方式"
+                      onClick={() => {
+                        setAction(null);
+                        key.current = crypto.randomUUID();
+                      }}
                     >
-                      {action.name}
-                      <X size={11} />
+                      {(action || actions[0])?.name}
+                      {action && <X size={11} />}
                     </button>
                   )}
                 </div>
@@ -278,10 +366,16 @@ function Futures() {
                   className="submit-research"
                   title="开始研究"
                   aria-label="开始研究"
-                  disabled={busy || !question.trim()}
+                  disabled={
+                    busy ||
+                    !question.trim() ||
+                    !commodity.trim() ||
+                    !actions.length
+                  }
                   onClick={() => void run()}
                 >
-                  {busy ? <Spinner /> : <ArrowUp size={19} />}
+                  {busy ? <Spinner /> : <ArrowUp size={18} />}
+                  <span>{busy ? "正在提交" : "开始研究"}</span>
                 </button>
               </div>
               {showScope && (
@@ -311,15 +405,26 @@ function Futures() {
                 </div>
               )}
             </section>
-            <div className="suggestion-label">也可以从一项具体工作开始</div>
+            <div className="suggestion-label">
+              <span>选择研究方式</span>
+              <small>选好研究方式，再补充你关心的问题</small>
+            </div>
+            {!actions.length && (
+              <Empty
+                title="研究方式尚未发布"
+                detail="工作区管理员发布研究配置后，即可在这里开始。"
+              />
+            )}
             <div className="research-action-grid">
               {actions.map((a, i) => {
                 const Icon = [Layers, FileCheck2, Clock3][i % 3];
                 return (
                   <button
                     key={a.id}
+                    aria-pressed={(action || actions[0])?.id === a.id}
                     className={
-                      "research-action " + (action?.id === a.id ? "chosen" : "")
+                      "research-action " +
+                      ((action || actions[0])?.id === a.id ? "chosen" : "")
                     }
                     onClick={() => {
                       choose(a);
@@ -355,7 +460,6 @@ function Futures() {
                   资料库尚未收录研究资料
                 </>
               )}
-              {!ready?.model_configured && <span>研究模型等待管理员连接</span>}
             </div>
             <footer className="research-principles">
               <span>
@@ -373,7 +477,7 @@ function Futures() {
             </footer>
           </main>
         ) : (
-          <main className="research-result">
+          <main className="research-result" id="research-content" tabIndex={-1}>
             <button className="back-link" onClick={fresh}>
               <ArrowLeft size={15} />
               开始新研究
@@ -381,7 +485,7 @@ function Futures() {
             {result ? (
               <>
                 <header>
-                  <div className="eyebrow">RESEARCH RECORD</div>
+                  <div className="record-label">已保存的研究任务</div>
                   <h1>{result.commodity} · 基本面研究</h1>
                   <div className="research-meta">
                     <Badge state={result.status} />
@@ -400,7 +504,7 @@ function Futures() {
                     }
                   >
                     <span className="progress-number">2</span>
-                    <b>整理与核对资料</b>
+                    <b>执行研究任务</b>
                     {result.status === "running" ? (
                       <Spinner />
                     ) : result.status === "completed" ? (
@@ -424,11 +528,11 @@ function Futures() {
                         className="text-button"
                         onClick={() => {
                           const blob = new Blob([result.result], {
-                            type: "text/plain;charset=utf-8",
+                            type: "text/markdown;charset=utf-8",
                           });
                           const link = document.createElement("a");
                           link.href = URL.createObjectURL(blob);
-                          link.download = result.commodity + "-研究记录.txt";
+                          link.download = result.commodity + "-研究记录.md";
                           link.click();
                           URL.revokeObjectURL(link.href);
                         }}
@@ -436,7 +540,7 @@ function Futures() {
                         导出记录 <ArrowUpRight size={13} />
                       </button>
                     </div>
-                    <div>{result.result}</div>
+                    <Answer>{result.result}</Answer>
                   </article>
                 ) : result.status === "failed" ? (
                   <div className="research-failure">
@@ -492,7 +596,7 @@ function Futures() {
         )}
       </div>
       {notice && (
-        <div className="toast">
+        <div className="toast" role="status">
           <span>{notice}</span>
           <button
             className="icon-button"

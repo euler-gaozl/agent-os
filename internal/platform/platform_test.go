@@ -470,7 +470,11 @@ func TestSchemaRejectsExternalReferences(t *testing.T) {
 	if _, e := compileSchema([]byte(`{"$ref":"https://example.invalid/schema"}`)); e == nil {
 		t.Fatal("external schema reference accepted")
 	}
-	if e := validateArgs(Builtins[0], []byte(`{"query":"库存","unexpected":true}`)); e == nil {
+	definition, e := builtinTool("knowledge_search")
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e := validateArgs(definition, []byte(`{"query":"库存","unexpected":true}`)); e == nil {
 		t.Fatal("unknown argument accepted")
 	}
 }

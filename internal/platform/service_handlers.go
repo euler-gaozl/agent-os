@@ -8,7 +8,13 @@ import (
 // Fixed service entry points avoid linking a role-selectable all-services server
 // into each deployment. Shared execution transactions remain in this package.
 func (s *Server) RuntimeHandler(c servicehttp.Config) http.Handler {
-	return servicehttp.New(c, s.Store.DB.Ping, func(m *http.ServeMux) { s.runtimeRoutes(m); s.toolRoutes(m); s.applicationRoutes(m) })
+	return servicehttp.New(c, s.Store.DB.Ping, func(m *http.ServeMux) {
+		s.runtimeRoutes(m)
+		s.documentRoutes(m, "/v1")
+		s.toolRoutes(m)
+		s.applicationRoutes(m)
+		s.sandboxAuthorizationRoutes(m)
+	})
 }
 func (s *Server) RegistryHandler(c servicehttp.Config) http.Handler {
 	return servicehttp.New(c, s.Store.DB.Ping, func(m *http.ServeMux) { s.registryRoutes(m); s.publishedRoutes(m) })

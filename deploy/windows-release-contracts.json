@@ -1,0 +1,46 @@
+{
+  "format": 1,
+  "http_contract": "agentos-http-v0.6-notes-lifecycle",
+  "service_contracts": {
+    "runtime": {
+      "http": "agentos-http-v0.7-source-state-v1",
+      "data": "execution-v0.7-working-state",
+      "engines": [],
+      "tools": [
+        "knowledge_search", "note_save", "artifact_read", "spawn_agent",
+        "sandbox_exec", "document_read", "run_recall", "note_revise", "note_retire"
+      ]
+    }
+  },
+  "data_contracts": {
+    "registry": "registry-v0.6-notes-lifecycle",
+    "toolhub": "toolhub-v0.6-notes-lifecycle",
+    "runtime": "execution-v0.6-notes-lifecycle",
+    "worker": "execution-v0.6-notes-lifecycle",
+    "knowledge": "knowledge-v0.7-source-archives",
+    "indexer": "knowledge-v0.6",
+    "storage": "storage-v0.6-independent",
+    "sandbox": "sandbox-v0.6-independent",
+    "telemetry": "telemetry-v0.6-independent",
+    "sources": "sources-v0.6",
+    "control": "none",
+    "futures": "none",
+    "migrate-services": "explicit-migration-only"
+  },
+  "worker_engines": [
+    "legacy-go",
+    "dsh-0.2.0-rc.2",
+    "dsh-0.2.0-rc.2-evidence-v1"
+  ],
+  "builtin_tools": [
+    "knowledge_search",
+    "note_save",
+    "artifact_read",
+    "spawn_agent",
+    "sandbox_exec",
+    "document_read",
+    "run_recall",
+    "note_revise",
+    "note_retire"
+  ]
+}

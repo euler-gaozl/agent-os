@@ -1,0 +1,139 @@
+# 独立服务部署与版本边界
+
+每个后端服务有独立镜像、身份、配置和发布单位，共用 Console 中台 Web。Futures 是独立业务入口。代码在同一仓库中维护；一次服务发布不要求构建或替换其他镜像。以下流程已实现，实际验收以 Linux CI 的 `independent-release.json` 为准。
+
+## 服务和状态归属
+
+| 服务 | 端口 / Docker 构建 target | 状态及迁移责任 | 运行依赖 |
+| --- | --- | --- | --- |
+| Registry | 8096 / service | resources、secrets | 本域 PostgreSQL；解析 MCP/Skill 时调用 ToolHub |
+| ToolHub | 8091 / service | toolhub schema | 本域 PostgreSQL；命名凭证由 Registry 解析；业务执行转交 Runtime |
+| Knowledge | 8095 / service | knowledge schema | 本域 PostgreSQL、Registry 配置/凭证；原文授权需要 Runtime |
+| Indexer | 8097 / service | 消费 Knowledge 的 schema，不能自定不兼容迁移 | Knowledge 数据、Registry；按选型调用外部 RAG |
+| Sources | 8101 / service | sources schema | 本域 PostgreSQL、管理员白名单中的公开网站 |
+| Runtime | 8094 / service | 运行、调用、事件、业务任务、持久化 Agent 笔记与实例 | 执行库、Registry、按工具绑定调用下游 |
+| Worker | 8099 / worker | 消费 Runtime 运行状态；固定 DSH 和 Node | 执行库、Registry、ToolHub、所绑定的工具与模型 |
+| Storage | 8092 / service | artifacts、artifact_refs | 本域 PostgreSQL；不读取 Runtime 笔记或运行表 |
+| Sandbox | 8093 / sandbox | sandbox_jobs | Runtime 授权 HTTP API、专用隔离 Docker daemon |
+| Telemetry | 8100 / service | 本域 telemetry_inbox、telemetry_exports | Runtime 事件投递 API、Registry 中的凭证、Langfuse |
+| Console | 8090 / control | 无数据库 | 聚合服务 HTTP API |
+| Futures | 8098 / futures | 无数据库 | Registry 发布目录和 Runtime 任务 API |
+
+所有服务的实例心跳写入 Runtime；心跳失败不阻止其他服务提供本域功能。端口不代表必须映射到公网。独立部署允许不同主机和不同服务版本，但必须保留上表的依赖与兼容性。
+
+**执行域边界**：Runtime/Worker 是共享执行状态的 API/执行进程，可以分别部署和扩缩容；Agent 笔记属于此域，和调用回执在同一事务中提交。Storage 只管理产物，不参与笔记事务。本机独立数据库和 DSH 回放已验，新边界的 Linux 全链路结果另行记录。ToolHub、Knowledge、Sources 已有独立 schema 及 HTTP 边界，可以为它们配置独立 PostgreSQL，但迁移历史资料和跨库灾备还需专项验收。
+
+Telemetry 新版无跨域 SQL：Runtime 的事务事件行同时是 outbox，`POST /v1/telemetry/claim` 每次最多 32 条、租约 30 秒并递增 fence；接收端在自己的 inbox 提交后才调用 ack。逐行投递标记避免序号较小的晚提交事件被最大游标跳过。重复 inbox 必须具有相同事件身份；过期实例回执会被拒绝。事件接收与批量导出各有一个有界循环、超时和错误退避，Runtime 故障不阻止导出已接收事件。外部 OTLP 为至少一次投递，使用稳定 trace/span ID；不能承诺第三方端恰好一次。导出的内容仅为事件标识、类型和时间。
+
+先升级 Runtime schema 和 Runtime，再迁移 Telemetry schema、部署 Telemetry，最后撤销其旧 `events` SQL 权限；全新初始化已采用最小权限。历史 `telemetry_exports` 保留并用于跳过已导出的记录；迁到独立数据库时必须搬迁这张表与完整 inbox。回滚到旧跨域 SQL 导出器需要恢复旧数据库连接和只读需求对应的权限，不属于无需准备的普通回滚。独立库灾备必须协调 outbox/inbox 恢复点：单独恢复较旧的 inbox 备份会缺少 Runtime 已确认的事件，需要从保留的执行事件重新投递；本版不自动 GC 事件或回执。
+
+Sandbox 新版只需要自己的作业表，通过 Runtime 的 `POST /v1/sandbox/authorize` 校验持久化调用意图、参数摘要、绑定工具、fence、规则版本和取消状态。等待作业锁后再次校验；Runtime 不可用时拒绝启动新执行。部署顺序是先升级 Runtime，再升级 Sandbox，最后撤销 Sandbox 对 `public.runs` 的旧权限；初始化作业已采用新权限。回滚到使用跨域 SQL 的旧 Sandbox 前需要恢复对应旧配置/权限，不能把协议迁移当作普通兼容发布。实际独立库迁移时要保留完整 sandbox_jobs 和确定性容器 ID，不得丢弃待核对作业。
+
+Sandbox 的工作负载镜像与 HTTP 服务镜像分开。使用 `deploy/sandbox-runtime.Dockerfile`，将可信 Node 基镜像 digest 作为 `NODE_BASE` 构建，然后把生成的不可变 `sha256:…` image ID（仅同一 daemon 有效）或推送仓库后的 `repo@sha256:…` 配置为 `SANDBOX_IMAGE`。普通 Node 镜像不再满足新版运行契约；缺少 guard 会失败，不能回退到宿主机执行。
+
+guard 为容器内可信 Go 程序，UID 0，仅有 SETUID/SETGID 用于启动 UID/GID 65534、无额外组权限和零 capabilities 的 Node 子进程；不授予 CAP_KILL。执行代码与守护程序不同身份，不能向 guard 发 SIGSTOP/SIGKILL。guard 在 30 秒退出容器主进程，init 退出时整个 PID namespace 的后代被销毁；broker 仍保留 35 秒持久化截止与恢复器。只读根目录、网络关闭、128 MiB/0.5 CPU/64 PID 及 16 MiB 临时目录继续约束整个容器。此前同 UID 的 BusyBox timeout 仅验证了普通死循环，不能用于证明抵抗主动干扰截止进程；新版必须通过 Linux 容器信号攻击与 broker SIGKILL 联合验收。Docker 共享宿主内核，仍不是面向恶意多租户的虚拟机隔离。
+
+## 构建和发布单个服务
+
+### 启用笔记生命周期的升级屏障
+
+`note_revise`/`note_retire` 不改变旧工具 schema，但改变笔记的有效检索语义。旧 Runtime 不识别 retired，不能与新版本在启用撤回后混合提供读取。首次启用按以下顺序执行：
+
+1. 备份并恢复核验执行库，暂停新任务提交和笔记管理写入，停止所有旧 Runtime/Worker；多机环境须核对完整实例清单，不能只核对本机。
+2. 执行 `migrate-services --service runtime`。新增 note_roots、note_versions、note_audits、note_admin_receipts；Runtime/Worker 获得这些表及 note_audits_seq_seq 的权限。迁移保留原文、已提交回执和历史分叉。
+3. 发布支持新工具集合的 Worker、ToolHub、Registry、Runtime，核对全部消费者和读取实例；再发布 Console 管理页。其他服务可保持原版本与配置。新 readiness 仅证明本实例和 schema 就绪，不证明所有副本已更新。
+4. 新实例全部确认后才恢复提交、启用笔记修改页面/工具。个人部署可运行 `node scripts/enable-note-lifecycle.mjs` 预览，再加 `--apply` 为五个默认 Agent 创建不可变版本。脚本自身不会检查整个集群版本，不能替代上述屏障。
+
+本机只有一个 Runtime 和两个 Worker，此次按全量替换验收。工具集合镜像标签可阻止不兼容单服务回滚，但没有分布式发布协调器。启用后不直接回滚旧 Runtime；需要回滚应用时使用理解生命周期状态的兼容版本。恢复启用前快照会丢失此后合法修改，必须按恢复流程处理，不能作为自动回滚手段。完整语义见[笔记生命周期](architecture/notes-lifecycle.md)。
+
+以 Knowledge 为例；`release-service.mjs` 接收已经构建或拉取到本机的镜像，将标签解析为本机不可变 image ID 后部署。发布记录只保存路径、配置摘要和镜像 ID，不保存凭证。
+
+```sh
+docker build --target service --build-arg SERVICE=knowledge -t agent-os-knowledge:release-1 .
+node scripts/release-service.mjs deploy \
+  --project agentos-knowledge-prod --service knowledge \
+  --image agent-os-knowledge:release-1 \
+  --config /srv/agent-os/config/knowledge-v1.json \
+  --network agentos-private --replicas 1
+node scripts/release-service.mjs status --project agentos-knowledge-prod
+node scripts/release-service.mjs rollback --project agentos-knowledge-prod
+node scripts/release-service.mjs stop --project agentos-knowledge-prod
+```
+
+网络、数据库、下游地址和服务身份由运维预先配置。启动入口仅使用 `deploy/service.compose.yaml`，没有数据库容器或 `depends_on`；不会隐式启动、升级其他服务。`--network` 是已存在的私有 Docker 网络；跨宿主机网络及 TLS/mTLS 由部署基础设施提供，这个 Compose 文件本身不是跨机集群。
+
+配置文件必须让运行容器的 UID 10001 可读，并让发布操作员可读以校验摘要；不授予其他用户读取权限。配置内容参照初始化生成的每服务配置，HTTP 下游使用服务 DNS 或负载均衡地址。控制台还需 `SOURCES_URL`。运行配置不得包含数据库管理员账号；只有 Registry 获得 MASTER_KEY。
+
+相同项目名再次 deploy 可以换镜像、配置路径、实例数量。使用不可变的版本配置文件，保留前一版本；修改原配置文件后脚本会拒绝自动回滚，避免拿旧二进制配未知配置。发布先等待 `/readyz`，失败自动恢复前一镜像及副本数；初次发布失败只清理本发布单位。并发发布有文件锁。操作员进程被强杀时锁会保留，须确认进程已退出、检查容器和发布记录后解除；尚不承诺操作员断电时发布控制器自动续传。
+
+只有 Console/Futures 可通过 `--publish 8090` / `--publish 8098` 映射宿主机回环端口；单机固定端口只支持一个实例。多个网关实例应使用独立负载均衡。增加副本会增加连接数、CPU 和内存总预算。单服务 Compose 替换有短暂切换窗口；**不是零停机或物理节点 HA 的证明**。
+
+## 数据库迁移
+
+首次初始化/历史跨域导入仍使用 `migrate-services --output`，需要维护窗口。日常单服务升级改为：
+
+```sh
+# 专用迁移容器，只挂载所需的管理员/DDL 配置；不挂载所有服务配置目录。
+docker run --rm --network agentos-private --read-only --cap-drop=ALL \
+  -v /srv/agent-os/config/knowledge-ddl.json:/run/ddl.json:ro \
+  --entrypoint /app/service agent-os-migrate:release-1 \
+  --config /run/ddl.json --service knowledge
+```
+
+迁移配置仅需 DATABASE_URL；`--service` 不重写配置、不生成/轮换身份、不重导历史数据。Knowledge/Indexer 对应同一个数据域；Runtime/Worker 也是同一个域。Registry、Storage、Sandbox、Telemetry 的 SQL 已按所有权拆分，Bootstrap 仍按依赖顺序执行全部 SQL。Sources/Knowledge/ToolHub 迁移各自加数据库锁；执行域升级与历史初始化互斥。
+
+迁移设置 3 秒锁等待、单语句 120 秒、总计 3 分钟预算，不能无界阻塞在线服务。新增大索引可能超过该预算，需要为该版本安排独立索引构建/维护流程；不能通过取消超时硬顶生产负载。升级采用先兼容扩展、再发布消费者、最后单独清理旧字段的步骤。自动回滚只回滚程序，不逆向删除 schema 或用户资料；破坏性 schema 变更不适用该流程。
+
+Windows 现使用 `D:\workspace\agent-platform\ops\Platform.ps1` 的 `build/update/rollback/release-recover`；build 只产生候选清单，必须显式 update 才激活。完整路径和进程故障实绩见 [Windows 发布恢复](windows-release-recovery-20261012.md)。跨 schema/配置边界的迁移不属于普通兼容更新；旧 `Start-Local -Migrate` 在 format2 禁止执行，不能用重写全部配置绕过部署摘要。P2 拆仓继续落实每域迁移责任与对应的协调流程。
+
+## 验收范围
+
+新增 Linux CI 使用真实旧版本 Knowledge 二进制 `a0d6c81` 验证迁移后的数据读取、单服务升级、回滚、两副本、错误镜像发布失败后恢复。断言其他服务容器 ID 不变，所有身份配置字节不变。模型使用受控夹具，不消耗真实 API。物理跨机故障转移、每个历史版本的兼容矩阵仍单列未完成；不能用 Knowledge 一项结果代替所有服务的版本兼容验收。
+## Storage 产物 HTTP 边界增量
+
+Runtime/Worker 的产物写入改为 Storage 的 `PUT /v1/artifacts/{sha256}`：二进制最多 4 MiB，同时提交运行引用根；相同内容和根重传幂等。Runtime 先从自己的运行树计算可见根，再调用 `POST /v1/artifacts/page` 分页回读。Storage 校验哈希、窗口和引用，原子增加保留引用，不查询运行表；只有 Runtime 能调用分页授权接口，Worker 只能上传，Console 仍使用管理下载接口。
+
+新初始化不再授予 Runtime/Worker 读取 artifacts/artifact_refs 的 SQL 权限。迁移现有部署时，先备份，先发布兼容新旧管理接口的 Storage，再更新 Runtime/Worker 并配置各自的 `STORAGE_URL`，验证后撤销旧产物 SQL 权限。回滚旧消费者前必须恢复原权限与数据连接；若已经迁移独立存储数据库，旧二进制无法凭原执行库直接回读，需先完成资料回迁，不能盲目回滚。
+
+后续的笔记所有权调整见下节：documents/note_save 归 Runtime，效果与回执继续保留执行域事务。本机真实 PostgreSQL 测试将 Runtime 的产物表移除，Storage schema 中没有运行表，验证 HTTP 写入、重试、子任务引用、跨运行拒绝、Unicode 分页、角色和大小限制；Linux CI 与现有部署升级结果单独记录。跨机时必须使用受信网络或 TLS/mTLS。没有启动自动删除资料的 GC。
+
+## Runtime 持久化笔记所有权与旧权限退役
+
+`documents` 是执行域保留的 Agent 作用域笔记（含历史 memory/evidence/fact/knowledge 类型），由 Runtime 迁移及管理；scope 是 Agent ID，任务结束不能删除这些笔记。`fact` 标签本身不代表已经验证的业务事实。Knowledge 上传资料继续属于 Knowledge 数据域，历史副本不绕过绑定版本授权。
+
+`note_save`、`document_read`、`knowledge_search` 的模型协议和逻辑调用 ID 未变。笔记、完成回执和事件仍在持有运行锁的同一事务提交；旧 fence、取消和规则版本检查保留。Storage 只存产物字节及引用，故障不会阻断笔记管理，但完整 DSH 仍需要 Storage 留存原始事件。没有自动 GC 运行笔记。
+
+Console 的 `/api/documents` / `/api/documents/{id}` 保持原接口，内部改用 Runtime 的 `/v1/documents` / `/v1/documents/{id}`。仅 control 身份允许 GET 和新增 POST；Futures、Worker、Storage、ToolHub、Knowledge 均无此管理权限。Storage 旧 `/documents` 接口在此版本退役，不保留第二个 SQL 写入者。
+
+升级顺序：备份并核验恢复 → Runtime scoped migration / 发布新 Runtime → 发布 Console 并确认旧笔记可读 → 发布 Storage → 最后在**执行库 DDL 配置**下运行 `migrate-services --config <execution-ddl.json> --retire-storage-notes`。该最后一步可重复执行，只撤销 `agentos_storage` 对 public.documents 的旧权限；不移动/删除资料、不重写配置。它与 `--service` 分开，避免升级过程中旧 Console/Storage 提前失效；若角色继承仍授予权限会失败并回滚，需先清理对应角色授权。自定义角色由部署者等价撤权。
+
+同库升级不改 ID、内容、scope、metadata、supersedes、valid_until 或 created_at。物理迁移 Storage 独立库时，只搬完整 artifacts/artifact_refs；笔记和回执留在执行域。Runtime/Worker 的旧产物 SQL 权限仍需按上一节撤销。迁移完成前后验证原产物哈希与引用；存在未完成任务时不能遗失其原始事件。
+
+旧 Console 依赖 Storage `/documents`，所以跨本次接口边界回滚 Console 前，要恢复兼容旧 Storage 的数据连接与权限；若 Storage 已拆库，不允许只回滚镜像。普通无协议变化的单服务发布仍走前述 release-service 流程。没有承诺所有历史版本可任意混用。
+
+本机新增测试创建两个真实独立数据库：Runtime 仅执行本域 DDL、无 artifacts；Storage 仅本域 DDL、无 documents/runs/calls。覆盖产物 HTTP、笔记提交前回滚/丢失回复后接管、DSH 已提交工具恢复、作用域版本/管理鉴权、旧入口兼容以及旧账号权限退役。Linux CI 将整套服务启动在独立 Storage 数据库，并在执行库删除空的旧产物表，不能依靠隐藏 SQL 回退蒙混通过。跨物理主机验收仍待服务器。
+
+## 有界资源目录升级流程
+
+中台使用 `GET /api/catalog`，Registry 提供 `/v1/catalog`，ToolHub 提供 `/v1/assets/catalog`。支持 `kind`、名称/ID 子串 `q`、`after` 和 `limit`（1–100），返回 `items`、`next_cursor`；中台另返回各来源的 `services` 状态。摘要带 `summary:true`，不能提交为资源定义。完整版本继续通过既有按 kind/id/revision 的详情接口读取。
+
+先分别执行 Registry、ToolHub 的 scoped migration，再更新这两个服务，最后更新 Console。索引迁移不改正文与资源版本，旧服务仍可读；回滚只回滚镜像，保留兼容的新增索引。目录短暂不可用会明确显示来源状态，部分结果不能推进游标，防止跳过离线服务的数据。
+
+兼容的 `/api/resources` 完整定义列表也已停止自动读取全部页，返回 `next_cursor`；旧调用方须逐页读取，最后可能需要一次空页请求。单次来源列表最多 100 项并按 2 MiB 总预算停止（至少允许一个完整资源）；它用于旧管理脚本，新 UI 必须使用摘要接口。资源目录翻页不是数据库快照：并发修改名称或新增资源时应刷新第一页；执行仍绑定明确版本。
+
+## evidence-v1 执行协议升级门槛
+
+新 Runtime 提交根任务时显式选择 `dsh-0.2.0-rc.2-evidence-v1`，数据库默认值保留旧 engine，子任务继承父任务 engine。新版 Worker 同时支持旧 Go、旧 DSH 和新 DSH，并且只领取已支持的 engine。**旧二进制没有该领取过滤，不能与新版提交入口混跑。**
+
+执行以下顺序，所有命令均针对已备份的部署；多机必须覆盖全部 Worker 实例：
+
+1. 停止接收新任务；记录所有 Worker 的镜像 ID/进程路径，停掉全部旧 Worker，确认容器退出或本机受管 PID 已消失。旧 Runtime 可短暂继续读历史，但不要打开新的 `run_recall` Agent。
+2. 使用新版迁移程序 `--config <execution-ddl.json> --service runtime` 增加本域归档表和 Runtime/Worker 权限。不改变数据库 engine 默认值，不搬资料，不改历史 engine。
+3. 发布新 Worker 全部副本和新 ToolHub；逐个确认镜像/二进制为本次构建且 ready。新版 Worker 可以恢复旧 DSH 任务。Windows 用 `Stop-Local.ps1 -Service worker`、`Start-Local.ps1 -Service worker -Workers 2`，并核对 `.state/processes.json` 的路径、PID、启动时间。
+4. 确认没有旧 Worker 后，再单独更新 Runtime。随后更新 Registry/Console 的新工具配置入口，恢复提交。用受控任务检查 engine、新目录、Storage hash 和回执，保留升级前资料核验。
+
+Worker 镜像以 `org.agentos.worker-engines` 声明兼容集合。`release-service.mjs` 在修改容器前拒绝移除当前 Worker 已支持的 engine，deploy 和 rollback 都受约束；历史无标签镜像按只支持旧 Go/DSH 处理。Runtime、ToolHub、Registry、Worker 另以 `org.agentos.builtin-tools` 校验工具支持集合，不能回滚到不认识已绑定 `run_recall` 的版本。工具调用仍经过 Runtime 校验，保留新 Worker 不能弥补旧 Runtime 的工具缺失。脚本不会自动证明集群其他部署单位也已更新，首次启用仍必须执行上述全实例盘点；标签也不代替具体参数 schema 的兼容测试。
+
+存在新任务、可恢复的新任务或新版提交入口时，禁止回滚旧 Worker。Runtime、ToolHub、Registry 跨新增工具降级也必须先停止提交，清点并完成/迁移依赖该工具的全部可恢复任务和 Agent 入口。若必须跨协议降级，先停提交和全部 Worker，逐任务完成/迁移留存及恢复计划，再人工维护；不能通过改 engine 字段或删除归档让检查通过。自动回滚只适用于兼容集合不减少的版本。详见[事件存储协议](architecture/storage-evidence-v1.md)。
+
+上述服务升级完成后，已有个人部署可运行 `node scripts/enable-evidence-recall.mjs` 预览五个默认 Agent 的变更，`--apply` 创建不可变的新版本。脚本保留模型、凭证引用、MCP/Skill/知识库绑定和发布配置，只补回查工具和范围约束；旧 Agent 版本和历史任务不变。重复执行不重复生成版本。新安装的能力包已包含此绑定；其他自定义 Agent 由中台显式勾选，不批量改写用户自定义配置。

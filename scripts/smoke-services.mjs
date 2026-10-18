@@ -6,7 +6,17 @@ const dc=(...args)=>execFileSync('docker',['compose','-f','compose.yaml','-f','d
 const docker=(...args)=>execFileSync('docker',args,{encoding:'utf8',timeout:30000,stdio:['pipe','pipe','pipe']}).trim();
 // Crash the application process. `docker kill` is an operator stop and can
 // suppress restart policy, so it is not a valid supervisor recovery test.
-const crash=id=>docker('exec','--user','10001',id,'sh','-c','kill -KILL "$(pidof service)"');
+const crash=id=>{
+ const before=JSON.parse(docker('inspect',id))[0].RestartCount;
+ try{docker('exec','--user','10001',id,'sh','-c','target=$(pidof service); test -n "$target" || exit 4; kill -KILL "$target"')}
+ catch(e){
+  // Killing the application can make container init exit before this exec
+  // shell returns; Docker then kills the shell too. Accept only SIGKILL's
+  // exit status here, and still require observed restart/fenced recovery.
+  if(e.status!==137)throw e;
+ }
+ return before;
+};
 const sql=q=>dc('exec','-T','postgres','psql','-U','agentos','-d','agentos','-At','-v','ON_ERROR_STOP=1','-c',q);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const until=async(fn,label,seconds=90)=>{const end=Date.now()+seconds*1000;while(Date.now()<end){try{const v=await fn();if(v)return v}catch{}await sleep(1000)}throw Error('Timeout: '+label)};
@@ -21,7 +31,7 @@ function passed(name){evidence.checks.push(name);console.log('PASS '+name)}
 let sampler=setInterval(()=>{try{const raw=docker('stats','--no-stream','--format','{{json .}}');const at=new Date().toISOString();evidence.resources.push(...raw.split('\n').filter(Boolean).map(x=>({time:at,...JSON.parse(x)})))}catch{}},4000);
 try{
  await until(async()=>{const s=await request('/status');return s.instances.filter(x=>x.active).length>=12},'service heartbeats');
- for(const role of ['toolhub','knowledge','storage','sandbox','worker']){
+ for(const role of ['toolhub','knowledge','storage','sandbox','worker','sources']){
   let denied=false;try{sql('SET ROLE agentos_'+role+'; SELECT sealed FROM public.secrets LIMIT 1')}catch{denied=true}assert(denied,role+' database privilege');
  }
  assert(!config('control').DATABASE_URL && !config('futures').DATABASE_URL);passed('separate database identities and SQL denial; UI has no database credentials');
@@ -56,14 +66,23 @@ try{
  await until(()=>sql("SELECT count(*) FROM calls WHERE run_id='"+run.id+"' AND request->>'name'='note_save' AND status='completed'")==='1','first durable tool receipt');
  const owner=sql("SELECT hostname FROM instances WHERE id=(SELECT owner FROM runs WHERE id='"+run.id+"')");assert(owner);
  const workers=dc('ps','-q','worker').split('\n');const victim=workers.find(id=>JSON.parse(docker('inspect',id))[0].Config.Hostname===owner);assert(victim,'owner container');
- crash(victim);
+ const workerRestarts=crash(victim);
+ await until(()=>JSON.parse(docker('inspect',victim))[0].RestartCount>workerRestarts,'worker supervisor restart',60);
  const completed=await until(async()=>{const r=await request('/tasks/'+run.id,undefined,{business:true});if(r.status==='failed'||r.status==='needs_review')throw Error(JSON.stringify(r));return r.status==='completed'?r:null},'DSH task recovery',150);
  assert.match(completed.result,/Controlled/);
  assert.equal(sql("SELECT count(*) FROM documents WHERE title='CI durable receipt'"),'1');
  assert(Number(sql("SELECT fence FROM runs WHERE id='"+run.id+"'"))>=2);passed('real worker SIGKILL, fenced takeover, DSH replay and one committed note');
  assert.equal(sql("SELECT count(*) FROM calls WHERE run_id='"+run.id+"' AND kind='tool' AND status='completed'"),'4');passed('cross-service MCP call, KB search and bound original document read');
+ const retainedNote=(await request('/documents?q=CI%20durable%20receipt'))[0];assert(retainedNote?.id);
+ dc('stop','storage');
+ try{
+  assert.equal((await request('/documents/'+retainedNote.id)).id,retainedNote.id);
+  const created=await request('/documents',{kind:'memory',title:'CI Runtime-owned memory',content:'Storage can be unavailable while retained notes stay accessible.',source:'fixture://runtime-notes',scope:'ci-agent'});
+  assert.equal((await request('/documents/'+created.id)).scope,'ci-agent');
+ }finally{dc('start','storage')}
+ passed('Console routes persistent notes to Runtime while independent Storage is stopped');
  dc('stop','toolhub');const partial=await request('/resources');assert.equal(partial.services.toolhub,false);assert.equal(partial.services.registry,true);assert(partial.items.some(x=>x.id==='ci-agent'));assert((await request('/tasks',undefined,{business:true})).length===1);dc('start','toolhub');passed('ToolHub outage leaves registry catalog and business history usable');
- for(const role of ['registry','runtime','knowledge','indexer','storage','control','futures']){const ids=dc('ps','-q',role).split('\n');const before=JSON.parse(docker('inspect',ids[0]))[0].RestartCount;crash(ids[0]);await until(()=>{const state=JSON.parse(docker('inspect',ids[0]))[0];return state.RestartCount>before&&state.State.Health?.Status==='healthy'},role+' automatic restart',60)}
+ for(const role of ['registry','runtime','knowledge','indexer','storage','control','futures','sources']){const ids=dc('ps','-q',role).split('\n');const before=JSON.parse(docker('inspect',ids[0]))[0].RestartCount;crash(ids[0]);await until(()=>{const state=JSON.parse(docker('inspect',ids[0]))[0];return state.RestartCount>before&&state.State.Health?.Status==='healthy'},role+' automatic restart',60)}
  assert((await request('/knowledge/query',{knowledge:{id:'ci-kb',revision:1},query:'甲醇库存'})).hits.length===1);passed('independent service crash restart retains data');
  dc('stop','postgres');await sleep(2000);
  for(const role of ['registry','runtime','knowledge']){let unhealthy=false;try{dc('exec','-T',role,'/app/healthcheck')}catch{unhealthy=true}assert(unhealthy,role+' must not report ready without DB')}

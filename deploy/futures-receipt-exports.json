@@ -1,0 +1,9 @@
+[
+  {
+    "app": "futures",
+    "id": "research-draft-v1",
+    "tool": "mcp_futures-research_check_research_draft_v2",
+    "input_path": ["arguments", "draft"],
+    "output_path": ["content", "0", "text"]
+  }
+]

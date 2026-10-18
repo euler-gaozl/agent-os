@@ -40,6 +40,8 @@ func permitted(service, caller, method, path string) bool {
 	}
 	get := method == "GET"
 	switch service {
+	case "sources":
+		return (caller == "sources" && method == "POST" && path == "/mcp") || (caller == "control" && get && strings.HasPrefix(path, "/captures/"))
 	case "registry":
 		if caller == "control" {
 			return !strings.HasPrefix(path, "/v1/credentials/resolve")
@@ -67,8 +69,18 @@ func permitted(service, caller, method, path string) bool {
 			return (get && strings.HasPrefix(path, "/v1/resolve/")) || (caller == "worker" && method == "POST" && path == "/invoke")
 		}
 	case "runtime":
+		if caller == "telemetry" {
+			return method == "POST" && (path == "/v1/telemetry/claim" || path == "/v1/telemetry/ack")
+		}
+		if caller == "sandbox" {
+			return method == "POST" && path == "/v1/sandbox/authorize"
+		}
 		if caller == "control" {
-			return strings.HasPrefix(path, "/v1/runs") || path == "/v1/status"
+			return strings.HasPrefix(path, "/v1/runs") || path == "/v1/status" ||
+				(get && (path == "/v1/notes" || strings.HasPrefix(path, "/v1/notes/"))) ||
+				(method == "POST" && (path == "/v1/notes/revise" || path == "/v1/notes/retire")) ||
+				((get || method == "POST") && path == "/v1/documents") ||
+				(get && strings.HasPrefix(path, "/v1/documents/"))
 		}
 		if caller == "futures" {
 			return path == "/v1/apps/futures/runs" || strings.HasPrefix(path, "/v1/apps/futures/runs/")
@@ -90,7 +102,10 @@ func permitted(service, caller, method, path string) bool {
 			return method == "POST" && (path == "/v1/retrieve" || path == "/v1/document")
 		}
 	case "storage":
-		return caller == "control"
+		if caller == "runtime" || caller == "worker" {
+			return method == "PUT" && strings.HasPrefix(path, "/v1/artifacts/") || caller == "runtime" && method == "POST" && path == "/v1/artifacts/page"
+		}
+		return caller == "control" && ((get && strings.HasPrefix(path, "/artifacts/")) || (method == "POST" && path == "/gc"))
 	case "sandbox":
 		return caller == "runtime" && method == "POST" && path == "/execute"
 	}

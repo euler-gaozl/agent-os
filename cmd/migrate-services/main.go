@@ -11,6 +11,7 @@ import (
 	"github.com/euler-gaozl/agent-os/internal/servicehost"
 	"github.com/euler-gaozl/agent-os/internal/servicehttp"
 	"github.com/euler-gaozl/agent-os/services/knowledge"
+	"github.com/euler-gaozl/agent-os/services/sources"
 	"github.com/euler-gaozl/agent-os/services/toolhub"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -22,8 +23,27 @@ import (
 
 func main() {
 	output := flag.String("output", ".state/services", "private per-service configuration directory")
+	service := flag.String("service", "", "upgrade only this service's schema; do not provision identities or import legacy data")
+	retireStorageNotes := flag.Bool("retire-storage-notes", false, "after Runtime/Console/Storage rollout, revoke Storage access to execution notes; use the execution database DDL config")
 	if e := servicehost.Load(); e != nil {
 		fail(e)
+	}
+	if *retireStorageNotes {
+		if *service != "" {
+			fail(errors.New("retirement is a separate final rollout step; omit --service"))
+		}
+		if e := retireStorageNoteAccess(context.Background(), os.Getenv("DATABASE_URL")); e != nil {
+			fail(e)
+		}
+		fmt.Println("Legacy Storage note privileges revoked; data and service configurations unchanged.")
+		return
+	}
+	if *service != "" {
+		if e := upgradeService(context.Background(), os.Getenv("DATABASE_URL"), *service); e != nil {
+			fail(e)
+		}
+		fmt.Println("Selected service schema upgraded; configuration and credentials unchanged.")
+		return
 	}
 	if e := run(*output); e != nil {
 		fail(e)
@@ -44,7 +64,7 @@ func run(output string) error {
 	if e = os.MkdirAll(output, 0700); e != nil {
 		return e
 	}
-	for _, name := range []string{"toolhub", "knowledge"} {
+	for _, name := range []string{"toolhub", "knowledge", "sources"} {
 		if _, e = admin.DB.Exec(ctx, "CREATE SCHEMA IF NOT EXISTS "+pgx.Identifier{name}.Sanitize()); e != nil {
 			return e
 		}
@@ -102,9 +122,18 @@ func run(output string) error {
 	if e = knowledge.ImportLegacy(ctx, kbPool); e != nil {
 		return e
 	}
-	execution := []string{"runs", "events", "calls", "model_attempts", "harness_exchanges", "documents", "artifacts", "artifact_refs", "app_runs", "business_runs", "instances"}
-	grants := map[string][]string{"runtime": execution, "worker": execution, "registry": {"resources", "secrets"}, "storage": {"documents", "artifacts", "artifact_refs"}, "sandbox": {"runs", "sandbox_jobs"}, "telemetry": {"events", "telemetry_exports"}, "toolhub": nil, "knowledge": nil, "indexer": nil, "control": nil, "futures": nil}
+	sourcePool, e := scoped("sources")
+	if e != nil {
+		return e
+	}
+	defer sourcePool.Close()
+	if e = sources.Migrate(ctx, sourcePool); e != nil {
+		return e
+	}
+	execution := []string{"runs", "events", "calls", "model_attempts", "harness_exchanges", "harness_archives", "note_roots", "note_versions", "note_audits", "note_admin_receipts", "documents", "app_runs", "business_runs", "instances"}
+	grants := map[string][]string{"runtime": execution, "worker": execution, "registry": {"resources", "secrets"}, "storage": {"artifacts", "artifact_refs"}, "sandbox": {"sandbox_jobs"}, "telemetry": {"telemetry_inbox", "telemetry_exports"}, "toolhub": nil, "knowledge": nil, "indexer": nil, "control": nil, "futures": nil}
 	identities := map[string]string{}
+	grants["sources"] = nil
 	identityFile := filepath.Join(output, "identities.json")
 	if raw, err := os.ReadFile(identityFile); err == nil {
 		if e = json.Unmarshal(raw, &identities); e != nil {
@@ -123,14 +152,20 @@ func run(output string) error {
 	if e = writeConfig(identityFile, identities); e != nil {
 		return e
 	}
+	if e = admin.PutSecret(ctx, "SOURCES_MCP_TOKEN", identities["sources"]); e != nil {
+		return e
+	}
 	for role, tables := range grants {
 		cfg := map[string]string{}
-		for _, key := range []string{"SERVICE_TOKEN", "ADMIN_TOKEN", "BUSINESS_TOKEN", "DEV_LOCAL", "REGISTRY_URL", "RUNTIME_URL", "TOOLHUB_URL", "KNOWLEDGE_URL", "STORAGE_URL", "SANDBOX_URL", "AGENTOS_NODE", "DSH_RUNNER", "WEB_DIR", "FUTURES_WEB_DIR", "MCP_ALLOWED_HOSTS", "SANDBOX_IMAGE", "LANGFUSE_URL"} {
+		for _, key := range []string{"SERVICE_TOKEN", "ADMIN_TOKEN", "BUSINESS_TOKEN", "DEV_LOCAL", "REGISTRY_URL", "RUNTIME_URL", "TOOLHUB_URL", "KNOWLEDGE_URL", "STORAGE_URL", "SANDBOX_URL", "SOURCES_URL", "AGENTOS_NODE", "DSH_RUNNER", "WEB_DIR", "FUTURES_WEB_DIR", "MCP_ALLOWED_HOSTS", "SANDBOX_IMAGE", "DOCKER_HOST", "LANGFUSE_URL"} {
 			if value := os.Getenv(key); value != "" {
 				cfg[key] = value
 			}
 		}
 		cfg["DB_MAX_CONNS"] = "3"
+		if role == "sources" {
+			cfg["SOURCE_ALLOWED_HOSTS"] = servicehost.Env("SOURCE_ALLOWED_HOSTS", strings.Join(sources.DefaultHosts, ","))
+		}
 		cfg["SERVICE_TOKEN"] = identities[role]
 		cfg["SERVICE_PEERS"] = string(contracts.JSON(peers))
 		cfg["GOMEMLIMIT"] = "96MiB"
@@ -164,6 +199,9 @@ func run(output string) error {
 		}
 		if role == "knowledge" || role == "indexer" {
 			schema = "knowledge"
+		}
+		if role == "sources" {
+			schema = "sources"
 		}
 		password := contracts.ID() + contracts.ID()
 		old := map[string]string{}
@@ -208,6 +246,16 @@ func run(output string) error {
 		if _, e = admin.DB.Exec(ctx, "GRANT USAGE ON SCHEMA "+pgx.Identifier{schema}.Sanitize()+" TO "+ident); e != nil {
 			return e
 		}
+		if role == "sandbox" {
+			if _, e = admin.DB.Exec(ctx, "REVOKE ALL ON TABLE public.runs FROM "+ident); e != nil {
+				return e
+			}
+		}
+		if role == "telemetry" {
+			if _, e = admin.DB.Exec(ctx, "REVOKE ALL ON TABLE public.events FROM "+ident); e != nil {
+				return e
+			}
+		}
 		if schema != "public" {
 			if _, e = admin.DB.Exec(ctx, "GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA "+pgx.Identifier{schema}.Sanitize()+" TO "+ident); e != nil {
 				return e
@@ -222,7 +270,7 @@ func run(output string) error {
 				}
 			}
 			if role == "runtime" || role == "worker" {
-				if _, e = admin.DB.Exec(ctx, "GRANT USAGE,SELECT ON SEQUENCE public.events_seq_seq TO "+ident); e != nil {
+				if _, e = admin.DB.Exec(ctx, "GRANT USAGE,SELECT ON SEQUENCE public.events_seq_seq,public.note_audits_seq_seq TO "+ident); e != nil {
 					return e
 				}
 			}

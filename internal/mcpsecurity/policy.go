@@ -49,7 +49,7 @@ func publicIP(a netip.Addr) bool {
 // Resolve and validate at the actual dial, so a hostname cannot pass inspection
 // with a public address then resolve to metadata/private networks on execution.
 func (p Policy) Client() *http.Client {
-	tr := &http.Transport{Proxy: nil, MaxIdleConns: 16, MaxIdleConnsPerHost: 2, MaxConnsPerHost: 4, IdleConnTimeout: 30 * time.Second, TLSHandshakeTimeout: 5 * time.Second, ResponseHeaderTimeout: 8 * time.Second}
+	tr := &http.Transport{Proxy: nil, MaxResponseHeaderBytes: 32 << 10, MaxIdleConns: 16, MaxIdleConnsPerHost: 2, MaxConnsPerHost: 4, IdleConnTimeout: 30 * time.Second, TLSHandshakeTimeout: 5 * time.Second, ResponseHeaderTimeout: 8 * time.Second}
 	tr.DialContext = func(ctx context.Context, network, address string) (net.Conn, error) {
 		host, port, e := net.SplitHostPort(address)
 		if e != nil {

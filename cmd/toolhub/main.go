@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"github.com/euler-gaozl/agent-os/internal/servicehost"
 	"github.com/euler-gaozl/agent-os/internal/servicehttp"
 	"github.com/euler-gaozl/agent-os/services/toolhub"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -17,10 +19,14 @@ func main() {
 			return nil, nil, e
 		}
 		client := servicehost.Client()
+		workers, e := strconv.Atoi(servicehost.Env("TOOLHUB_PROBE_WORKERS", "2"))
+		if e != nil || workers < 1 || workers > 8 {
+			return nil, nil, errors.New("TOOLHUB_PROBE_WORKERS must be 1..8")
+		}
 		store := &toolhub.Store{DB: p, Policy: toolhub.Policy{AllowedHosts: strings.Split(os.Getenv("MCP_ALLOWED_HOSTS"), ",")}, Secrets: client}
 		s := &toolhub.Server{Store: store, HTTP: c, Execution: client}
 		return s.Handler(), func(ctx context.Context) error {
-			return store.Monitor(ctx, servicehost.Env("INSTANCE_ID", "toolhub-monitor"))
+			return store.MonitorWorkers(ctx, servicehost.Env("INSTANCE_ID", "toolhub-monitor"), workers)
 		}, nil
 	})
 }

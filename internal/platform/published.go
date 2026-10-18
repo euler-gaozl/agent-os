@@ -8,7 +8,7 @@ import (
 
 func (s *Server) publishedRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /v1/published/{app}", wrap(func(w http.ResponseWriter, r *http.Request) error {
-		rows, e := s.Store.DB.Query(r.Context(), "SELECT id,revision,spec FROM resources a WHERE kind='agent' AND revision=(SELECT max(revision) FROM resources b WHERE b.kind=a.kind AND b.id=a.id) AND spec#>>'{publication,enabled}'='true' AND spec#>>'{publication,app}'=$1 ORDER BY id LIMIT 200", r.PathValue("app"))
+		rows, e := s.Store.DB.Query(r.Context(), "SELECT id,revision,spec#>>'{publication,name}',coalesce(spec#>>'{publication,description}','') FROM resources a WHERE kind='agent' AND revision=(SELECT max(revision) FROM resources b WHERE b.kind=a.kind AND b.id=a.id) AND spec#>>'{publication,enabled}'='true' AND spec#>>'{publication,app}'=$1 ORDER BY id LIMIT 200", r.PathValue("app"))
 		if e != nil {
 			return e
 		}
@@ -17,15 +17,11 @@ func (s *Server) publishedRoutes(mux *http.ServeMux) {
 		for rows.Next() {
 			var id string
 			var rev int
-			var raw []byte
-			var a Agent
-			if e = rows.Scan(&id, &rev, &raw); e != nil {
+			var name, description string
+			if e = rows.Scan(&id, &rev, &name, &description); e != nil {
 				return e
 			}
-			if e = json.Unmarshal(raw, &a); e != nil {
-				return e
-			}
-			out = append(out, map[string]any{"id": id, "revision": rev, "name": a.Publication.Name, "description": a.Publication.Description})
+			out = append(out, map[string]any{"id": id, "revision": rev, "name": name, "description": description})
 		}
 		if e = rows.Err(); e != nil {
 			return e
