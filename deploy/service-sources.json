@@ -7,7 +7,7 @@
     },
     "futures": {
       "repository": "agent-os-futures",
-      "commit": "939e9b665f920993bdb56ba54828eb244c757304"
+      "commit": "4f40249cd705754da1944256d2bf7128e099124c"
     },
     "registry": {
       "repository": "agent-os-registry",
