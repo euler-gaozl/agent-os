@@ -84,3 +84,10 @@ Runtime `76237d3`、Futures `f3c25ea` 已在原 Windows 安装，DB 15 项/Web 2
 - R3d 证据：`local/evidence/original-supply-review-20261018-r3d-2026-10-18T05-58-03-745Z/`。
 - 最新 Futures 源码 `665ff73`，安装 `futures-f8d0064a5a2b4790874347eaa2a2519b`；Go 全包/vet、Web 29/29/build 通过。
 - 内容复核仍保持“待独立验收”；结构/引用检查通过不等于研究事实正确。
+
+## G2 反例补口（2026-10-18）
+
+- Codex G2 指出的 S1/S2/S4 已修复：跨回执空白差异显式匹配、字节/未读分页预算归 `receipt_budget`、finding 月份比较年份并识别中文月份。
+- 新增测试：`TestJointQuoteWhitespaceAcrossSegments`、`TestFindingMonthMustRespectYear`；连同三个说明反例均通过。
+- 最新源码 `2b729c3`，安装 `futures-1d09d1ef7b47426cb3940a3772026c45`；R3d 复检仍为 25 facts/12 statements、无 retained/borrow。
+- main 已同步：agent-os `6c3cc69`，agent-os-futures `2b729c3`；Actions 未开启。
