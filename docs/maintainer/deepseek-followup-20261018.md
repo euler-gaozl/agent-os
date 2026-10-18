@@ -73,3 +73,14 @@ Runtime `76237d3`、Futures `f3c25ea` 已在原 Windows 安装，DB 15 项/Web 2
 - 证据：`local/evidence/original-supply-review-20261018-r3-2026-10-18T03-27-41-199Z/`、`...r3b-...`、`...r3c-...`。
 - 根因：`bcb1...` 的本任务读取页只含导航/标题/出处，未读到库存正文；模型仍把“监测显示…”拼接成引用。最终 `check_research_draft_v2` 没有任务 read receipt，只做结构检查，无法在 final 前阻止该引用。
 - 下一修复方向：让最终检查或 Runtime final policy 能按 run_id 读取本任务 receipt，或在任务完成前拒绝未匹配 quote；当前不能宣称供给四问内容通过。
+
+## 2026-10-18 独立复核后的修正与 R3d
+
+- 根因修正：f14/f15 的原文实际包含 869/113，模型引用删除了“进口 大豆 库存”“豆粕 库存”中的空格；不是正文缺失。旧记录“只读到导航”不准确。
+- 六条说明（s3/s4/s9/s13/s14/s15）原文可匹配；失败来自继承回执重复读取，检查器在取完列表/记录前耗尽 48 次预算。已按 OriginalHash+ReadOffset+ReadEnd 去重，并区分 `receipt_budget` 与 `retained_quote`。
+- 空白归一化现在不是静默通过：匹配返回 `quote_match_mode=whitespace`、保留原文偏移，并产生 source_review `quote_normalized`。
+- 三个说明检查反例（第二个断言、仅有“暂无”、数据库含“据”）已加入测试并复现修复。
+- 新 facts/stmts 引用全部可回查；R3d 任务 `2434822c…` completed、draft-match=matched，report-check 的 25 facts/12 statements 全部匹配，未出现 retained_quote/quote_normalized/finding_period_borrow。
+- R3d 证据：`local/evidence/original-supply-review-20261018-r3d-2026-10-18T05-58-03-745Z/`。
+- 最新 Futures 源码 `665ff73`，安装 `futures-f8d0064a5a2b4790874347eaa2a2519b`；Go 全包/vet、Web 29/29/build 通过。
+- 内容复核仍保持“待独立验收”；结构/引用检查通过不等于研究事实正确。

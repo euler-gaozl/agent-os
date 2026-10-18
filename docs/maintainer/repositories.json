@@ -2,7 +2,7 @@
   "schema_version": 1,
   "latest_recovery_audit": "windows-source-recovery-20261017.json",
   "current_execution_record": "deepseek-followup-20261018.md",
-  "as_of": "2026-10-18T03:35:00Z",
+  "as_of": "2026-10-18T06:00:00Z",
   "project_id": "project:agent-platform",
   "source_baseline": "76a4f22f0bc794b17ddac7aa0ee06d5cde11596d",
   "integration_handoff_branch": "feat/end-to-end-delivery",
@@ -92,10 +92,10 @@
       "installed": [
         {
           "role": "futures",
-          "commit": "939e9b665f920993bdb56ba54828eb244c757304",
+          "commit": "665ff73c673dabc2c5196a8db9c4e0a06d102cef",
           "repository": "agent-os-futures",
-          "manifest": "descriptors/futures-8dfe9e178eee4c3ea441b8523907fe91.json",
-          "release_id": "futures-8dfe9e178eee4c3ea441b8523907fe91",
+          "manifest": "descriptors/futures-f8d0064a5a2b4790874347eaa2a2519b.json",
+          "release_id": "futures-f8d0064a5a2b4790874347eaa2a2519b",
           "sdk": {
             "version": "v0.1.0-rc.4",
             "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
@@ -109,7 +109,7 @@
           "observation": "Read from current catalog and immutable descriptor after two service updates."
         }
       ],
-      "remote_main_head_at_audit": "939e9b665f920993bdb56ba54828eb244c757304"
+      "remote_main_head_at_audit": "665ff73c673dabc2c5196a8db9c4e0a06d102cef"
     },
     {
       "id": "repo:agent-os-harness",
