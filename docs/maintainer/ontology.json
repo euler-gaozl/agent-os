@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "as_of": "2026-10-17",
+  "as_of": "2026-10-18T03:12:45.549Z",
   "purpose": "项目群维护定位与交接；不是运行时知识图谱、授权系统或自动验收",
   "authority": "代码/固定发布/真实运行与原始证据优先；本文件为人工维护快照",
   "node_types": [
@@ -748,10 +748,10 @@
     {
       "id": "task:research-completion",
       "type": "task",
-      "label": "研究稳定成稿",
-      "status": "open",
-      "doc": "backlog.md",
-      "scope": "原目标余项"
+      "label": "原供给四问内容复核",
+      "status": "execution_completed_content_review_failed",
+      "doc": "deepseek-followup-20261018.md",
+      "scope": "Task 6908846d5d9684999371ca19a2192b6f completed, draft-match matched, facts22/24 and statements10/10; temporal/semantic support defects remain."
     },
     {
       "id": "task:research-quality",
@@ -803,17 +803,17 @@
       "type": "task",
       "label": "最新备份实际恢复",
       "status": "current_snapshot_restore_passed",
-      "doc": "windows-ds08-restore-20261017.md",
+      "doc": "evidence-binding-delivery-20261018.md",
       "section": "DS-08",
-      "scope": "Latest backup ds08-final-20261018l (after Knowledge collation fix and 13/13 hosted CI) restored into a disposable random-port PostgreSQL cluster: 46 relations, 10 service logins, 5 sealed credential decryptions, 2 archived Worker bundles (52356bed/806b411d), complete release generation 215 with 3103 files; isolated cluster stopped, provider calls 0. Not server/HA, eight physical databases or external Milvus/LightRAG/Langfuse."
+      "scope": "post-evidence-binding-20261018 restored in isolated cluster; report c79423131f2d459dad8a5b303d67bdd1. Includes new app_evidence_bindings table. Not server/HA/external backend verification."
     },
     {
       "id": "task:final-ci",
       "type": "task",
       "label": "一次统一验收与交付",
-      "status": "local_sweep_passed_hosted_ci_open",
+      "status": "previous_baseline_hosted_ci_passed_actions_disabled",
       "doc": "windows-local-acceptance-20261017.md",
-       "scope": "Hosted concentrated CI dispatched once on 13 service repos; after fixing the Knowledge archive-floor collation bug, the targeted rerun passed and the final result is 13/13. Actions were disabled again. Not capacity/server/HA. See windows-final-ci-20261018.md."
+      "scope": "Previous concentrated 13/13 completed. No new Actions for current follow-up; targeted local tests recorded separately."
     },
     {
       "id": "task:fresh-windows-bootstrap",
@@ -1721,6 +1721,51 @@
       "type": "evidence_document",
       "label": "DeepSeek最新交接与详细任务",
       "doc": "deepseek-handoff-20261017.md"
+    },
+    {
+      "id": "capability:evidence-binding",
+      "type": "capability",
+      "label": "修订任务固定阅读回执关联",
+      "status": "installed_verified_owner_windows",
+      "doc": "evidence-binding-delivery-20261018.md",
+      "scope": "Runtime-owned immutable binding; same app, terminal older source, fixed request/response versions; original reports unchanged."
+    },
+    {
+      "id": "state:app-evidence-binding",
+      "type": "state_class",
+      "label": "不可变的来源报告与阅读回执清单",
+      "table": "app_evidence_bindings",
+      "scope": "Runtime SELECT/INSERT only; Worker no access; not inherited drafts/model messages."
+    },
+    {
+      "id": "task:ds-r1",
+      "type": "task",
+      "label": "DS-R1",
+      "status": "open",
+      "doc": "deepseek-followup-20261018.md",
+      "section": "DS-R1"
+    },
+    {
+      "id": "task:ds-r2",
+      "type": "task",
+      "label": "DS-R2",
+      "status": "open",
+      "doc": "deepseek-followup-20261018.md",
+      "section": "DS-R2"
+    },
+    {
+      "id": "task:ds-r3",
+      "type": "task",
+      "label": "DS-R3",
+      "status": "open",
+      "doc": "deepseek-followup-20261018.md",
+      "section": "DS-R3"
+    },
+    {
+      "id": "evidence:review-followup-20261018",
+      "type": "evidence_document",
+      "label": "三项复核收尾与真实失败保留",
+      "doc": "review-followup-20261018.md"
     }
   ],
   "edges": [
@@ -3761,6 +3806,56 @@
       "from": "task:research-completion",
       "relation": "documented_by",
       "to": "evidence:windows-guarded-release-20261017"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "owns",
+      "to": "state:app-evidence-binding"
+    },
+    {
+      "from": "service:runtime",
+      "relation": "implements",
+      "to": "capability:evidence-binding"
+    },
+    {
+      "from": "service:futures",
+      "relation": "uses",
+      "to": "capability:evidence-binding"
+    },
+    {
+      "from": "state:app-evidence-binding",
+      "relation": "part_of",
+      "to": "domain:execution"
+    },
+    {
+      "from": "capability:evidence-binding",
+      "relation": "documented_by",
+      "to": "evidence:review-followup-20261018"
+    },
+    {
+      "from": "task:research-completion",
+      "relation": "documented_by",
+      "to": "evidence:review-followup-20261018"
+    },
+    {
+      "from": "task:ds-r1",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:ds-r2",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:ds-r3",
+      "relation": "depends_on",
+      "to": "task:ds-r1"
+    },
+    {
+      "from": "task:ds-r3",
+      "relation": "depends_on",
+      "to": "task:ds-r2"
     }
   ],
   "environment_policy": {
@@ -3770,5 +3865,5 @@
     "updated_at": "2026-10-17",
     "rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets."
   },
-  "current_execution_record": "windows-ds08-restore-20261017.md"
+  "current_execution_record": "review-followup-20261018.md"
 }

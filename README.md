@@ -1,5 +1,7 @@
 # Agent OS
 
+**最新复核（2026-10-18）：** 15 仓 main 已同步，修订报告的固定证据关联已实现、安装并验证；原供给四问虽已成稿，内容复核仍有待修问题。请读 [当前状态](docs/maintainer/current-state.md)、[DeepSeek 接续任务](docs/maintainer/deepseek-followup-20261018.md) 和 [开工提示词](docs/maintainer/deepseek-followup-prompt-20261018.txt)。下面带日期的旧交接属于历史，不能覆盖最新状态。
+
 **维护交接（2026-10-17）：** 最新进度、具体待办和环境边界见 [DeepSeek接续](docs/maintainer/deepseek-handoff-20261017.md)，可直接使用 [开工提示词](docs/maintainer/deepseek-start-prompt.txt)。整体仍在验收，未宣称端到端交付完成。
 
 **2026-10-17 更新：** 已从 Mac 接回 6 仓 29 个提交，并同步各仓 `main` 和开发分支；原 Windows 已恢复 12 个服务实例。最新接续功能的 Windows 安装与完整业务验收仍在推进，见 [续做计划及核验结果](docs/maintainer/windows-resumption-20261017.md)。下面保留历史记录，源码同步不代表全部功能已安装或项目已交付。

@@ -1,3 +1,9 @@
+# 当前交接入口 · 2026-10-18
+
+先读 [当前状态](docs/maintainer/current-state.md)、[DS-R1/R2/R3详细任务](docs/maintainer/deepseek-followup-20261018.md)，复制 [开工提示词](docs/maintainer/deepseek-followup-prompt-20261018.txt)。15仓main已同步；证据链已实现、安装和验证；原供给四问成稿但内容未通过。环境先确认，凭据与原电脑私有证据不随克隆转移。Actions关闭，不复活旧无限Goal。
+
+以下为历史交接，不是本轮待办：
+
 # Agent Platform 接手入口
 
 **最新：交给 DeepSeek。** 直接读 [2026-10-17接续任务](docs/maintainer/deepseek-handoff-20261017.md)，复制 [开工提示词](docs/maintainer/deepseek-start-prompt.txt)。用户要求交接后暂停原Codex。15仓远端和当前安装已重新核对，整体仍未完成；下方较早的交接内容保留作历史。

@@ -103,3 +103,7 @@ Worker 固定 Runtime execution 包、Indexer 固定 Knowledge indexing 包，�
 [native 新尝试修订守卫](macos-native-attempt-revision-20261015.md)位于 Runtime 所有的 execution 事务域，由 Worker 的固定编译依赖实际运行。BeginModel 在运行行锁内、completed cache 返回后、预算与新 attempt 写入前比较 exchange 冻结修订与当前规则；不改变旧请求、回执、成功缓存或既有 DSH 交换协议。已准入的在途调用仍留存账单/结果，不能把新准入守卫扩大为撤回 HTTP 的保证。Runtime HTTP 安装版本与 Worker 内嵌模块分别记载；数据权威、跨库边界、官方 DSH 决策循环和 Compact 保持，后续接续写动作仍需独立设计与验收。
 
 [显式接续与持久化回执](macos-continuation-action-20261015.md)由Runtime Owner在请求身份锁、父先家族行锁和预算锁下复核后，原子记录排队/确定拒绝；回执为永久历史决定，不是当前状态或缓存。Console只保存有界请求指针并回读原ID，事务及预算权威仍在Runtime。新源码的native旧/resume返回明确409，历史引擎旧路径保留；只读preview-v1、固定execution/DSH循环与Compact、Worker编译pin和跨库归属不变。Owner表迁移只扩展，Worker无新增权限；readiness/退役清单纳入不等于已迁移、部署或撤回旧异常授权。原Windows和Mac历史版本说明保留，常驻服务本轮未替换。
+
+## 2026-10-18 证据关联增量
+
+Runtime 执行域新增 app_evidence_bindings（固定、只插入的源报告/阅读回执关联）及 app_runs.evidence_source_run。Futures经同应用HTTP提交/读取，不直接访问数据库；继承只覆盖成功document_read，不包括草稿/模型上下文。原任务结果不可变，提交关联与事后关联明确区分。接口、边界及测试见 [交付记录](evidence-binding-delivery-20261018.md)。

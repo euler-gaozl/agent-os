@@ -1,33 +1,13 @@
-# 当前工作队列 · DeepSeek 接续
+# 当前待办 · 2026-10-18
 
-2026-10-17更新。详细文件、步骤、测试和完成标准统一在 [DeepSeek交接](deepseek-handoff-20261017.md)。完整目标与W01–W14不缩减；以下顺序不等于只有这些工程小项需要验收。用户已明确交接后暂停原Codex，交给DeepSeek。
+先做 [DeepSeek 接续](deepseek-followup-20261018.md) 的三个 P0，详细到具体事实/说明编号、代码路径、复现任务及验收。
 
-| 顺序 | 当前状态 | 本体任务 / Owner | 下一步 |
+| 编号 | 工作 | Owner | 状态 |
 | --- | --- | --- | --- |
-| DS-01 | 已完成（源码/测试/安装/静态复核） | task:qualitative-evidence / Futures | 非数值说明已绑定留存原文并安装；转入 DS-02，DS-03 真实内容复核仍待做 |
-| DS-02 | 已完成（双产物安装，默认 v7；DS-03 已在 v7 上跑通真实任务） | task:finalization-recovery / Harness、Runtime、Worker、业务方法 | v6 任务 continuation context=`manual_review`/`unsupported_checkpoint`，保留重放/读取但不能直接续跑；不得删 v6 runner 或改旧任务；真实恢复/故障重放归 DS-07 |
-| DS-03 | 已完成（真实四问报告 + 独立内容复核 ACCEPT） | task:research-quality / Agent 22、Skill 10、Futures 检查器 | 仅覆盖库存/区域/合同三份资料；旧供给/进口/压榨失败任务未回填；保留 s1 引文拼接 minor；下一步 DS-04 |
-| DS-04 | 浏览器矩阵通过；业务入口已修复安装；Console 运行详情“查看源任务”、Futures 同品种历史任务与“源任务 ID”手动打开均已浏览器验证；自动/持久化跨任务证据链仍开放 | task:continuation-ui / Console、Futures、Runtime | 跟进 v6 失败任务“不足以直接续跑”的评估；在 Futures 记录页补精确来源任务/证据链；补浏览器自动化可重复入口；不把启发式同品种入口写成自动溯源 |
-| DS-05 | 正式 ACL 已收缩；撤权后合成任务/双 Worker 接管通过；真实 Langfuse 已由用户放弃；旧单体入口 `cmd/agentos` 已删除，共享兼容库保留用于迁移/历史回放；Linux 组合仍为后续 | task:service-retirement / 各Owner及集成 | 保留兼容库，不再为删除而破坏回放；Linux 组合与逐条 W 项按剩余清单处理 |
-| DS-06 | 笔记修订/过期/并发/撤回、长历史 Compact/重放、**Compact 点 kill/resume 已通过**（549c3295…，fence 2，同一 call_id，COMPACT_DONE）、4 并发新引擎 40 轮任务全部完成并采样（Worker 峰值 45.4 MB） | task:storage-lifecycle / Harness、Runtime、Worker、Storage | 10M 分块/24 小时生产长稳/RSS 上界仍为显式延后；不以合成基准代替生产容量 |
-| DS-07 | 部分完成（8 并发 8/8、30.1 分钟 24/24 soak、8 秒锁恢复、30 秒锁失败、15/30 秒锁内取消、杀 owner 后取消、终止 3 个 Worker DB 会话后完成、PG 快速重启后完成、DB 层死锁注入 0→1、任务级死锁未复现、小数据量查询计划基线（events 0.10ms、calls 0.05ms、runs seq 0.35ms）、1M 行合成计划（events 0.56ms、runs seq 86.4ms）、Runtime stop/start 4 秒/25 秒在 60 秒退避下完成；网络分区（已通过）已通过（手工 Worker + TCP 代理，waiting_unknown 后 resume-source-state，任务 cdcf5fe0 completed step 41）/任务级死锁/大数据量慢查询/异步补偿/内存趋势未做） | task:faults-and-resources / 集成及相关Owner | 补网络分区（已通过）、更长 Runtime 停机/任务级恢复、任务级死锁、大数据量慢查询计划、超过 60 秒锁的异步取消、外部副作用补偿、内存趋势和整平台资源口径 |
-| DS-08 | 已完成（当前版本快照备份 + 隔离恢复 passed） | task:latest-recovery / 原Windows集成 | 备份 `ds08-final-20261018l`（Runtime cd1436ca/Worker 806b411d 双引擎安装后）：46 表/序列、10 服务登录、5 密封凭据、2 Worker bundle、离线 Harness 重建全部通过；不替代服务器/HA 或外部服务恢复 |
-| DS-09 | 本机全套扫描通过（40+27 Web、16+31 Harness，0 skip）；**最终 hosted CI 13/13 通过**（Knowledge collation 修复后定向重跑；Actions 已再次禁用） | task:final-ci / 集成 | 不再重复全套；保留逐条 W 项与服务器/容量后续范围 |
+| DS-R1 | 提示优先级、跨月/指标引用、统计日与AI摘要诊断 | Futures | 待修 |
+| DS-R2 | 两条不匹配引用、说明支持范围、范围与历史基数复核 | Futures + 原资料 | 待修 |
+| DS-R3 | 同四问新修订、实际回执/末稿/浏览器/内容复核 | Futures及原Windows | 前两项后执行 |
 
-已完成不重做：Mac成果接回、接续回执迁移/安装、final-v5确定性成稿协议、guarded-v6工具参数纠正、Futures v7精确引用诊断、DS-01非数值说明绑定与v8检查器、DS-02双引擎v7单次续接安装、15仓同步。它们不等于最终业务和平台验收通过。
+已完成无需重做：15仓 main同步、修订证据持久化与权限/版本测试、Runtime/Futures独立安装、真实 UI 修订、最终备份隔离恢复。
 
-task:fresh-windows-bootstrap仍保留为用户以后要求新Windows时的条件任务；新维护者可先在独立环境做便携代码测试，不能把环境不同当作伪造原Windows验收的理由。服务器/机器HA/最终全量容量和全品种后续范围见objective.md。
-
-原队列及2026-10-15/17的逐次历史保存在 [旧队列](backlog-before-deepseek-20261017.md)，其中Agent v17、默认native/final、尚未迁移/安装等旧状态不再是当前开工指令。查证据需要时再读，不把全部历史塞入模型上下文。
-
-## 2026-10-18 用户决定
-
-- 用户明确放弃真实 Langfuse/managed Telemetry 验收；mock/临时实例不再作为待关闭项，相关结论保留为历史证据。
-- 旧实现删除用户授权“你看着办”；仍按“先补未移交覆盖、再删除”执行，不能为了删除而破坏旧任务重放。
-- 网络分区（已通过）不需要用户配置；改用本机可控 TCP 代理/测试 Worker 方式制造分区；首次手工 Worker 未 claim，需改用测试布局或受管 Worker 可配置 Runtime 端点。
-- 最终只执行一次集中 hosted CI；在本机剩余项收口后启用，失败先本机修复，不循环重跑。
-- 服务器、跨机 HA、24 小时生产长稳、1000 万块规模继续显式延后。
-
-## 2026-10-18 单机交付收口
-
-用户确认收口当前 Windows 单机交付：13/13 hosted CI、最终备份 l、旧单体入口退役完成。DS-04 自动跨任务证据链、DS-07 任务级死锁/异步补偿/内存趋势、服务器/HA/10M 与真实 Langfuse 不再阻塞本次收口；详见 [收口记录](windows-single-machine-delivery-close-20261018.md)。
+较大范围仍按 [完整目标](objective.md) 和 [历史队列](backlog-before-review-20261018.md) 保留：服务器/HA/千万块/24小时长稳延后；任务级死锁、长锁异步取消、外部副作用补偿等是后续增强。真实 Langfuse 按用户旧决定放弃。不要从历史未完成措辞再次循环上一轮13仓CI；Actions关闭。

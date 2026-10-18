@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "latest_recovery_audit": "windows-source-recovery-20261017.json",
-  "current_execution_record": "windows-single-machine-delivery-close-20261018.md",
-  "as_of": "2026-10-18T02:10:00Z",
+  "current_execution_record": "review-followup-20261018.md",
+  "as_of": "2026-10-18T03:12:45.549Z",
   "project_id": "project:agent-platform",
-  "source_baseline": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe",
+  "source_baseline": "76a4f22f0bc794b17ddac7aa0ee06d5cde11596d",
   "integration_handoff_branch": "feat/end-to-end-delivery",
   "integration_checkout_note": "Integration source_baseline is the clean pre-handoff commit. Read latest main for these handoff documents; the handoff commit cannot contain its own SHA. Service heads, integration pins, installed releases are separate observations.",
-  "evidence": "原电脑 ops/maintainer-handoff.path 指向的 repositories.json；deploy/service-sources.json；local/releases/current.json 及固定 manifest",
+  "evidence": "2026-10-18 GitHub API refs/Actions; local current catalog and immutable descriptors. Integration HEAD here is before this documentation commit.",
   "repositories": [
     {
       "id": "repo:agent-os",
@@ -15,15 +15,15 @@
       "url": "https://github.com/euler-gaozl/agent-os",
       "clone_url": "https://github.com/euler-gaozl/agent-os.git",
       "branch": "feat/end-to-end-delivery",
-      "source_head_at_audit": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe",
+      "source_head_at_audit": "76a4f22f0bc794b17ddac7aa0ee06d5cde11596d",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
-      "working_tree_clean_before_handoff": true,
+      "working_tree_clean_before_handoff": false,
       "roles": [],
       "integration_pins": [],
       "installed": [],
-      "remote_main_head_at_audit": "f585be6fc2c7cb9fbe0fc92bcc64a5bc3a612cfe"
+      "remote_main_head_at_audit": "76a4f22f0bc794b17ddac7aa0ee06d5cde11596d"
     },
     {
       "id": "repo:agent-os-console",
@@ -50,7 +50,9 @@
         {
           "role": "control",
           "commit": "4b0520f34ee03be79db9c6870aad464b91de3611",
+          "repository": "agent-os-console",
           "manifest": "descriptors/control-94f118e7c5154f0e8041ea79830c62f9.json",
+          "release_id": "control-94f118e7c5154f0e8041ea79830c62f9",
           "sdk": {
             "version": "v0.1.0-rc.4",
             "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
@@ -60,8 +62,8 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T12:18:44Z",
-          "observation": "Actual owner Windows release catalog; parent-task link in run detail, browser verified."
+          "observed_at": "2026-10-18T03:12:45.549Z",
+          "observation": "Read from current catalog and immutable descriptor after two service updates."
         }
       ],
       "remote_main_head_at_audit": "4b0520f34ee03be79db9c6870aad464b91de3611"
@@ -72,7 +74,7 @@
       "url": "https://github.com/euler-gaozl/agent-os-futures",
       "clone_url": "https://github.com/euler-gaozl/agent-os-futures.git",
       "branch": "feat/native-task-transport",
-      "source_head_at_audit": "67f15271215f4aaf5c50bcd8edf651914d66bffd",
+      "source_head_at_audit": "f3c25eaf30282c177db505f1a6d58c3601b1104f",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -83,15 +85,17 @@
       "integration_pins": [
         {
           "role": "futures",
-          "commit": "67f15271215f4aaf5c50bcd8edf651914d66bffd",
+          "commit": "f3c25eaf30282c177db505f1a6d58c3601b1104f",
           "owner_modules": []
         }
       ],
       "installed": [
         {
           "role": "futures",
-          "commit": "67f15271215f4aaf5c50bcd8edf651914d66bffd",
-          "manifest": "descriptors/futures-8d91333b485f4853b7012b8bff61451b.json",
+          "commit": "f3c25eaf30282c177db505f1a6d58c3601b1104f",
+          "repository": "agent-os-futures",
+          "manifest": "descriptors/futures-bb58c4f2bf6949cdb0358a7128084d28.json",
+          "release_id": "futures-bb58c4f2bf6949cdb0358a7128084d28",
           "sdk": {
             "version": "v0.1.0-rc.4",
             "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
@@ -101,11 +105,11 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T13:40:24Z",
-          "observation": "Actual owner Windows release catalog; explicit source-task ID lookup added to the business record."
+          "observed_at": "2026-10-18T03:12:45.549Z",
+          "observation": "Read from current catalog and immutable descriptor after two service updates."
         }
       ],
-      "remote_main_head_at_audit": "67f15271215f4aaf5c50bcd8edf651914d66bffd"
+      "remote_main_head_at_audit": "f3c25eaf30282c177db505f1a6d58c3601b1104f"
     },
     {
       "id": "repo:agent-os-harness",
@@ -121,7 +125,7 @@
       "roles": [],
       "integration_pins": [],
       "installed": [],
-      "remote_main_head_at_audit": "19e0ceee82cd6f8776cbc5eb97d1a5aab0f7a210"
+      "remote_main_head_at_audit": "78ab3d97da42938dcd24784e334221828997e9cb"
     },
     {
       "id": "repo:agent-os-indexer",
@@ -158,7 +162,9 @@
         {
           "role": "indexer",
           "commit": "ccbfbd206f13e10619898ddb52b84e5c1109c7f8",
+          "repository": "agent-os-indexer",
           "manifest": "descriptors/indexer-595bc54d1df446389563894b69ff3921.json",
+          "release_id": "indexer-595bc54d1df446389563894b69ff3921",
           "sdk": {
             "version": "v0.1.0-rc.2",
             "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
@@ -178,8 +184,8 @@
             }
           ],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T08:09:21.828Z",
-          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
+          "observed_at": "2026-10-18T03:12:45.549Z",
+          "observation": "Read from current catalog and immutable descriptor after two service updates."
         }
       ],
       "remote_main_head_at_audit": "30ed978324aa34a2275a0e27a10a65e85f9e28f9"
@@ -190,7 +196,7 @@
       "url": "https://github.com/euler-gaozl/agent-os-knowledge",
       "clone_url": "https://github.com/euler-gaozl/agent-os-knowledge.git",
       "branch": "feat/independent-service",
-      "source_head_at_audit": "ed54550f15e115956fc30e08e0e8121b976ee796",
+      "source_head_at_audit": "ff58a037b667203531234e00f244724738e94f1b",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -201,7 +207,7 @@
       "integration_pins": [
         {
           "role": "knowledge",
-          "commit": "ed54550f15e115956fc30e08e0e8121b976ee796",
+          "commit": "ff58a037b667203531234e00f244724738e94f1b",
           "owner_modules": []
         }
       ],
@@ -209,7 +215,9 @@
         {
           "role": "knowledge",
           "commit": "ff58a037b667203531234e00f244724738e94f1b",
+          "repository": "agent-os-knowledge",
           "manifest": "descriptors/knowledge-e1d6ed1d618c4c9b87980038afc03473.json",
+          "release_id": "knowledge-e1d6ed1d618c4c9b87980038afc03473",
           "sdk": {
             "version": "v0.1.0-rc.2",
             "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
@@ -219,8 +227,8 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T08:09:21.828Z",
-          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
+          "observed_at": "2026-10-18T03:12:45.549Z",
+          "observation": "Read from current catalog and immutable descriptor after two service updates."
         }
       ],
       "remote_main_head_at_audit": "ff58a037b667203531234e00f244724738e94f1b"
@@ -250,7 +258,9 @@
         {
           "role": "registry",
           "commit": "2f7f8364e972a54d65414bcebb5f77738eced586",
+          "repository": "agent-os-registry",
           "manifest": "descriptors/registry-e4cf19eb11dc4251abb4d9c7cf0bec72.json",
+          "release_id": "registry-e4cf19eb11dc4251abb4d9c7cf0bec72",
           "sdk": {
             "version": "v0.1.0-rc.4",
             "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
@@ -260,8 +270,8 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T08:09:21.828Z",
-          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
+          "observed_at": "2026-10-18T03:12:45.549Z",
+          "observation": "Read from current catalog and immutable descriptor after two service updates."
         }
       ],
       "remote_main_head_at_audit": "2f7f8364e972a54d65414bcebb5f77738eced586"
@@ -272,7 +282,7 @@
       "url": "https://github.com/euler-gaozl/agent-os-runtime",
       "clone_url": "https://github.com/euler-gaozl/agent-os-runtime.git",
       "branch": "feat/model-native-limits",
-      "source_head_at_audit": "69b9e62b23155596a5c1b36b488ad0e9b1d5941c",
+      "source_head_at_audit": "76237d34993cf26d91a7bec65765623fdf220034",
       "remote_verified_at_audit": true,
       "visibility": "public",
       "actions_enabled_at_audit": false,
@@ -283,15 +293,17 @@
       "integration_pins": [
         {
           "role": "runtime",
-          "commit": "55dc3cd747008d9f5d8f13e989a8ebbfe437fbab",
+          "commit": "76237d34993cf26d91a7bec65765623fdf220034",
           "owner_modules": []
         }
       ],
       "installed": [
         {
           "role": "runtime",
-          "commit": "69b9e62b23155596a5c1b36b488ad0e9b1d5941c",
-          "manifest": "descriptors/runtime-cd1436ca0bca41199ad2ad35b901af97.json",
+          "commit": "76237d34993cf26d91a7bec65765623fdf220034",
+          "repository": "agent-os-runtime",
+          "manifest": "descriptors/runtime-d15b05d4f47840b9883567c44ccfd59e.json",
+          "release_id": "runtime-d15b05d4f47840b9883567c44ccfd59e",
           "sdk": {
             "version": "v0.1.0-rc.4",
             "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
@@ -301,11 +313,11 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T14:40:00Z",
-          "observation": "Actual owner Windows release catalog; dual DSH engine registry installed; default guarded-v2."
+          "observed_at": "2026-10-18T03:12:45.549Z",
+          "observation": "Read from current catalog and immutable descriptor after two service updates."
         }
       ],
-      "remote_main_head_at_audit": "1e17aae52b40db9ecb7a637090e5859edf9cf9aa"
+      "remote_main_head_at_audit": "76237d34993cf26d91a7bec65765623fdf220034"
     },
     {
       "id": "repo:agent-os-sandbox",
@@ -332,7 +344,9 @@
         {
           "role": "sandbox",
           "commit": "9348b8e6ead28da5e1585ee69e469e4b10620d08",
+          "repository": "agent-os-sandbox",
           "manifest": "descriptors/sandbox-d3942e50051c4e10b0533fb62c43e2ea.json",
+          "release_id": "sandbox-d3942e50051c4e10b0533fb62c43e2ea",
           "sdk": {
             "version": "v0.1.0-rc.2",
             "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
@@ -342,8 +356,8 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T08:09:21.828Z",
-          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
+          "observed_at": "2026-10-18T03:12:45.549Z",
+          "observation": "Read from current catalog and immutable descriptor after two service updates."
         }
       ],
       "remote_main_head_at_audit": "b7a2cdfa7fdb1fe04d89d268e261b99db777ab98"
@@ -389,7 +403,9 @@
         {
           "role": "sources",
           "commit": "29fe0860d424a6f263ed9b274673590d0d8694c2",
+          "repository": "agent-os-sources",
           "manifest": "descriptors/sources-9097b5984dcb4f37a76ad198a9bf4a44.json",
+          "release_id": "sources-9097b5984dcb4f37a76ad198a9bf4a44",
           "sdk": {
             "version": "v0.1.0-rc.2",
             "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
@@ -399,8 +415,8 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T08:09:21.828Z",
-          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
+          "observed_at": "2026-10-18T03:12:45.549Z",
+          "observation": "Read from current catalog and immutable descriptor after two service updates."
         }
       ],
       "remote_main_head_at_audit": "76511f1738bfbb5d791ad8f804bd54ae23380c03"
@@ -430,7 +446,9 @@
         {
           "role": "storage",
           "commit": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c",
+          "repository": "agent-os-storage",
           "manifest": "descriptors/storage-8ae0873dbfd645a5bfb74e57888acbe8.json",
+          "release_id": "storage-8ae0873dbfd645a5bfb74e57888acbe8",
           "sdk": {
             "version": "v0.1.0-rc.2",
             "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
@@ -440,8 +458,8 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T08:09:21.828Z",
-          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
+          "observed_at": "2026-10-18T03:12:45.549Z",
+          "observation": "Read from current catalog and immutable descriptor after two service updates."
         }
       ],
       "remote_main_head_at_audit": "ded5920e1e684cb07f0789bf33f77aec3a0afa5c"
@@ -463,7 +481,7 @@
       "integration_pins": [
         {
           "role": "telemetry",
-          "commit": "c2a02e27fcc0ef517347dcaaaabe11fbcc671e81",
+          "commit": "6f9f539125431bebbf88ddbdbb6840f3dd426068",
           "owner_modules": []
         }
       ],
@@ -471,7 +489,9 @@
         {
           "role": "telemetry",
           "commit": "6f9f539125431bebbf88ddbdbb6840f3dd426068",
+          "repository": "agent-os-telemetry",
           "manifest": "descriptors/telemetry-d243b05fc74b416aa4c164561e3099be.json",
+          "release_id": "telemetry-d243b05fc74b416aa4c164561e3099be",
           "sdk": {
             "version": "v0.1.0-rc.2",
             "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
@@ -481,8 +501,8 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T09:59:03Z",
-          "observation": "Actual owner Windows release catalog; Telemetry telemetry-http-v1 installed with inbox present, zero instances."
+          "observed_at": "2026-10-18T03:12:45.549Z",
+          "observation": "Read from current catalog and immutable descriptor after two service updates."
         }
       ],
       "remote_main_head_at_audit": "6f9f539125431bebbf88ddbdbb6840f3dd426068"
@@ -512,7 +532,9 @@
         {
           "role": "toolhub",
           "commit": "98f8fecc5a139b3f1b0e4d76f4a11c9d8e0c0d07",
+          "repository": "agent-os-toolhub",
           "manifest": "descriptors/toolhub-a97a7b478b044b6c9db04726ca5ecac1.json",
+          "release_id": "toolhub-a97a7b478b044b6c9db04726ca5ecac1",
           "sdk": {
             "version": "v0.1.0-rc.2",
             "module_sum": "h1:SunD5Oyh1le4sv3CMJTpKCa0SsKBQDqXoBoAC0aji98=",
@@ -522,8 +544,8 @@
           },
           "owner_modules": [],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T08:09:21.828Z",
-          "observation": "Actual owner Windows release catalog; no deployment or access entitlement on another machine."
+          "observed_at": "2026-10-18T03:12:45.549Z",
+          "observation": "Read from current catalog and immutable descriptor after two service updates."
         }
       ],
       "remote_main_head_at_audit": "448f449db9f18a0810fdc6c111582c2e51048776"
@@ -545,7 +567,7 @@
       "integration_pins": [
         {
           "role": "worker",
-          "commit": "3e8eec3d125240e730cf393a11694d482a0e3cfe",
+          "commit": "64a31b9989dba5597fb85477c15cfe48a7240f27",
           "owner_modules": [
             {
               "module": "github.com/euler-gaozl/agent-os-runtime",
@@ -563,7 +585,9 @@
         {
           "role": "worker",
           "commit": "64a31b9989dba5597fb85477c15cfe48a7240f27",
+          "repository": "agent-os-worker",
           "manifest": "descriptors/worker-806b411dd08049178458ef34702f34c5.json",
+          "release_id": "worker-806b411dd08049178458ef34702f34c5",
           "sdk": {
             "version": "v0.1.0-rc.4",
             "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
@@ -583,8 +607,8 @@
             }
           ],
           "environment_id": "environment:owner-windows",
-          "observed_at": "2026-10-17T14:40:00Z",
-          "observation": "Actual owner Windows release catalog; dual DSH engine bundle (old 639ed015 + new 687f282e) installed."
+          "observed_at": "2026-10-18T03:12:45.549Z",
+          "observation": "Read from current catalog and immutable descriptor after two service updates."
         }
       ],
       "remote_main_head_at_audit": "64a31b9989dba5597fb85477c15cfe48a7240f27"
