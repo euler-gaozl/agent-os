@@ -121,6 +121,7 @@ Runtime 全包测试包含本机 PostgreSQL 隔离夹具；`TEST_DATABASE_URL` �
 - 切换时没有在途任务（两个任务都是终态）；没有数据库迁移；Worker 与执行模块未重建。
 - `mac-platform.mjs stop` 在停止时报告 `Process PID changed while waiting for exit`，每次只停一个服务，需要重复执行到 `stopped:0`。这是本次改动之前就存在的启停脚本行为，本轮没有修改它，也没有把它当成产品验收通过。
 - 安装清单的 `binary_sha256`/`commit` 是作为受控安装的一部分显式更新的；配置摘要保持不变。没有用改摘要的方式绕过校验。
+- Runtime 的提交最初落在本地 `main`；发现后把 `780fb23` 建到 `work/futures-ux-errors-20261020` 分支，并把本地 `main` 恢复为 `76237d3`。`main` 没有推送，远端 main 未变。
 
 ## 6. FUX-004 仍单独跟踪
 
