@@ -1570,5 +1570,36 @@
       ],
       "worker_unchanged": true
     }
-  ]
+  ],
+  "mac_local_candidate_20261020": {
+    "recorded_at": "2026-10-21T00:30:00+08:00",
+    "note": "The installed[] entries above are the historical original-Windows release observations. This section records only the local Mac candidate install; it does not rewrite that audit.",
+    "branches": {
+      "agent-os": "docs/futures-ux-errors-20261020",
+      "agent-os-runtime": "work/futures-ux-errors-20261020",
+      "agent-os-futures": "work/futures-ux-errors-20261020"
+    },
+    "commits": {
+      "runtime": "780fb23a697feb3049dcbd88fbe80e6cd4c54f9c",
+      "futures": "5de319587300e2ee5d5b084761886c459cdb0040"
+    },
+    "integration_pins_updated": true,
+    "installed": {
+      "runtime": {
+        "commit": "780fb23a697feb3049dcbd88fbe80e6cd4c54f9c",
+        "binary_sha256": "6123c0c36dbf14336d5427299eecc9b2f7c2a136e0f576d8795dd51212db0ef2"
+      },
+      "futures": {
+        "commit": "5de319587300e2ee5d5b084761886c459cdb0040",
+        "binary_sha256": "366f27346f5cd7740112e3d8ffeae5aba58aad911258c6c9f7f37912994a3c2d"
+      },
+      "web_index_sha256": "fafe2d577ef796c5f38e61e7e16e83e69ad973728a0f55246bdbad986a0b56cb"
+    },
+    "rollback": {
+      "path": "local/evidence/futures-ux-20261020/rollback/ (mac workspace, not committed)",
+      "rehearsed": true
+    },
+    "verification": "futures-ux-errors-delivery-20261020.md",
+    "state": "installed locally on the Mac; not merged to main and not pushed"
+  }
 }
