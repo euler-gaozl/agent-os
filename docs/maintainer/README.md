@@ -1,5 +1,7 @@
 # 项目群维护知识库
 
+最新有界任务（2026-10-20）：[期货 UI 与错误记录计划](futures-ux-errors-plan-20261020.md)、[工程问题清单](futures-ux-errors-register-20261020.json)、[DSH 开工指令](dsh-futures-ux-prompt-20261020.txt)。仅完成只读评估，交由 DSH 实施；手动复盘，无定时任务。新 Mac 现场与下方原 Windows 历史分开记录。
+
 最新入口（2026-10-18）：[当前状态](current-state.md)、[三项复核结果](review-followup-20261018.md)、[DeepSeek接续](deepseek-followup-20261018.md)、[可复制开工提示词](deepseek-followup-prompt-20261018.txt)。前两项交付，第三项研究内容尚未通过。
 
 先识别实际机器，读 [环境](environment.md) / [环境映射](environments.json)，不能把原Windows的端口、安装、凭据和私有证据当作另一台电脑的资源。

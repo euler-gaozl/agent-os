@@ -1,0 +1,71 @@
+{
+  "schema": "agentos-manual-improvement-register-v1",
+  "as_of": "2026-10-20",
+  "status": "assessment_only",
+  "scope": "Engineering handoff; runtime events and receipts remain the execution authority.",
+  "review_mode": "manual",
+  "scheduled_automation": false,
+  "plan": "futures-ux-errors-plan-20261020.md",
+  "issues": [
+    {
+      "id": "FUX-001",
+      "priority": "P0",
+      "title": "任务页面重复累积证据关联与修订入口",
+      "status": "open",
+      "owner_repositories": ["agent-os-futures"],
+      "evidence": "Screenshots and live browser show repeated controls; sibling component keys collide when evidence_binding is absent.",
+      "implementation_batch": "A",
+      "acceptance": ["A1", "A2", "A3"],
+      "fix_commits": [],
+      "verification_evidence": []
+    },
+    {
+      "id": "FUX-002",
+      "priority": "P1",
+      "title": "失败页只显示通用 HTTP 400，无法定位原因",
+      "status": "open",
+      "owner_repositories": ["agent-os-runtime", "agent-os-futures"],
+      "evidence": "Existing persisted tool/event receipts identify query rejection, while the app sees only upstream request rejected.",
+      "implementation_batch": "C",
+      "acceptance": ["B1", "C1", "C2", "C3"],
+      "fix_commits": [],
+      "verification_evidence": []
+    },
+    {
+      "id": "FUX-003",
+      "priority": "P1",
+      "title": "报告、草稿、证据关联与执行完成状态混杂",
+      "status": "open",
+      "owner_repositories": ["agent-os-futures"],
+      "evidence": "Completed methanol run has zero saved drafts and zero original document reads; duplicated actions do not represent real revisions.",
+      "implementation_batch": "B",
+      "acceptance": ["A3", "B2", "B3", "B4", "B5"],
+      "fix_commits": [],
+      "verification_evidence": []
+    },
+    {
+      "id": "FUX-004",
+      "priority": "P1",
+      "title": "可修正的检索参数拒绝直接终止整次研究",
+      "status": "open_separate_execution_change",
+      "owner_repositories": ["agent-os-runtime", "agent-os-worker", "agent-os-knowledge"],
+      "evidence": "One-character Han query is rejected; the shared Go bridge propagates the error and terminates the run before the model can correct it.",
+      "implementation_batch": "Follow-up execution protocol review; not part of UI changes",
+      "acceptance": ["Typed rejection versus authorization/fence/unknown effect", "Durable replay and bounded correction", "Existing Agent definitions unchanged"],
+      "fix_commits": [],
+      "verification_evidence": []
+    },
+    {
+      "id": "FUX-005",
+      "priority": "P1",
+      "title": "缺少面向用户的错误记录与手动复盘入口",
+      "status": "open",
+      "owner_repositories": ["agent-os-runtime", "agent-os-futures"],
+      "evidence": "Execution errors already persist; a bounded, application-scoped read-only list and diagnostic view are needed.",
+      "implementation_batch": "D",
+      "acceptance": ["D1", "D2", "C3"],
+      "fix_commits": [],
+      "verification_evidence": []
+    }
+  ]
+}
