@@ -74,7 +74,8 @@
         "GET /api/tasks/dd80cadf.../diagnostics => stage tool, parameter_rejected, cause_confirmed true, query 豆, 2 attempts, events 24/25",
         "local/evidence/futures-ux-20261020/after/failed-desktop.png",
         "local/evidence/futures-ux-20261020/after/failed-details-desktop.png",
-        "local/evidence/futures-ux-20261020/after/states/states-effect-unknown.png"
+        "local/evidence/futures-ux-20261020/after/states/states-effect-unknown.png",
+        "local/evidence/futures-ux-20261020/after/mixed/mixed-check.json (new BFF + old Runtime; old BFF + new Runtime checked via API)"
       ],
       "verified_at": "2026-10-21"
     },

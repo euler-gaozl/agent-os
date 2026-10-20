@@ -1,6 +1,6 @@
 # 期货任务页面与错误记录 · DSH 交付记录
 
-日期：2026-10-21（Asia/Shanghai）。状态：**候选分支已实现、本机候选已浏览器验收并在本机受控安装；尚未合并 main、尚未推送、没有触发 GitHub Actions。**
+日期：2026-10-21（Asia/Shanghai）。状态：**候选分支已实现、本机候选已浏览器验收并在本机受控安装；代码分支与交付文档已推送，尚未合并 main，没有触发 GitHub Actions。**
 
 本轮按 [实施计划](futures-ux-errors-plan-20261020.md) 完成 A–E。产品源码只改 `agent-os-futures` 与 `agent-os-runtime`；原期货业务包、Worker、执行协议、Harness、预算和模型设置都未改。错误记录保持手动复盘，没有定时任务、自动修复、自动重试或自动重跑。
 
@@ -16,7 +16,7 @@
 | agent-os-futures | 同上 | `5de3195` | B/D 收口：失败页单一操作区、暂停/取消文案 |
 | agent-os | `docs/futures-ux-errors-20261020` | 本文提交 | 计划状态、问题清单、集成 pin、交付记录 |
 
-主仓 `deploy/service-sources.json` 已把 `runtime` 固定到 `780fb23a697feb3049dcbd88fbe80e6cd4c54f9c`、`futures` 固定到 `5de319587300e2ee5d5b084761886c459cdb0040`。这是在本机组合通过验收之后的更新，不代表已推送或已在其他机器安装。
+主仓 `deploy/service-sources.json` 已把 `runtime` 固定到 `780fb23a697feb3049dcbd88fbe80e6cd4c54f9c`、`futures` 固定到 `5de319587300e2ee5d5b084761886c459cdb0040`。该 pin 更新随本文档分支推送，只代表本机验收组合，不代表已在其他机器安装。
 
 ## 2. A–E 交付与验收
 
@@ -49,7 +49,7 @@
 - 真实豆粕失败解析为：stage `tool`、code `parameter_rejected`、`cause_confirmed=true`、operation `…/dsh/14`、tool `kb_search`、参数 `query=豆`、events 24/25、attempts 2、tokens 23667/218、预算 200000。页面显示“资料检索未完成 / 检索词“豆”未通过资料库的查询校验”，不以原始 HTTP 400 作唯一解释。
 - C2：单测覆盖已恢复工具错误、最终失败、503/预算/取消/效果未知/无确认原因；浏览器另看真实参数拒绝及样例的取消、待核对、预算耗尽、旧 Markdown 页面。
 - C3：跨应用、非应用身份、伪造/转义路径、旧 Runtime 404、5xx、普通 Go error 都有拒绝或固定安全响应；C3 注入测试把 `PRIVATE`、URL、模型内容和原始错误塞进真实字段，业务响应不含它们。BFF 还独立限制 code/stage/action/usage、操作 ID 必须属于该任务、参数必须短且不含 URL/凭证样式。
-- C4：新 BFF 连旧 Runtime 时诊断 404 → 页面保留任务状态并提示“当前执行服务尚未提供错误详情”；其他读取失败 → 固定 503/502；旧 `task.error` 由 BFF 映射到固定集合（`model HTTP 503`、`credential unavailable`、预算/截断文案、`upstream request rejected`、`execution failed`），不再原样透传。回滚演练实际验证了旧组合下诊断 404、任务页仍可用。
+- C4：两种混合组合都做了端到端检查。新 BFF + 旧 Runtime：诊断 200 `{available:false, reason:"diagnostics_not_supported"}`，失败页保留任务状态并提示“当前执行服务尚未提供错误详情”，错误记录页显示固定“暂时无法读取”；旧 BFF + 新 Runtime：两个任务正常读取，详情 `error` 仍是字符串且只有通用 `upstream request rejected`，旧 BFF 没有诊断路由（404）。其他读取失败 → 固定 503/502；旧 `task.error` 由新 BFF 映射到固定集合（`model HTTP 503`、`credential unavailable`、预算/截断文案、`upstream request rejected`、`execution failed`），不再原样透传。回滚演练实际验证了旧组合下诊断 404、任务页仍可用。
 
 ### D. 错误记录与手动复盘
 
@@ -96,6 +96,7 @@ Runtime 全包测试包含本机 PostgreSQL 隔离夹具；`TEST_DATABASE_URL` �
 - `after/records-desktop.png`、`records-filtered-desktop.png`、`records-1024.png`、`records-390.png`
 - `after/states/states-old-markdown.png`、`states-cancelled.png`、`states-effect-unknown.png`、`states-budget.png`、`states.json`
 - `after/readonly/readonly-audit.json`、`after/readonly/downloads/`（3 个脱敏导出）
+- `after/mixed/mixed-check.json`、`mixed-old-runtime-failed.png`、`mixed-old-runtime-records.png`（新 BFF + 旧 Runtime 降级）
 - `after/installed/installed-check.json` 与三张安装后截图
 - `runtime-go-test.log`、`futures-go-test.log`、`futures-web-test.log`、`futures-web-check.log`、`futures-web-build.log`
 - `seed-fixtures.mjs`、`cleanup-fixtures.mjs`、`acceptance.mjs`、`states.mjs`、`readonly-audit.mjs`、`installed-check.mjs`：夹具可复现且已清理。
@@ -127,7 +128,7 @@ Runtime 全包测试包含本机 PostgreSQL 隔离夹具；`TEST_DATABASE_URL` �
 
 ## 7. 未完成与后续
 
-- 代码分支尚未合并 main、尚未推送；需要用户确认后再推送/合并。日常 GitHub Actions 保持关闭，本轮没有触发 CI。
+- 代码分支与主仓交付文档已推送到 origin，但尚未合并 main；合并需要用户确认。日常 GitHub Actions 保持关闭，本轮没有触发 CI。
 - Console 管理诊断摘要未做（计划列为另计范围）。
 - 持久化人工“已复盘/已解决/备注”未做；首版只在导出文件里保留空模板。
 - 失败列表的候选分类由 Runtime 在分页前投影并受 200 条扫描预算限制；若未来错误量显著增大，需要由 Runtime 评估索引或物化投影，不能由前端过滤最近 100 条。
