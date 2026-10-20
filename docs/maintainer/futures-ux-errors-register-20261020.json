@@ -1,0 +1,170 @@
+{
+  "schema": "agentos-manual-improvement-register-v1",
+  "as_of": "2026-10-21",
+  "status": "candidate_verified_and_installed_locally_pending_merge",
+  "scope": "Engineering handoff; runtime events and receipts remain the execution authority.",
+  "review_mode": "manual",
+  "scheduled_automation": false,
+  "plan": "futures-ux-errors-plan-20261020.md",
+  "delivery": "futures-ux-errors-delivery-20261020.md",
+  "branches": {
+    "agent-os": "docs/futures-ux-errors-20261020",
+    "agent-os-runtime": "work/futures-ux-errors-20261020",
+    "agent-os-futures": "work/futures-ux-errors-20261020"
+  },
+  "installed_local": {
+    "combination": "runtime 780fb23a697feb3049dcbd88fbe80e6cd4c54f9c + futures 5de319587300e2ee5d5b084761886c459cdb0040 + rebuilt web fafe2d577ef796c5f38e61e7e16e83e69ad973728a0f55246bdbad986a0b56cb",
+    "status": "12/12 managed processes ready on 2026-10-21, diagnostics 200",
+    "rollback": "local/evidence/futures-ux-20261020/rollback/ (rehearsed: old combination ran 12/12, diagnostics 404)"
+  },
+  "issues": [
+    {
+      "id": "FUX-001",
+      "priority": "P0",
+      "title": "任务页面重复累积证据关联与修订入口",
+      "status": "verified_pending_merge",
+      "owner_repositories": [
+        "agent-os-futures"
+      ],
+      "evidence": "Before: one evidence section after load, 11 after ten 6.2s parent refreshes on the installed baseline (local/evidence/futures-ux-20261020/a1-before.json). Sibling keys collided when evidence_binding was absent.",
+      "implementation_batch": "A",
+      "acceptance": [
+        "A1",
+        "A2",
+        "A3"
+      ],
+      "fix_commits": [
+        "agent-os-futures 26988f1"
+      ],
+      "verification_evidence": [
+        "web/test/futures-identity.test.tsx (real parent, ten refresh ticks, task switch, duplicate-key assertion; fails on the old keys)",
+        "local/evidence/futures-ux-20261020/a1-before.json",
+        "local/evidence/futures-ux-20261020/after/acceptance.json (10 refresh samples stay 1/1/1; ten task switches)",
+        "local/evidence/futures-ux-20261020/after/failed-after10-refreshes.png"
+      ],
+      "verified_at": "2026-10-21"
+    },
+    {
+      "id": "FUX-002",
+      "priority": "P1",
+      "title": "失败页只显示通用 HTTP 400，无法定位原因",
+      "status": "verified_pending_merge",
+      "owner_repositories": [
+        "agent-os-runtime",
+        "agent-os-futures"
+      ],
+      "evidence": "The stored event/receipt chain of dd80cadf resolves to a tool parameter rejection; the page now names the query term and the impact without echoing HTTP text.",
+      "implementation_batch": "C",
+      "acceptance": [
+        "B1",
+        "C1",
+        "C2",
+        "C3",
+        "C4"
+      ],
+      "fix_commits": [
+        "agent-os-runtime 780fb23",
+        "agent-os-futures fb1c2e6",
+        "agent-os-futures 9ca2d3b",
+        "agent-os-futures 5de3195"
+      ],
+      "verification_evidence": [
+        "runtime/app_diagnostics_test.go (real-shaped rejection, recovered error exclusion, cancelled/unknown, cross-app, injection, no raw leak)",
+        "futures/diagnostics_test.go (independent BFF sanitization, old Runtime 404 fallback, 5xx/502 fixed messages)",
+        "GET /api/tasks/dd80cadf.../diagnostics => stage tool, parameter_rejected, cause_confirmed true, query 豆, 2 attempts, events 24/25",
+        "local/evidence/futures-ux-20261020/after/failed-desktop.png",
+        "local/evidence/futures-ux-20261020/after/failed-details-desktop.png",
+        "local/evidence/futures-ux-20261020/after/states/states-effect-unknown.png",
+        "local/evidence/futures-ux-20261020/after/mixed/mixed-check.json (new BFF + old Runtime; old BFF + new Runtime checked via API)"
+      ],
+      "verified_at": "2026-10-21"
+    },
+    {
+      "id": "FUX-003",
+      "priority": "P1",
+      "title": "报告、草稿、证据关联与执行完成状态混杂",
+      "status": "verified_pending_merge",
+      "owner_repositories": [
+        "agent-os-futures"
+      ],
+      "evidence": "Completed methanol run is shown as 记录已生成 with a separate 13-项待核 evidence check and zero saved drafts as one compact line; final and draft anchors are namespaced.",
+      "implementation_batch": "B",
+      "acceptance": [
+        "A3",
+        "B2",
+        "B3",
+        "B4",
+        "B5"
+      ],
+      "fix_commits": [
+        "agent-os-futures 9ca2d3b",
+        "agent-os-futures 5de3195"
+      ],
+      "verification_evidence": [
+        "web/test/failure-view.test.tsx",
+        "web/test/report-anchors.test.tsx",
+        "web/test/drafts.test.tsx",
+        "local/evidence/futures-ux-20261020/after/completed-desktop.png",
+        "local/evidence/futures-ux-20261020/after/completed-drafts-desktop.png",
+        "local/evidence/futures-ux-20261020/after/states/states-old-markdown.png",
+        "local/evidence/futures-ux-20261020/after/states/states-cancelled.png",
+        "1024/768 and 390/844 screenshots in local/evidence/futures-ux-20261020/after/"
+      ],
+      "verified_at": "2026-10-21"
+    },
+    {
+      "id": "FUX-004",
+      "priority": "P1",
+      "title": "可修正的检索参数拒绝直接终止整次研究",
+      "status": "open_separate_execution_change",
+      "owner_repositories": [
+        "agent-os-runtime",
+        "agent-os-worker",
+        "agent-os-knowledge"
+      ],
+      "evidence": "One-character Han query is rejected; the shared Go bridge propagates the error and terminates the run before the model can correct it. This batch records and explains the failure but deliberately does not change the execution protocol.",
+      "implementation_batch": "Follow-up execution protocol review; not part of UI changes",
+      "acceptance": [
+        "Typed rejection versus authorization/fence/unknown effect",
+        "Durable replay and bounded correction",
+        "Existing Agent definitions unchanged"
+      ],
+      "fix_commits": [],
+      "verification_evidence": [
+        "Design boundary recorded in futures-ux-errors-delivery-20261020.md section 6",
+        "No Worker/execution module or packs/futures definition changed in this batch"
+      ]
+    },
+    {
+      "id": "FUX-005",
+      "priority": "P1",
+      "title": "缺少面向用户的错误记录与手动复盘入口",
+      "status": "verified_pending_merge",
+      "owner_repositories": [
+        "agent-os-runtime",
+        "agent-os-futures"
+      ],
+      "evidence": "The new read-only failure list pages failed/cancelled/waiting_unknown app runs with filters before pagination, a bound cursor, scan coverage and manual review exports; no new error store or manual disposition state.",
+      "implementation_batch": "D",
+      "acceptance": [
+        "D1",
+        "D2",
+        "C3"
+      ],
+      "fix_commits": [
+        "agent-os-runtime 780fb23",
+        "agent-os-futures fb1c2e6",
+        "agent-os-futures ff80a5b",
+        "agent-os-futures 5de3195"
+      ],
+      "verification_evidence": [
+        "runtime TestAppRunFailuresPaginationFiltersAndCoverage (120 newer successes do not hide old failures; filters/cursor/window; no repeat or skip)",
+        "runtime TestAppRunFailuresHTTPReadOnlyAndInjection",
+        "local/evidence/futures-ux-20261020/after/records-desktop.png",
+        "local/evidence/futures-ux-20261020/after/records-filtered-desktop.png",
+        "local/evidence/futures-ux-20261020/after/readonly/readonly-audit.json (all GET; row counts and content digests unchanged; 3 export files)"
+      ],
+      "verified_at": "2026-10-21"
+    }
+  ]
+}

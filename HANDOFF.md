@@ -1,4 +1,8 @@
-# 当前交接入口 · 2026-10-18
+# 当前交接入口 · 2026-10-20
+
+新增有界任务：[期货任务页面与错误记录实施计划](docs/maintainer/futures-ux-errors-plan-20261020.md)、[问题清单](docs/maintainer/futures-ux-errors-register-20261020.json)、[给 DSH 的开工指令](docs/maintainer/dsh-futures-ux-prompt-20261020.txt)。目前仅完成评估，未改产品代码；先修复重复入口，再整理报告与诊断，错误按需手动复盘，不创建自动化。下方 2026-10-18 为原 Windows 的独立历史交接，不能代替本轮范围和环境。
+
+## 2026-10-18 交接记录
 
 先读 [当前状态](docs/maintainer/current-state.md)、[DS-R1/R2/R3详细任务](docs/maintainer/deepseek-followup-20261018.md)，复制 [开工提示词](docs/maintainer/deepseek-followup-prompt-20261018.txt)。15仓main已同步；证据链已实现、安装和验证；原供给四问成稿但内容未通过。环境先确认，凭据与原电脑私有证据不随克隆转移。Actions关闭，不复活旧无限Goal。
 

@@ -1,7 +1,8 @@
 {
   "schema_version": 1,
-  "as_of": "2026-10-18T03:12:45.549Z",
+  "as_of": "2026-10-21",
   "purpose": "项目群维护定位与交接；不是运行时知识图谱、授权系统或自动验收",
+  "current_handoff_plan": "futures-ux-errors-delivery-20261020.md",
   "authority": "代码/固定发布/真实运行与原始证据优先；本文件为人工维护快照",
   "node_types": [
     "project",
@@ -1773,6 +1774,44 @@
       "label": "解读月份角色修复与原 Windows 安装",
       "doc": "month-role-fix-20261018.md",
       "status": "targeted_fix_verified_content_revision_pending"
+    },
+    {
+      "id": "task:futures-ux-errors-20261020",
+      "type": "task",
+      "label": "期货任务页面与手动错误复盘",
+      "status": "assessment_only",
+      "doc": "futures-ux-errors-plan-20261020.md"
+    },
+    {
+      "id": "evidence:futures-ux-errors-register-20261020",
+      "type": "evidence_document",
+      "label": "UI缺陷与执行错误工程清单",
+      "doc": "futures-ux-errors-register-20261020.json",
+      "status": "open_issues_not_fixes"
+    },
+    {
+      "id": "constraint:manual-error-review",
+      "type": "constraint",
+      "label": "用户选择按需手动复盘，不设置自动化或自动重跑"
+    },
+    {
+      "id": "capability:futures-error-records",
+      "type": "capability",
+      "label": "期货失败诊断与错误记录",
+      "status": "candidate_verified_local_install_pending_merge",
+      "doc": "futures-ux-errors-delivery-20261020.md",
+      "status_scope": "mac_candidate_branch_not_main",
+      "notes": "Read-only projection over runs/calls/events; app-scoped, bounded, no raw exception text and no manual disposition state."
+    },
+    {
+      "id": "evidence:futures-ux-errors-20261020",
+      "type": "evidence_document",
+      "label": "期货 UX/错误记录候选验收",
+      "doc": "futures-ux-errors-delivery-20261020.md",
+      "scope": "A-E code, GO/Web tests, browser acceptance on two real read-only tasks plus labelled fixtures, local install and rollback rehearsal",
+      "raw_evidence": "local/evidence/futures-ux-20261020/ on the Mac; not committed",
+      "verification": "candidate_and_browser_acceptance_on_local_mac",
+      "evidence_environment_id": "environment:maintainer-macos"
     }
   ],
   "edges": [
@@ -3868,14 +3907,54 @@
       "from": "service:futures",
       "relation": "documented_by",
       "to": "evidence:month-role-fix-20261018"
+    },
+    {
+      "from": "task:futures-ux-errors-20261020",
+      "relation": "affects",
+      "to": "service:futures"
+    },
+    {
+      "from": "task:futures-ux-errors-20261020",
+      "relation": "affects",
+      "to": "service:runtime"
+    },
+    {
+      "from": "task:futures-ux-errors-20261020",
+      "relation": "documented_by",
+      "to": "evidence:futures-ux-errors-register-20261020"
+    },
+    {
+      "from": "task:futures-ux-errors-20261020",
+      "relation": "constrained_by",
+      "to": "constraint:manual-error-review"
+    },
+    {
+      "from": "repo:agent-os-runtime",
+      "relation": "implements",
+      "to": "capability:futures-error-records"
+    },
+    {
+      "from": "repo:agent-os-futures",
+      "relation": "implements",
+      "to": "capability:futures-error-records"
+    },
+    {
+      "from": "capability:futures-error-records",
+      "relation": "part_of",
+      "to": "project:agent-platform"
+    },
+    {
+      "from": "capability:futures-error-records",
+      "relation": "documented_by",
+      "to": "evidence:futures-ux-errors-20261020"
     }
   ],
   "environment_policy": {
     "file": "environments.json",
     "default_execution_environment": null,
-    "current_execution_record": "deepseek-followup-20261018.md",
+    "current_execution_record": "futures-ux-errors-delivery-20261020.md",
     "updated_at": "2026-10-17",
     "rule": "DeepSeek host is unspecified. Detect actual OS, workspace and authorization first; original Windows and Mac facts remain scoped observations, never automatic deployment targets."
   },
-  "current_execution_record": "review-followup-20261018.md"
+  "current_execution_record": "futures-ux-errors-delivery-20261020.md"
 }

@@ -1,5 +1,7 @@
 # 项目群维护知识库
 
+最新有界任务（2026-10-21）：[期货 UX 与错误记录交付记录](futures-ux-errors-delivery-20261020.md)、[实施计划](futures-ux-errors-plan-20261020.md)、[工程问题清单](futures-ux-errors-register-20261020.json)。A–E 已实现并在本机 Mac 候选组合上完成浏览器验收与受控安装/回滚演练；**尚未合并 main、尚未推送**。FUX-004 执行协议仍单独跟踪，手动复盘，无定时任务。
+
 最新入口（2026-10-18）：[当前状态](current-state.md)、[三项复核结果](review-followup-20261018.md)、[DeepSeek接续](deepseek-followup-20261018.md)、[可复制开工提示词](deepseek-followup-prompt-20261018.txt)。前两项交付，第三项研究内容尚未通过。
 
 先识别实际机器，读 [环境](environment.md) / [环境映射](environments.json)，不能把原Windows的端口、安装、凭据和私有证据当作另一台电脑的资源。
